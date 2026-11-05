@@ -300,3 +300,83 @@ export function isValidRoadSegmentDesign(
     profiles.some((profile) => profile.id === design.crossSectionProfileId) &&
     ["planned", "prototype", "implemented"].includes(design.status);
 }
+
+export type RoadMarkingKind =
+  | "lane_dashed"
+  | "lane_solid"
+  | "lane_double_solid"
+  | "road_edge"
+  | "stop_line"
+  | "give_way_line"
+  | "zebra_crossing"
+  | "direction_arrow"
+  | "box_junction"
+  | "parking_bay";
+
+export type RoadMarkingSpec = {
+  id: string;
+  kind: RoadMarkingKind;
+  colour: "white" | "yellow";
+  widthM: number;
+  repeatLengthM?: number;
+  status: WorldContentStatus;
+};
+
+export type TrafficSignalKind = "vehicle_three_aspect" | "pedestrian_two_aspect" | "arrow";
+export type TrafficSignalSpec = {
+  id: string;
+  kind: TrafficSignalKind;
+  status: WorldContentStatus;
+  /** Timing is deliberately not specified until traffic simulation is designed. */
+};
+
+export type RoadSignCategory = "regulatory" | "warning" | "directional" | "information";
+export type RoadSignSpec = {
+  id: string;
+  category: RoadSignCategory;
+  name: string;
+  status: WorldContentStatus;
+};
+
+export type StreetFurnitureKind = "streetlight" | "pedestrian_barrier" | "vehicle_barrier" | "bollard";
+export type StreetFurnitureSpec = {
+  id: string;
+  kind: StreetFurnitureKind;
+  status: WorldContentStatus;
+};
+
+export function isValidRoadMarkingSpec(value: unknown): value is RoadMarkingSpec {
+  if (!value || typeof value !== "object") return false;
+  const item = value as Partial<RoadMarkingSpec>;
+  return typeof item.id === "string" && ID_PATTERN.test(item.id) &&
+    ["lane_dashed", "lane_solid", "lane_double_solid", "road_edge", "stop_line", "give_way_line", "zebra_crossing", "direction_arrow", "box_junction", "parking_bay"].includes(String(item.kind)) &&
+    ["white", "yellow"].includes(String(item.colour)) &&
+    typeof item.widthM === "number" && Number.isFinite(item.widthM) && item.widthM > 0 && item.widthM <= 1 &&
+    (item.repeatLengthM === undefined || (Number.isFinite(item.repeatLengthM) && item.repeatLengthM > 0)) &&
+    ["planned", "prototype", "implemented"].includes(String(item.status));
+}
+
+export function isValidTrafficSignalSpec(value: unknown): value is TrafficSignalSpec {
+  if (!value || typeof value !== "object") return false;
+  const item = value as Partial<TrafficSignalSpec>;
+  return typeof item.id === "string" && ID_PATTERN.test(item.id) &&
+    ["vehicle_three_aspect", "pedestrian_two_aspect", "arrow"].includes(String(item.kind)) &&
+    ["planned", "prototype", "implemented"].includes(String(item.status));
+}
+
+export function isValidRoadSignSpec(value: unknown): value is RoadSignSpec {
+  if (!value || typeof value !== "object") return false;
+  const item = value as Partial<RoadSignSpec>;
+  return typeof item.id === "string" && ID_PATTERN.test(item.id) &&
+    ["regulatory", "warning", "directional", "information"].includes(String(item.category)) &&
+    typeof item.name === "string" && item.name.trim().length > 0 &&
+    ["planned", "prototype", "implemented"].includes(String(item.status));
+}
+
+export function isValidStreetFurnitureSpec(value: unknown): value is StreetFurnitureSpec {
+  if (!value || typeof value !== "object") return false;
+  const item = value as Partial<StreetFurnitureSpec>;
+  return typeof item.id === "string" && ID_PATTERN.test(item.id) &&
+    ["streetlight", "pedestrian_barrier", "vehicle_barrier", "bollard"].includes(String(item.kind)) &&
+    ["planned", "prototype", "implemented"].includes(String(item.status));
+}
