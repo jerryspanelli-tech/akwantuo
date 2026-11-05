@@ -96,3 +96,71 @@ export function hasValidWorldReferences(
   if (roads.some((road) => road.regionIds.some((regionId) => !regionIds.has(regionId)))) return false;
   return regions.every((region) => region.parentId === null || regionIds.has(region.parentId));
 }
+
+export type RoadNetworkNodeKind = "junction" | "interchange" | "area_anchor" | "gateway" | "future_gateway";
+
+export type RoadNetworkNode = {
+  id: string;
+  name: string;
+  kind: RoadNetworkNodeKind;
+  regionId: string | null;
+  status: WorldContentStatus;
+};
+
+export type RoadNetworkSegment = {
+  id: string;
+  name: string;
+  roadClass: RoadClass;
+  fromNodeId: string;
+  toNodeId: string;
+  regionIds: string[];
+  status: WorldContentStatus;
+  /** True when this segment leads beyond the first playable-world boundary. */
+  futureExpansion?: boolean;
+};
+
+export type RoadNetwork = {
+  id: string;
+  name: string;
+  version: number;
+  nodes: readonly RoadNetworkNode[];
+  segments: readonly RoadNetworkSegment[];
+};
+
+/** Checks network topology and all region/node references without requiring map coordinates. */
+export function isValidRoadNetwork(
+  network: RoadNetwork,
+  regions: readonly WorldRegion[]
+): boolean {
+  if (!network.id || !ID_PATTERN.test(network.id) ||
+      !network.name.trim() || !Number.isInteger(network.version) || network.version < 1) return false;
+
+  const regionIds = new Set(regions.map((region) => region.id));
+  const nodeIds = new Set(network.nodes.map((node) => node.id));
+  if (nodeIds.size !== network.nodes.length) return false;
+  if (network.nodes.some((node) =>
+    !ID_PATTERN.test(node.id) ||
+    !node.name.trim() ||
+    !["junction", "interchange", "area_anchor", "gateway", "future_gateway"].includes(node.kind) ||
+    (node.regionId !== null && !regionIds.has(node.regionId)) ||
+    !["planned", "prototype", "implemented"].includes(node.status)
+  )) return false;
+
+  const segmentIds = new Set(network.segments.map((segment) => segment.id));
+  if (segmentIds.size !== network.segments.length) return false;
+  return network.segments.every((segment) =>
+    ID_PATTERN.test(segment.id) &&
+    segment.name.trim().length > 0 &&
+    ["motorway", "major_road", "urban_road", "local_road"].includes(segment.roadClass) &&
+    segment.fromNodeId !== segment.toNodeId &&
+    nodeIds.has(segment.fromNodeId) &&
+    nodeIds.has(segment.toNodeId) &&
+    segment.regionIds.length > 0 &&
+    segment.regionIds.every((regionId) => regionIds.has(regionId)) &&
+    ["planned", "prototype", "implemented"].includes(segment.status) &&
+    (segment.futureExpansion !== true ||
+      network.nodes.some((node) =>
+        node.id === segment.toNodeId && node.kind === "future_gateway"
+      ))
+  );
+}
