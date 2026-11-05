@@ -154,7 +154,7 @@ export function createRoadSegmentMarkings(
 
   const meshes: Mesh[] = [];
   const solid = createLineMesh(scene, `${roadSegmentId}-edge-markings`, solidLines, EDGE_WHITE);
-  const dashed = createLineMesh(scene, `${roadSegmentId}-lane-markings`, dashedLines);
+  const dashed = createLineMesh(scene, `${roadSegmentId}-lane-markings`, dashedLines, WHITE);
   if (solid) meshes.push(solid);
   if (dashed) meshes.push(dashed);
   return meshes;
