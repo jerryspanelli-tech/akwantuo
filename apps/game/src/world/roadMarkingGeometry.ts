@@ -96,8 +96,7 @@ function createLineMesh(
   scene: Scene,
   name: string,
   lines: Vector3[][],
-  color: Color3,
-  width: number
+  color: Color3
 ): Mesh | undefined {
   if (lines.length === 0) return undefined;
   const mesh = MeshBuilder.CreateLineSystem(name, { lines, updatable: false }, scene);
@@ -106,9 +105,6 @@ function createLineMesh(
   mesh.isPickable = false;
   mesh.checkCollisions = false;
   mesh.renderingGroupId = 1;
-  // Babylon line-system width is platform-dependent; retain a conservative value.
-  mesh.enableEdgesRendering = false;
-  void width;
   return mesh;
 }
 
@@ -157,8 +153,8 @@ export function createRoadSegmentMarkings(
   }
 
   const meshes: Mesh[] = [];
-  const solid = createLineMesh(scene, `${roadSegmentId}-edge-markings`, solidLines, EDGE_WHITE, 0.12);
-  const dashed = createLineMesh(scene, `${roadSegmentId}-lane-markings`, dashedLines, WHITE, 0.1);
+  const solid = createLineMesh(scene, `${roadSegmentId}-edge-markings`, solidLines, EDGE_WHITE);
+  const dashed = createLineMesh(scene, `${roadSegmentId}-lane-markings`, dashedLines);
   if (solid) meshes.push(solid);
   if (dashed) meshes.push(dashed);
   return meshes;
