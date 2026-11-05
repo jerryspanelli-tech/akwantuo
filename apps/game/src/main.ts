@@ -25,9 +25,9 @@ const joystickStick = document.querySelector<HTMLElement>("#joystick-stick");
 const jumpButton = document.querySelector<HTMLButtonElement>("#jump-button");
 const notice = document.querySelector<HTMLElement>("#notice");
 
-type MoveInput = { x: number; z: number };
+type SolidArea = { x: number; z: number; halfWidth: number; halfDepth: number };
 const pressedKeys = new Set<string>();
-const touchInput: MoveInput = { x: 0, z: 0 };
+const touchInput = { x: 0, z: 0 };
 let jumpRequested = false;
 let hasEnteredWorld = false;
 
@@ -37,7 +37,8 @@ function showNotice(message: string): void {
   notice.classList.add("is-visible");
 }
 
-type SolidArea = { x: number; z: number; halfWidth: number; halfDepth: number };\n\nfunction createPreviewWorld(scene: Scene): SolidArea[] {\n  const solidAreas: SolidArea[] = [];
+function createPreviewWorld(scene: Scene): SolidArea[] {
+  const solidAreas: SolidArea[] = [];
   scene.clearColor = new Color4(0.48, 0.62, 0.66, 1);
 
   const light = new HemisphericLight("sunlight", new Vector3(0.2, 1, 0.1), scene);
@@ -65,14 +66,21 @@ type SolidArea = { x: number; z: number; halfWidth: number; halfDepth: number };
     const side = i % 2 === 0 ? -1 : 1;
     const depth = -72 + Math.floor(i / 2) * 13;
     const width = 7 + (i % 3) * 2;
+    const buildingDepth = 8 + (i % 2) * 3;
     const height = 5 + ((i * 7) % 13);
     const material = new StandardMaterial(`building-material-${i}`, scene);
     material.diffuseColor = buildingPalette[i % buildingPalette.length];
     const building = MeshBuilder.CreateBox(`street-building-${i}`, {
-      width, height, depth: 8 + (i % 2) * 3
+      width, height, depth: buildingDepth
     }, scene);
     building.position.set(side * (15 + (i % 3) * 5), height / 2, depth);
     building.material = material;
+    solidAreas.push({
+      x: building.position.x,
+      z: building.position.z,
+      halfWidth: width / 2,
+      halfDepth: buildingDepth / 2
+    });
   }
 
   const skylineMaterial = new StandardMaterial("distant-skyline", scene);
@@ -91,6 +99,18 @@ type SolidArea = { x: number; z: number; halfWidth: number; halfDepth: number };
   const landmarkMaterial = new StandardMaterial("landmark-material", scene);
   landmarkMaterial.diffuseColor = new Color3(0.78, 0.67, 0.48);
   centre.material = landmarkMaterial;
+  solidAreas.push({ x: 0, z: -62, halfWidth: 6, halfDepth: 6 });
+
+  return solidAreas;
+}
+
+function isBlocked(x: number, z: number, solidAreas: SolidArea[]): boolean {
+  const radius = 0.48;
+  return solidAreas.some((area) => {
+    const nearestX = Math.max(area.x - area.halfWidth, Math.min(x, area.x + area.halfWidth));
+    const nearestZ = Math.max(area.z - area.halfDepth, Math.min(z, area.z + area.halfDepth));
+    return (x - nearestX) ** 2 + (z - nearestZ) ** 2 < radius ** 2;
+  });
 }
 
 function createPlayer(scene: Scene): {
@@ -120,9 +140,7 @@ function createPlayer(scene: Scene): {
   torso.material = shirt;
   torso.parent = root;
 
-  const head = MeshBuilder.CreateSphere("player-head", {
-    diameter: 0.48, segments: 16
-  }, scene);
+  const head = MeshBuilder.CreateSphere("player-head", { diameter: 0.48, segments: 16 }, scene);
   head.position.y = 2.02;
   head.material = skin;
   head.parent = root;
@@ -172,20 +190,8 @@ function installTouchControls(): void {
     joystickStick.style.transform = "translate(0, 0)";
   };
 
-  joystick.addEventListener("pointerdown", (event: PointerEvent) => {
-    event.preventDefault();
-    joystick.setPointerCapture(event.pointerId);
-    updateStick(event);
-  });
-  joystick.addEventListener("pointermove", (event: PointerEvent) => {
-    if (joystick.hasPointerCapture(event.pointerId)) updateStick(event);
-  });
-  joystick.addEventListener("pointerup", resetStick);
-  joystick.addEventListener("pointercancel", resetStick);
-  joystick.addEventListener("lostpointercapture", resetStick);
-
-  function updateStick(event: PointerEvent): void {
-    const bounds = joystick!.getBoundingClientRect();
+  const updateStick = (event: PointerEvent): void => {
+    const bounds = joystick.getBoundingClientRect();
     const centreX = bounds.left + bounds.width / 2;
     const centreY = bounds.top + bounds.height / 2;
     const max = bounds.width * 0.31;
@@ -197,8 +203,20 @@ function installTouchControls(): void {
     const y = dy * scale;
     touchInput.x = x / max;
     touchInput.z = -y / max;
-    joystickStick!.style.transform = `translate(${x}px, ${y}px)`;
-  }
+    joystickStick.style.transform = `translate(${x}px, ${y}px)`;
+  };
+
+  joystick.addEventListener("pointerdown", (event: PointerEvent) => {
+    event.preventDefault();
+    joystick.setPointerCapture(event.pointerId);
+    updateStick(event);
+  });
+  joystick.addEventListener("pointermove", (event: PointerEvent) => {
+    if (joystick.hasPointerCapture(event.pointerId)) updateStick(event);
+  });
+  joystick.addEventListener("pointerup", resetStick);
+  joystick.addEventListener("pointercancel", resetStick);
+  joystick.addEventListener("lostpointercapture", resetStick);
 }
 
 async function start(): Promise<void> {
@@ -216,7 +234,7 @@ async function start(): Promise<void> {
     powerPreference: "high-performance"
   });
   const scene = new Scene(engine);
-  createPreviewWorld(scene);
+  const solidAreas = createPreviewWorld(scene);
   const player = createPlayer(scene);
 
   const camera = new ArcRotateCamera(
@@ -282,7 +300,12 @@ async function start(): Promise<void> {
 
       if (moving) {
         direction.normalize();
-        player.root.position.addInPlace(direction.scale(5.2 * delta));
+        const stepX = direction.x * 5.2 * delta;
+        const stepZ = direction.z * 5.2 * delta;
+        const nextX = player.root.position.x + stepX;
+        const nextZ = player.root.position.z + stepZ;
+        if (!isBlocked(nextX, player.root.position.z, solidAreas)) player.root.position.x = nextX;
+        if (!isBlocked(player.root.position.x, nextZ, solidAreas)) player.root.position.z = nextZ;
         player.root.rotation.y = Math.atan2(direction.x, direction.z);
         walkClock += delta * 9;
       }
