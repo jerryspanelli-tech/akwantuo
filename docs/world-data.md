@@ -289,6 +289,17 @@ A World Bank project report describes the northbound CBD–Amasaman route travel
 
 Reference: [World Bank — Accra CBD–Amasaman corridor project report](https://documents.worldbank.org/curated/en/276331468251734905/pdf/RP5130V40P10060Box391429B00PUBLIC0.pdf).
 
+
+### Circle through-movement continuity
+
+The Circle catalogue now records three named through-movements as ordered corridor sequences:
+
+1. **Northbound CBD–Amasaman:** Tudu → Kojo Thompson Road → Akasanoma Road → Circle → Nsawam Road → Achimota → Ofankor → Amasaman.
+2. **Southbound Amasaman–CBD:** Amasaman → Ofankor → Achimota → Nsawam Road → Circle → Kwame Nkrumah Avenue → Tudu.
+3. **Ring Road westbound:** Ring Road Central → Circle → Ring Road West.
+
+The first two follow the route descriptions in the World Bank CBD–Amasaman corridor report; the Ring Road connection follows the Circle interchange project description. The movement catalogue ties each sequence to its correct first- or second-elevated level. These are named topology references, not drivable splines: intermediate street coordinates, turn geometry, lane paths, ramp gradients and ground-level local access remain to be designed.
+
 ### Separate vertical levels at Circle
 
 The Circle flyover links now record their distinct design levels instead of using one generic “elevated” label:
