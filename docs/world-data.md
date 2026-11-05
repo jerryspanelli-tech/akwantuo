@@ -279,6 +279,22 @@ These constraints come from the original project description, which states that 
 
 Reference: [Graphic Online — Work on Nkrumah Circle interchange begins](https://www.graphic.com.gh/news/general-news/work-on-nkrumah-circle-interchange-begins.html). The report also describes the ground-level roundabout and the two first-level flyover movements.
 
+
+### Separate vertical levels at Circle
+
+The Circle flyover links now record their distinct design levels instead of using one generic “elevated” label:
+
+| Level | Movement |
+|---|---|
+| Ground | Existing Circle roundabout and local access |
+| First elevated level | Akasanoma Road → Nsawam Road |
+| First elevated level | Nsawam Road → Kwame Nkrumah Avenue |
+| Second elevated level | Ring Road Central → Ring Road West |
+
+This follows the project description, which identifies the Akasanoma/Nsawam and Nsawam/Nkrumah Avenue flyovers as the first level, and the Ring Road Central–Ring Road West flyover as the second level. The Ring Road structure also crosses above the Odaw River and railway corridor.
+
+The level labels are relative design layers, not surveyed deck heights. We have not assigned metres-above-ground values, gradients, ramp start/end points or vertical curves. The next geometry work must keep these three layers separate and connect them with researched approach paths rather than flattening the interchange into one surface.
+
 ### Structural reference dimensions
 
 The catalogue also records dimensions published by structural consultant FHECOR in its 2016 Dr. Kwame Nkrumah Interchange project sheet:
