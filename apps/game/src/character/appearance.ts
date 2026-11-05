@@ -55,7 +55,7 @@ export const DEFAULT_APPEARANCE: Readonly<CharacterAppearance> = {
 
 const complexionIds = new Set(COMPLEXIONS.map((preset) => preset.id));
 const outfitIds = new Set(OUTFITS.map((preset) => preset.id));
-const hairstyleIds = new Set(["short-natural", "low-cut", "twists", "braids", "locs", "fade", "afro", "covered"]);
+import { BARBERSHOP_HAIRSTYLES } from "./hairstyles";\n\nconst hairstyleIds = new Set(BARBERSHOP_HAIRSTYLES.map((style) => style.id));
 
 export function validateAppearance(value: unknown): value is CharacterAppearance {
   if (!value || typeof value !== "object") return false;
