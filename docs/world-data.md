@@ -34,7 +34,23 @@ These are planning entries only. They do not define official administrative boun
 
 ## Spatial-data rule
 
-Do not assign world-space positions or road paths until the map layout is deliberately designed and reviewed. The future map stage will add coastline, road geometry, junctions, district boundaries, landmarks and connections using the agreed Greater Accra geography. The later Kumasi corridor will extend the same data model rather than require a new one.
+World-space positions and road paths are now being introduced in a dedicated layout layer. The first pass is a stylised, compressed game map; it is not a GPS survey or official boundary dataset. Coastline, road geometry and district anchors are kept separate from the identity catalogues so they can be refined without changing stable region and road IDs. The later Kumasi corridor will extend the same coordinate system and data model.
+
+## Greater Accra spatial layout — first coordinate pass
+
+`apps/game/src/world/greaterAccraLayout.ts` adds the first shared spatial layout:
+
+- A local metric coordinate system: east is +X, north is +Z, and the Gulf of Guinea coastline lies to the south.
+- A 21 km × 13.5 km design extent for the compressed first-world layout.
+- A spatial anchor for each of the 12 playable districts plus the Greater Accra root region.
+- Coordinates for every primary-road network node.
+- A stylised southern coastline guide.
+- Centreline guide paths for every current primary-road segment, with exact endpoint matching to its network nodes.
+- Explicit flags that keep the Nsawam and Prampram expansion stubs outside the first-release playable road network.
+
+The layout exports lookup helpers and `isGreaterAccraMapLayoutValid()`, which checks complete region/node/segment coverage, unique IDs, coordinate bounds, finite points, and road-path endpoints against the network graph.
+
+These coordinates are **game-layout approximations** intended to preserve the agreed west/centre/east and north/south relationships. They do not claim exact GPS positions, administrative boundaries, surveyed shoreline, legal road alignments, engineering levels or real travel distances. District street grids, junction footprints, interchanges, ramps, coastline terrain, beach shapes and 3D road meshes are not generated yet. The current 180 m Babylon preview is also not yet resized or replaced by this larger layout.
 
 ## Primary road-network foundation
 
