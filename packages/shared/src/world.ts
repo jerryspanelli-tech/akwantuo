@@ -541,3 +541,140 @@ export function isValidPublicTransportRoute(
     route.stopIds.every((stopId) => stopIds.has(stopId)) &&
     ["planned", "prototype", "implemented"].includes(String(route.status));
 }
+
+
+export type PassengerTripState =
+  | "waiting"
+  | "boarded"
+  | "seated"
+  | "travelling"
+  | "alighting"
+  | "completed"
+  | "cancelled";
+
+export type PassengerFareStatus = "unpaid" | "paid" | "refunded";
+
+export type PassengerFareQuote = {
+  currency: "GHS";
+  amountPesewas: number;
+  routeId: string;
+  boardingStopId: string;
+  alightingStopId: string;
+};
+
+export type PassengerSeatSpec = {
+  id: string;
+  label: string;
+  position: Vector3Data;
+  /** True for a seat reserved for a passenger with reduced mobility. */
+  prioritySeat?: boolean;
+};
+
+export type PassengerTripSession = {
+  id: string;
+  vehicleId: string;
+  routeId: string;
+  boardingStopId: string;
+  alightingStopId: string;
+  state: PassengerTripState;
+  seatId: string | null;
+  fareStatus: PassengerFareStatus;
+  fareQuote: PassengerFareQuote;
+};
+
+export type PassengerTripAction =
+  | { type: "board" }
+  | { type: "choose_seat"; seatId: string }
+  | { type: "fare_confirmed" }
+  | { type: "depart" }
+  | { type: "arrive_at_stop"; stopId: string }
+  | { type: "exit_vehicle" }
+  | { type: "cancel" };
+
+/**
+ * Deterministic passenger journey rules. A trusted server must verify seat
+ * availability, stop arrival and payment before accepting the corresponding
+ * actions; this helper is not an authority or a payment processor.
+ */
+export function transitionPassengerTrip(
+  session: PassengerTripSession,
+  action: PassengerTripAction,
+  availableSeatIds: readonly string[] = []
+): PassengerTripSession | null {
+  switch (action.type) {
+    case "board":
+      return session.state === "waiting"
+        ? { ...session, state: "boarded" }
+        : null;
+    case "choose_seat":
+      return (session.state === "boarded" || session.state === "seated") &&
+        availableSeatIds.includes(action.seatId)
+        ? { ...session, state: "seated", seatId: action.seatId }
+        : null;
+    case "fare_confirmed":
+      return session.state === "seated" && session.seatId !== null &&
+        session.fareStatus === "unpaid"
+        ? { ...session, fareStatus: "paid" }
+        : null;
+    case "depart":
+      return session.state === "seated" && session.seatId !== null &&
+        session.fareStatus === "paid"
+        ? { ...session, state: "travelling" }
+        : null;
+    case "arrive_at_stop":
+      return session.state === "travelling" &&
+        action.stopId === session.alightingStopId
+        ? { ...session, state: "alighting" }
+        : null;
+    case "exit_vehicle":
+      return session.state === "alighting"
+        ? { ...session, state: "completed", seatId: null }
+        : null;
+    case "cancel":
+      return session.state === "waiting" || session.state === "boarded" ||
+        session.state === "seated"
+        ? { ...session, state: "cancelled", seatId: null }
+        : null;
+    default:
+      return null;
+  }
+}
+
+export function isValidPassengerFareQuote(value: unknown): value is PassengerFareQuote {
+  if (!value || typeof value !== "object") return false;
+  const quote = value as Partial<PassengerFareQuote>;
+  return quote.currency === "GHS" &&
+    Number.isSafeInteger(quote.amountPesewas) && (quote.amountPesewas ?? -1) >= 0 &&
+    typeof quote.routeId === "string" && ID_PATTERN.test(quote.routeId) &&
+    typeof quote.boardingStopId === "string" && ID_PATTERN.test(quote.boardingStopId) &&
+    typeof quote.alightingStopId === "string" && ID_PATTERN.test(quote.alightingStopId) &&
+    quote.boardingStopId !== quote.alightingStopId;
+}
+
+export function isValidPassengerSeatSpec(value: unknown): value is PassengerSeatSpec {
+  if (!value || typeof value !== "object") return false;
+  const seat = value as Partial<PassengerSeatSpec>;
+  return typeof seat.id === "string" && ID_PATTERN.test(seat.id) &&
+    typeof seat.label === "string" && seat.label.trim().length > 0 &&
+    !!seat.position && Number.isFinite(seat.position.x) &&
+    Number.isFinite(seat.position.y) && Number.isFinite(seat.position.z) &&
+    (seat.prioritySeat === undefined || typeof seat.prioritySeat === "boolean");
+}
+
+export function isValidPassengerTripSession(value: unknown): value is PassengerTripSession {
+  if (!value || typeof value !== "object") return false;
+  const session = value as Partial<PassengerTripSession>;
+  return typeof session.id === "string" && ID_PATTERN.test(session.id) &&
+    typeof session.vehicleId === "string" && ID_PATTERN.test(session.vehicleId) &&
+    typeof session.routeId === "string" && ID_PATTERN.test(session.routeId) &&
+    typeof session.boardingStopId === "string" && ID_PATTERN.test(session.boardingStopId) &&
+    typeof session.alightingStopId === "string" && ID_PATTERN.test(session.alightingStopId) &&
+    session.boardingStopId !== session.alightingStopId &&
+    ["waiting", "boarded", "seated", "travelling", "alighting", "completed", "cancelled"].includes(String(session.state)) &&
+    (session.seatId === null || (typeof session.seatId === "string" && ID_PATTERN.test(session.seatId))) &&
+    ["unpaid", "paid", "refunded"].includes(String(session.fareStatus)) &&
+    isValidPassengerFareQuote(session.fareQuote) &&
+    session.fareQuote.routeId === session.routeId &&
+    session.fareQuote.boardingStopId === session.boardingStopId &&
+    session.fareQuote.alightingStopId === session.alightingStopId;
+}
