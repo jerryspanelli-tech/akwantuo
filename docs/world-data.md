@@ -247,3 +247,11 @@ The current result is an intentional gap in the corridor geometry at each reserv
 The movement candidates are calculated from the map approach directions, so they stay connected to the current road graph instead of relying on manually duplicated turn labels. They provide a basis for later lane assignment, route navigation, signal phases and vehicle path planning.
 
 All entries remain **planned candidates**. A generated movement does not mean that the real junction permits that turn, that a ramp or lane exists, or that a vehicle can drive it. Final junction-specific designs must remove prohibited movements and define lane groups, merging, pedestrian conflicts and traffic control. Grade-separated interchanges will need level-aware movement paths rather than treating every connection as a flat crossing.
+
+## Kwame Nkrumah Circle — first interchange level concept
+
+`apps/game/src/world/circleInterchange.ts` records the first level-separated concept for Circle. The N1 west/east through movement is reserved for an elevated deck, while other turning connections remain separate candidates for ground-level roads and future ramp design.
+
+The deck record includes a provisional centreline, height, width and the two opposing N1 through-movement references. Two support-clearance reservations are recorded away from the provisional central carriageway. This makes the intended separation explicit before physical meshes are generated.
+
+This is **not a finished or surveyed interchange design**. The centreline, 7.5 m deck height, 24.5 m width and support positions are provisional game-layout values. No ramp meshes, piers, barriers, lane markings, collision surfaces, traffic rules or vehicle navigation are created by this catalogue. Detailed approach transitions, vertical curves, structural clearances, drainage, pedestrian routes and all other turning movements still require design and validation before the interchange becomes drivable.
