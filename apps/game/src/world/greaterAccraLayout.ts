@@ -196,7 +196,15 @@ export function isGreaterAccraMapLayoutValid(): boolean {
 
   if (nodeIds.size !== GREATER_ACCRA_MAP_NODES.length ||
       regionAnchorIds.size !== GREATER_ACCRA_REGION_ANCHORS.length ||
-      pathIds.size !== GREATER_ACCRA_ROAD_PATHS.length) return false;
+      pathIds.size !== GREATER_ACCRA_ROAD_PATHS.length ||
+      pathIds.size !== GREATER_ACCRA_ROAD_NETWORK.segments.length) return false;
+
+  if (GREATER_ACCRA_COASTLINE.length < 2 ||
+      GREATER_ACCRA_COASTLINE.some((point, index) =>
+        point.order !== index || !Number.isFinite(point.x) || !Number.isFinite(point.z) ||
+        point.x < GREATER_ACCRA_MAP_EXTENT.minX || point.x > GREATER_ACCRA_MAP_EXTENT.maxX ||
+        point.z < GREATER_ACCRA_MAP_EXTENT.minZ || point.z > GREATER_ACCRA_MAP_EXTENT.maxZ
+      )) return false;
 
   if (GREATER_ACCRA_MAP_NODES.some((node) =>
     !networkNodeIds.has(node.nodeId) ||
