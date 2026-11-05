@@ -125,3 +125,86 @@ export function isCircleInterchangeConceptValid(): boolean {
     CIRCLE_GROUND_LEVEL_LAYOUT.level === "ground" &&
     CIRCLE_GROUND_LEVEL_LAYOUT.status === "planned";
 }
+
+/**
+ * Named approach corridors that must be represented around Circle before
+ * authored geometry is approved. These records deliberately do not assign
+ * game coordinates or claim one-to-one correspondence with the simplified
+ * Greater Accra primary-road graph.
+ */
+export type CircleApproachCorridor = Readonly<{
+  id: string;
+  name: string;
+  role: "western_approach" | "northern_approach" | "southern_approach" | "eastern_ring_approach" | "western_ring_approach";
+  relatedFlyoverLinkIds: readonly string[];
+  groundLevelConnection: boolean;
+  mapStatus: "not_yet_mapped";
+  designNote: string;
+}>;
+
+export const CIRCLE_APPROACH_CORRIDORS: readonly CircleApproachCorridor[] = [
+  {
+    id: "circle-approach-akasanoma-road",
+    name: "Akasanoma Road",
+    role: "western_approach",
+    relatedFlyoverLinkIds: ["circle-akasanoma-to-nsawam-flyover"],
+    groundLevelConnection: true,
+    mapStatus: "not_yet_mapped",
+    designNote: "Named western-side corridor in the reported flyover connection; exact local alignment and its relationship to the existing Kaneshie approach need map review."
+  },
+  {
+    id: "circle-approach-nsawam-road",
+    name: "Nsawam Road",
+    role: "northern_approach",
+    relatedFlyoverLinkIds: [
+      "circle-akasanoma-to-nsawam-flyover",
+      "circle-nsawam-to-nkrumah-avenue-flyover"
+    ],
+    groundLevelConnection: true,
+    mapStatus: "not_yet_mapped",
+    designNote: "Northern corridor appears in both reported elevated links; do not substitute the distant future Nsawam expansion gateway for this Circle approach."
+  },
+  {
+    id: "circle-approach-kwame-nkrumah-avenue",
+    name: "Kwame Nkrumah Avenue",
+    role: "southern_approach",
+    relatedFlyoverLinkIds: ["circle-nsawam-to-nkrumah-avenue-flyover"],
+    groundLevelConnection: true,
+    mapStatus: "not_yet_mapped",
+    designNote: "Southern corridor named in the Nsawam Road flyover connection; exact connection to the central Accra street grid remains to be authored."
+  },
+  {
+    id: "circle-approach-ring-road-central",
+    name: "Ring Road Central",
+    role: "eastern_ring_approach",
+    relatedFlyoverLinkIds: ["circle-ring-road-central-to-west-flyover"],
+    groundLevelConnection: true,
+    mapStatus: "not_yet_mapped",
+    designNote: "One side of the elevated Ring Road Central-to-West connection; the current simplified Ring Road Central centreline is not yet a detailed Circle approach."
+  },
+  {
+    id: "circle-approach-ring-road-west",
+    name: "Ring Road West",
+    role: "western_ring_approach",
+    relatedFlyoverLinkIds: ["circle-ring-road-central-to-west-flyover"],
+    groundLevelConnection: true,
+    mapStatus: "not_yet_mapped",
+    designNote: "Other side of the elevated Ring Road Central-to-West connection; its distinct route must not be collapsed into the N1 western approach."
+  }
+] as const;
+
+export function isCircleApproachCatalogueValid(): boolean {
+  const corridorIds = new Set(CIRCLE_APPROACH_CORRIDORS.map((corridor) => corridor.id));
+  const flyoverIds = new Set(CIRCLE_INTERCHANGE_FLYOVER_LINKS.map((link) => link.id));
+  return CIRCLE_APPROACH_CORRIDORS.length === 5 &&
+    corridorIds.size === CIRCLE_APPROACH_CORRIDORS.length &&
+    CIRCLE_APPROACH_CORRIDORS.every((corridor) =>
+      corridor.name.trim().length > 0 &&
+      corridor.groundLevelConnection &&
+      corridor.mapStatus === "not_yet_mapped" &&
+      corridor.relatedFlyoverLinkIds.length > 0 &&
+      corridor.relatedFlyoverLinkIds.every((id) => flyoverIds.has(id))
+    ) &&
+    CIRCLE_APPROACH_CORRIDORS.find((corridor) => corridor.id === "circle-approach-nsawam-road")?.relatedFlyoverLinkIds.length === 2;
+}
+
