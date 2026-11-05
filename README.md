@@ -25,7 +25,7 @@ Supabase credentials and production service URLs must be supplied through enviro
 
 ## Development
 
-Requirements: Node.js 20 or newer and npm 10 or newer.
+Requirements: Node.js 22.12 or newer and npm 10 or newer.
 
 ```bash
 npm install
