@@ -186,11 +186,18 @@ function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
 
   const hairMaterial = new StandardMaterial("player-hair", scene);
   hairMaterial.diffuseColor = new Color3(0.055, 0.045, 0.04);
-  const hair = MeshBuilder.CreateSphere("player-hairstyle", { diameter: 0.49, segments: 12 }, scene);
-  hair.scaling.y = 0.48;
-  hair.position.y = 2.23;
-  hair.material = hairMaterial;
-  hair.parent = root;
+  const createHairShape = (name: string, diameter: number, height: number): ReturnType<typeof MeshBuilder.CreateSphere> => {
+    const mesh = MeshBuilder.CreateSphere(name, { diameter, segments: 16 }, scene);
+    mesh.scaling.y = height;
+    mesh.position.y = 2.23;
+    mesh.material = hairMaterial;
+    mesh.parent = root;
+    return mesh;
+  };
+  const shortNaturalHair = createHairShape("hair-short-natural", 0.49, 0.48);
+  const lowCutHair = createHairShape("hair-low-cut", 0.48, 0.27);
+  const fadeHair = createHairShape("hair-classic-fade", 0.49, 0.37);
+  const afroHair = createHairShape("hair-natural-afro", 0.56, 0.78);
 
   const leftArm = new TransformNode("left-arm-pivot", scene);
   leftArm.position.set(-0.39, 1.58, 0);
@@ -244,12 +251,10 @@ function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
     rightArm.position.x = 0.39 * broadness;
     leftLeg.position.x = -0.19 * hipWidth * buildScale;
     rightLeg.position.x = 0.19 * hipWidth * buildScale;
-    hair.scaling.set(
-      appearance.hairstyleId === "afro" ? 1.18 : 1,
-      appearance.hairstyleId === "afro" ? 0.9 : 0.48,
-      appearance.hairstyleId === "locs" ? 1.08 : 1
-    );
-    hair.isVisible = appearance.hairstyleId !== "covered";
+    shortNaturalHair.isVisible = appearance.hairstyleId === "short-natural";
+    lowCutHair.isVisible = appearance.hairstyleId === "low-cut";
+    fadeHair.isVisible = appearance.hairstyleId === "fade";
+    afroHair.isVisible = appearance.hairstyleId === "afro";
   };
   applyAppearance(initialAppearance);
   return { root, leftArm, rightArm, leftLeg, rightLeg, applyAppearance };
