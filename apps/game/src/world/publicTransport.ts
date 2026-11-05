@@ -4,7 +4,8 @@ import {
   isValidPublicTransportVehicleProfile,
   type PublicTransportRoute,
   type PublicTransportStop,
-  type PublicTransportVehicleProfile
+  type PublicTransportVehicleProfile,
+  type PassengerRideExperience
 } from "@akwantuo/shared";
 
 /**
@@ -12,13 +13,13 @@ import {
  * Interior window views must render the moving world outside the vehicle,
  * not a static background or a camera fixed to the vehicle exterior.
  */
-const GHANAIAN_PASSENGER_RIDE = {
+const GHANAIAN_PASSENGER_RIDE: PassengerRideExperience = {
   availableCameraModes: ["interior_window", "interior_free_look", "exterior_follow"],
   defaultCameraMode: "interior_window",
   allowLookAround: true,
   showWorldThroughWindows: true,
   status: "planned"
-} as const;
+};
 
 export const PUBLIC_TRANSPORT_VEHICLE_PROFILES: readonly PublicTransportVehicleProfile[] = [
   {
