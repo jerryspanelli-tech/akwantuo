@@ -125,6 +125,7 @@ function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
   rightArm: TransformNode;
   leftLeg: TransformNode;
   rightLeg: TransformNode;
+  applyAppearance: (appearance: CharacterAppearance) => void;
 } {
   const root = new TransformNode("player-root", scene);
   root.position.set(0, 0, 5);
@@ -150,6 +151,14 @@ function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
   head.position.y = 2.02;
   head.material = skin;
   head.parent = root;
+
+  const hairMaterial = new StandardMaterial("player-hair", scene);
+  hairMaterial.diffuseColor = new Color3(0.055, 0.045, 0.04);
+  const hair = MeshBuilder.CreateSphere("player-hairstyle", { diameter: 0.49, segments: 12 }, scene);
+  hair.scaling.y = 0.48;
+  hair.position.y = 2.23;
+  hair.material = hairMaterial;
+  hair.parent = root;
 
   const leftArm = new TransformNode("left-arm-pivot", scene);
   leftArm.position.set(-0.39, 1.58, 0);
