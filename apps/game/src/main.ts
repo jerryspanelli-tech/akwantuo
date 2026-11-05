@@ -102,6 +102,7 @@ function createPlayer(scene: Scene): {
 } {
   const root = new TransformNode("player-root", scene);
   root.position.set(0, 0, 5);
+  root.rotation.y = Math.PI;
 
   const skin = new StandardMaterial("player-skin", scene);
   skin.diffuseColor = new Color3(0.38, 0.21, 0.13);
@@ -220,7 +221,7 @@ async function start(): Promise<void> {
 
   const camera = new ArcRotateCamera(
     "third-person-camera",
-    -Math.PI / 2,
+    0,
     1.18,
     8,
     new Vector3(0, 1.2, 5),
@@ -275,7 +276,7 @@ async function start(): Promise<void> {
       }
 
       const forward = new Vector3(-Math.sin(camera.alpha), 0, -Math.cos(camera.alpha));
-      const right = new Vector3(forward.z, 0, -forward.x);
+      const right = new Vector3(-forward.z, 0, forward.x);
       const direction = forward.scale(inputZ).add(right.scale(inputX));
       const moving = direction.lengthSquared() > 0.001;
 
