@@ -32,18 +32,18 @@ npm install
 npm run dev
 ```
 
-Open the local URL printed by Vite. The current prototype includes the AKWANTUO title experience, a third-person placeholder character, a Ghana-inspired street preview, keyboard movement and mobile touch movement. It is an early local prototype, not yet an online or production-ready game.
+Open the local URL printed by Vite. The current prototype includes the AKWANTUO title experience, a basic character creator with local appearance saving, a third-person placeholder character, a Ghana-inspired street preview, keyboard movement and mobile touch movement. Shared client/server message contracts are being established. It is an early local prototype, not yet an online or production-ready game.
 
 ## Workspace
 
 - `apps/game` — browser game client
-- `apps/server` — multiplayer server (next implementation stage)
-- `packages/shared` — shared types and game rules (next implementation stage)
+- `apps/server` — planned multiplayer server (not implemented yet)
+- `packages/shared` — versioned client/server message contracts and validation
 - `docs` — architecture and development notes
 
 ## Current stage
 
-**Phase 1 — foundation and first playable prototype.** The client now has a responsive startup/menu flow, a simple third-person character, follow camera, basic walk/jump controls, and a touch joystick for phones.\n\n### Prototype controls\n\n- Desktop: WASD or arrow keys to move; Space to jump; drag the scene to rotate the camera.\n- Touchscreen: use the left virtual joystick to move and the JUMP button to jump; drag the scene to rotate the camera.\n\nThe character, buildings and street are temporary development geometry. There is no collision system, character selection, saved progress, authentication, multiplayer or production art yet.
+**Phase 1 — foundation and first playable prototype.** The client now has a responsive startup/menu flow, a simple third-person character, follow camera, basic walk/jump controls, and a touch joystick for phones.\n\n### Prototype controls\n\n- Desktop: WASD or arrow keys to move; Space to jump; drag the scene to rotate the camera.\n- Touchscreen: use the left virtual joystick to move and the JUMP button to jump; drag the scene to rotate the camera.\n\nThe character, buildings and street are temporary development geometry. Character appearance is saved only in this browser; there is no cloud profile, authentication, multiplayer server or production art yet.
 
 ## Ownership and safety
 
