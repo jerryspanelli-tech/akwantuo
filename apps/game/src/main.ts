@@ -12,6 +12,8 @@ import {
 } from "@babylonjs/core";
 import "./style.css";
 import { COMPLEXIONS, DEFAULT_APPEARANCE, OUTFITS, resolveAppearance, type CharacterAppearance } from "./character/appearance";
+import { loadAppearance, saveAppearance } from "./character/appearanceStore";
+import { getHairstyle } from "./character/hairstyles";
 
 const bootScreen = document.querySelector<HTMLElement>("#boot-screen");
 const gameShell = document.querySelector<HTMLElement>("#game-shell");
@@ -36,17 +38,6 @@ const pressedKeys = new Set<string>();
 const touchInput = { x: 0, z: 0 };
 let jumpRequested = false;
 let hasEnteredWorld = false;
-
-const APPEARANCE_STORAGE_KEY = "akwantuo.character-appearance.v1";
-
-function loadSavedAppearance(): CharacterAppearance {
-  try {
-    const saved = window.localStorage.getItem(APPEARANCE_STORAGE_KEY);
-    return saved ? resolveAppearance(JSON.parse(saved) as unknown) : resolveAppearance(DEFAULT_APPEARANCE);
-  } catch {
-    return resolveAppearance(DEFAULT_APPEARANCE);
-  }
-}
 
 function readAppearanceForm(form: HTMLFormElement): CharacterAppearance {
   const data = new FormData(form);
@@ -251,10 +242,12 @@ function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
     rightArm.position.x = 0.39 * broadness;
     leftLeg.position.x = -0.19 * hipWidth * buildScale;
     rightLeg.position.x = 0.19 * hipWidth * buildScale;
-    shortNaturalHair.isVisible = appearance.hairstyleId === "short-natural";
-    lowCutHair.isVisible = appearance.hairstyleId === "low-cut";
-    fadeHair.isVisible = appearance.hairstyleId === "fade";
-    afroHair.isVisible = appearance.hairstyleId === "afro";
+    const selectedStyle = getHairstyle(appearance.hairstyleId);
+    const styleId = selectedStyle?.id ?? "short-natural";
+    shortNaturalHair.isVisible = !["low-cut", "fade", "afro", "covered"].includes(styleId);
+    lowCutHair.isVisible = styleId === "low-cut";
+    fadeHair.isVisible = ["fade", "high-fade", "low-fade", "mid-fade", "skin-fade", "taper-fade", "waves", "line-up"].includes(styleId);
+    afroHair.isVisible = ["afro", "twists", "starter-locs", "locs", "cornrows", "box-braids", "knotless-braids", "ghana-braids", "feed-in-cornrows", "fulani-braids", "faux-locs", "passion-twists", "wig-install", "natural-bun"].includes(styleId);
   };
   applyAppearance(initialAppearance);
   return { root, leftArm, rightArm, leftLeg, rightLeg, applyAppearance };
@@ -314,7 +307,7 @@ async function start(): Promise<void> {
   });
   const scene = new Scene(engine);
   const solidAreas = createPreviewWorld(scene);
-  let currentAppearance = loadSavedAppearance();
+  let currentAppearance = loadAppearance(window.localStorage);
   const player = createPlayer(scene, currentAppearance);
 
   const camera = new ArcRotateCamera(
@@ -456,13 +449,7 @@ async function start(): Promise<void> {
   characterForm?.addEventListener("submit", (event: SubmitEvent) => {
     event.preventDefault();
     updateCharacterPreview();
-    let savedLocally = false;
-    try {
-      window.localStorage.setItem(APPEARANCE_STORAGE_KEY, JSON.stringify(currentAppearance));
-      savedLocally = true;
-    } catch {
-      savedLocally = false;
-    }
+    const savedLocally = saveAppearance(currentAppearance, window.localStorage);
     closeCharacterCreator();
     showNotice(savedLocally
       ? "Appearance saved on this device. Cloud account saving will come later."
