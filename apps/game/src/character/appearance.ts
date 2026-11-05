@@ -1,4 +1,6 @@
-import { BARBERSHOP_HAIRSTYLES } from "./hairstyles";\n\n/** Shared appearance data for the first AKWANTUO character creator.
+import { BARBERSHOP_HAIRSTYLES } from "./hairstyles";
+
+/** Shared appearance data for the first AKWANTUO character creator.
  * Values here describe presentation only; they never grant gameplay privileges.
  */
 
