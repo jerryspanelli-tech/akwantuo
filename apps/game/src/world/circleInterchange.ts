@@ -140,7 +140,7 @@ export function isCircleInterchangeConceptValid(): boolean {
 export type CircleApproachCorridor = Readonly<{
   id: string;
   name: string;
-  role: "western_approach" | "northern_approach" | "southern_approach" | "eastern_ring_approach" | "western_ring_approach";
+  role: "cbd_approach" | "northern_approach" | "southern_departure" | "ring_road_central" | "ring_road_west";
   relatedFlyoverLinkIds: readonly string[];
   groundLevelConnection: boolean;
   mapStatus: "not_yet_mapped";
@@ -151,11 +151,11 @@ export const CIRCLE_APPROACH_CORRIDORS: readonly CircleApproachCorridor[] = [
   {
     id: "circle-approach-akasanoma-road",
     name: "Akasanoma Road",
-    role: "western_approach",
+    role: "cbd_approach",
     relatedFlyoverLinkIds: ["circle-akasanoma-to-nsawam-flyover"],
     groundLevelConnection: true,
     mapStatus: "not_yet_mapped",
-    designNote: "Named western-side corridor in the reported flyover connection; exact local alignment and its relationship to the existing Kaneshie approach need map review."
+    designNote: "The Accra CBD–Amasaman corridor report describes the northbound CBD route entering Circle via Akasanoma Road; exact local alignment still needs map review."
   },
   {
     id: "circle-approach-nsawam-road",
@@ -172,16 +172,16 @@ export const CIRCLE_APPROACH_CORRIDORS: readonly CircleApproachCorridor[] = [
   {
     id: "circle-approach-kwame-nkrumah-avenue",
     name: "Kwame Nkrumah Avenue",
-    role: "southern_approach",
+    role: "southern_departure",
     relatedFlyoverLinkIds: ["circle-nsawam-to-nkrumah-avenue-flyover"],
     groundLevelConnection: true,
     mapStatus: "not_yet_mapped",
-    designNote: "Southern corridor named in the Nsawam Road flyover connection; exact connection to the central Accra street grid remains to be authored."
+    designNote: "The CBD–Amasaman corridor report describes the southbound return leaving Circle via Kwame Nkrumah Avenue toward Tudu; exact local alignment remains to be authored."
   },
   {
     id: "circle-approach-ring-road-central",
     name: "Ring Road Central",
-    role: "eastern_ring_approach",
+    role: "ring_road_central",
     relatedFlyoverLinkIds: ["circle-ring-road-central-to-west-flyover"],
     groundLevelConnection: true,
     mapStatus: "not_yet_mapped",
@@ -190,7 +190,7 @@ export const CIRCLE_APPROACH_CORRIDORS: readonly CircleApproachCorridor[] = [
   {
     id: "circle-approach-ring-road-west",
     name: "Ring Road West",
-    role: "western_ring_approach",
+    role: "ring_road_west",
     relatedFlyoverLinkIds: ["circle-ring-road-central-to-west-flyover"],
     groundLevelConnection: true,
     mapStatus: "not_yet_mapped",
