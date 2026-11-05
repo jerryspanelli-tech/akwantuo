@@ -239,3 +239,11 @@ The main road geometry builder now trims each corridor ribbon before it enters a
 The reserved areas are intentionally left for dedicated junction geometry. This is important for grade-separated locations, where a single flat road ribbon would incorrectly imply that all traffic movements share one level. At-grade junctions also need their own central paved area and approach treatment rather than overlapping road ribbons.
 
 The current result is an intentional gap in the corridor geometry at each reserved junction, not a finished intersection. Ramps, bridges, lane connections, roundabout islands, signal-controlled stop lines and pedestrian crossings still need their own authored layouts. A 25m provisional buffer is applied outside each reservation envelope to give later junction meshes room to connect cleanly.
+
+## Candidate junction turning movements
+
+`apps/game/src/world/junctionMovements.ts` derives candidate vehicle movements between each distinct pair of approaches at a planned junction. It records the incoming and outgoing road segment IDs, a signed turn angle and a coarse movement class: through, left, right or U-turn.
+
+The movement candidates are calculated from the map approach directions, so they stay connected to the current road graph instead of relying on manually duplicated turn labels. They provide a basis for later lane assignment, route navigation, signal phases and vehicle path planning.
+
+All entries remain **planned candidates**. A generated movement does not mean that the real junction permits that turn, that a ramp or lane exists, or that a vehicle can drive it. Final junction-specific designs must remove prohibited movements and define lane groups, merging, pedestrian conflicts and traffic control. Grade-separated interchanges will need level-aware movement paths rather than treating every connection as a flat crossing.
