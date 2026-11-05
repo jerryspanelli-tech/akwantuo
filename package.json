@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "npm run dev --workspace @akwantuo/game",
     "build": "npm run build --workspace @akwantuo/game",
-    "typecheck": "npm run typecheck --workspace @akwantuo/game"
+    "typecheck": "npm run typecheck --workspace @akwantuo/shared && npm run typecheck --workspace @akwantuo/game"
   },
   "engines": {
     "node": ">=22.12.0"
