@@ -37,6 +37,38 @@ const touchInput = { x: 0, z: 0 };
 let jumpRequested = false;
 let hasEnteredWorld = false;
 
+const APPEARANCE_STORAGE_KEY = "akwantuo.character-appearance.v1";
+
+function loadSavedAppearance(): CharacterAppearance {
+  try {
+    const saved = window.localStorage.getItem(APPEARANCE_STORAGE_KEY);
+    return saved ? resolveAppearance(JSON.parse(saved) as unknown) : resolveAppearance(DEFAULT_APPEARANCE);
+  } catch {
+    return resolveAppearance(DEFAULT_APPEARANCE);
+  }
+}
+
+function readAppearanceForm(form: HTMLFormElement): CharacterAppearance {
+  const data = new FormData(form);
+  return resolveAppearance({
+    presentation: data.get("presentation"), age: Number(data.get("age")),
+    complexionId: data.get("complexion"), bodyBuild: data.get("build"),
+    hairstyleId: data.get("hairstyle"), outfitId: data.get("outfit")
+  });
+}
+
+function fillAppearanceForm(form: HTMLFormElement, appearance: CharacterAppearance): void {
+  const values: Record<string, string> = {
+    presentation: appearance.presentation, age: String(appearance.age),
+    complexion: appearance.complexionId, build: appearance.bodyBuild,
+    hairstyle: appearance.hairstyleId, outfit: appearance.outfitId
+  };
+  for (const [name, value] of Object.entries(values)) {
+    const field = form.elements.namedItem(name);
+    if (field instanceof HTMLInputElement || field instanceof HTMLSelectElement) field.value = value;
+  }
+}
+
 function showNotice(message: string): void {
   if (!notice) return;
   notice.textContent = message;
@@ -262,7 +294,7 @@ async function start(): Promise<void> {
   });
   const scene = new Scene(engine);
   const solidAreas = createPreviewWorld(scene);
-  let currentAppearance = resolveAppearance(DEFAULT_APPEARANCE);
+  let currentAppearance = loadSavedAppearance();
   const player = createPlayer(scene, currentAppearance);
 
   const camera = new ArcRotateCamera(
@@ -384,6 +416,7 @@ async function start(): Promise<void> {
 
   const openCharacterCreator = (): void => {
     if (!characterPanel || !characterForm) return;
+    fillAppearanceForm(characterForm, currentAppearance);
     characterPanel.classList.remove("is-hidden");
     characterPanel.setAttribute("aria-hidden", "false");
   };
@@ -393,19 +426,28 @@ async function start(): Promise<void> {
   };
   characterButton?.addEventListener("click", openCharacterCreator);
   characterClose?.addEventListener("click", closeCharacterCreator);
+  const updateCharacterPreview = (): void => {
+    if (!characterForm) return;
+    currentAppearance = readAppearanceForm(characterForm);
+    player.applyAppearance(currentAppearance);
+  };
+  characterForm?.addEventListener("input", updateCharacterPreview);
+  characterForm?.addEventListener("change", updateCharacterPreview);
   characterForm?.addEventListener("submit", (event: SubmitEvent) => {
     event.preventDefault();
-    const formData = new FormData(characterForm);
-    const next = resolveAppearance({
-      presentation: formData.get("presentation"), age: Number(formData.get("age")),
-      complexionId: formData.get("complexion"), bodyBuild: formData.get("build"),
-      hairstyleId: formData.get("hairstyle"), outfitId: formData.get("outfit")
-    });
-    currentAppearance = next;
-    player.applyAppearance(currentAppearance);
+    updateCharacterPreview();
+    let savedLocally = false;
+    try {
+      window.localStorage.setItem(APPEARANCE_STORAGE_KEY, JSON.stringify(currentAppearance));
+      savedLocally = true;
+    } catch {
+      savedLocally = false;
+    }
     closeCharacterCreator();
-    showNotice("Character appearance updated. Your choices are active in this preview.");
-    window.setTimeout(() => notice?.classList.remove("is-visible"), 3200);
+    showNotice(savedLocally
+      ? "Appearance saved on this device. Cloud account saving will come later."
+      : "Appearance updated for this session, but this browser could not save it.");
+    window.setTimeout(() => notice?.classList.remove("is-visible"), 4200);
   });
 
   playButton?.addEventListener("click", () => {
