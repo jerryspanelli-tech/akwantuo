@@ -18,13 +18,21 @@
         <p class="boot-status" id="boot-status">Preparing your world…</p>
       </section>
       <section class="game-shell is-hidden" id="game-shell">
-        <canvas id="world-canvas" aria-label="AKWANTUO 3D world preview"></canvas>
+        <canvas id="world-canvas" aria-label="AKWANTUO 3D world"></canvas>
+        <section class="game-hud is-hidden" id="game-hud" aria-label="Game controls">
+          <div class="hud-top"><span class="hud-location">AKWANTUO <i>·</i> ACCRA DISTRICT</span><span class="hud-mode">EXPLORATION</span></div>
+          <div class="touch-controls" id="touch-controls">
+            <div class="joystick" id="joystick" aria-label="Movement joystick"><div class="joystick-stick" id="joystick-stick"></div></div>
+            <button class="jump-button" id="jump-button" type="button">JUMP</button>
+          </div>
+          <div class="control-hint" id="control-hint">WASD / ARROW KEYS TO MOVE · DRAG TO LOOK</div>
+        </section>
         <div class="world-vignette"></div>
         <header class="topbar">
           <a class="wordmark" href="#" aria-label="AKWANTUO home">AKWANTUO<span>.</span></a>
-          <span class="online-label"><i></i> WORLD INITIALISING</span>
+          <span class="online-label"><i></i> WORLD PREVIEW</span>
         </header>
-        <section class="menu-panel">
+        <section class="menu-panel" id="main-menu">
           <p class="eyebrow">YOUR STORY STARTS HERE</p>
           <h1>AKWANTUO</h1>
           <p class="menu-subtitle">A World of Your Own.</p>
