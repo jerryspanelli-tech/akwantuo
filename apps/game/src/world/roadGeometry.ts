@@ -9,6 +9,8 @@ import {
 import type { RoadCrossSectionProfile } from "@akwantuo/shared";
 import { getMapRoadPath, GREATER_ACCRA_ROAD_PATHS, type MapPoint } from "./greaterAccraLayout";
 import { getRoadCrossSectionProfile, ROAD_CROSS_SECTION_PROFILES, GREATER_ACCRA_ROAD_DESIGNS } from "./roadDesign";
+import { GREATER_ACCRA_JUNCTION_LAYOUTS } from "./junctionLayouts";
+import { GREATER_ACCRA_ROAD_NETWORK } from "./roadNetwork";
 
 type RoadBandKind = "asphalt" | "sidewalk" | "median" | "drain";
 
@@ -79,6 +81,59 @@ function getNormals(points: readonly MapPoint[]): MapPoint[] {
     const length = Math.hypot(dx, dz) || 1;
     return { x: dz / length, z: -dx / length };
   });
+}
+
+/**
+ * Keeps corridor ribbons outside junction reservation envelopes. Dedicated
+ * junction meshes will later occupy these spaces, avoiding overlapping
+ * through-road ribbons at multi-level interchanges and urban junctions.
+ */
+function trimRoadPathAtJunctions(roadSegmentId: string, source: readonly MapPoint[]): MapPoint[] {
+  const segment = GREATER_ACCRA_ROAD_NETWORK.segments.find((item) => item.id === roadSegmentId);
+  if (!segment) throw new Error(`Unknown road segment for junction clipping: ${roadSegmentId}`);
+
+  const clipEndpoint = (points: readonly MapPoint[], nodeId: string): MapPoint[] => {
+    const reservation = GREATER_ACCRA_JUNCTION_LAYOUTS.find((item) => item.nodeId === nodeId);
+    if (!reservation) return [...points];
+
+    const halfX = reservation.reserveWidthM / 2 + 25;
+    const halfZ = reservation.reserveDepthM / 2 + 25;
+    const inside = (point: MapPoint) =>
+      Math.abs(point.x - reservation.centre.x) <= halfX &&
+      Math.abs(point.z - reservation.centre.z) <= halfZ;
+
+    if (!inside(points[0])) return [...points];
+    for (let index = 1; index < points.length; index += 1) {
+      const previous = points[index - 1];
+      const current = points[index];
+      if (inside(current)) continue;
+
+      let low = 0;
+      let high = 1;
+      for (let iteration = 0; iteration < 20; iteration += 1) {
+        const middle = (low + high) / 2;
+        const candidate = {
+          x: previous.x + (current.x - previous.x) * middle,
+          z: previous.z + (current.z - previous.z) * middle
+        };
+        if (inside(candidate)) low = middle;
+        else high = middle;
+      }
+      const segmentLength = Math.hypot(current.x - previous.x, current.z - previous.z);
+      const t = Math.min(1, high + 25 / Math.max(1, segmentLength));
+      const cut = {
+        x: previous.x + (current.x - previous.x) * t,
+        z: previous.z + (current.z - previous.z) * t
+      };
+      return [cut, ...points.slice(index)];
+    }
+    return [];
+  };
+
+  let points = clipEndpoint(source, segment.fromNodeId);
+  if (points.length < 2) return [];
+  points = clipEndpoint([...points].reverse(), segment.toNodeId).reverse();
+  return points;
 }
 
 function createBands(profile: RoadCrossSectionProfile): RoadBand[] {
@@ -171,7 +226,9 @@ export function createRoadSegmentGeometry(
     throw new RangeError("Road sample spacing must be between 5 and 250 metres.");
   }
 
-  const points = samplePolyline(path.points, spacing);
+  const approachPath = trimRoadPathAtJunctions(roadSegmentId, path.points);
+  if (approachPath.length < 2) return [];
+  const points = samplePolyline(approachPath, spacing);
   const normals = getNormals(points);
   return createBands(profile).map((band, index) =>
     createBandMesh(scene, `${roadSegmentId}-${band.kind}-${index}`, points, normals, band)
