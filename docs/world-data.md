@@ -300,6 +300,13 @@ The caller must supply the deck width, deck thickness, ground datum and any supp
 
 This is a geometry utility only. It is not yet used by the playable scene and no Circle flyover mesh has been placed. The Circle-specific centre-lines, elevations and safe pier stations must be authored from the local site layout before calling this builder. Mesh collision and vehicle physics integration remain separate work.
 
+
+### Circle flyover directionality
+
+The two first-level connections are recorded as separate **one-way directional links**: Akasanoma Road toward Nsawam Road, and Nsawam Road toward Kwame Nkrumah Avenue. This reflects the reported opposite-direction movements and prevents the game from treating them as one undirected two-way ramp.
+
+The Ring Road Central–Ring Road West viaduct is kept as directionality **not confirmed** in the catalogue. Its published structural width is recorded separately, but width alone is not used to invent lane direction or traffic rules. Vehicle lane paths and permitted movements remain to be authored from verified road references.
+
 ### Circle site anchors and ground-level access
 
 A ten-item site-anchor catalogue now captures the important named features that must be preserved when the interchange area is modelled:
