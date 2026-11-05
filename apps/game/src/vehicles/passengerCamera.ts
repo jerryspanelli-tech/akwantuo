@@ -24,7 +24,7 @@ export type PassengerCameraAnchors = {
  */
 export class PassengerCameraRig {
   readonly camera: UniversalCamera;
-  private readonly previousCamera;
+  private readonly previousCamera: Scene["activeCamera"];
   private readonly clampLookRotation: () => void;
   private attachedCanvas: HTMLCanvasElement | null = null;
   private mode: PassengerCameraMode = "interior_window";
