@@ -212,3 +212,12 @@ The shared contracts also define reusable seat records, including optional prior
 The marking pass uses configurable sampling, dash length, dash gap and a small vertical offset to reduce z-fighting against the asphalt ribbons. It reuses line-system meshes and does not create a separate material per dash. The current catalogue uses restrained white paint as a visual placeholder; exact line colours, widths, patterns and placement must be reviewed against Ghana road-marking guidance and each junction's final design.
 
 This is a **geometry builder only** and is not yet called by the playable game. It does not create stop/give-way lines, zebra crossings, arrows, box junctions, parking markings, traffic signals, signs or working traffic rules. Those need junction-specific approach geometry rather than being drawn blindly across every road centreline.
+
+
+## Junction-aware road-marking termination
+
+The road-marking geometry pass now reads the provisional junction reservation envelopes and clips ordinary lane/edge paint before it enters those reserved areas. This prevents the first road-paint pass from drawing uninterrupted lane lines straight through the planned Circle, Kaneshie, 37/Ridge, Tetteh Quarshie, Madina, Osu, Spintex and Tema junction spaces.
+
+The clipping uses the existing game-layout reservation rectangles plus a small approach buffer. It does **not** create the junction itself, determine traffic priority, define ramp or turning movements, or place stop lines and zebra crossings. Those must be authored as junction-specific geometry once the individual approach layouts are designed. Where a road has no junction reservation at an endpoint, its paint continues to that endpoint.
+
+This is an interim visual safeguard, not final engineering geometry. Reservation envelopes remain provisional game-space allowances and will be refined with the detailed road and junction layouts.
