@@ -1,3 +1,5 @@
+import { BARBERSHOP_HAIRSTYLES } from "./hairstyles";
+
 import { BARBERSHOP_HAIRSTYLES } from "./hairstyles";\n\n/** Shared appearance data for the first AKWANTUO character creator.
  * Values here describe presentation only; they never grant gameplay privileges.
  */
@@ -54,8 +56,8 @@ export const DEFAULT_APPEARANCE: Readonly<CharacterAppearance> = {
 };
 
 const complexionIds = new Set(COMPLEXIONS.map((preset) => preset.id));
-const outfitIds = new Set(OUTFITS.map((preset) => preset.id));\nconst hairstyleIds
-import { BARBERSHOP_HAIRSTYLES } from "./hairstyles";\n\nconst hairstyleIds = new Set(BARBERSHOP_HAIRSTYLES.map((style) => style.id));
+const outfitIds = new Set(OUTFITS.map((preset) => preset.id));
+const hairstyleIds = new Set(BARBERSHOP_HAIRSTYLES.map((style) => style.id));
 
 export function validateAppearance(value: unknown): value is CharacterAppearance {
   if (!value || typeof value !== "object") return false;
