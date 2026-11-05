@@ -129,6 +129,7 @@ export function isCircleInterchangeConceptValid(): boolean {
     CIRCLE_GROUND_LEVEL_LAYOUT.status === "planned" &&
     isCircleApproachCatalogueValid() &&
     isCircleSiteConstraintCatalogueValid() &&
+    isCircleSiteAnchorCatalogueValid() &&
     isCircleThroughMovementCatalogueValid();
 }
 
@@ -324,5 +325,121 @@ export function isCircleThroughMovementCatalogueValid(): boolean {
       links.get("circle-nsawam-to-nkrumah-avenue-flyover")?.level &&
     CIRCLE_THROUGH_MOVEMENTS.find((movement) => movement.id === "circle-ring-road-westbound")?.level ===
       links.get("circle-ring-road-central-to-west-flyover")?.level;
+}
+
+/**
+ * Named site anchors around Circle, collected from project and urban-area
+ * descriptions. Relations are descriptive only: no local X/Z coordinates,
+ * footprint dimensions or current operating status are implied.
+ */
+export type CircleSiteAnchor = Readonly<{
+  id: string;
+  name: string;
+  kind: "building_landmark" | "transport_terminal" | "pedestrian_area" | "waterway" | "railway" | "local_road";
+  relationshipToInterchange: string;
+  designRequirement: string;
+  status: "reference_only";
+}>;
+
+export const CIRCLE_SITE_ANCHORS: readonly CircleSiteAnchor[] = [
+  {
+    id: "circle-anchor-vodafone-building",
+    name: "Vodafone building",
+    kind: "building_landmark",
+    relationshipToInterchange: "Named in the project description as a landmark around the Akasanoma Road–Nsawam Road flyover connection.",
+    designRequirement: "Retain as a recognisable urban landmark when the Akasanoma approach block is modelled; verify the present-day building identity and footprint before asset placement.",
+    status: "reference_only"
+  },
+  {
+    id: "circle-anchor-gcb-tower",
+    name: "Ghana Commercial Bank (GCB) Tower",
+    kind: "building_landmark",
+    relationshipToInterchange: "Named in the project description around the Nsawam Road–Kwame Nkrumah Avenue flyover connection.",
+    designRequirement: "Use as a Circle skyline landmark and verify its present-day position and footprint before placing the flyover approach.",
+    status: "reference_only"
+  },
+  {
+    id: "circle-anchor-ernest-chemists",
+    name: "Ernest Chemists building",
+    kind: "building_landmark",
+    relationshipToInterchange: "Reported as a prominent building close to the Circle interchange area.",
+    designRequirement: "Preserve a distinct commercial landmark in the local building cluster; exact footprint and current façade require reference checking.",
+    status: "reference_only"
+  },
+  {
+    id: "circle-anchor-neoplan-station",
+    name: "Neoplan Station",
+    kind: "transport_terminal",
+    relationshipToInterchange: "Reported as one of the established transport terminals at Circle; project works also referenced construction near the station.",
+    designRequirement: "Reserve ground-level terminal access, passenger circulation, boarding areas and safe pedestrian connections without placing stalls or queues in vehicle paths.",
+    status: "reference_only"
+  },
+  {
+    id: "circle-anchor-stc-terminal",
+    name: "STC terminal",
+    kind: "transport_terminal",
+    relationshipToInterchange: "Reported among the transport terminals located around Circle.",
+    designRequirement: "Represent as a coach terminal with passenger arrival/departure access, layover space and clear pedestrian links; exact gate location needs mapping.",
+    status: "reference_only"
+  },
+  {
+    id: "circle-anchor-vip-terminal",
+    name: "VIP Transport Terminal",
+    kind: "transport_terminal",
+    relationshipToInterchange: "Reported among the transport terminals located around Circle; the interchange construction report also mentions its boundary wall.",
+    designRequirement: "Preserve terminal access and its site boundary as a local constraint; do not route flyover supports or road geometry through its verified footprint.",
+    status: "reference_only"
+  },
+  {
+    id: "circle-anchor-pedestrian-shopping-mall",
+    name: "Circle Pedestrian Shopping Mall",
+    kind: "pedestrian_area",
+    relationshipToInterchange: "Reported as a pedestrian shopping mall built for hawkers in the Circle area.",
+    designRequirement: "Keep pedestrian shopping activity connected to safe walkways and terminal approaches; do not turn the pedestrian mall into a vehicle carriageway.",
+    status: "reference_only"
+  },
+  {
+    id: "circle-anchor-odaw-river",
+    name: "Odaw River",
+    kind: "waterway",
+    relationshipToInterchange: "The elevated Ring Road structure crosses above the Odaw River corridor.",
+    designRequirement: "Keep a continuous open river channel and maintenance access below the elevated road; detailed banks, flood levels and pier exclusions require local reference data.",
+    status: "reference_only"
+  },
+  {
+    id: "circle-anchor-railway",
+    name: "Railway corridor",
+    kind: "railway",
+    relationshipToInterchange: "The elevated Ring Road structure crosses above the railway line.",
+    designRequirement: "Keep a continuous rail reservation and the required clearance envelope; do not place piers or road-level structures inside the verified rail corridor.",
+    status: "reference_only"
+  },
+  {
+    id: "circle-anchor-otublohum-access",
+    name: "Otublohum local access roads",
+    kind: "local_road",
+    relationshipToInterchange: "Local road links were identified as connections between Nsawam Road and the Pedestrian Mall.",
+    designRequirement: "Retain local access to the pedestrian mall as a separate ground-level network, with safe junctions and service access.",
+    status: "reference_only"
+  }
+] as const;
+
+export function isCircleSiteAnchorCatalogueValid(): boolean {
+  const ids = new Set(CIRCLE_SITE_ANCHORS.map((anchor) => anchor.id));
+  const requiredKinds = new Set(CIRCLE_SITE_ANCHORS.map((anchor) => anchor.kind));
+  return ids.size === CIRCLE_SITE_ANCHORS.length &&
+    CIRCLE_SITE_ANCHORS.length === 10 &&
+    requiredKinds.has("building_landmark") &&
+    requiredKinds.has("transport_terminal") &&
+    requiredKinds.has("pedestrian_area") &&
+    requiredKinds.has("waterway") &&
+    requiredKinds.has("railway") &&
+    requiredKinds.has("local_road") &&
+    CIRCLE_SITE_ANCHORS.every((anchor) =>
+      anchor.name.trim().length > 0 &&
+      anchor.relationshipToInterchange.trim().length > 0 &&
+      anchor.designRequirement.trim().length > 0 &&
+      anchor.status === "reference_only"
+    );
 }
 
