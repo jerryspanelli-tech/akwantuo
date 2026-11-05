@@ -266,6 +266,19 @@ This is an explicit correction to the simplified primary-road graph: Ring Road W
 
 All five corridor records therefore remain marked **not yet mapped**. No local coordinates, route geometry, road widths, ramp paths or level assignments have been invented. The next spatial pass must reconcile these corridors against the surrounding Kaneshie, Circle, Accra Central and Ring Road layout before any viaduct or ground-level junction mesh is built. The catalogue validator checks that each corridor refers only to one of the three known elevated links.
 
+
+### Circle site constraints for the next geometry pass
+
+The Circle concept now also records three site constraints that affect how the elevated Ring Road must be built:
+
+- **Odaw River:** the Ring Road flyover passes over the river corridor; preserve the channel and maintenance access.
+- **Railway:** the elevated road must clear the rail corridor; exact span locations and vertical clearances still require reliable survey/design information.
+- **Ground-level access:** retain usable pedestrian and public-transport space below/alongside the elevated road, with separate safe links to the transport terminals.
+
+These constraints come from the original project description, which states that the Ring Road flyover lifts the Ring Road above both the Odaw River and the rail line to allow pedestrian and public-transport operations at ground level. They are not coordinates, structural drawings or engineering clearance values. The geometry stage must not guess those values.
+
+Reference: [Graphic Online — Work on Nkrumah Circle interchange begins](https://www.graphic.com.gh/news/general-news/work-on-nkrumah-circle-interchange-begins.html). The report also describes the ground-level roundabout and the two first-level flyover movements.
+
 ### Structural reference dimensions
 
 The catalogue also records dimensions published by structural consultant FHECOR in its 2016 Dr. Kwame Nkrumah Interchange project sheet:
