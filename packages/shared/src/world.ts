@@ -237,10 +237,13 @@ export function isValidRoadStructure(
 
 export type RoadSurface = "asphalt" | "concrete" | "compacted_earth" | "paving_blocks";
 
+export type RoadDrainageStyle = "open_channel" | "covered_channel" | "edge_drain";
 export type RoadCrossSectionProfile = {
   id: string;
   name: string;
   surface: RoadSurface;
+  sidewalkSurface: "concrete" | "paving_blocks";
+  drainageStyle: RoadDrainageStyle;
   lanesPerDirection: number;
   laneWidthM: number;
   shoulderWidthM: number;
@@ -280,6 +283,8 @@ export function isValidRoadCrossSectionProfile(value: unknown): value is RoadCro
   return typeof profile.id === "string" && ID_PATTERN.test(profile.id) &&
     typeof profile.name === "string" && profile.name.trim().length > 0 &&
     ["asphalt", "concrete", "compacted_earth", "paving_blocks"].includes(String(profile.surface)) &&
+    ["concrete", "paving_blocks"].includes(String(profile.sidewalkSurface)) &&
+    ["open_channel", "covered_channel", "edge_drain"].includes(String(profile.drainageStyle)) &&
     Number.isInteger(profile.lanesPerDirection) && (profile.lanesPerDirection ?? 0) >= 1 &&
     dimensions.every((dimension) => typeof dimension === "number" && Number.isFinite(dimension) && dimension >= 0) &&
     typeof profile.laneWidthM === "number" && profile.laneWidthM >= 2.5 && profile.laneWidthM <= 4.5 &&
