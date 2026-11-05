@@ -291,6 +291,15 @@ Reference: [World Bank — Accra CBD–Amasaman corridor project report](https:/
 
 
 
+
+### Reusable elevated-road 3D geometry builder
+
+Added `apps/game/src/world/elevatedRoadGeometry.ts` with `createElevatedRoadGeometry(scene, options)`. It builds a deck surface, underside, side fascia, two guardrails and optional support columns from an explicitly supplied 3D centreline.
+
+The caller must supply the deck width, deck thickness, ground datum and any support-station distances. The builder validates finite coordinates, positive dimensions, valid support stations and deck clearance above the configured ground datum. It does **not** guess support positions or create ramp alignments.
+
+This is a geometry utility only. It is not yet used by the playable scene and no Circle flyover mesh has been placed. The Circle-specific centre-lines, elevations and safe pier stations must be authored from the local site layout before calling this builder. Mesh collision and vehicle physics integration remain separate work.
+
 ### Circle site anchors and ground-level access
 
 A ten-item site-anchor catalogue now captures the important named features that must be preserved when the interchange area is modelled:
