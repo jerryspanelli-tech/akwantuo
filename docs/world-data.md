@@ -250,14 +250,31 @@ All entries remain **planned candidates**. A generated movement does not mean th
 
 ## Kwame Nkrumah Circle — research-informed interchange concept
 
-`apps/game/src/world/circleInterchange.ts` records the reported corridor relationships for the Circle interchange rather than assuming one simple N1 flyover. The catalogue identifies three elevated links:
+`apps/game/src/world/circleInterchange.ts` records the three elevated corridor connections and the ground-level roundabout:
 
 - Akasanoma Road to Nsawam Road
 - Nsawam Road to Kwame Nkrumah Avenue
 - Ring Road Central to Ring Road West
+- Ground-level roundabout at the existing Circle
 
-It also records the ground-level roundabout. These relationships are described in published accounts of the interchange project, including [Graphic Online's project overview](https://www.graphic.com.gh/news/general-news/kwame-nkrumah-circle-interchange-project-progresses.html) and [ModernGhana's explanation of the interchange levels](https://www.modernghana.com/news/499984/kwame-nkrumah-reborn-as-urban-roads-deliver-interchange.html).
+### Structural reference dimensions
 
-This is a **research-informed concept catalogue**, not a reconstruction of engineering drawings. It deliberately does not assign exact ramp coordinates, deck heights, pier positions, lane geometry, clearances, traffic rules or surveyed dimensions. The current simplified primary-road graph and map centrelines do not yet contain all four named approach corridors in enough detail to generate connected flyover meshes. Those road-network and spatial-layout links must be reconciled before physical construction.
+The catalogue also records dimensions published by structural consultant FHECOR in its 2016 Dr. Kwame Nkrumah Interchange project sheet:
 
-No playable ramps, bridge meshes, support columns, barriers, collision surfaces, roundabout island, pedestrian crossings or vehicle navigation are created by this catalogue. The next Circle stage is to add the missing named corridor approaches to the map graph and align their geometry, then build the separate elevated and ground-level road surfaces.
+| Structure | Reference length | Deck width |
+|---|---:|---:|
+| Ring Road main viaduct | 925 m | 24.0 m |
+| Ramp down at Feo Oyeo | 141.5 m | 6.50 m |
+| Ramp up at Feo Oyeo | 143 m | 6.50 m |
+| Loop viaduct | 323 m | 9.20 m |
+| Akasanoma viaduct | 168.3 m | 9.20 m |
+| Nsawam viaduct | 167.8 m | 9.20 m |
+| Bridge 1 | 34.5 m | 11.65 m |
+| Bridge 2 | 34.5 m | 18.15 m |
+| Bridge 3 | 35.2 m | 12.30 m |
+
+Source: [FHECOR — Dr. Kwame Nkrumah Interchange, Accra (2016)](https://www.fhecor.com/multimedia/proyectos/file/000000005000/Enlace%20Dr.%20Kwame%20Nkrumah_5238.pdf). The corridor relationships are also described by [Graphic Online](https://www.graphic.com.gh/news/general-news/kwame-nkrumah-circle-interchange-project-progresses.html), and the two first flyovers' routes were reported at their 2015 opening [here](https://www.graphic.com.gh/news/general-news/mahama-inaugurates-phase-one-of-nkrumah-circle-flyovers.html).
+
+These are **consultant-published structural reference dimensions**, not a complete surveyed model or a claim that each listed structure is a separate corridor. They do not supply our game's local coordinates, full horizontal/vertical alignments, exact pier positions, deck levels at every point, collision geometry, current road rules or pedestrian paths. The current simplified primary-road graph and map centrelines still need to be reconciled with the named approaches before connected 3D construction.
+
+No playable ramps, bridge meshes, support columns, barriers, collision surfaces, roundabout island, pedestrian crossings or vehicle navigation are created by this catalogue. The next Circle stage is to map the approach corridors and structure alignments, then build separate ground-level and elevated road surfaces.
