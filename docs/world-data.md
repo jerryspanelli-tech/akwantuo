@@ -88,7 +88,7 @@ It also defines bridge, overpass, underpass and tunnel structure records. Valida
 
 The entries marked **to be designed** deliberately do not guess whether a real-world junction should be a roundabout or traffic-light junction. The known major interchange locations reserve a grade-separated design concept, but ramp geometry and exact approach roads still require map review.
 
-The bridge/overpass catalogue is currently empty by design. No bridge or flyover is placed based on guesswork. During the geography and road-layout stage, actual crossings will be identified and added with their connected road segments.
+The bridge/overpass catalogue is currently empty by design. No bridge or flyover is placed based on guesswork. During the geography and road-layout stage, actual crossings will be identified and added with their connected road segments.\n\n`apps/game/src/world/junctionLayouts.ts` now reserves provisional spatial envelopes for the eight major junctions in the shared Greater Accra coordinate system. Each reservation is anchored to its existing road-network node and checked against the map bounds. These are game-layout allowances only—not surveyed footprints, final ramp designs or official engineering dimensions. The next geometry pass must shape each junction around its real approach paths and keep pedestrian crossings and public-transport stops away from unsafe conflict points.
 
 Junctions will eventually support lane approach definitions, turning movements, traffic lights, pedestrian crossings, roundabout circulation, merging lanes, ramp connections and vehicle navigation. Those simulation details are not implemented yet.
 
