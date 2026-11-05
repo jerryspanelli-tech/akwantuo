@@ -136,3 +136,25 @@ The catalogue is intended to support different street characters. Busy commercia
 No real-world stop, taxi rank, vendor location, tree or utility pole has been placed yet. `GREATER_ACCRA_ROADSIDE_ACTIVITY_ZONES` is deliberately empty until actual road alignments, safe stopping bays and district layouts are designed. This avoids inventing stop locations or encouraging unsafe stopping on fast roads.
 
 Future map placement will add local variation for pavement continuity, drain crossings, roadside trading, trotro routes, taxi queues, shelters, shade, utility corridors and street frontage. Passenger boarding, vehicle queues, vendor interactions, drain water flow and pedestrian navigation are not implemented by this catalogue.
+
+## Public transport and passenger ride experience
+
+`packages/shared/src/world.ts` defines public-transport vehicle profiles, passenger camera modes, stops and route contracts. `apps/game/src/world/publicTransport.ts` contains the first vehicle profiles:
+
+- Shared trotro minibus, including a future driver and mate/conductor role
+- City public bus
+- Intercity coach
+- Shared or private taxi
+
+### Passenger window-view requirement
+
+When a player boards as a passenger, the default camera mode is an **interior window view**. The moving outside world must remain visible through the vehicle windows and move naturally relative to the vehicle: roads, buildings, traffic, pedestrians, trees and roadside activity should pass by as the vehicle travels.
+
+The planned passenger camera options are:
+- **Interior window:** seated passenger perspective looking through the windscreen or side windows.
+- **Interior free look:** remain seated but look around the cabin and out of different windows.
+- **Exterior follow:** optional outside camera following the moving vehicle.
+
+This is a core ride-experience requirement, not a decorative video background. The vehicle, passengers, camera and exterior world must share the same movement and timing. Window frames, glass transparency/reflections, interior visibility, camera clipping and mobile performance must be handled during vehicle implementation.
+
+Stops and routes are intentionally empty until the Greater Accra road map and safe boarding locations are approved. Route fares, stop sequences, driver/mate AI, passenger queues, boarding animations, vehicle schedules, traffic integration and actual ride cameras are **not implemented yet**. This commit establishes the data contracts and design requirements only.
