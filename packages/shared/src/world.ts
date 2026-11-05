@@ -234,3 +234,64 @@ export function isValidRoadStructure(
         structure.crossingSegmentId !== structure.roadSegmentId)) &&
     ["planned", "prototype", "implemented"].includes(structure.status);
 }
+
+export type RoadSurface = "asphalt" | "concrete" | "compacted_earth" | "paving_blocks";
+
+export type RoadCrossSectionProfile = {
+  id: string;
+  name: string;
+  surface: RoadSurface;
+  lanesPerDirection: number;
+  laneWidthM: number;
+  shoulderWidthM: number;
+  medianWidthM: number;
+  sidewalkWidthM: number;
+  drainageWidthM: number;
+  /** Design guidance only; dimensions are game-world targets, not surveyed measurements. */
+  designNote: string;
+};
+
+export type RoadSegmentDesign = {
+  roadSegmentId: string;
+  crossSectionProfileId: string;
+  status: WorldContentStatus;
+};
+
+export function getRoadCrossSectionWidth(profile: RoadCrossSectionProfile): number {
+  return (
+    profile.lanesPerDirection * 2 * profile.laneWidthM +
+    profile.shoulderWidthM * 2 +
+    profile.medianWidthM +
+    profile.sidewalkWidthM * 2 +
+    profile.drainageWidthM * 2
+  );
+}
+
+export function isValidRoadCrossSectionProfile(value: unknown): value is RoadCrossSectionProfile {
+  if (!value || typeof value !== "object") return false;
+  const profile = value as Partial<RoadCrossSectionProfile>;
+  const dimensions = [
+    profile.laneWidthM,
+    profile.shoulderWidthM,
+    profile.medianWidthM,
+    profile.sidewalkWidthM,
+    profile.drainageWidthM
+  ];
+  return typeof profile.id === "string" && ID_PATTERN.test(profile.id) &&
+    typeof profile.name === "string" && profile.name.trim().length > 0 &&
+    ["asphalt", "concrete", "compacted_earth", "paving_blocks"].includes(String(profile.surface)) &&
+    Number.isInteger(profile.lanesPerDirection) && (profile.lanesPerDirection ?? 0) >= 1 &&
+    dimensions.every((dimension) => typeof dimension === "number" && Number.isFinite(dimension) && dimension >= 0) &&
+    typeof profile.laneWidthM === "number" && profile.laneWidthM >= 2.5 && profile.laneWidthM <= 4.5 &&
+    typeof profile.designNote === "string" && profile.designNote.trim().length > 0;
+}
+
+export function isValidRoadSegmentDesign(
+  design: RoadSegmentDesign,
+  network: RoadNetwork,
+  profiles: readonly RoadCrossSectionProfile[]
+): boolean {
+  return network.segments.some((segment) => segment.id === design.roadSegmentId) &&
+    profiles.some((profile) => profile.id === design.crossSectionProfileId) &&
+    ["planned", "prototype", "implemented"].includes(design.status);
+}
