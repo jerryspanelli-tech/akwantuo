@@ -1,6 +1,7 @@
 import {
   Color3,
   Color4,
+  ArcRotateCamera,
   Engine,
   HemisphericLight,
   MeshBuilder,
@@ -117,7 +118,7 @@ async function start(): Promise<void> {
   const scene = new Scene(engine);
   createPreviewWorld(scene);
 
-  const camera = new (await import("@babylonjs/core")).ArcRotateCamera(
+  const camera = new ArcRotateCamera(
     "preview-camera",
     -Math.PI / 2,
     Math.PI / 2.55,
@@ -141,6 +142,7 @@ async function start(): Promise<void> {
   await new Promise<void>((resolve) => window.setTimeout(resolve, 450));
   bootScreen.classList.add("is-hidden");
   gameShell.classList.remove("is-hidden");
+  engine.resize();
 
   playButton?.addEventListener("click", () => {
     showNotice("The playable world, character creation and online services are being built in the next development stages.");
