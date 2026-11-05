@@ -14,6 +14,8 @@ import "./style.css";
 import { COMPLEXIONS, DEFAULT_APPEARANCE, OUTFITS, resolveAppearance, type CharacterAppearance } from "./character/appearance";
 import { loadAppearance, saveAppearance } from "./character/appearanceStore";
 import { getHairstyle } from "./character/hairstyles";
+import { WORLD_CONFIG } from "./world/config";
+import { clampToWorld, isBlocked, type SolidArea } from "./world/collision";
 
 const bootScreen = document.querySelector<HTMLElement>("#boot-screen");
 const gameShell = document.querySelector<HTMLElement>("#game-shell");
@@ -33,7 +35,6 @@ const characterForm = document.querySelector<HTMLFormElement>("#character-form")
 const characterClose = document.querySelector<HTMLButtonElement>("#character-close");
 const characterSave = document.querySelector<HTMLButtonElement>("#character-save");
 
-type SolidArea = { x: number; z: number; halfWidth: number; halfDepth: number };
 const pressedKeys = new Set<string>();
 const touchInput = { x: 0, z: 0 };
 let jumpRequested = false;
@@ -68,19 +69,23 @@ function showNotice(message: string): void {
 
 function createPreviewWorld(scene: Scene): SolidArea[] {
   const solidAreas: SolidArea[] = [];
-  scene.clearColor = new Color4(0.48, 0.62, 0.66, 1);
+  scene.clearColor = new Color4(...WORLD_CONFIG.environment.clearColor);
 
-  const light = new HemisphericLight("sunlight", new Vector3(0.2, 1, 0.1), scene);
-  light.intensity = 0.9;
+  const light = new HemisphericLight("sunlight", new Vector3(
+    WORLD_CONFIG.environment.sunlightDirection.x,
+    WORLD_CONFIG.environment.sunlightDirection.y,
+    WORLD_CONFIG.environment.sunlightDirection.z
+  ), scene);
+  light.intensity = WORLD_CONFIG.environment.sunlightIntensity;
 
   const groundMaterial = new StandardMaterial("warm-earth", scene);
   groundMaterial.diffuseColor = new Color3(0.43, 0.39, 0.29);
-  const ground = MeshBuilder.CreateGround("terrain", { width: 180, height: 180, subdivisions: 2 }, scene);
+  const ground = MeshBuilder.CreateGround("terrain", { width: WORLD_CONFIG.ground.width, height: WORLD_CONFIG.ground.depth, subdivisions: 2 }, scene);
   ground.material = groundMaterial;
 
   const roadMaterial = new StandardMaterial("road-surface", scene);
   roadMaterial.diffuseColor = new Color3(0.12, 0.14, 0.14);
-  const road = MeshBuilder.CreateGround("preview-road", { width: 13, height: 180 }, scene);
+  const road = MeshBuilder.CreateGround("preview-road", { width: WORLD_CONFIG.road.width, height: WORLD_CONFIG.road.length }, scene);
   road.position.y = 0.025;
   road.material = roadMaterial;
 
@@ -133,15 +138,6 @@ function createPreviewWorld(scene: Scene): SolidArea[] {
   return solidAreas;
 }
 
-function isBlocked(x: number, z: number, solidAreas: SolidArea[]): boolean {
-  const radius = 0.48;
-  return solidAreas.some((area) => {
-    const nearestX = Math.max(area.x - area.halfWidth, Math.min(x, area.x + area.halfWidth));
-    const nearestZ = Math.max(area.z - area.halfDepth, Math.min(z, area.z + area.halfDepth));
-    return (x - nearestX) ** 2 + (z - nearestZ) ** 2 < radius ** 2;
-  });
-}
-
 function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
   root: TransformNode;
   leftArm: TransformNode;
@@ -151,7 +147,7 @@ function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
   applyAppearance: (appearance: CharacterAppearance) => void;
 } {
   const root = new TransformNode("player-root", scene);
-  root.position.set(0, 0, 5);
+  root.position.set(WORLD_CONFIG.spawn.x, WORLD_CONFIG.spawn.y, WORLD_CONFIG.spawn.z);
   root.rotation.y = Math.PI;
 
   const skin = new StandardMaterial("player-skin", scene);
@@ -373,22 +369,22 @@ async function start(): Promise<void> {
 
       if (moving) {
         direction.normalize();
-        const stepX = direction.x * 5.2 * delta;
-        const stepZ = direction.z * 5.2 * delta;
+        const stepX = direction.x * WORLD_CONFIG.movement.walkSpeed * delta;
+        const stepZ = direction.z * WORLD_CONFIG.movement.walkSpeed * delta;
         const nextX = player.root.position.x + stepX;
         const nextZ = player.root.position.z + stepZ;
-        if (!isBlocked(nextX, player.root.position.z, solidAreas)) player.root.position.x = nextX;
-        if (!isBlocked(player.root.position.x, nextZ, solidAreas)) player.root.position.z = nextZ;
+        if (!isBlocked(nextX, player.root.position.z, solidAreas, WORLD_CONFIG.movement.collisionRadius)) player.root.position.x = nextX;
+        if (!isBlocked(player.root.position.x, nextZ, solidAreas, WORLD_CONFIG.movement.collisionRadius)) player.root.position.z = nextZ;
         player.root.rotation.y = Math.atan2(direction.x, direction.z);
         walkClock += delta * 9;
       }
 
       if (jumpRequested && onGround) {
-        verticalVelocity = 6.3;
+        verticalVelocity = WORLD_CONFIG.movement.jumpVelocity;
         onGround = false;
       }
       jumpRequested = false;
-      verticalVelocity -= 17 * delta;
+      verticalVelocity -= WORLD_CONFIG.movement.gravity * delta;
       player.root.position.y += verticalVelocity * delta;
       if (player.root.position.y <= 0) {
         player.root.position.y = 0;
@@ -411,8 +407,14 @@ async function start(): Promise<void> {
 
       const target = player.root.position.add(new Vector3(0, 1.25, 0));
       camera.target = Vector3.Lerp(camera.target, target, Math.min(1, delta * 8));
-      player.root.position.x = Math.max(-82, Math.min(82, player.root.position.x));
-      player.root.position.z = Math.max(-82, Math.min(82, player.root.position.z));
+      const boundedPosition = clampToWorld(player.root.position.x, player.root.position.z, {
+        minX: WORLD_CONFIG.bounds.playerMinX,
+        maxX: WORLD_CONFIG.bounds.playerMaxX,
+        minZ: WORLD_CONFIG.bounds.playerMinZ,
+        maxZ: WORLD_CONFIG.bounds.playerMaxZ
+      });
+      player.root.position.x = boundedPosition.x;
+      player.root.position.z = boundedPosition.z;
     }
 
     scene.render();
