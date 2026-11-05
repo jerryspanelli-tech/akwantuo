@@ -164,3 +164,73 @@ export function isValidRoadNetwork(
       ))
   );
 }
+
+export type JunctionDesign =
+  | "roundabout"
+  | "signal_controlled"
+  | "priority_controlled"
+  | "grade_separated_interchange"
+  | "merge_diverge"
+  | "to_be_designed";
+
+export type RoadJunction = {
+  id: string;
+  name: string;
+  nodeId: string;
+  regionId: string;
+  design: JunctionDesign;
+  connectedSegmentIds: string[];
+  status: WorldContentStatus;
+  /** Design note only; does not assert the current real-world junction layout. */
+  planningNote?: string;
+};
+
+export type RoadStructureKind = "bridge" | "overpass" | "underpass" | "tunnel";
+
+export type RoadStructure = {
+  id: string;
+  name: string;
+  kind: RoadStructureKind;
+  roadSegmentId: string;
+  status: WorldContentStatus;
+  /** Optional crossing road segment; populated after surveyed layout is approved. */
+  crossingSegmentId?: string;
+};
+
+export function isValidRoadJunction(
+  junction: RoadJunction,
+  network: RoadNetwork,
+  regions: readonly WorldRegion[]
+): boolean {
+  const node = network.nodes.find((item) => item.id === junction.nodeId);
+  const regionIds = new Set(regions.map((region) => region.id));
+  const segmentIds = new Set(network.segments.map((segment) => segment.id));
+  if (!ID_PATTERN.test(junction.id) || !junction.name.trim() ||
+      !node || !regionIds.has(junction.regionId) ||
+      (node.regionId !== null && node.regionId !== junction.regionId) ||
+      !["roundabout", "signal_controlled", "priority_controlled", "grade_separated_interchange", "merge_diverge", "to_be_designed"].includes(junction.design) ||
+      !["planned", "prototype", "implemented"].includes(junction.status) ||
+      junction.connectedSegmentIds.length < 2) return false;
+  if (new Set(junction.connectedSegmentIds).size !== junction.connectedSegmentIds.length) return false;
+  return junction.connectedSegmentIds.every((segmentId) => {
+    if (!segmentIds.has(segmentId)) return false;
+    const segment = network.segments.find((item) => item.id === segmentId);
+    return segment !== undefined &&
+      (segment.fromNodeId === junction.nodeId || segment.toNodeId === junction.nodeId);
+  });
+}
+
+export function isValidRoadStructure(
+  structure: RoadStructure,
+  network: RoadNetwork
+): boolean {
+  const segmentIds = new Set(network.segments.map((segment) => segment.id));
+  return ID_PATTERN.test(structure.id) &&
+    structure.name.trim().length > 0 &&
+    ["bridge", "overpass", "underpass", "tunnel"].includes(structure.kind) &&
+    segmentIds.has(structure.roadSegmentId) &&
+    (structure.crossingSegmentId === undefined ||
+      (segmentIds.has(structure.crossingSegmentId) &&
+        structure.crossingSegmentId !== structure.roadSegmentId)) &&
+    ["planned", "prototype", "implemented"].includes(structure.status);
+}
