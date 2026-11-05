@@ -17,6 +17,7 @@ export type CircleFlyoverLink = Readonly<{
   fromCorridor: string;
   toCorridor: string;
   level: "first_elevated" | "second_elevated";
+  trafficDirection: "one_way" | "not_confirmed";
   status: "planned";
   designNote: string;
 }>;
@@ -47,6 +48,7 @@ export const CIRCLE_INTERCHANGE_FLYOVER_LINKS: readonly CircleFlyoverLink[] = [
     fromCorridor: "Akasanoma Road",
     toCorridor: "Nsawam Road",
     level: "first_elevated",
+    trafficDirection: "one_way",
     status: "planned",
     designNote: "First-level flyover corridor reported in the Circle interchange project description; exact ramp geometry remains to be authored."
   },
@@ -65,6 +67,7 @@ export const CIRCLE_INTERCHANGE_FLYOVER_LINKS: readonly CircleFlyoverLink[] = [
     fromCorridor: "Ring Road Central",
     toCorridor: "Ring Road West",
     level: "second_elevated",
+    trafficDirection: "not_confirmed",
     status: "planned",
     designNote: "Second-level Ring Road flyover reported in the project description; exact ramp geometry and structural elevations remain to be authored."
   }
@@ -107,6 +110,7 @@ export function isCircleInterchangeConceptValid(): boolean {
     ids.size === CIRCLE_INTERCHANGE_FLYOVER_LINKS.length &&
     CIRCLE_INTERCHANGE_FLYOVER_LINKS.every((link) =>
       (link.level === "first_elevated" || link.level === "second_elevated") &&
+      (link.trafficDirection === "one_way" || link.trafficDirection === "not_confirmed") &&
       link.status === "planned" &&
       link.fromCorridor.trim().length > 0 &&
       link.toCorridor.trim().length > 0 &&
@@ -124,6 +128,9 @@ export function isCircleInterchangeConceptValid(): boolean {
     CIRCLE_INTERCHANGE_FLYOVER_LINKS.find((link) => link.id === "circle-akasanoma-to-nsawam-flyover")?.level === "first_elevated" &&
     CIRCLE_INTERCHANGE_FLYOVER_LINKS.find((link) => link.id === "circle-nsawam-to-nkrumah-avenue-flyover")?.level === "first_elevated" &&
     CIRCLE_INTERCHANGE_FLYOVER_LINKS.find((link) => link.id === "circle-ring-road-central-to-west-flyover")?.level === "second_elevated" &&
+    CIRCLE_INTERCHANGE_FLYOVER_LINKS.find((link) => link.id === "circle-akasanoma-to-nsawam-flyover")?.trafficDirection === "one_way" &&
+    CIRCLE_INTERCHANGE_FLYOVER_LINKS.find((link) => link.id === "circle-nsawam-to-nkrumah-avenue-flyover")?.trafficDirection === "one_way" &&
+    CIRCLE_INTERCHANGE_FLYOVER_LINKS.find((link) => link.id === "circle-ring-road-central-to-west-flyover")?.trafficDirection === "not_confirmed" &&
     CIRCLE_GROUND_LEVEL_LAYOUT.kind === "roundabout" &&
     CIRCLE_GROUND_LEVEL_LAYOUT.level === "ground" &&
     CIRCLE_GROUND_LEVEL_LAYOUT.status === "planned" &&
