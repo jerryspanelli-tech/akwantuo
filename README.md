@@ -32,7 +32,7 @@ npm install
 npm run dev
 ```
 
-Open the local URL printed by Vite. The initial client foundation includes the AKWANTUO title experience and a lightweight 3D scene placeholder.
+Open the local URL printed by Vite. The current prototype includes the AKWANTUO title experience, a third-person placeholder character, a Ghana-inspired street preview, keyboard movement and mobile touch movement. It is an early local prototype, not yet an online or production-ready game.
 
 ## Workspace
 
@@ -43,7 +43,7 @@ Open the local URL printed by Vite. The initial client foundation includes the A
 
 ## Current stage
 
-**Phase 1 — project foundation.** The first milestone is a reliable, responsive startup experience and a clean technical base. Authentication, persistent profiles, multiplayer, world streaming and production assets are not yet implemented.
+**Phase 1 — foundation and first playable prototype.** The client now has a responsive startup/menu flow, a simple third-person character, follow camera, basic walk/jump controls, and a touch joystick for phones.\n\n### Prototype controls\n\n- Desktop: WASD or arrow keys to move; Space to jump; drag the scene to rotate the camera.\n- Touchscreen: use the left virtual joystick to move and the JUMP button to jump; drag the scene to rotate the camera.\n\nThe character, buildings and street are temporary development geometry. There is no collision system, character selection, saved progress, authentication, multiplayer or production art yet.
 
 ## Ownership and safety
 
