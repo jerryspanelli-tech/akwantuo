@@ -290,6 +290,23 @@ A World Bank project report describes the northbound CBD–Amasaman route travel
 Reference: [World Bank — Accra CBD–Amasaman corridor project report](https://documents.worldbank.org/curated/en/276331468251734905/pdf/RP5130V40P10060Box391429B00PUBLIC0.pdf).
 
 
+
+### Circle site anchors and ground-level access
+
+A ten-item site-anchor catalogue now captures the important named features that must be preserved when the interchange area is modelled:
+
+- **Building landmarks:** Vodafone building, GCB Tower and Ernest Chemists building.
+- **Transport terminals:** Neoplan Station, STC terminal and VIP Transport Terminal.
+- **Pedestrian space:** Circle Pedestrian Shopping Mall.
+- **Infrastructure constraints:** Odaw River and the railway corridor.
+- **Local access:** Otublohum roads connecting Nsawam Road with the Pedestrian Mall.
+
+These references come from historical project descriptions and an urban-area overview. They are not a current survey: the catalogue deliberately stores no invented coordinates, building footprints, gate positions or present-day operating status. Before generating the local 3D block, each anchor must be placed against a current map/reference image and checked for changes.
+
+The ground-level design must preserve the transport terminals, pedestrian shopping area, local road access, river channel and railway reservation. It must not place flyover supports through terminal footprints or block pedestrian routes. The site-anchor catalogue is a design hand-off only; no terminal, building, river, rail or pedestrian-mall meshes have been created yet.
+
+References: [Graphic Online — Circle interchange construction and site constraints](https://www.graphic.com.gh/news/general-news/odaw-river-bridge-to-be-demolished-to-pave-way-circle-interchange.html); [Modern Ghana — Circle landmarks and lorry terminals](https://www.modernghana.com/news/500060/kwame-nkrumah-reborn-as-urban-roads-delivers-interchange.amp); [Modern Ghana — local access roads and pedestrian mall connections](https://www.modernghana.com/news/477181/work-on-nkrumah-circle-interchange-begins.html).
+
 ### Circle through-movement continuity
 
 The Circle catalogue now records three named through-movements as ordered corridor sequences:
