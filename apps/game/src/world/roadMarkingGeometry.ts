@@ -2,6 +2,8 @@ import { Color3, Mesh, MeshBuilder, Scene, Vector3 } from "@babylonjs/core";
 import type { RoadCrossSectionProfile } from "@akwantuo/shared";
 import { getMapRoadPath, GREATER_ACCRA_ROAD_PATHS, type MapPoint } from "./greaterAccraLayout";
 import { getRoadCrossSectionProfile, ROAD_CROSS_SECTION_PROFILES, GREATER_ACCRA_ROAD_DESIGNS } from "./roadDesign";
+import { GREATER_ACCRA_JUNCTION_LAYOUTS } from "./junctionLayouts";
+import { GREATER_ACCRA_ROAD_NETWORK } from "./roadNetwork";
 
 export type RoadMarkingGeometryOptions = Readonly<{
   sampleSpacingM?: number;
@@ -58,6 +60,62 @@ function offsetPath(
     y,
     point.z + normals[index].z * offsetM
   ));
+}
+
+/**
+ * Stops ordinary lane paint outside reserved junction envelopes. This prevents
+ * centreline markings from being drawn straight through future flyovers,
+ * signal junctions or roundabouts before their own geometry is authored.
+ */
+function trimAtJunctionReservations(
+  roadSegmentId: string,
+  source: readonly MapPoint[]
+): MapPoint[] {
+  const segment = GREATER_ACCRA_ROAD_NETWORK.segments.find((item) => item.id === roadSegmentId);
+  if (!segment) throw new Error(`Unknown road segment for junction clipping: ${roadSegmentId}`);
+
+  const clipFromEndpoint = (points: readonly MapPoint[], nodeId: string): MapPoint[] => {
+    const reservation = GREATER_ACCRA_JUNCTION_LAYOUTS.find((item) => item.nodeId === nodeId);
+    if (!reservation) return [...points];
+
+    const halfWidth = reservation.reserveWidthM / 2 + 25;
+    const halfDepth = reservation.reserveDepthM / 2 + 25;
+    const inside = (point: MapPoint): boolean =>
+      Math.abs(point.x - reservation.centre.x) <= halfWidth &&
+      Math.abs(point.z - reservation.centre.z) <= halfDepth;
+
+    if (!inside(points[0])) return [...points];
+    for (let index = 1; index < points.length; index += 1) {
+      const previous = points[index - 1];
+      const current = points[index];
+      if (inside(current)) continue;
+
+      // Binary-search the first point just beyond the reservation boundary.
+      let low = 0;
+      let high = 1;
+      for (let iteration = 0; iteration < 18; iteration += 1) {
+        const middle = (low + high) / 2;
+        const candidate = {
+          x: previous.x + (current.x - previous.x) * middle,
+          z: previous.z + (current.z - previous.z) * middle
+        };
+        if (inside(candidate)) low = middle;
+        else high = middle;
+      }
+      const t = Math.min(1, high + 25 / Math.max(1, Math.hypot(current.x - previous.x, current.z - previous.z)));
+      const cut = {
+        x: previous.x + (current.x - previous.x) * t,
+        z: previous.z + (current.z - previous.z) * t
+      };
+      return [cut, ...points.slice(index)];
+    }
+    return [];
+  };
+
+  let points = clipFromEndpoint(source, segment.fromNodeId);
+  if (points.length < 2) return [];
+  points = clipFromEndpoint([...points].reverse(), segment.toNodeId).reverse();
+  return points;
 }
 
 function getPathLength(points: readonly Vector3[]): number {
@@ -132,7 +190,9 @@ export function createRoadSegmentMarkings(
   if (!Number.isFinite(dashLength) || dashLength < 1 || dashLength > 20) throw new RangeError("Dash length must be 1–20 metres.");
   if (!Number.isFinite(dashGap) || dashGap < 1 || dashGap > 30) throw new RangeError("Dash gap must be 1–30 metres.");
 
-  const points = samplePolyline(path.points, spacing);
+  const approachPath = trimAtJunctionReservations(roadSegmentId, path.points);
+  if (approachPath.length < 2) return [];
+  const points = samplePolyline(approachPath, spacing);
   const normals = getNormals(points);
   const carriageway = profile.lanesPerDirection * profile.laneWidthM;
   const innerEdge = profile.medianWidthM / 2;
