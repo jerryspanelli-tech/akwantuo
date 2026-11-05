@@ -270,3 +270,58 @@ export function isCircleSiteConstraintCatalogueValid(): boolean {
     CIRCLE_SITE_CONSTRAINTS.some((constraint) => constraint.kind === "ground_level_access");
 }
 
+/** Named corridor sequences for the key through-movements at Circle. */
+export type CircleThroughMovement = Readonly<{
+  id: string;
+  name: string;
+  travelDirection: "toward_north" | "toward_south" | "ring_road_westbound" | "ring_road_eastbound";
+  level: "ground" | "first_elevated" | "second_elevated";
+  corridorSequence: readonly string[];
+  status: "topology_reference";
+}>;
+
+export const CIRCLE_THROUGH_MOVEMENTS: readonly CircleThroughMovement[] = [
+  {
+    id: "circle-cbd-to-amasaman-northbound",
+    name: "CBD–Amasaman northbound corridor",
+    travelDirection: "toward_north",
+    level: "first_elevated",
+    corridorSequence: ["Tudu", "Kojo Thompson Road", "Akasanoma Road", "Kwame Nkrumah Circle", "Nsawam Road", "Achimota", "Ofankor", "Amasaman"],
+    status: "topology_reference"
+  },
+  {
+    id: "circle-amasaman-to-cbd-southbound",
+    name: "Amasaman–CBD southbound corridor",
+    travelDirection: "toward_south",
+    level: "first_elevated",
+    corridorSequence: ["Amasaman", "Ofankor", "Achimota", "Nsawam Road", "Kwame Nkrumah Circle", "Kwame Nkrumah Avenue", "Tudu"],
+    status: "topology_reference"
+  },
+  {
+    id: "circle-ring-road-westbound",
+    name: "Ring Road Central to Ring Road West",
+    travelDirection: "ring_road_westbound",
+    level: "second_elevated",
+    corridorSequence: ["Ring Road Central", "Kwame Nkrumah Circle", "Ring Road West"],
+    status: "topology_reference"
+  }
+] as const;
+
+export function isCircleThroughMovementCatalogueValid(): boolean {
+  const ids = new Set(CIRCLE_THROUGH_MOVEMENTS.map((movement) => movement.id));
+  const links = new Map(CIRCLE_INTERCHANGE_FLYOVER_LINKS.map((link) => [link.id, link]));
+  return CIRCLE_THROUGH_MOVEMENTS.length === 3 &&
+    ids.size === CIRCLE_THROUGH_MOVEMENTS.length &&
+    CIRCLE_THROUGH_MOVEMENTS.every((movement) =>
+      movement.status === "topology_reference" &&
+      movement.corridorSequence.length >= 3 &&
+      movement.corridorSequence.every((corridor) => corridor.trim().length > 0)
+    ) &&
+    CIRCLE_THROUGH_MOVEMENTS.find((movement) => movement.id === "circle-cbd-to-amasaman-northbound")?.level ===
+      links.get("circle-akasanoma-to-nsawam-flyover")?.level &&
+    CIRCLE_THROUGH_MOVEMENTS.find((movement) => movement.id === "circle-amasaman-to-cbd-southbound")?.level ===
+      links.get("circle-nsawam-to-nkrumah-avenue-flyover")?.level &&
+    CIRCLE_THROUGH_MOVEMENTS.find((movement) => movement.id === "circle-ring-road-westbound")?.level ===
+      links.get("circle-ring-road-central-to-west-flyover")?.level;
+}
+
