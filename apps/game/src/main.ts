@@ -133,7 +133,7 @@ async function start(): Promise<void> {
   camera.attachControl(canvas, true);
 
   engine.runRenderLoop(() => {
-    if (!scene.isDisposed) scene.render();
+    scene.render();
   });
 
   window.addEventListener("resize", () => engine.resize());
@@ -153,7 +153,7 @@ async function start(): Promise<void> {
       engine.stopRenderLoop();
     } else {
       engine.runRenderLoop(() => {
-        if (!scene.isDisposed) scene.render();
+        scene.render();
       });
     }
   });
