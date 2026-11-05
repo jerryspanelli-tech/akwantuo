@@ -21,6 +21,16 @@ export type CircleFlyoverLink = Readonly<{
   designNote: string;
 }>;
 
+export type CircleStructureReference = Readonly<{
+  id: string;
+  name: string;
+  structureKind: "viaduct" | "ramp" | "bridge";
+  lengthM: number;
+  deckWidthM: number;
+  source: "FHECOR_Dr_Kwame_Nkrumah_Interchange_2016";
+  status: "reference_only";
+}>;
+
 export type CircleGroundLevelLayout = Readonly<{
   id: string;
   name: string;
@@ -60,6 +70,23 @@ export const CIRCLE_INTERCHANGE_FLYOVER_LINKS: readonly CircleFlyoverLink[] = [
   }
 ] as const;
 
+/**
+ * Dimensions transcribed from the structural consultant's 2016 project sheet.
+ * They are reference dimensions, not a complete 3D alignment or a claim that
+ * every listed structure is a separate flyover corridor.
+ */
+export const CIRCLE_STRUCTURE_REFERENCES: readonly CircleStructureReference[] = [
+  { id: "circle-ring-road-main-viaduct", name: "Ring Road Main Viaduct", structureKind: "viaduct", lengthM: 925, deckWidthM: 24, source: "FHECOR_Dr_Kwame_Nkrumah_Interchange_2016", status: "reference_only" },
+  { id: "circle-feo-oye-o-ramp-down", name: "Ramp Down at Feo Oyeo", structureKind: "ramp", lengthM: 141.5, deckWidthM: 6.5, source: "FHECOR_Dr_Kwame_Nkrumah_Interchange_2016", status: "reference_only" },
+  { id: "circle-feo-oye-o-ramp-up", name: "Ramp Up at Feo Oyeo", structureKind: "ramp", lengthM: 143, deckWidthM: 6.5, source: "FHECOR_Dr_Kwame_Nkrumah_Interchange_2016", status: "reference_only" },
+  { id: "circle-loop-viaduct", name: "Interchange Loop Viaduct", structureKind: "viaduct", lengthM: 323, deckWidthM: 9.2, source: "FHECOR_Dr_Kwame_Nkrumah_Interchange_2016", status: "reference_only" },
+  { id: "circle-akasanoma-viaduct", name: "Akasanoma Viaduct", structureKind: "viaduct", lengthM: 168.3, deckWidthM: 9.2, source: "FHECOR_Dr_Kwame_Nkrumah_Interchange_2016", status: "reference_only" },
+  { id: "circle-nsawam-viaduct", name: "Nsawam Viaduct", structureKind: "viaduct", lengthM: 167.8, deckWidthM: 9.2, source: "FHECOR_Dr_Kwame_Nkrumah_Interchange_2016", status: "reference_only" },
+  { id: "circle-bridge-1", name: "Interchange Bridge 1", structureKind: "bridge", lengthM: 34.5, deckWidthM: 11.65, source: "FHECOR_Dr_Kwame_Nkrumah_Interchange_2016", status: "reference_only" },
+  { id: "circle-bridge-2", name: "Interchange Bridge 2", structureKind: "bridge", lengthM: 34.5, deckWidthM: 18.15, source: "FHECOR_Dr_Kwame_Nkrumah_Interchange_2016", status: "reference_only" },
+  { id: "circle-bridge-3", name: "Interchange Bridge 3", structureKind: "bridge", lengthM: 35.2, deckWidthM: 12.3, source: "FHECOR_Dr_Kwame_Nkrumah_Interchange_2016", status: "reference_only" }
+] as const;
+
 export const CIRCLE_GROUND_LEVEL_LAYOUT: CircleGroundLevelLayout = {
   id: "circle-ground-level-roundabout",
   name: "Kwame Nkrumah Circle Ground-Level Roundabout",
@@ -84,6 +111,15 @@ export function isCircleInterchangeConceptValid(): boolean {
       link.fromCorridor.trim().length > 0 &&
       link.toCorridor.trim().length > 0 &&
       expectedPairs.has(`${link.fromCorridor}|${link.toCorridor}`)
+    ) &&
+    CIRCLE_STRUCTURE_REFERENCES.length === 9 &&
+    new Set(CIRCLE_STRUCTURE_REFERENCES.map((structure) => structure.id)).size === CIRCLE_STRUCTURE_REFERENCES.length &&
+    CIRCLE_STRUCTURE_REFERENCES.every((structure) =>
+      structure.lengthM > 0 &&
+      structure.deckWidthM > 0 &&
+      Number.isFinite(structure.lengthM) &&
+      Number.isFinite(structure.deckWidthM) &&
+      structure.status === "reference_only"
     ) &&
     CIRCLE_GROUND_LEVEL_LAYOUT.kind === "roundabout" &&
     CIRCLE_GROUND_LEVEL_LAYOUT.level === "ground" &&
