@@ -56,7 +56,8 @@ export class PassengerCameraRig {
   }
 
   setMode(mode: PassengerCameraMode, canvas?: HTMLCanvasElement): void {
-    if (mode === "interior_free_look" && !canvas && !this.attachedCanvas) {
+    const controlCanvas = canvas ?? this.attachedCanvas;
+    if (mode === "interior_free_look" && !controlCanvas) {
       throw new Error("A canvas is required to enable passenger free-look controls.");
     }
 
@@ -74,7 +75,6 @@ export class PassengerCameraRig {
     this.scene.activeCamera = this.camera;
 
     if (mode === "interior_free_look") {
-      const controlCanvas = canvas ?? this.attachedCanvas;
       if (!controlCanvas) {
         throw new Error("Passenger free-look canvas was not available.");
       }
