@@ -231,9 +231,24 @@ function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
     skin.diffuseColor = Color3.FromHexString(complexion.color);
     shirt.diffuseColor = Color3.FromHexString(outfit.topColor);
     trousers.diffuseColor = Color3.FromHexString(outfit.trouserColor);
-    const buildScale = appearance.bodyBuild === "slim" ? 0.9 : appearance.bodyBuild === "broad" ? 1.12 : 1;
+    const buildScale = appearance.bodyBuild === "slim" ? 0.92 : appearance.bodyBuild === "broad" ? 1.1 : 1;
+    const masculine = appearance.presentation === "masculine";
+    const broadness = masculine ? 1.08 : 0.96;
+    const hipWidth = masculine ? 0.96 : 1.08;
+
+    // These are deliberately modest silhouette adjustments on the temporary
+    // primitive avatar; final character art and rigging will replace this mesh.
     root.scaling.set(buildScale, 1, 1);
-    hair.scaling.set(appearance.hairstyleId === "afro" ? 1.18 : 1, appearance.hairstyleId === "afro" ? 0.9 : 0.48, appearance.hairstyleId === "locs" ? 1.08 : 1);
+    torso.scaling.set(broadness * (appearance.bodyBuild === "broad" ? 1.06 : 1), 1, 1);
+    leftArm.position.x = -0.39 * broadness;
+    rightArm.position.x = 0.39 * broadness;
+    leftLeg.position.x = -0.19 * hipWidth * buildScale;
+    rightLeg.position.x = 0.19 * hipWidth * buildScale;
+    hair.scaling.set(
+      appearance.hairstyleId === "afro" ? 1.18 : 1,
+      appearance.hairstyleId === "afro" ? 0.9 : 0.48,
+      appearance.hairstyleId === "locs" ? 1.08 : 1
+    );
     hair.isVisible = appearance.hairstyleId !== "covered";
   };
   applyAppearance(initialAppearance);
