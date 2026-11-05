@@ -128,7 +128,8 @@ export function isCircleInterchangeConceptValid(): boolean {
     CIRCLE_GROUND_LEVEL_LAYOUT.level === "ground" &&
     CIRCLE_GROUND_LEVEL_LAYOUT.status === "planned" &&
     isCircleApproachCatalogueValid() &&
-    isCircleSiteConstraintCatalogueValid();
+    isCircleSiteConstraintCatalogueValid() &&
+    isCircleThroughMovementCatalogueValid();
 }
 
 /**
