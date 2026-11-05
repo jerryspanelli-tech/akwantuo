@@ -248,10 +248,16 @@ The movement candidates are calculated from the map approach directions, so they
 
 All entries remain **planned candidates**. A generated movement does not mean that the real junction permits that turn, that a ramp or lane exists, or that a vehicle can drive it. Final junction-specific designs must remove prohibited movements and define lane groups, merging, pedestrian conflicts and traffic control. Grade-separated interchanges will need level-aware movement paths rather than treating every connection as a flat crossing.
 
-## Kwame Nkrumah Circle — first interchange level concept
+## Kwame Nkrumah Circle — research-informed interchange concept
 
-`apps/game/src/world/circleInterchange.ts` records the first level-separated concept for Circle. The N1 west/east through movement is reserved for an elevated deck, while other turning connections remain separate candidates for ground-level roads and future ramp design.
+`apps/game/src/world/circleInterchange.ts` records the reported corridor relationships for the Circle interchange rather than assuming one simple N1 flyover. The catalogue identifies three elevated links:
 
-The deck record includes a provisional centreline, height, width and the two opposing N1 through-movement references. Two support-clearance reservations are recorded away from the provisional central carriageway. This makes the intended separation explicit before physical meshes are generated.
+- Akasanoma Road to Nsawam Road
+- Nsawam Road to Kwame Nkrumah Avenue
+- Ring Road Central to Ring Road West
 
-This is **not a finished or surveyed interchange design**. The centreline, 7.5 m deck height, 24.5 m width and support positions are provisional game-layout values. No ramp meshes, piers, barriers, lane markings, collision surfaces, traffic rules or vehicle navigation are created by this catalogue. Detailed approach transitions, vertical curves, structural clearances, drainage, pedestrian routes and all other turning movements still require design and validation before the interchange becomes drivable.
+It also records the ground-level roundabout. These relationships are described in published accounts of the interchange project, including [Graphic Online's project overview](https://www.graphic.com.gh/news/general-news/kwame-nkrumah-circle-interchange-project-progresses.html) and [ModernGhana's explanation of the interchange levels](https://www.modernghana.com/news/499984/kwame-nkrumah-reborn-as-urban-roads-deliver-interchange.html).
+
+This is a **research-informed concept catalogue**, not a reconstruction of engineering drawings. It deliberately does not assign exact ramp coordinates, deck heights, pier positions, lane geometry, clearances, traffic rules or surveyed dimensions. The current simplified primary-road graph and map centrelines do not yet contain all four named approach corridors in enough detail to generate connected flyover meshes. Those road-network and spatial-layout links must be reconciled before physical construction.
+
+No playable ramps, bridge meshes, support columns, barriers, collision surfaces, roundabout island, pedestrian crossings or vehicle navigation are created by this catalogue. The next Circle stage is to add the missing named corridor approaches to the map graph and align their geometry, then build the separate elevated and ground-level road surfaces.
