@@ -221,3 +221,12 @@ The road-marking geometry pass now reads the provisional junction reservation en
 The clipping uses the existing game-layout reservation rectangles plus a small approach buffer. It does **not** create the junction itself, determine traffic priority, define ramp or turning movements, or place stop lines and zebra crossings. Those must be authored as junction-specific geometry once the individual approach layouts are designed. Where a road has no junction reservation at an endpoint, its paint continues to that endpoint.
 
 This is an interim visual safeguard, not final engineering geometry. Reservation envelopes remain provisional game-space allowances and will be refined with the detailed road and junction layouts.
+
+
+## Junction approach catalogue
+
+`apps/game/src/world/junctionApproaches.ts` now derives an approach arm for every road segment connected to the eight planned Greater Accra junctions. Each arm records its junction and road IDs, outward direction from the junction, inherited road width/profile, first-release availability and whether its control concept is grade-separated or still awaiting detailed design.
+
+The catalogue is generated from the approved road graph, map centrelines and cross-section assignments rather than duplicating coordinates by hand. Its validator checks that every connected segment has exactly one valid approach, directions are normalised, widths are positive and future expansion arms remain excluded from first-release play.
+
+This is the hand-off layer for detailed junction geometry. It does **not** yet create ramps, lane splits, merge/diverge tapers, stop lines, traffic signals, zebra crossings or vehicle turning behaviour. Kaneshie, Circle and Tetteh Quarshie retain grade-separated concepts; the remaining junctions keep their control layout open until their detailed designs are authored. The Tema-to-Prampram arm remains a future expansion connection.
