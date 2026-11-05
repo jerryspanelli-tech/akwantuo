@@ -257,6 +257,15 @@ All entries remain **planned candidates**. A generated movement does not mean th
 - Ring Road Central to Ring Road West
 - Ground-level roundabout at the existing Circle
 
+
+### Circle approach-corridor reconciliation
+
+The Circle catalogue now separately names five corridors that must be reconciled before bridge geometry is authored: Akasanoma Road, Nsawam Road, Kwame Nkrumah Avenue, Ring Road Central and Ring Road West. The records connect the three reported flyover links to their named corridors and preserve the ground-level connection requirement.
+
+This is an explicit correction to the simplified primary-road graph: Ring Road West must not be treated as the same road as the N1 western approach, and the Circle-side Nsawam Road approach must not be confused with the distant future Nsawam/Kumasi expansion gateway. The current graph does not yet represent all five as distinct mapped arms.
+
+All five corridor records therefore remain marked **not yet mapped**. No local coordinates, route geometry, road widths, ramp paths or level assignments have been invented. The next spatial pass must reconcile these corridors against the surrounding Kaneshie, Circle, Accra Central and Ring Road layout before any viaduct or ground-level junction mesh is built. The catalogue validator checks that each corridor refers only to one of the three known elevated links.
+
 ### Structural reference dimensions
 
 The catalogue also records dimensions published by structural consultant FHECOR in its 2016 Dr. Kwame Nkrumah Interchange project sheet:
