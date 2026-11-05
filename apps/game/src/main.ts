@@ -184,7 +184,19 @@ function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
     shoe.parent = pivot;
   }
 
-  const applyAppearance = (appearance: CharacterAppearance): void => {\n    const complexion = COMPLEXIONS.find((preset) => preset.id === appearance.complexionId) ?? COMPLEXIONS[1];\n    const outfit = OUTFITS.find((preset) => preset.id === appearance.outfitId) ?? OUTFITS[0];\n    skin.diffuseColor = Color3.FromHexString(complexion.color);\n    shirt.diffuseColor = Color3.FromHexString(outfit.topColor);\n    trousers.diffuseColor = Color3.FromHexString(outfit.trouserColor);\n    const buildScale = appearance.bodyBuild === "slim" ? 0.9 : appearance.bodyBuild === "broad" ? 1.12 : 1;\n    root.scaling.set(buildScale, 1, 1);\n    hair.scaling.set(appearance.hairstyleId === "afro" ? 1.18 : 1, appearance.hairstyleId === "afro" ? 0.9 : 0.48, appearance.hairstyleId === "locs" ? 1.08 : 1);\n    hair.isVisible = appearance.hairstyleId !== "covered";\n  };\n  applyAppearance(initialAppearance);\n  return { root, leftArm, rightArm, leftLeg, rightLeg, applyAppearance };
+  const applyAppearance = (appearance: CharacterAppearance): void => {
+    const complexion = COMPLEXIONS.find((preset) => preset.id === appearance.complexionId) ?? COMPLEXIONS[1];
+    const outfit = OUTFITS.find((preset) => preset.id === appearance.outfitId) ?? OUTFITS[0];
+    skin.diffuseColor = Color3.FromHexString(complexion.color);
+    shirt.diffuseColor = Color3.FromHexString(outfit.topColor);
+    trousers.diffuseColor = Color3.FromHexString(outfit.trouserColor);
+    const buildScale = appearance.bodyBuild === "slim" ? 0.9 : appearance.bodyBuild === "broad" ? 1.12 : 1;
+    root.scaling.set(buildScale, 1, 1);
+    hair.scaling.set(appearance.hairstyleId === "afro" ? 1.18 : 1, appearance.hairstyleId === "afro" ? 0.9 : 0.48, appearance.hairstyleId === "locs" ? 1.08 : 1);
+    hair.isVisible = appearance.hairstyleId !== "covered";
+  };
+  applyAppearance(initialAppearance);
+  return { root, leftArm, rightArm, leftLeg, rightLeg, applyAppearance };
 }
 
 function installTouchControls(): void {
@@ -241,7 +253,8 @@ async function start(): Promise<void> {
   });
   const scene = new Scene(engine);
   const solidAreas = createPreviewWorld(scene);
-  let currentAppearance = resolveAppearance(DEFAULT_APPEARANCE);\n  const player = createPlayer(scene, currentAppearance);
+  let currentAppearance = resolveAppearance(DEFAULT_APPEARANCE);
+  const player = createPlayer(scene, currentAppearance);
 
   const camera = new ArcRotateCamera(
     "third-person-camera",
@@ -360,8 +373,35 @@ async function start(): Promise<void> {
   gameShell.classList.remove("is-hidden");
   engine.resize();
 
-  const openCharacterCreator = (): void => {\n    if (!characterPanel || !characterForm) return;\n    characterPanel.classList.remove("is-hidden");\n    characterPanel.setAttribute("aria-hidden", "false");\n  };\n  const closeCharacterCreator = (): void => {\n    characterPanel?.classList.add("is-hidden");\n    characterPanel?.setAttribute("aria-hidden", "true");\n  };\n  characterButton?.addEventListener("click", openCharacterCreator);\n  characterClose?.addEventListener("click", closeCharacterCreator);\n  characterForm?.addEventListener("submit", (event: SubmitEvent) => {\n    event.preventDefault();\n    const formData = new FormData(characterForm);\n    const next = resolveAppearance({\n      presentation: formData.get("presentation"), age: Number(formData.get("age")),\n      complexionId: formData.get("complexion"), bodyBuild: formData.get("build"),\n      hairstyleId: formData.get("hairstyle"), outfitId: formData.get("outfit")\n    });\n    currentAppearance = next;\n    player.applyAppearance(currentAppearance);\n    closeCharacterCreator();\n    showNotice("Character appearance updated. Your choices are active in this preview.");\n    window.setTimeout(() => notice?.classList.remove("is-visible"), 3200);\n  });\n\n  playButton?.addEventListener("click", () => {
-    closeCharacterCreator();\n    hasEnteredWorld = true;
+  const openCharacterCreator = (): void => {
+    if (!characterPanel || !characterForm) return;
+    characterPanel.classList.remove("is-hidden");
+    characterPanel.setAttribute("aria-hidden", "false");
+  };
+  const closeCharacterCreator = (): void => {
+    characterPanel?.classList.add("is-hidden");
+    characterPanel?.setAttribute("aria-hidden", "true");
+  };
+  characterButton?.addEventListener("click", openCharacterCreator);
+  characterClose?.addEventListener("click", closeCharacterCreator);
+  characterForm?.addEventListener("submit", (event: SubmitEvent) => {
+    event.preventDefault();
+    const formData = new FormData(characterForm);
+    const next = resolveAppearance({
+      presentation: formData.get("presentation"), age: Number(formData.get("age")),
+      complexionId: formData.get("complexion"), bodyBuild: formData.get("build"),
+      hairstyleId: formData.get("hairstyle"), outfitId: formData.get("outfit")
+    });
+    currentAppearance = next;
+    player.applyAppearance(currentAppearance);
+    closeCharacterCreator();
+    showNotice("Character appearance updated. Your choices are active in this preview.");
+    window.setTimeout(() => notice?.classList.remove("is-visible"), 3200);
+  });
+
+  playButton?.addEventListener("click", () => {
+    closeCharacterCreator();
+    hasEnteredWorld = true;
     mainMenu?.classList.add("is-hidden");
     footerBar?.classList.add("is-hidden");
     gameHud?.classList.remove("is-hidden");
