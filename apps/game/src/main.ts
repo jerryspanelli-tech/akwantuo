@@ -11,6 +11,7 @@ import {
   Vector3
 } from "@babylonjs/core";
 import "./style.css";
+import { COMPLEXIONS, DEFAULT_APPEARANCE, OUTFITS, resolveAppearance, type CharacterAppearance } from "./character/appearance";
 
 const bootScreen = document.querySelector<HTMLElement>("#boot-screen");
 const gameShell = document.querySelector<HTMLElement>("#game-shell");
@@ -24,6 +25,11 @@ const joystick = document.querySelector<HTMLElement>("#joystick");
 const joystickStick = document.querySelector<HTMLElement>("#joystick-stick");
 const jumpButton = document.querySelector<HTMLButtonElement>("#jump-button");
 const notice = document.querySelector<HTMLElement>("#notice");
+const characterButton = document.querySelector<HTMLButtonElement>("#character-button");
+const characterPanel = document.querySelector<HTMLElement>("#character-panel");
+const characterForm = document.querySelector<HTMLFormElement>("#character-form");
+const characterClose = document.querySelector<HTMLButtonElement>("#character-close");
+const characterSave = document.querySelector<HTMLButtonElement>("#character-save");
 
 type SolidArea = { x: number; z: number; halfWidth: number; halfDepth: number };
 const pressedKeys = new Set<string>();
@@ -113,7 +119,7 @@ function isBlocked(x: number, z: number, solidAreas: SolidArea[]): boolean {
   });
 }
 
-function createPlayer(scene: Scene): {
+function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
   root: TransformNode;
   leftArm: TransformNode;
   rightArm: TransformNode;
@@ -178,7 +184,7 @@ function createPlayer(scene: Scene): {
     shoe.parent = pivot;
   }
 
-  return { root, leftArm, rightArm, leftLeg, rightLeg };
+  const applyAppearance = (appearance: CharacterAppearance): void => {\n    const complexion = COMPLEXIONS.find((preset) => preset.id === appearance.complexionId) ?? COMPLEXIONS[1];\n    const outfit = OUTFITS.find((preset) => preset.id === appearance.outfitId) ?? OUTFITS[0];\n    skin.diffuseColor = Color3.FromHexString(complexion.color);\n    shirt.diffuseColor = Color3.FromHexString(outfit.topColor);\n    trousers.diffuseColor = Color3.FromHexString(outfit.trouserColor);\n    const buildScale = appearance.bodyBuild === "slim" ? 0.9 : appearance.bodyBuild === "broad" ? 1.12 : 1;\n    root.scaling.set(buildScale, 1, 1);\n    hair.scaling.set(appearance.hairstyleId === "afro" ? 1.18 : 1, appearance.hairstyleId === "afro" ? 0.9 : 0.48, appearance.hairstyleId === "locs" ? 1.08 : 1);\n    hair.isVisible = appearance.hairstyleId !== "covered";\n  };\n  applyAppearance(initialAppearance);\n  return { root, leftArm, rightArm, leftLeg, rightLeg, applyAppearance };
 }
 
 function installTouchControls(): void {
@@ -235,7 +241,7 @@ async function start(): Promise<void> {
   });
   const scene = new Scene(engine);
   const solidAreas = createPreviewWorld(scene);
-  const player = createPlayer(scene);
+  let currentAppearance = resolveAppearance(DEFAULT_APPEARANCE);\n  const player = createPlayer(scene, currentAppearance);
 
   const camera = new ArcRotateCamera(
     "third-person-camera",
@@ -354,8 +360,8 @@ async function start(): Promise<void> {
   gameShell.classList.remove("is-hidden");
   engine.resize();
 
-  playButton?.addEventListener("click", () => {
-    hasEnteredWorld = true;
+  const openCharacterCreator = (): void => {\n    if (!characterPanel || !characterForm) return;\n    characterPanel.classList.remove("is-hidden");\n    characterPanel.setAttribute("aria-hidden", "false");\n  };\n  const closeCharacterCreator = (): void => {\n    characterPanel?.classList.add("is-hidden");\n    characterPanel?.setAttribute("aria-hidden", "true");\n  };\n  characterButton?.addEventListener("click", openCharacterCreator);\n  characterClose?.addEventListener("click", closeCharacterCreator);\n  characterForm?.addEventListener("submit", (event: SubmitEvent) => {\n    event.preventDefault();\n    const formData = new FormData(characterForm);\n    const next = resolveAppearance({\n      presentation: formData.get("presentation"), age: Number(formData.get("age")),\n      complexionId: formData.get("complexion"), bodyBuild: formData.get("build"),\n      hairstyleId: formData.get("hairstyle"), outfitId: formData.get("outfit")\n    });\n    currentAppearance = next;\n    player.applyAppearance(currentAppearance);\n    closeCharacterCreator();\n    showNotice("Character appearance updated. Your choices are active in this preview.");\n    window.setTimeout(() => notice?.classList.remove("is-visible"), 3200);\n  });\n\n  playButton?.addEventListener("click", () => {
+    closeCharacterCreator();\n    hasEnteredWorld = true;
     mainMenu?.classList.add("is-hidden");
     footerBar?.classList.add("is-hidden");
     gameHud?.classList.remove("is-hidden");
