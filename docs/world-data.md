@@ -158,3 +158,22 @@ The planned passenger camera options are:
 This is a core ride-experience requirement, not a decorative video background. The vehicle, passengers, camera and exterior world must share the same movement and timing. Window frames, glass transparency/reflections, interior visibility, camera clipping and mobile performance must be handled during vehicle implementation.
 
 Stops and routes are intentionally empty until the Greater Accra road map and safe boarding locations are approved. Route fares, stop sequences, driver/mate AI, passenger queues, boarding animations, vehicle schedules, traffic integration and actual ride cameras are **not implemented yet**. This commit establishes the data contracts and design requirements only.
+
+## Passenger boarding, seats, fares and alighting
+
+The shared contracts now define a passenger-trip state machine:
+
+1. **Waiting** at the selected boarding stop.
+2. **Boarded** into the vehicle.
+3. **Seated** after selecting an available seat.
+4. **Travelling** only after fare confirmation.
+5. **Alighting** when the vehicle arrives at the selected destination stop.
+6. **Completed** after the passenger exits.
+
+A passenger can cancel before paying. A paid trip cannot be cancelled through the simple cancellation path because a refund must be explicitly handled by the future trusted economy service. Fare quotes use Ghana cedis represented as integer pesewas and are tied to a route, boarding stop and alighting stop. This avoids floating-point currency errors and prevents a fare quote from silently applying to a different journey.
+
+The shared contracts also define reusable seat records, including optional priority seating. Seat coordinates will be authored against actual vehicle interior models later; no arbitrary seat positions or passenger capacity have been invented at this stage.
+
+`transitionPassengerTrip` is a deterministic rules helper, not a live game interaction or a trusted payment system. The future server must independently verify vehicle proximity, route membership, stop arrival, seat availability, player identity and payment before accepting state changes. The client must never be allowed to mark its own fare as paid or award/refund money.
+
+**Not implemented yet:** boarding animations, doors, seat meshes, passenger NPCs, fare UI, CediPay/economy integration, real vehicle movement, live stop announcements, multiplayer seat reservations and the interior passenger camera. Those will be connected when vehicle models, map stops and the authoritative server are ready.
