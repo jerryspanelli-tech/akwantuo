@@ -450,3 +450,94 @@ export function isValidRoadsideActivityZone(
     network.segments.some((segment) => segment.id === item.roadSegmentId) &&
     typeof item.designNote === "string" && item.designNote.trim().length > 0;
 }
+
+export type PublicTransportVehicleKind = "trotro" | "city_bus" | "coach" | "taxi";
+export type PassengerCameraMode = "interior_window" | "interior_free_look" | "exterior_follow";
+export type PassengerRideExperience = {
+  availableCameraModes: PassengerCameraMode[];
+  defaultCameraMode: PassengerCameraMode;
+  allowLookAround: boolean;
+  showWorldThroughWindows: boolean;
+  status: WorldContentStatus;
+};
+
+export type PublicTransportVehicleProfile = {
+  id: string;
+  name: string;
+  kind: PublicTransportVehicleKind;
+  passengerRide: PassengerRideExperience;
+  hasDriver: boolean;
+  hasConductor: boolean;
+  status: WorldContentStatus;
+  designNote: string;
+};
+
+export type PublicTransportStop = {
+  id: string;
+  name: string;
+  locationId: string;
+  status: WorldContentStatus;
+};
+
+export type PublicTransportRoute = {
+  id: string;
+  name: string;
+  vehicleProfileId: string;
+  stopIds: string[];
+  status: WorldContentStatus;
+  /** Fares and travel times are configured only after routes and economy are designed. */
+};
+
+export function isValidPassengerRideExperience(value: unknown): value is PassengerRideExperience {
+  if (!value || typeof value !== "object") return false;
+  const ride = value as Partial<PassengerRideExperience>;
+  const modes = ["interior_window", "interior_free_look", "exterior_follow"];
+  return Array.isArray(ride.availableCameraModes) &&
+    ride.availableCameraModes.length > 0 &&
+    ride.availableCameraModes.every((mode) => modes.includes(String(mode))) &&
+    new Set(ride.availableCameraModes).size === ride.availableCameraModes.length &&
+    modes.includes(String(ride.defaultCameraMode)) &&
+    ride.availableCameraModes.includes(ride.defaultCameraMode as PassengerCameraMode) &&
+    typeof ride.allowLookAround === "boolean" &&
+    typeof ride.showWorldThroughWindows === "boolean" &&
+    ["planned", "prototype", "implemented"].includes(String(ride.status));
+}
+
+export function isValidPublicTransportVehicleProfile(value: unknown): value is PublicTransportVehicleProfile {
+  if (!value || typeof value !== "object") return false;
+  const vehicle = value as Partial<PublicTransportVehicleProfile>;
+  return typeof vehicle.id === "string" && ID_PATTERN.test(vehicle.id) &&
+    typeof vehicle.name === "string" && vehicle.name.trim().length > 0 &&
+    ["trotro", "city_bus", "coach", "taxi"].includes(String(vehicle.kind)) &&
+    isValidPassengerRideExperience(vehicle.passengerRide) &&
+    typeof vehicle.hasDriver === "boolean" &&
+    typeof vehicle.hasConductor === "boolean" &&
+    ["planned", "prototype", "implemented"].includes(String(vehicle.status)) &&
+    typeof vehicle.designNote === "string" && vehicle.designNote.trim().length > 0;
+}
+
+export function isValidPublicTransportStop(value: unknown): value is PublicTransportStop {
+  if (!value || typeof value !== "object") return false;
+  const stop = value as Partial<PublicTransportStop>;
+  return typeof stop.id === "string" && ID_PATTERN.test(stop.id) &&
+    typeof stop.name === "string" && stop.name.trim().length > 0 &&
+    typeof stop.locationId === "string" && ID_PATTERN.test(stop.locationId) &&
+    ["planned", "prototype", "implemented"].includes(String(stop.status));
+}
+
+export function isValidPublicTransportRoute(
+  value: unknown,
+  vehicles: readonly PublicTransportVehicleProfile[],
+  stops: readonly PublicTransportStop[]
+): value is PublicTransportRoute {
+  if (!value || typeof value !== "object") return false;
+  const route = value as Partial<PublicTransportRoute>;
+  const vehicleIds = new Set(vehicles.map((vehicle) => vehicle.id));
+  const stopIds = new Set(stops.map((stop) => stop.id));
+  return typeof route.id === "string" && ID_PATTERN.test(route.id) &&
+    typeof route.name === "string" && route.name.trim().length > 0 &&
+    typeof route.vehicleProfileId === "string" && vehicleIds.has(route.vehicleProfileId) &&
+    Array.isArray(route.stopIds) && route.stopIds.length >= 2 &&
+    route.stopIds.every((stopId) => stopIds.has(stopId)) &&
+    ["planned", "prototype", "implemented"].includes(String(route.status));
+}
