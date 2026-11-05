@@ -37,7 +37,7 @@ function showNotice(message: string): void {
   notice.classList.add("is-visible");
 }
 
-function createPreviewWorld(scene: Scene): void {
+type SolidArea = { x: number; z: number; halfWidth: number; halfDepth: number };\n\nfunction createPreviewWorld(scene: Scene): SolidArea[] {\n  const solidAreas: SolidArea[] = [];
   scene.clearColor = new Color4(0.48, 0.62, 0.66, 1);
 
   const light = new HemisphericLight("sunlight", new Vector3(0.2, 1, 0.1), scene);
