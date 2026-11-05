@@ -91,12 +91,12 @@ Junctions will eventually support lane approach definitions, turning movements, 
 
 | Profile | Intended use | Target total width |
 |---|---|---:|
-| Urban expressway | N1 / N6 primary highway sections | 21.5 m |
+| Urban expressway | N1 / N6 primary highway sections | 24.5 m |
 | Major urban arterial | N4, Liberation, Ring Road, Spintex | 20.5 m |
 | Urban collector | Smaller connecting roads | 12.0 m |
 | Local street | Neighbourhood streets | 10.2 m |
-| Rural connector | Future outer-corridor sections | 8.5 m |
-| Unpaved access road | Selected low-speed access routes | 7.1 m |
+| Rural connector | Future outer-corridor sections | 9.7 m |
+| Unpaved access road | Selected low-speed access routes | 7.6 m |
 
 Total width is calculated from the component dimensions rather than separately typed, so the displayed result stays consistent with the profile.
 
