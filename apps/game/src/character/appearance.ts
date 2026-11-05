@@ -1,4 +1,4 @@
-/** Shared appearance data for the first AKWANTUO character creator.
+import { BARBERSHOP_HAIRSTYLES } from "./hairstyles";\n\n/** Shared appearance data for the first AKWANTUO character creator.
  * Values here describe presentation only; they never grant gameplay privileges.
  */
 
@@ -55,7 +55,7 @@ export const DEFAULT_APPEARANCE: Readonly<CharacterAppearance> = {
 
 const complexionIds = new Set(COMPLEXIONS.map((preset) => preset.id));
 const outfitIds = new Set(OUTFITS.map((preset) => preset.id));\nconst hairstyleIds
-import { BARBERSHOP_HAIRSTYLES } from "./hairstyles";\n\nconst hairstyleIds = new Set(["short-natural", "low-cut", "fade", "high-fade", "low-fade", "mid-fade", "skin-fade", "taper-fade", "waves", "line-up", "afro", "twists", "starter-locs", "locs", "cornrows", "box-braids", "knotless-braids", "ghana-braids", "feed-in-cornrows", "fulani-braids", "faux-locs", "passion-twists", "wig-install", "natural-bun", "covered"]);
+import { BARBERSHOP_HAIRSTYLES } from "./hairstyles";\n\nconst hairstyleIds = new Set(BARBERSHOP_HAIRSTYLES.map((style) => style.id));
 
 export function validateAppearance(value: unknown): value is CharacterAppearance {
   if (!value || typeof value !== "object") return false;
