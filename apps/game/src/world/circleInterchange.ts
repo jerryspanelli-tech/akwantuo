@@ -1,116 +1,91 @@
-import { GREATER_ACCRA_JUNCTION_MOVEMENTS } from "./junctionMovements";
-import { GREATER_ACCRA_JUNCTION_LAYOUTS } from "./junctionLayouts";
+/**
+ * Research-informed concept catalogue for Kwame Nkrumah Circle.
+ *
+ * Public project descriptions identify three elevated links:
+ * - Akasanoma Road to Nsawam Road
+ * - Nsawam Road to Kwame Nkrumah Avenue
+ * - Ring Road Central to Ring Road West
+ *
+ * A roundabout remains at ground level. This catalogue records the intended
+ * corridor relationships only; it does not invent ramp coordinates, deck
+ * heights, pier positions, lane geometry or surveyed engineering dimensions.
+ */
 
-export type InterchangeLevel = "ground" | "elevated";
-
-export type InterchangeDeck = Readonly<{
+export type CircleFlyoverLink = Readonly<{
   id: string;
-  junctionId: string;
   name: string;
-  level: InterchangeLevel;
-  /** Centreline points in local map metres, ordered from west to east. */
-  centreline: readonly Readonly<{ x: number; z: number }>[];
-  deckHeightM: number;
-  deckWidthM: number;
-  connectedMovementIds: readonly string[];
+  fromCorridor: string;
+  toCorridor: string;
+  level: "elevated";
   status: "planned";
   designNote: string;
 }>;
 
-export type InterchangeSupportReservation = Readonly<{
+export type CircleGroundLevelLayout = Readonly<{
   id: string;
-  deckId: string;
-  position: Readonly<{ x: number; z: number }>;
-  /** Reserved support clearance radius; not a final pier dimension. */
-  clearanceRadiusM: number;
+  name: string;
+  kind: "roundabout";
+  level: "ground";
   status: "planned";
+  designNote: string;
 }>;
 
-const CIRCLE_ID = "circle-interchange-junction";
-const CIRCLE_LAYOUT = GREATER_ACCRA_JUNCTION_LAYOUTS.find((item) => item.junctionId === CIRCLE_ID);
-
-function movementId(incoming: string, outgoing: string): string {
-  return `${CIRCLE_ID}--${incoming}--to--${outgoing}`;
-}
-
-/**
- * First concept for Circle: keep the N1 west/east through corridor on an
- * elevated deck, leaving the remaining interchange movements for a separate
- * ground-level/ramp design. Coordinates and levels are provisional game units.
- */
-export const CIRCLE_INTERCHANGE_DECKS: readonly InterchangeDeck[] = [
+export const CIRCLE_INTERCHANGE_FLYOVER_LINKS: readonly CircleFlyoverLink[] = [
   {
-    id: "circle-n1-elevated-through-deck",
-    junctionId: CIRCLE_ID,
-    name: "N1 West–East Elevated Through Deck",
+    id: "circle-akasanoma-to-nsawam-flyover",
+    name: "Akasanoma Road to Nsawam Road Flyover",
+    fromCorridor: "Akasanoma Road",
+    toCorridor: "Nsawam Road",
     level: "elevated",
-    centreline: [
-      { x: -1225, z: 205 },
-      { x: -950, z: 285 },
-      { x: -650, z: 375 },
-      { x: -450, z: 435 },
-      { x: -150, z: 465 },
-      { x: 175, z: 465 },
-      { x: 425, z: 430 }
-    ],
-    deckHeightM: 7.5,
-    deckWidthM: 24.5,
-    connectedMovementIds: [
-      movementId("n1-central-approach", "n1-tema-corridor"),
-      movementId("n1-tema-corridor", "n1-central-approach")
-    ],
     status: "planned",
-    designNote: "Conceptual elevated N1 through movement; transition ramps, vertical curves, clearances and exact alignment require detailed design."
-  }
-] as const;
-
-/** Keep support concepts outside the reserved carriageway envelope for now. */
-export const CIRCLE_INTERCHANGE_SUPPORT_RESERVATIONS: readonly InterchangeSupportReservation[] = [
-  {
-    id: "circle-deck-support-west-north",
-    deckId: "circle-n1-elevated-through-deck",
-    position: { x: -820, z: 690 },
-    clearanceRadiusM: 5,
-    status: "planned"
+    designNote: "Elevated corridor relationship reported in the Circle interchange project description; exact ramp geometry remains to be authored."
   },
   {
-    id: "circle-deck-support-east-north",
-    deckId: "circle-n1-elevated-through-deck",
-    position: { x: -80, z: 690 },
-    clearanceRadiusM: 5,
-    status: "planned"
+    id: "circle-nsawam-to-nkrumah-avenue-flyover",
+    name: "Nsawam Road to Kwame Nkrumah Avenue Flyover",
+    fromCorridor: "Nsawam Road",
+    toCorridor: "Kwame Nkrumah Avenue",
+    level: "elevated",
+    status: "planned",
+    designNote: "Elevated corridor relationship reported in the Circle interchange project description; exact ramp geometry remains to be authored."
+  },
+  {
+    id: "circle-ring-road-central-to-west-flyover",
+    name: "Ring Road Central to Ring Road West Flyover",
+    fromCorridor: "Ring Road Central",
+    toCorridor: "Ring Road West",
+    level: "elevated",
+    status: "planned",
+    designNote: "Third elevated connection in the reported interchange scheme; exact ramp geometry and structural levels remain to be authored."
   }
 ] as const;
 
-export function isCircleInterchangeConceptValid(): boolean {
-  if (!CIRCLE_LAYOUT || CIRCLE_INTERCHANGE_DECKS.length !== 1) return false;
-  const deckIds = new Set(CIRCLE_INTERCHANGE_DECKS.map((deck) => deck.id));
-  const circleMovements = new Set(
-    GREATER_ACCRA_JUNCTION_MOVEMENTS
-      .filter((movement) => movement.junctionId === CIRCLE_ID)
-      .map((movement) => movement.id)
-  );
+export const CIRCLE_GROUND_LEVEL_LAYOUT: CircleGroundLevelLayout = {
+  id: "circle-ground-level-roundabout",
+  name: "Kwame Nkrumah Circle Ground-Level Roundabout",
+  kind: "roundabout",
+  level: "ground",
+  status: "planned",
+  designNote: "Ground-level roundabout retained beneath/alongside the elevated links; island shape, entries, exits, crossings and traffic control are not yet designed."
+};
 
-  return deckIds.size === CIRCLE_INTERCHANGE_DECKS.length &&
-    CIRCLE_INTERCHANGE_DECKS.every((deck) =>
-      deck.junctionId === CIRCLE_ID &&
-      deck.level === "elevated" &&
-      deck.centreline.length >= 2 &&
-      deck.centreline.every((point) =>
-        Number.isFinite(point.x) && Number.isFinite(point.z) &&
-        point.x >= -1225 && point.x <= 425 &&
-        point.z >= -100 && point.z <= 1000
-      ) &&
-      Number.isFinite(deck.deckHeightM) && deck.deckHeightM >= 4 &&
-      Number.isFinite(deck.deckWidthM) && deck.deckWidthM > 0 &&
-      deck.connectedMovementIds.length === 2 &&
-      deck.connectedMovementIds.every((id) => circleMovements.has(id)) &&
-      deck.status === "planned"
+export function isCircleInterchangeConceptValid(): boolean {
+  const ids = new Set(CIRCLE_INTERCHANGE_FLYOVER_LINKS.map((link) => link.id));
+  const expectedPairs = new Set([
+    "Akasanoma Road|Nsawam Road",
+    "Nsawam Road|Kwame Nkrumah Avenue",
+    "Ring Road Central|Ring Road West"
+  ]);
+  return CIRCLE_INTERCHANGE_FLYOVER_LINKS.length === 3 &&
+    ids.size === CIRCLE_INTERCHANGE_FLYOVER_LINKS.length &&
+    CIRCLE_INTERCHANGE_FLYOVER_LINKS.every((link) =>
+      link.level === "elevated" &&
+      link.status === "planned" &&
+      link.fromCorridor.trim().length > 0 &&
+      link.toCorridor.trim().length > 0 &&
+      expectedPairs.has(`${link.fromCorridor}|${link.toCorridor}`)
     ) &&
-    CIRCLE_INTERCHANGE_SUPPORT_RESERVATIONS.every((support) =>
-      deckIds.has(support.deckId) &&
-      Number.isFinite(support.position.x) && Number.isFinite(support.position.z) &&
-      Number.isFinite(support.clearanceRadiusM) && support.clearanceRadiusM > 0 &&
-      support.status === "planned"
-    );
+    CIRCLE_GROUND_LEVEL_LAYOUT.kind === "roundabout" &&
+    CIRCLE_GROUND_LEVEL_LAYOUT.level === "ground" &&
+    CIRCLE_GROUND_LEVEL_LAYOUT.status === "planned";
 }
