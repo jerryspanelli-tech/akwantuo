@@ -280,6 +280,15 @@ These constraints come from the original project description, which states that 
 Reference: [Graphic Online — Work on Nkrumah Circle interchange begins](https://www.graphic.com.gh/news/general-news/work-on-nkrumah-circle-interchange-begins.html). The report also describes the ground-level roundabout and the two first-level flyover movements.
 
 
+
+### Circle corridor directions checked against the CBD–Amasaman route
+
+The corridor records now distinguish the **CBD approach via Akasanoma Road**, the **northern Nsawam Road**, and the **southern departure via Kwame Nkrumah Avenue**. This avoids assigning Akasanoma Road an unsupported west-side compass direction.
+
+A World Bank project report describes the northbound CBD–Amasaman route travelling from Tudu via Kojo Thompson Road and entering Circle through Akasanoma Road before continuing north on Nsawam Road. Its return route comes south on Nsawam Road and leaves Circle via Kwame Nkrumah Avenue toward Tudu. This supports the route relationship, but not exact in-game coordinates or surveyed centre-lines.
+
+Reference: [World Bank — Accra CBD–Amasaman corridor project report](https://documents.worldbank.org/curated/en/276331468251734905/pdf/RP5130V40P10060Box391429B00PUBLIC0.pdf).
+
 ### Separate vertical levels at Circle
 
 The Circle flyover links now record their distinct design levels instead of using one generic “elevated” label:
