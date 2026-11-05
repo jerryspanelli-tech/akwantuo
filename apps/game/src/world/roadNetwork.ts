@@ -1,4 +1,5 @@
-import type { RoadNetwork } from "@akwantuo/shared";
+import { isValidRoadNetwork, type RoadNetwork } from "@akwantuo/shared";
+import { GREATER_ACCRA_REGIONS } from "./regions";
 
 /**
  * Topology-only road plan for the first Greater Accra world.
@@ -171,4 +172,9 @@ export function getRoadSegmentsAt(nodeId: string): RoadNetwork["segments"][numbe
 
 export function getRoadNode(nodeId: string): RoadNetwork["nodes"][number] | undefined {
   return GREATER_ACCRA_ROAD_NETWORK.nodes.find((node) => node.id === nodeId);
+}
+
+/** Development-time catalogue check; geometry and real-world accuracy are reviewed separately. */
+export function isGreaterAccraRoadNetworkValid(): boolean {
+  return isValidRoadNetwork(GREATER_ACCRA_ROAD_NETWORK, GREATER_ACCRA_REGIONS);
 }
