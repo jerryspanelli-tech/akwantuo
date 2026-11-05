@@ -9,7 +9,8 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@babylonjs/core": "^8.56.2"
+    "@babylonjs/core": "^8.56.2",
+    "@akwantuo/shared": "0.1.0"
   },
   "devDependencies": {
     "typescript": "^6.0.3",
