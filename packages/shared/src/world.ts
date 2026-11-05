@@ -632,7 +632,7 @@ export function transitionPassengerTrip(
         : null;
     case "cancel":
       return session.state === "waiting" || session.state === "boarded" ||
-        session.state === "seated"
+        (session.state === "seated" && session.fareStatus === "unpaid")
         ? { ...session, state: "cancelled", seatId: null }
         : null;
     default:
