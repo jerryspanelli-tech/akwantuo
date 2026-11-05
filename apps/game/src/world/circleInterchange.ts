@@ -208,3 +208,60 @@ export function isCircleApproachCatalogueValid(): boolean {
     CIRCLE_APPROACH_CORRIDORS.find((corridor) => corridor.id === "circle-approach-nsawam-road")?.relatedFlyoverLinkIds.length === 2;
 }
 
+/**
+ * Site constraints reported in the original project description. These are
+ * required relationships for later geometry, not coordinate-bearing assets.
+ */
+export type CircleSiteConstraint = Readonly<{
+  id: string;
+  kind: "river_crossing" | "rail_crossing" | "ground_level_access";
+  name: string;
+  affectedFlyoverLinkIds: readonly string[];
+  requiredOutcome: string;
+  status: "design_constraint";
+}>;
+
+export const CIRCLE_SITE_CONSTRAINTS: readonly CircleSiteConstraint[] = [
+  {
+    id: "circle-ring-road-over-odaw-river",
+    kind: "river_crossing",
+    name: "Odaw River crossing",
+    affectedFlyoverLinkIds: ["circle-ring-road-central-to-west-flyover"],
+    requiredOutcome: "The Ring Road elevated structure must clear the Odaw River corridor without blocking the river channel or its maintenance access.",
+    status: "design_constraint"
+  },
+  {
+    id: "circle-ring-road-over-railway",
+    kind: "rail_crossing",
+    name: "Railway crossing",
+    affectedFlyoverLinkIds: ["circle-ring-road-central-to-west-flyover"],
+    requiredOutcome: "The Ring Road elevated structure must clear the existing railway corridor with appropriate vertical clearance; exact levels and span locations remain to be surveyed.",
+    status: "design_constraint"
+  },
+  {
+    id: "circle-ground-public-transport-and-pedestrians",
+    kind: "ground_level_access",
+    name: "Ground-level pedestrian and public-transport access",
+    affectedFlyoverLinkIds: ["circle-ring-road-central-to-west-flyover"],
+    requiredOutcome: "Keep ground-level space available for pedestrian movement and public-transport operations beneath/alongside the elevated Ring Road; design safe, continuous crossings and terminal access separately.",
+    status: "design_constraint"
+  }
+];
+
+export function isCircleSiteConstraintCatalogueValid(): boolean {
+  const flyoverIds = new Set(CIRCLE_INTERCHANGE_FLYOVER_LINKS.map((link) => link.id));
+  const ids = new Set(CIRCLE_SITE_CONSTRAINTS.map((constraint) => constraint.id));
+  return CIRCLE_SITE_CONSTRAINTS.length === 3 &&
+    ids.size === CIRCLE_SITE_CONSTRAINTS.length &&
+    CIRCLE_SITE_CONSTRAINTS.every((constraint) =>
+      constraint.name.trim().length > 0 &&
+      constraint.requiredOutcome.trim().length > 0 &&
+      constraint.status === "design_constraint" &&
+      constraint.affectedFlyoverLinkIds.length > 0 &&
+      constraint.affectedFlyoverLinkIds.every((id) => flyoverIds.has(id))
+    ) &&
+    CIRCLE_SITE_CONSTRAINTS.some((constraint) => constraint.kind === "river_crossing") &&
+    CIRCLE_SITE_CONSTRAINTS.some((constraint) => constraint.kind === "rail_crossing") &&
+    CIRCLE_SITE_CONSTRAINTS.some((constraint) => constraint.kind === "ground_level_access");
+}
+
