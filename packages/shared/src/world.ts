@@ -380,3 +380,73 @@ export function isValidStreetFurnitureSpec(value: unknown): value is StreetFurni
     ["streetlight", "pedestrian_barrier", "vehicle_barrier", "bollard"].includes(String(item.kind)) &&
     ["planned", "prototype", "implemented"].includes(String(item.status));
 }
+
+export type RoadsideFeatureKind =
+  | "pavement"
+  | "kerb"
+  | "open_drain"
+  | "covered_drain"
+  | "culvert"
+  | "bus_stop"
+  | "trotro_stop"
+  | "taxi_rank"
+  | "vendor_stall"
+  | "street_vending_zone"
+  | "pedestrian_shelter"
+  | "roadside_tree"
+  | "utility_pole";
+
+export type RoadsideFeatureSpec = {
+  id: string;
+  kind: RoadsideFeatureKind;
+  name: string;
+  status: WorldContentStatus;
+  /** Optional design dimensions in metres; placement and dimensions are map-stage decisions. */
+  widthM?: number;
+  lengthM?: number;
+  designNote: string;
+};
+
+export type RoadsideActivityKind =
+  | "bus_boarding"
+  | "trotro_boarding"
+  | "taxi_pickup"
+  | "informal_vending"
+  | "pedestrian_waiting";
+
+export type RoadsideActivityZone = {
+  id: string;
+  name: string;
+  kind: RoadsideActivityKind;
+  status: WorldContentStatus;
+  /** Must be attached to a mapped road segment in the later placement catalogue. */
+  roadSegmentId: string;
+  designNote: string;
+};
+
+export function isValidRoadsideFeatureSpec(value: unknown): value is RoadsideFeatureSpec {
+  if (!value || typeof value !== "object") return false;
+  const item = value as Partial<RoadsideFeatureSpec>;
+  return typeof item.id === "string" && ID_PATTERN.test(item.id) &&
+    typeof item.name === "string" && item.name.trim().length > 0 &&
+    ["pavement", "kerb", "open_drain", "covered_drain", "culvert", "bus_stop", "trotro_stop", "taxi_rank", "vendor_stall", "street_vending_zone", "pedestrian_shelter", "roadside_tree", "utility_pole"].includes(String(item.kind)) &&
+    ["planned", "prototype", "implemented"].includes(String(item.status)) &&
+    (item.widthM === undefined || (Number.isFinite(item.widthM) && item.widthM > 0)) &&
+    (item.lengthM === undefined || (Number.isFinite(item.lengthM) && item.lengthM > 0)) &&
+    typeof item.designNote === "string" && item.designNote.trim().length > 0;
+}
+
+export function isValidRoadsideActivityZone(
+  value: unknown,
+  network: RoadNetwork
+): value is RoadsideActivityZone {
+  if (!value || typeof value !== "object") return false;
+  const item = value as Partial<RoadsideActivityZone>;
+  return typeof item.id === "string" && ID_PATTERN.test(item.id) &&
+    typeof item.name === "string" && item.name.trim().length > 0 &&
+    ["bus_boarding", "trotro_boarding", "taxi_pickup", "informal_vending", "pedestrian_waiting"].includes(String(item.kind)) &&
+    ["planned", "prototype", "implemented"].includes(String(item.status)) &&
+    typeof item.roadSegmentId === "string" &&
+    network.segments.some((segment) => segment.id === item.roadSegmentId) &&
+    typeof item.designNote === "string" && item.designNote.trim().length > 0;
+}
