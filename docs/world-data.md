@@ -230,3 +230,12 @@ This is an interim visual safeguard, not final engineering geometry. Reservation
 The catalogue is generated from the approved road graph, map centrelines and cross-section assignments rather than duplicating coordinates by hand. Its validator checks that every connected segment has exactly one valid approach, directions are normalised, widths are positive and future expansion arms remain excluded from first-release play.
 
 This is the hand-off layer for detailed junction geometry. It does **not** yet create ramps, lane splits, merge/diverge tapers, stop lines, traffic signals, zebra crossings or vehicle turning behaviour. Kaneshie, Circle and Tetteh Quarshie retain grade-separated concepts; the remaining junctions keep their control layout open until their detailed designs are authored. The Tema-to-Prampram arm remains a future expansion connection.
+
+
+## Junction footprint reservation for road surfaces
+
+The main road geometry builder now trims each corridor ribbon before it enters a planned junction reservation envelope, using the same provisional bounds that protect road markings. This keeps continuous asphalt, sidewalks, medians and drainage bands from being laid across the reserved spaces for Circle, Kaneshie, 37/Ridge, Tetteh Quarshie, Madina, Osu, Spintex and Tema.
+
+The reserved areas are intentionally left for dedicated junction geometry. This is important for grade-separated locations, where a single flat road ribbon would incorrectly imply that all traffic movements share one level. At-grade junctions also need their own central paved area and approach treatment rather than overlapping road ribbons.
+
+The current result is an intentional gap in the corridor geometry at each reserved junction, not a finished intersection. Ramps, bridges, lane connections, roundabout islands, signal-controlled stop lines and pedestrian crossings still need their own authored layouts. A 25m provisional buffer is applied outside each reservation envelope to give later junction meshes room to connect cleanly.
