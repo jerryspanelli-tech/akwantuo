@@ -17,7 +17,7 @@ const ROUTE = {
   x: -41,
   startZ: -20,
   stationZ: -20,
-  endZ: 55
+  endZ: -60
 } as const;
 
 /**
@@ -34,9 +34,9 @@ export function createPlayableRailDemo(scene: Scene): PlayableRailDemo {
   sleeperMaterial.diffuseColor = new Color3(0.22, 0.19, 0.15);
 
   const ballast = MeshBuilder.CreateGround("playable-rail-ballast", {
-    width: 3.2, height: ROUTE.endZ - ROUTE.startZ + 34
+    width: 3.2, height: ROUTE.startZ - ROUTE.endZ + 60
   }, scene);
-  ballast.position.set(ROUTE.x, 0.06, (ROUTE.startZ - 30 + ROUTE.endZ + 4) / 2);
+  ballast.position.set(ROUTE.x, 0.06, (ROUTE.startZ + ROUTE.endZ) / 2);
   ballast.material = ballastMaterial;
   ballast.isPickable = false;
 
@@ -44,8 +44,8 @@ export function createPlayableRailDemo(scene: Scene): PlayableRailDemo {
   for (const offset of [-0.5335, 0.5335]) {
     const rail = MeshBuilder.CreateTube("playable-rail-" + offset, {
       path: [
-        new Vector3(ROUTE.x + offset, 0.2, ROUTE.startZ - 30),
-        new Vector3(ROUTE.x + offset, 0.2, ROUTE.endZ + 4)
+        new Vector3(ROUTE.x + offset, 0.2, ROUTE.endZ - 30),
+        new Vector3(ROUTE.x + offset, 0.2, ROUTE.startZ + 30)
       ],
       radius: 0.075,
       tessellation: 8
@@ -56,12 +56,12 @@ export function createPlayableRailDemo(scene: Scene): PlayableRailDemo {
   }
 
   const sleeperMeshes: Mesh[] = [];
-  const sleeperCount = Math.floor((ROUTE.endZ - ROUTE.startZ + 34) / 0.72) + 1;
+  const sleeperCount = Math.floor((ROUTE.startZ - ROUTE.endZ + 60) / 0.72) + 1;
   for (let index = 0; index < sleeperCount; index += 1) {
     const tie = MeshBuilder.CreateBox("playable-rail-sleeper-" + index, {
       width: 2.35, height: 0.18, depth: 0.24
     }, scene);
-    tie.position.set(ROUTE.x, 0.14, ROUTE.startZ - 30 + index * 0.72);
+    tie.position.set(ROUTE.x, 0.14, ROUTE.endZ - 30 + index * 0.72);
     tie.material = sleeperMaterial;
     tie.isPickable = false;
     sleeperMeshes.push(tie);
