@@ -809,7 +809,7 @@ async function start(): Promise<void> {
           passengerState.mode === "not_riding" &&
           greaterAccraMappedRailService.isBoardingOpen() &&
           Math.hypot(player.root.position.x + 250, player.root.position.z - 150) <= 14;
-        if (interactButton) interactButton.textContent = nearMappedRailBoarding ? "BOARD" : "ENTER";
+        if (interactButton) interactButton.textContent = activeInterior ? "EXIT" : nearMappedRailBoarding ? "BOARD" : "ENTER";
         if (jumpButton) jumpButton.classList.remove("is-hidden");
         if (vehicleViewButton) vehicleViewButton.classList.add("is-hidden");
       }
