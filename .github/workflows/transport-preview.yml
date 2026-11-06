@@ -16,6 +16,7 @@ on:
       - "apps/game/src/world/railTrackGeometry.ts"
       - "apps/game/src/world/trafficRules.ts"
       - "apps/game/src/vehicles/roadVehicles.ts"
+      - "apps/game/src/vehicles/roadVehicleDynamics.ts"
       - "apps/game/src/transportPreview.ts"
       - "apps/game/transport-preview.html"
       - "apps/game/vite.config.ts"
