@@ -153,6 +153,66 @@ try {
     if (failures.length) throw new Error(failures.join("\n"));
     await page.screenshot({ path: "artifacts/akwantuo-" + target.name + "-transport-game.png", fullPage: false, timeout: 30000 });
     console.log(target.name + ": trotro journey passed and screenshot captured");
+
+    // Re-open the playable world in a local-only test spawn at Accra Central,
+    // then complete the mapped Accra–Tema train journey and terminal alighting.
+    await page.goto("http://127.0.0.1:4173/?akwantuoTransportTest=rail", {
+      waitUntil: "networkidle",
+      timeout: 30000
+    });
+    await page.waitForFunction(() =>
+      (document.querySelector("#boot-status")?.textContent ?? "").includes("Your world is ready"),
+      { timeout: 30000 }
+    );
+    await page.waitForFunction(() =>
+      document.querySelector("#boot-screen")?.hasAttribute("hidden") === true,
+      { timeout: 10000 }
+    );
+    await page.locator("#play-button").click({ timeout: 10000 });
+    await page.waitForFunction(() => !document.querySelector("#game-hud")?.classList.contains("is-hidden"), { timeout: 10000 });
+    const railTestSpawn = await page.evaluate(() => ({
+      mode: document.documentElement.dataset.transportTestMode ?? "",
+      boardingOpen: document.documentElement.dataset.mappedRailBoardingOpen === "true"
+    }));
+    if (railTestSpawn.mode !== "rail" || !railTestSpawn.boardingOpen) {
+      throw new Error(target.name + ": local mapped rail test spawn did not activate: " + JSON.stringify(railTestSpawn));
+    }
+    if (target.isMobile) await page.locator("#interact-button").click({ timeout: 5000 });
+    else await page.keyboard.press("e");
+    await page.waitForFunction(() =>
+      (document.querySelector("#notice")?.textContent ?? "").includes("Boarded the Accra–Tema train"),
+      { timeout: 10000 }
+    );
+    console.log(target.name + ": mapped Accra Central train boarded and passenger camera active");
+    await page.waitForFunction(() =>
+      document.documentElement.dataset.mappedRailCompleted === "true" &&
+      Number(document.documentElement.dataset.mappedRailSpeedMps ?? 1) <= 0.01,
+      { timeout: 45000 }
+    );
+    const mappedTerminal = await page.evaluate(() => ({
+      stopId: document.documentElement.dataset.mappedRailStopId ?? "",
+      distanceM: Number(document.documentElement.dataset.mappedRailDistanceM ?? 0),
+      speedMps: Number(document.documentElement.dataset.mappedRailSpeedMps ?? -1),
+      completed: document.documentElement.dataset.mappedRailCompleted === "true"
+    }));
+    if (!mappedTerminal.completed || mappedTerminal.speedMps > 0.01 || mappedTerminal.distanceM < 10000) {
+      throw new Error(target.name + ": mapped Accra–Tema train did not complete at its terminal: " + JSON.stringify(mappedTerminal));
+    }
+    if (target.isMobile) await page.locator("#interact-button").click({ timeout: 5000 });
+    else await page.keyboard.press("e");
+    await page.waitForFunction(() =>
+      (document.querySelector("#notice")?.textContent ?? "").includes("You alighted at Tema"),
+      { timeout: 5000 }
+    );
+    const railAlighting = await page.evaluate(() => ({
+      passengerMode: document.documentElement.dataset.transportPassengerMode ?? "",
+      notice: document.querySelector("#notice")?.textContent ?? ""
+    }));
+    if (railAlighting.passengerMode !== "not_riding") {
+      throw new Error(target.name + ": mapped train passenger state did not return to on-foot mode: " + JSON.stringify(railAlighting));
+    }
+    console.log(target.name + ": mapped Accra–Tema train reached Tema and passenger alighted");
+    await page.screenshot({ path: "artifacts/akwantuo-" + target.name + "-mapped-rail.png", fullPage: false, timeout: 30000 });
     await context.close();
   }
 } finally {
