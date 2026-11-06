@@ -25,6 +25,8 @@
 - Passenger camera modes: interior window, interior free-look and exterior follow.
 - Passenger vehicle profiles for trotro, city bus, coach and taxi.
 - New boarding/alighting state machine checks stopped vehicle, open boarding/alighting, available seats and vehicle identity.
+- A Ghana-inspired shared-trotro minibus visual is now spawned in the main playable scene. The player can board at a temporary preview stop, pay a fare from a local pesewa balance, ride while the vehicle moves with an interior-window/free-look/exterior camera, and alight at the temporary terminal stop.
+- This is a short local preview journey inside the 180m test scene, not a Greater Accra route, a live schedule, an NPC-driven public transport service or a server-backed payment.
 - Fare quote and deduction use integer pesewas and validate balances.
 - Preview startup smoke checks exercise boarding, fare deduction, alighting, vehicle entry and safe/unsafe exit.
 
@@ -39,12 +41,12 @@ These are not being represented as finished systems:
 - Realistic final 3D assets for every Ghanaian vehicle class, interiors, articulated trailers and motorcycles.
 - Full collision, suspension, tyre grip, wheel steering/rotation, vehicle damage, fuel, ownership, insurance, licences or garages.
 - AI traffic, traffic-light phases, lane-level navigation, parking enforcement, emergency dispatch and road safety simulation.
-- Driver entry/exit is connected for the starter saloon, but seat animations and visible driver placement are not yet implemented. The three camera modes are connected to that vehicle only; public-transport passenger seating/cameras remain unintegrated.
-- Real public-transport route/stop placements, timetables, live vehicles, conductor/mate interaction, stop announcements, fare UI and route destination boards.
+- Driver entry/exit is connected for the starter saloon, but seat animations and visible driver placement are not yet implemented. The three camera modes are connected to the starter saloon and the preview trotro passenger ride; full passenger seat placement and animations remain unimplemented.
+- Approved Greater Accra public-transport route/stop placements, timetables, multiple live vehicles, conductor/mate interaction, stop announcements, full fare UI and real destination boards. The current two temporary preview stops are deliberately not presented as real Accra stops.
 - Rail signalling, block occupancy, switches, dispatch, timetable conflicts, safety logic, train doors, passenger interiors and operational railway certification.
 - Multiplayer/server-authoritative vehicle ownership, seat reservations, fare transactions, economy integration, anti-cheat and persistence.
-- Integration of the preview models and transport controllers into the playable Greater Accra map.
-- Main-game mobile driving and camera controls are now connected for the starter saloon; other vehicle classes and public-transport passenger journeys are not yet connected.
+- Integration of the preview models and transport controllers into the playable Greater Accra map. The current playable scene remains a small 180m prototype and is not the Greater Accra map.
+- Main-game mobile driving and camera controls are connected for the starter saloon. The preview trotro passenger journey uses the same on-screen interaction and view controls; additional vehicle classes and mapped public-transport services remain unconnected.
 
 ## Remaining work before this stage can close
 1. Complete and approve Greater Accra road/rail geometry and transport stop placements.
