@@ -238,7 +238,7 @@ try {
       { buildingId: "osu-corner-mart", roomId: "shop-small", business: true, screenshot: true },
       { buildingId: "ama-salon", business: true, roomId: "salon" },
       { buildingId: "chop-bar", business: true, roomId: "restaurant" },
-      { buildingId: "adom-compound", business: true, roomId: "compound-house" },
+      { buildingId: "adom-compound", roomId: "compound-house", business: false },
       { buildingId: "coastal-guest-house", business: true, roomId: "guest-house" },
       { buildingId: "district-office", business: true, roomId: "office" },
       { buildingId: "ridge-clinic", business: true, roomId: "clinic" },
