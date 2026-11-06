@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - "apps/game/src/world/railStationGeometry.ts"
+      - "apps/game/src/world/railTrainGeometry.ts"
       - "apps/game/src/world/railStationFitout.ts"
       - "apps/game/src/world/railStationAccessGeometry.ts"
       - "apps/game/src/world/railStationInterchange.ts"
