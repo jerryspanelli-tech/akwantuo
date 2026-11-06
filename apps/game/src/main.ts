@@ -334,6 +334,7 @@ async function start(): Promise<void> {
   const solidAreas = createPreviewWorld(scene, { includeGround: false });
   const interiorRooms = createInteriorRooms(scene);
   document.documentElement.dataset.akwantuoInteriorRoomCount = String(interiorRooms.length);
+  document.documentElement.dataset.akwantuoStoreCollisionCount = String(interiorRooms.find((room) => room.id === "convenience-store")?.solidAreas.length ?? 0);
   const convenienceStoreBlueprint = INTERIOR_BLUEPRINTS.find((blueprint) => blueprint.id === "convenience-store");
   document.documentElement.dataset.akwantuoStoreFridgeCount = String(
     convenienceStoreBlueprint?.fixtures.filter((fixture) => fixture.type === "refrigerator").length ?? 0
