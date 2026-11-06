@@ -541,9 +541,14 @@ async function start(): Promise<void> {
         : "";
 
       playableRailDemo.update(Math.min(rawDelta, 0.1));
-      const mappedRailFrame = greaterAccraMappedRailService.update(
-        rawDelta * (transportRailTestMode ? 120 : 1)
-      );
+      let mappedRailFrame = greaterAccraMappedRailService.update(rawDelta);
+      if (transportRailTestMode) {
+        // Accelerate only the local browser-test session. The live game keeps
+        // normal simulation time and the service's bounded catch-up behaviour.
+        for (let testStep = 0; testStep < 9; testStep += 1) {
+          mappedRailFrame = greaterAccraMappedRailService.update(rawDelta);
+        }
+      }
       const mappedRailState = greaterAccraMappedRailService.getState();
       document.documentElement.dataset.mappedRailBoardingOpen = String(greaterAccraMappedRailService.isBoardingOpen());
       document.documentElement.dataset.mappedRailDistanceM = mappedRailState.distanceM.toFixed(2);
