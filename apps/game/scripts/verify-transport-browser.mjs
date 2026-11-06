@@ -53,9 +53,9 @@ try {
       interiorLinks: Number(document.documentElement.dataset.akwantuoBuildingInteriorLinkCount ?? 0),
       stage6Checks: document.documentElement.dataset.akwantuoStage6Checks === "passed"
     }));
-    if (stageSixCatalogues.buildings !== 22 || stageSixCatalogues.districts !== 12 || stageSixCatalogues.properties !== 22 || stageSixCatalogues.businesses !== 16 ||
-        stageSixCatalogues.interiorBlueprints !== 9 || stageSixCatalogues.renderedInteriorRooms !== 9 ||
-        stageSixCatalogues.interiorLinks !== 22 || !stageSixCatalogues.stage6Checks) {
+    if (stageSixCatalogues.buildings !== 23 || stageSixCatalogues.districts !== 12 || stageSixCatalogues.properties !== 23 || stageSixCatalogues.businesses !== 17 ||
+        stageSixCatalogues.interiorBlueprints !== 10 || stageSixCatalogues.renderedInteriorRooms !== 10 ||
+        stageSixCatalogues.interiorLinks !== 23 || !stageSixCatalogues.stage6Checks) {
       failures.push(target.name + ": Stage 6 building/district/property/interior catalogues are incomplete: " +
         JSON.stringify(stageSixCatalogues));
     }
@@ -243,7 +243,8 @@ try {
       { buildingId: "district-office", business: true, roomId: "office" },
       { buildingId: "ridge-clinic", business: true, roomId: "clinic" },
       { buildingId: "kwame-auto-works", business: true, roomId: "workshop" },
-      { buildingId: "east-legon-apartments", roomId: "apartment", business: false }
+      { buildingId: "east-legon-apartments", roomId: "apartment", business: false },
+      { buildingId: "akwaaba-creative-arts-centre", roomId: "creative-arts-centre", business: true }
     ];
     for (const interiorCase of interiorCases) {
       await page.goto("http://127.0.0.1:4173/?akwantuoInteriorTest=" + interiorCase.buildingId, {
