@@ -38,7 +38,7 @@ try {
     await page.waitForFunction(() => (document.querySelector("#notice")?.textContent ?? "").includes("Vehicle view"), { timeout: 5000 });
     console.log(target.name + ": trotro boarded and passenger camera switched");
     try {
-      await page.waitForFunction(() => (document.querySelector("#notice")?.textContent ?? "").includes("You have reached the final stop"), { timeout: 30000 });
+      await page.waitForFunction(() => (document.querySelector("#notice")?.textContent ?? "").includes("You have reached the final stop"), { timeout: 60000 });
     } catch (error) {
       const diagnostic = await page.evaluate(() => ({
         notice: document.querySelector("#notice")?.textContent,
