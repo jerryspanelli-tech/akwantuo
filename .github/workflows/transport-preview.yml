@@ -26,6 +26,9 @@ on:
       - "apps/game/src/vehicles/vehicleInteraction.ts"
       - "apps/game/src/vehicles/publicTransportVehicle.ts"
       - "apps/game/src/main.ts"
+      - "apps/game/src/world/transportSmokeChecks.ts"
+      - "apps/game/src/vehicles/passengerCamera.ts"
+      - "apps/game/scripts/verify-transport-browser.mjs"
       - "apps/game/src/world/publicTransportOperations.ts"
       - "apps/game/station-preview.css"
       - "apps/game/src/transportPreview.ts"
@@ -56,8 +59,10 @@ jobs:
         run: npm run typecheck
       - name: Build
         run: npm run build
+      - name: Install Playwright for browser verification
+        run: npm install --no-save --package-lock=false playwright
       - name: Install Chromium for screenshot capture
-        run: npx --yes playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium
       - name: Start production preview server
         run: |
           npm exec --workspace @akwantuo/game -- vite preview --host 127.0.0.1 --port 4173 > /tmp/akwantuo-preview.log 2>&1 &
@@ -69,6 +74,10 @@ jobs:
           done
           cat /tmp/akwantuo-preview.log
           exit 1
+      - name: Verify main game transport startup on desktop and mobile
+        run: |
+          mkdir -p artifacts
+          node apps/game/scripts/verify-transport-browser.mjs
       - name: Capture transport preview screenshot
         run: |
           mkdir -p artifacts
@@ -82,9 +91,9 @@ jobs:
             echo "Build target: production Vite preview"
             echo "Page: /transport-preview.html"
             echo "Viewport: 1440 x 1000"
-            echo "Screenshot: artifacts/akwantuo-transport-preview.png"
+            echo "Screenshots: artifacts/akwantuo-transport-preview.png, artifacts/akwantuo-desktop-transport-game.png, artifacts/akwantuo-mobile-transport-game.png"
             echo "Scope: ultra-modern railway station concept, passenger concourse fit-out, sheltered step-free forecourt walkway, illustrative trotro, city-bus, taxi and ride-hailing forecourt, and a preview-only moving two-car shuttle demonstrating the train rig and station-stop controller, plus a controllable saloon-car visual using the road-vehicle dynamics model and keyboard/touch controls. Startup smoke checks also cover vehicle entry/exit and public-transport boarding, fare deduction and alighting. Preview startup also smoke-checks that candidate Circle/Odaw is excluded from operational stops and that invalid train states are rejected."
-            echo "Validation: npm typecheck and production Vite build must pass before capture."
+            echo "Validation: npm typecheck and production Vite build; Chromium opens the main game, waits for successful Babylon startup, enters gameplay, checks uncaught page errors and captures desktop/mobile screenshots."
             echo "Limitations: developer preview contains separate transport demonstrations; the main playable game now also includes a compact local rail track, ultra-modern station and moving two-car train with a station dwell; this local rail slice is not the Greater Accra mapped rail service; the moving preview shuttle is a short separate path and is not the Greater Accra mapped rail service; startup smoke checks cover prototype data rules only, not railway safety; no live network trains or traffic AI; the saloon uses prototype kinematics without road collision, tyre/suspension simulation or server authority; vehicle interaction and fare logic are local prototype rules and are not connected to a server wallet, seat reservations or live route timetable; the playable scene now includes a preview-only shared-trotro passenger ride between two temporary stops; those stops are not the approved Greater Accra route network; station-site coordinates remain illustrative."
           } > artifacts/transport-preview-report.txt
       - name: Upload screenshot and report
