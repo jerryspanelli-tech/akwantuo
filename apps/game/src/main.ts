@@ -785,6 +785,13 @@ async function start(): Promise<void> {
     speedboat: createMarinaCraft("speedboat", mainlandMarina.x, mainlandMarina.z),
     jet_ski: createMarinaCraft("jet_ski", mainlandMarina.x + 8, mainlandMarina.z + 1)
   };
+  const findNearestMarinaCraft = (): { kind: WatercraftKind; craft: typeof marinaWatercraft.speedboat; distanceM: number } =>
+    (["speedboat", "jet_ski"] as const).map((kind) => ({
+      kind,
+      craft: marinaWatercraft[kind],
+      distanceM: Math.hypot(player.root.position.x - marinaWatercraft[kind].root.position.x,
+        player.root.position.z - marinaWatercraft[kind].root.position.z)
+    })).sort((a, b) => a.distanceM - b.distanceM)[0];
   document.documentElement.dataset.akwantuoWatercraftCount = "2";
   document.documentElement.dataset.akwantuoWaterRouteWaypointCount = String(AKWAABA_CAY_WATER_ROUTE.length);
 
@@ -967,7 +974,25 @@ async function start(): Promise<void> {
         document.documentElement.dataset.transportActionConsumedAt = String(performance.now());
         document.documentElement.dataset.transportActionPassengerModeBefore = passengerState.mode;
         vehicleActionRequested = false;
-        if (activeInterior) {
+        if (watercraftMode && activeWatercraftKind) {
+          const mainlandDistance = Math.hypot(watercraftState.x - mainlandMarina.x, watercraftState.z - mainlandMarina.z);
+          const islandDistance = Math.hypot(watercraftState.x - islandMarina.x, watercraftState.z - islandMarina.z);
+          const atDock = mainlandDistance <= 38 || islandDistance <= 45;
+          if (Math.abs(watercraftState.speedMps) > 0.5) {
+            showNotice("Slow down and stop at the marina before leaving your watercraft.");
+          } else if (!atDock) {
+            showNotice("You are offshore. Follow the marked buoys to Labadi Marina or Akwaaba Cay to disembark safely.");
+          } else {
+            const exitPoint = mainlandDistance <= islandDistance ? mainlandMarina : islandMarina;
+            player.root.position.set(exitPoint.x + 3, 0, exitPoint.z + 5);
+            player.root.setEnabled(true);
+            watercraftMode = false;
+            activeWatercraftKind = null;
+            passengerCameraRig?.dispose();
+            passengerCameraRig = null;
+            showNotice("You are safely ashore. Your watercraft remains at the dock.");
+          }
+        } else if (activeInterior) {
           const room = interiorRooms.find((item) => item.id === activeInterior?.roomId);
           room?.root.setEnabled(false);
           player.root.position.set(activeInterior.exitX, 0, activeInterior.exitZ);
@@ -1103,6 +1128,27 @@ async function start(): Promise<void> {
           document.documentElement.dataset.transportTrotroBoardResult = result.ok ? "ok" : result.reason;
           if (result.ok && result.state.mode === "riding") { passengerState = result.state; passengerCameraRig = new PassengerCameraRig(scene, { interiorWindow: publicTaxi.interiorWindow, exteriorFollow: publicTaxi.exteriorFollow }); vehicleCameraModeIndex = 0; player.root.setEnabled(false); showNotice("Boarded shared trotro. Fare: GH₵" + (result.state.farePaidPesewas / 100).toFixed(2)); }
           else if (!result.ok) showNotice("Unable to board: " + result.reason.replaceAll("_", " ") + ".");
+        } else if (interactionState.mode === "on_foot" && passengerState.mode === "not_riding" &&
+          findNearestMarinaCraft().distanceM <= 26) {
+          const nearbyCraft = findNearestMarinaCraft();
+          activeWatercraftKind = nearbyCraft.kind;
+          watercraftState = {
+            x: nearbyCraft.craft.root.position.x,
+            z: nearbyCraft.craft.root.position.z,
+            headingRadians: nearbyCraft.craft.root.rotation.y,
+            speedMps: 0
+          };
+          watercraftMode = true;
+          player.root.setEnabled(false);
+          passengerCameraRig = new PassengerCameraRig(scene, {
+            interiorWindow: nearbyCraft.craft.interior,
+            exteriorFollow: nearbyCraft.craft.exterior
+          });
+          vehicleCameraModeIndex = 0;
+          document.documentElement.dataset.akwantuoActiveWatercraft = nearbyCraft.kind;
+          showNotice(nearbyCraft.kind === "speedboat"
+            ? "Coastline 28 speedboat ready. Use W/A/S/D or the touch joystick to steer across the Gulf. Follow the buoys to Akwaaba Cay."
+            : "WaveRider jet ski ready. Use W/A/S/D or the touch joystick to steer across the Gulf. Follow the buoys to Akwaaba Cay.");
         } else if (interactionState.mode === "on_foot") {
           const entryX = vehicleState.x - Math.cos(vehicleState.headingRadians) * 1.15;
           const entryZ = vehicleState.z + Math.sin(vehicleState.headingRadians) * 1.15;
@@ -1144,7 +1190,7 @@ async function start(): Promise<void> {
         window.setTimeout(() => notice?.classList.remove("is-visible"), 3000);
       }
 
-      if (interactionState.mode === "inside_vehicle" || passengerState.mode === "riding") {
+      if (interactionState.mode === "inside_vehicle" || passengerState.mode === "riding" || watercraftMode) {
         const activePassengerCameraRig = railPassengerCameraRig ?? passengerCameraRig;
         if (vehicleViewRequested && activePassengerCameraRig) {
           vehicleViewRequested = false;
@@ -1168,6 +1214,34 @@ async function start(): Promise<void> {
           const railPosition = playableRailDemo.getStatus().position;
           camera.target = Vector3.Lerp(camera.target, new Vector3(railPosition.x, 2, railPosition.z), Math.min(1, delta * 8));
           camera.radius = 12;
+        } else if (watercraftMode && activeWatercraftKind) {
+          let steering = touchInput.x;
+          let throttle = touchInput.z;
+          if (pressedKeys.has("a") || pressedKeys.has("arrowleft")) steering -= 1;
+          if (pressedKeys.has("d") || pressedKeys.has("arrowright")) steering += 1;
+          if (pressedKeys.has("w") || pressedKeys.has("arrowup")) throttle += 1;
+          if (pressedKeys.has("s") || pressedKeys.has("arrowdown")) throttle -= 1;
+          steering = Math.max(-1, Math.min(1, steering));
+          throttle = Math.max(-1, Math.min(1, throttle));
+          const next = advanceWatercraftElapsed(WATERCRAFT_CONFIG[activeWatercraftKind], watercraftState, {
+            throttle,
+            steering,
+            brake: vehicleBrake || pressedKeys.has(" ") ? 1 : 0
+          }, rawDelta);
+          if (isWatercraftInNavigableSea(next)) {
+            watercraftState = next;
+          } else {
+            watercraftState = { ...watercraftState, speedMps: 0 };
+          }
+          const craft = marinaWatercraft[activeWatercraftKind];
+          craft.root.position.set(watercraftState.x, 0.12 + Math.sin(performance.now() / 330) * 0.045, watercraftState.z);
+          craft.root.rotation.y = watercraftState.headingRadians;
+          document.documentElement.dataset.akwantuoWatercraftX = watercraftState.x.toFixed(2);
+          document.documentElement.dataset.akwantuoWatercraftZ = watercraftState.z.toFixed(2);
+          document.documentElement.dataset.akwantuoWatercraftSpeed = watercraftState.speedMps.toFixed(2);
+          camera.target = Vector3.Lerp(camera.target, new Vector3(watercraftState.x, 1.6, watercraftState.z), Math.min(1, delta * 8));
+          camera.alpha = -Math.PI / 2 - watercraftState.headingRadians;
+          camera.radius = activeWatercraftKind === "jet_ski" ? 8 : 11;
         } else {
           let steering = touchInput.x;
           let throttle = touchInput.z;
@@ -1215,12 +1289,12 @@ async function start(): Promise<void> {
         if (vehicleViewButton) vehicleViewButton.classList.add("is-hidden");
       }
 
-      let inputX = interactionState.mode === "on_foot" && passengerState.mode !== "riding" ? touchInput.x : 0;
-      let inputZ = interactionState.mode === "on_foot" && passengerState.mode !== "riding" ? touchInput.z : 0;
-      if (interactionState.mode === "on_foot" && passengerState.mode !== "riding" && (pressedKeys.has("a") || pressedKeys.has("arrowleft"))) inputX -= 1;
-      if (interactionState.mode === "on_foot" && passengerState.mode !== "riding" && (pressedKeys.has("d") || pressedKeys.has("arrowright"))) inputX += 1;
-      if (interactionState.mode === "on_foot" && passengerState.mode !== "riding" && (pressedKeys.has("w") || pressedKeys.has("arrowup"))) inputZ += 1;
-      if (interactionState.mode === "on_foot" && passengerState.mode !== "riding" && (pressedKeys.has("s") || pressedKeys.has("arrowdown"))) inputZ -= 1;
+      let inputX = interactionState.mode === "on_foot" && passengerState.mode !== "riding" && !watercraftMode ? touchInput.x : 0;
+      let inputZ = interactionState.mode === "on_foot" && passengerState.mode !== "riding" && !watercraftMode ? touchInput.z : 0;
+      if (interactionState.mode === "on_foot" && passengerState.mode !== "riding" && !watercraftMode && (pressedKeys.has("a") || pressedKeys.has("arrowleft"))) inputX -= 1;
+      if (interactionState.mode === "on_foot" && passengerState.mode !== "riding" && !watercraftMode && (pressedKeys.has("d") || pressedKeys.has("arrowright"))) inputX += 1;
+      if (interactionState.mode === "on_foot" && passengerState.mode !== "riding" && !watercraftMode && (pressedKeys.has("w") || pressedKeys.has("arrowup"))) inputZ += 1;
+      if (interactionState.mode === "on_foot" && passengerState.mode !== "riding" && !watercraftMode && (pressedKeys.has("s") || pressedKeys.has("arrowdown"))) inputZ -= 1;
 
       const inputLength = Math.hypot(inputX, inputZ);
       if (inputLength > 1) {
@@ -1231,7 +1305,7 @@ async function start(): Promise<void> {
       const forward = new Vector3(-Math.sin(camera.alpha), 0, -Math.cos(camera.alpha));
       const right = new Vector3(-forward.z, 0, forward.x);
       const direction = forward.scale(inputZ).add(right.scale(inputX));
-      const moving = interactionState.mode === "on_foot" && passengerState.mode !== "riding" && direction.lengthSquared() > 0.001;
+      const moving = interactionState.mode === "on_foot" && passengerState.mode !== "riding" && !watercraftMode && direction.lengthSquared() > 0.001;
 
       if (moving) {
         direction.normalize();
@@ -1245,7 +1319,7 @@ async function start(): Promise<void> {
         walkClock += delta * 9;
       }
 
-      if (interactionState.mode === "on_foot" && passengerState.mode !== "riding" && jumpRequested && onGround) {
+      if (interactionState.mode === "on_foot" && passengerState.mode !== "riding" && !watercraftMode && jumpRequested && onGround) {
         verticalVelocity = WORLD_CONFIG.movement.jumpVelocity;
         onGround = false;
       }
@@ -1254,7 +1328,7 @@ async function start(): Promise<void> {
         verticalVelocity -= WORLD_CONFIG.movement.gravity * delta;
         player.root.position.y += verticalVelocity * delta;
       }
-      if (interactionState.mode === "on_foot" && passengerState.mode !== "riding" && player.root.position.y <= 0) {
+      if (interactionState.mode === "on_foot" && passengerState.mode !== "riding" && !watercraftMode && player.root.position.y <= 0) {
         player.root.position.y = 0;
         verticalVelocity = 0;
         onGround = true;
