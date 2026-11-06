@@ -21,6 +21,7 @@ import { createGreaterAccraRailTrackGeometry } from "./world/railTrackGeometry";
 import { GREATER_ACCRA_RAIL_NODES } from "./world/railNetwork";
 import { GREATER_ACCRA_RAIL_STATIONS } from "./world/railStations";
 import { GREATER_ACCRA_JUNCTION_LAYOUTS } from "./world/junctionLayouts";
+import { deriveRailRoadCrossingCandidates } from "./world/railRoadCrossings";
 import "./../greater-accra-transport-preview.css";
 
 const canvas = document.querySelector<HTMLCanvasElement>("#map-canvas");
@@ -104,6 +105,19 @@ try {
   const circleGeometry = createCircleInterchangeGeometry(scene);
   if (status) status.textContent = "Generating Greater Accra Cape-gauge railway corridors…";
   const railTracks = createGreaterAccraRailTrackGeometry(scene, { sleeperSpacingM: 1.2 });
+  const railCrossingCandidates = deriveRailRoadCrossingCandidates();
+  const crossingReviewMaterial = new StandardMaterial("rail-road-crossing-review-material", scene);
+  crossingReviewMaterial.diffuseColor = new Color3(0.94, 0.58, 0.13);
+  for (const crossing of railCrossingCandidates) {
+    const marker = MeshBuilder.CreateCylinder(
+      "rail-road-crossing-review-" + crossing.id,
+      { height: 18, diameter: 30, tessellation: 12 },
+      scene
+    );
+    marker.position.set(crossing.position.x, 9, crossing.position.z);
+    marker.material = crossingReviewMaterial;
+    marker.isPickable = false;
+  }
   const railStationMaterial = new StandardMaterial("rail-station-anchor-material", scene);
   railStationMaterial.diffuseColor = new Color3(0.88, 0.67, 0.29);
   const plannedRailStations = GREATER_ACCRA_RAIL_STATIONS.filter((station) => station.status === "planned");
@@ -154,7 +168,7 @@ try {
   engine.runRenderLoop(() => scene.render());
   window.addEventListener("resize", () => engine.resize());
   if (status) {
-    status.textContent = `Network preview ready · ${roadMeshes.length} road-surface meshes · ${markingMeshes.length} road-marking meshes · Circle: ${Object.keys(circleGeometry.elevatedStructures).length} elevated structures · ${railTracks.length} rail routes · ${plannedRailStations.length} planned station anchors · ${GREATER_ACCRA_REGION_ANCHORS.length} district anchors`;
+    status.textContent = `Network preview ready · ${roadMeshes.length} road-surface meshes · ${markingMeshes.length} road-marking meshes · Circle: ${Object.keys(circleGeometry.elevatedStructures).length} elevated structures · ${railTracks.length} rail routes · ${plannedRailStations.length} planned station anchors · ${railCrossingCandidates.length} rail-road crossing candidates (review required) · ${GREATER_ACCRA_REGION_ANCHORS.length} district anchors`;
   }
 } catch (error) {
   if (status) status.textContent = "Map preview failed: " + (error instanceof Error ? error.message : String(error));
