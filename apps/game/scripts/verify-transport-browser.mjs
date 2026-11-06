@@ -22,7 +22,8 @@ try {
     const status = await page.locator("#boot-status").textContent();
     if (!status?.includes("Your world is ready")) failures.push(target.name + ": startup status was " + status);
     console.log(target.name + ": startup ready");
-    await page.locator("#play-button").click({ timeout: 5000 });
+    await page.locator("#play-button").waitFor({ state: "visible", timeout: 10000 });
+    await page.locator("#play-button").click({ timeout: 10000 });
     await page.waitForFunction(() => !document.querySelector("#game-hud")?.classList.contains("is-hidden"), { timeout: 10000 });
     await page.waitForTimeout(1200);
 
