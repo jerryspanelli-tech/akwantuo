@@ -560,3 +560,17 @@ The Babylon.js builder creates:
 The current track dimensions, sleeper spacing, rail profile, elevations and intermediate route bends are simplified visual-design targets, **not railway construction specifications or surveyed track alignments**. The route catalogue itself remains schematic. The builder is reusable but is not yet integrated into the main playable world or a dedicated railway preview.
 
 This stage does not implement points/switches at Achimota, signals, level crossings, overhead electrification, train vehicles, train movement, collision, track maintenance, timetables or station-specific platform-track layouts. Those must be designed as separate layers after reliable alignment and station-site review. The Circle Odaw railway corridor preview remains its own schematic local visual and is not automatically joined to this wider track builder.
+
+
+## Railway station platform access geometry foundation
+
+Added `apps/game/src/world/railStationAccessGeometry.ts` as a reusable Babylon.js builder for four configurable station access types:
+
+- **Accessible ramps:** sloped deck, side handrails and a tactile landing marker.
+- **Stairs:** individually modelled tread geometry and a tactile landing marker.
+- **Lifts:** glazed shaft, visual lift cab and roof cap.
+- **Sheltered walkways:** paved connection, weather canopy and support posts.
+
+The builder requires explicit start/end coordinates and dimensions for every connection. It does not assume where Accra Central, Achimota or Tema platforms, lifts, stairs or entrances will sit. This lets a later reviewed station-site layout provide the exact connection data without embedding guessed positions in shared geometry code.
+
+These meshes are visual prototypes only. They do not establish compliant ramp gradients, stair risers/treads, lift capacity, fire strategy, structural design, tactile standards or accessible-route certification. Those details must be checked against applicable Ghanaian requirements and the approved station design. No station-specific access links have been placed yet, and this module is not integrated into the generic station preview or playable world.
