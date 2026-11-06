@@ -76,6 +76,50 @@ export function isRailTrainOperationConfigValid(config: RailTrainOperationConfig
   });
 }
 
+export function isRailTrainOperationStateValid(
+  config: RailTrainOperationConfig,
+  state: RailTrainOperationState
+): boolean {
+  if (!isRailTrainOperationConfigValid(config) ||
+      !Number.isFinite(state.distanceM) ||
+      !Number.isFinite(state.speedMps) ||
+      !Number.isInteger(state.nextStopIndex) ||
+      !Number.isFinite(state.dwellRemainingSeconds) ||
+      typeof state.completed !== "boolean" ||
+      !(state.currentStopId === null || typeof state.currentStopId === "string")) {
+    return false;
+  }
+
+  const totalDistanceM = measurePath(config.path).totalDistanceM;
+  if (state.distanceM < 0 || state.distanceM > totalDistanceM ||
+      state.speedMps < 0 || state.speedMps > config.maximumSpeedMps ||
+      state.nextStopIndex < 0 || state.nextStopIndex > config.stops.length ||
+      state.dwellRemainingSeconds < 0) {
+    return false;
+  }
+
+  if (state.currentStopId !== null) {
+    if (state.dwellRemainingSeconds <= 0 || state.nextStopIndex < 1) return false;
+    const activeStop = config.stops[state.nextStopIndex - 1];
+    if (!activeStop || activeStop.id !== state.currentStopId ||
+        state.distanceM !== activeStop.distanceM ||
+        state.dwellRemainingSeconds > activeStop.dwellSeconds) return false;
+  } else if (state.dwellRemainingSeconds > 0) {
+    return false;
+  }
+
+  if (state.completed) {
+    return state.distanceM === totalDistanceM &&
+      state.speedMps === 0 &&
+      state.nextStopIndex === config.stops.length &&
+      state.dwellRemainingSeconds === 0 &&
+      state.currentStopId === null;
+  }
+
+  const nextStop = config.stops[state.nextStopIndex];
+  return !nextStop || state.distanceM <= nextStop.distanceM;
+}
+
 export function createRailTrainOperationState(): RailTrainOperationState {
   return {
     distanceM: 0,
@@ -124,7 +168,7 @@ export function advanceRailTrain(
   if (!isRailTrainOperationConfigValid(config)) {
     throw new Error("Invalid rail train operation configuration.");
   }
-  if (!Number.isFinite(deltaSeconds) || deltaSeconds < 0 || deltaSeconds > 1) {
+  if (!isRailTrainOperationStateValid(config, state)) {\n    throw new Error("Invalid rail train operation state.");\n  }\n  if (!Number.isFinite(deltaSeconds) || deltaSeconds < 0 || deltaSeconds > 1) {
     throw new Error("Rail train time step must be between 0 and 1 second.");
   }
 
@@ -168,7 +212,7 @@ export function advanceRailTrain(
       speedMps: 0,
       nextStopIndex: state.nextStopIndex + (atStation ? 1 : 0),
       dwellRemainingSeconds: atStation ? nextStop.dwellSeconds : 0,
-      currentStopId: atStation ? nextStop.id : null,
+      currentStopId: atStation && nextStop.dwellSeconds > 0 ? nextStop.id : null,
       completed: !atStation
     };
   } else {
