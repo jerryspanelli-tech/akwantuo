@@ -5,22 +5,22 @@ export const WORLD_CONFIG = {
   displayName: "Accra District",
   coordinateUnit: "metres",
   ground: {
-    width: 180,
-    depth: 180
+    width: 21000,
+    depth: 13500
   },
   road: {
     width: 13,
     length: 180
   },
   bounds: {
-    minX: -90,
-    maxX: 90,
-    minZ: -90,
-    maxZ: 90,
-    playerMinX: -82,
-    playerMaxX: 82,
-    playerMinZ: -82,
-    playerMaxZ: 82
+    minX: -8000,
+    maxX: 13000,
+    minZ: -5000,
+    maxZ: 8500,
+    playerMinX: -7900,
+    playerMaxX: 12900,
+    playerMinZ: -4900,
+    playerMaxZ: 8400
   },
   spawn: {
     x: 0,
