@@ -8,7 +8,8 @@ import { GREATER_ACCRA_RAIL_STATIONS } from "./railStations";
 
 /**
  * Builds a deterministic prototype service config from a named schematic rail
- * route. Only planned first-release stations whose nodes exactly match the\n * route centreline become operational stops. Candidate stops remain excluded.
+ * route. Only planned first-release stations whose nodes exactly match the
+ * route centreline become operational stops. Candidate stops remain excluded.
  */
 export function createRailServiceConfig(
   routeId: string,
