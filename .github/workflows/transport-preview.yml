@@ -27,6 +27,7 @@ on:
       - "apps/game/src/vehicles/roadVehicleGeometry.ts"
       - "apps/game/src/vehicles/roadVehicleRig.ts"
       - "apps/game/src/vehicles/roadVehicleDynamics.ts"
+      - "apps/game/src/vehicles/motorcycleDynamics.ts"
       - "apps/game/src/vehicles/vehicleInteraction.ts"
       - "apps/game/src/vehicles/vehicleCollision.ts"
       - "apps/game/src/vehicles/publicTransportVehicle.ts"
