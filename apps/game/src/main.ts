@@ -24,6 +24,7 @@ import { createRoadVehicleGeometry } from "./vehicles/roadVehicleGeometry";
 import { createRoadVehicleRig } from "./vehicles/roadVehicleRig";
 import { enterVehicle, exitVehicle, type VehicleInteractionState } from "./vehicles/vehicleInteraction";
 import { isVehiclePathClear } from "./vehicles/vehicleCollision";
+import { advanceWatercraftDynamics, WATERCRAFT_CONFIG, AKWAABA_CAY_WATER_ROUTE, isWatercraftInNavigableSea, type WatercraftKind, type WatercraftDynamicsState } from "./vehicles/watercraftDynamics";
 import { PassengerCameraRig } from "./vehicles/passengerCamera";
 import { createPublicTransportVehicle } from "./vehicles/publicTransportVehicle";
 import { alightPublicTransport, boardPublicTransport, type PublicTransportPassengerState } from "./world/publicTransportOperations";
@@ -123,6 +124,22 @@ function advanceRoadVehicleElapsed(
   while (remaining > 0) {
     const step = Math.min(remaining, 0.1);
     next = advanceRoadVehicleDynamics(config, next, input, step);
+    remaining -= step;
+  }
+  return next;
+}
+
+function advanceWatercraftElapsed(
+  config: typeof WATERCRAFT_CONFIG[WatercraftKind],
+  state: WatercraftDynamicsState,
+  input: { throttle: number; steering: number; brake: number },
+  elapsedSeconds: number
+): WatercraftDynamicsState {
+  let remaining = Math.max(0, Math.min(elapsedSeconds, 1));
+  let next = state;
+  while (remaining > 0) {
+    const step = Math.min(remaining, 0.1);
+    next = advanceWatercraftDynamics(config, next, input, step);
     remaining -= step;
   }
   return next;
@@ -683,6 +700,94 @@ async function start(): Promise<void> {
     id: "playable-starter-saloon-rig",
     origin: vehicleOrigin
   });
+  const watercraftHullMaterial = new StandardMaterial("akwantuo-marina-watercraft-hull", scene);
+  watercraftHullMaterial.diffuseColor = new Color3(0.83, 0.86, 0.84);
+  const watercraftTrimMaterial = new StandardMaterial("akwantuo-marina-watercraft-trim", scene);
+  watercraftTrimMaterial.diffuseColor = new Color3(0.09, 0.22, 0.29);
+  const watercraftSeatMaterial = new StandardMaterial("akwantuo-marina-watercraft-seat", scene);
+  watercraftSeatMaterial.diffuseColor = new Color3(0.68, 0.32, 0.12);
+  const windowMaterialForWatercraft = new StandardMaterial("akwantuo-marina-watercraft-glass", scene);
+  windowMaterialForWatercraft.diffuseColor = new Color3(0.18, 0.48, 0.58);
+  windowMaterialForWatercraft.alpha = 0.72;
+  const createMarinaCraft = (kind: WatercraftKind, x: number, z: number): {
+    root: TransformNode; interior: TransformNode; exterior: TransformNode;
+  } => {
+    const root = new TransformNode("akwantuo-marina-" + kind, scene);
+    root.position.set(x, 0, z);
+    root.rotation.y = Math.atan2(4445, -1100);
+    const hull = MeshBuilder.CreateSphere("akwantuo-marina-" + kind + "-hull", { diameter: 1, segments: 20 }, scene);
+    hull.scaling.set(kind === "speedboat" ? 4.5 : 1.55, 0.78, kind === "speedboat" ? 12 : 4.8);
+    hull.position.y = 0.55;
+    hull.parent = root;
+    hull.material = watercraftHullMaterial;
+    hull.isPickable = false;
+    const deck = MeshBuilder.CreateBox("akwantuo-marina-" + kind + "-deck", {
+      width: kind === "speedboat" ? 4.2 : 1.15, height: 0.32, depth: kind === "speedboat" ? 7.4 : 2.1
+    }, scene);
+    deck.position.y = 0.92;
+    deck.parent = root;
+    deck.material = watercraftTrimMaterial;
+    deck.isPickable = false;
+    const seat = MeshBuilder.CreateBox("akwantuo-marina-" + kind + "-seat", {
+      width: kind === "speedboat" ? 1.9 : 0.72, height: 0.48, depth: kind === "speedboat" ? 1.5 : 1.45
+    }, scene);
+    seat.position.set(0, 1.22, 0.25);
+    seat.parent = root;
+    seat.material = watercraftSeatMaterial;
+    seat.isPickable = false;
+    if (kind === "speedboat") {
+      const cabin = MeshBuilder.CreateBox("akwantuo-marina-speedboat-console", { width: 2.5, height: 1.5, depth: 2.1 }, scene);
+      cabin.position.set(0, 1.6, -2.0);
+      cabin.parent = root;
+      cabin.material = watercraftTrimMaterial;
+      cabin.isPickable = false;
+      const windscreen = MeshBuilder.CreateBox("akwantuo-marina-speedboat-windscreen", { width: 2.3, height: 1.05, depth: 0.08 }, scene);
+      windscreen.position.set(0, 2.35, -0.85);
+      windscreen.parent = root;
+      windscreen.material = windowMaterialForWatercraft;
+      windscreen.isPickable = false;
+    } else {
+      const handle = MeshBuilder.CreateCylinder("akwantuo-marina-jetski-handle", { height: 1.2, diameter: 0.08, tessellation: 10 }, scene);
+      handle.position.set(0, 1.65, -1.5);
+      handle.rotation.z = Math.PI / 2;
+      handle.parent = root;
+      handle.material = watercraftTrimMaterial;
+      handle.isPickable = false;
+    }
+    const interior = new TransformNode("akwantuo-marina-" + kind + "-interior-camera", scene);
+    interior.position.set(0, 1.55, 0.45);
+    interior.parent = root;
+    const exterior = new TransformNode("akwantuo-marina-" + kind + "-exterior-camera", scene);
+    exterior.position.set(0, 3.8, -8.5);
+    exterior.parent = root;
+    return { root, interior, exterior };
+  };
+  const mainlandMarina = { x: 2700, z: -3380 };
+  const islandMarina = { x: AKWANTUO_PRIVATE_ISLAND.position.x + 145, z: AKWANTUO_PRIVATE_ISLAND.position.z + 85 };
+  const mainlandDock = MeshBuilder.CreateBox("akwantuo-labadi-marina-dock", { width: 30, height: 1.4, depth: 190 }, scene);
+  mainlandDock.position.set(mainlandMarina.x, 0.35, -3275);
+  mainlandDock.material = watercraftTrimMaterial;
+  mainlandDock.isPickable = false;
+  const dockSign = MeshBuilder.CreateBox("akwantuo-labadi-marina-sign", { width: 12, height: 3, depth: 0.45 }, scene);
+  dockSign.position.set(mainlandMarina.x, 3, -3182);
+  dockSign.material = watercraftSeatMaterial;
+  dockSign.isPickable = false;
+  const waterRouteBuoyMaterial = new StandardMaterial("akwantuo-cay-route-buoy-material", scene);
+  waterRouteBuoyMaterial.diffuseColor = new Color3(0.96, 0.66, 0.16);
+  for (let index = 1; index < AKWAABA_CAY_WATER_ROUTE.length - 1; index += 1) {
+    const waypoint = AKWAABA_CAY_WATER_ROUTE[index];
+    const buoy = MeshBuilder.CreateCylinder("akwantuo-cay-route-buoy-" + index, { height: 2.4, diameter: 1.1, tessellation: 10 }, scene);
+    buoy.position.set(waypoint.x, 1.2, waypoint.z);
+    buoy.material = waterRouteBuoyMaterial;
+    buoy.isPickable = false;
+  }
+  const marinaWatercraft = {
+    speedboat: createMarinaCraft("speedboat", mainlandMarina.x, mainlandMarina.z),
+    jet_ski: createMarinaCraft("jet_ski", mainlandMarina.x + 8, mainlandMarina.z + 1)
+  };
+  document.documentElement.dataset.akwantuoWatercraftCount = "2";
+  document.documentElement.dataset.akwantuoWaterRouteWaypointCount = String(AKWAABA_CAY_WATER_ROUTE.length);
+
   const publicTaxiOrigin = { x: WORLD_CONFIG.spawn.x + 2.8, y: 0, z: WORLD_CONFIG.spawn.z };
   const publicTaxi = createPublicTransportVehicle(scene, "playable-shared-trotro", publicTaxiOrigin);
   let publicTaxiState: RoadVehicleDynamicsState = { x: publicTaxiOrigin.x, z: publicTaxiOrigin.z, headingRadians: Math.PI, speedMps: 0 };
@@ -695,6 +800,11 @@ async function start(): Promise<void> {
     x: vehicleOrigin.x, z: vehicleOrigin.z, headingRadians: 0, speedMps: 0
   };
   let interactionState: VehicleInteractionState = { mode: "on_foot" };
+  let watercraftMode = false;
+  let activeWatercraftKind: WatercraftKind | null = null;
+  let watercraftState: WatercraftDynamicsState = {
+    x: mainlandMarina.x, z: mainlandMarina.z, headingRadians: Math.atan2(4445, -1100), speedMps: 0
+  };
   const interiorWindowAnchor = new TransformNode("starter-saloon-interior-camera-anchor", scene);
   interiorWindowAnchor.position.set(0, 1.48, 0.22);
   interiorWindowAnchor.parent = vehicleRig.root;
