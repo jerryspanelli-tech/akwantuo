@@ -30,7 +30,7 @@ const FIXTURE_COLOURS: Record<InteriorFixtureType, string> = {
   stage: "#202d39",
   runway: "#d9d9d3",
   audience_seating: "#8d3d36",
-  screen: "#172a38"
+  screen: "#172a38",\n  refrigerator: "#d7e1df",\n  snack_rack: "#a47a4f",\n  shopkeeper: "#385e59"
 };
 
 function createMaterial(scene: Scene, id: string, colour: string): StandardMaterial {
@@ -110,9 +110,9 @@ export function createInteriorRooms(scene: Scene): readonly InteriorRoomInstance
       const scale = fixture.scale;
       const isSeat = fixture.type === "chair" || fixture.type === "sofa";
       const isBed = fixture.type === "bed" || fixture.type === "medical_bed";
-      const width = fixture.type === "stage" ? 14 : fixture.type === "runway" ? 3.2 : fixture.type === "screen" ? 12 : fixture.type === "audience_seating" ? 2.1 : fixture.type === "counter" || fixture.type === "desk" || fixture.type === "tool_bench" ? 2.1 : isBed ? 2.2 : isSeat ? 0.9 : 1.2;
-      const height = fixture.type === "stage" ? 0.65 : fixture.type === "runway" ? 0.18 : fixture.type === "screen" ? 5.5 : fixture.type === "audience_seating" ? 0.95 : fixture.type === "shelf" ? 1.9 : fixture.type === "mirror" ? 1.7 : isSeat ? 0.9 : isBed ? 0.55 : 0.95;
-      const depth = fixture.type === "stage" ? 4.5 : fixture.type === "runway" ? 13 : fixture.type === "screen" ? 0.35 : fixture.type === "audience_seating" ? 1.6 : isBed ? 1.9 : fixture.type === "shelf" ? 0.55 : 0.85;
+      const width = fixture.type === "stage" ? 14 : fixture.type === "runway" ? 3.2 : fixture.type === "screen" ? 12 : fixture.type === "audience_seating" ? 2.1 : fixture.type === "counter" || fixture.type === "desk" || fixture.type === "tool_bench" ? 2.1 : fixture.type === "refrigerator" ? 2.25 : fixture.type === "snack_rack" ? 1.25 : fixture.type === "shopkeeper" ? 0.72 : isBed ? 2.2 : isSeat ? 0.9 : 1.2;
+      const height = fixture.type === "stage" ? 0.65 : fixture.type === "runway" ? 0.18 : fixture.type === "screen" ? 5.5 : fixture.type === "audience_seating" ? 0.95 : fixture.type === "shelf" || fixture.type === "snack_rack" ? 1.9 : fixture.type === "refrigerator" ? 2.35 : fixture.type === "shopkeeper" ? 1.25 : fixture.type === "mirror" ? 1.7 : isSeat ? 0.9 : isBed ? 0.55 : 0.95;
+      const depth = fixture.type === "stage" ? 4.5 : fixture.type === "runway" ? 13 : fixture.type === "screen" ? 0.35 : fixture.type === "audience_seating" ? 1.6 : isBed ? 1.9 : fixture.type === "shelf" || fixture.type === "snack_rack" ? 0.62 : fixture.type === "refrigerator" ? 0.9 : fixture.type === "shopkeeper" ? 0.55 : 0.85;
       const mesh = MeshBuilder.CreateBox("interior-fixture-" + blueprint.id + "-" + fixtureIndex, {
         width: width * scale, height: height * scale, depth: depth * scale
       }, scene);
