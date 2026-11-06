@@ -52,7 +52,7 @@ export const GREATER_ACCRA_STATION_INTERCHANGES: readonly StationInterchangeServ
         pedestrian: "Pedestrian access",
         bicycle: "Bicycle access and parking"
       } as const)[mode],
-      operation: (mode === "private_dropoff" || mode === "ride_hailing" ? "both" : "both") as StationInterchangeOperation,
+      operation: "both" as StationInterchangeOperation,
       accessPrinciples: COMMON_ACCESS_PRINCIPLES,
       status: "planned" as const,
       designNote: `Provide a legible ${mode.replaceAll("_", " ")} connection without allowing queues to block the station entrance or through traffic. Exact capacity and placement require a station-specific site plan.`
