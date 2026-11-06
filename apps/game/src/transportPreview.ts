@@ -17,6 +17,20 @@ const errorPanel = document.querySelector<HTMLElement>("#station-preview-error")
 if (!canvas) throw new Error("Transport preview canvas was not found.");
 
 try {
+  // Preview-start smoke checks keep candidate-only Circle/Odaw out of live
+  // service stops and reject impossible train states before rendering.
+  const temaService = createRailServiceConfig("achimota-to-tema");
+  const accraService = createRailServiceConfig("accra-odaw-achimota");
+  if (temaService.stops.length !== 1 || temaService.stops[0]?.id !== "tema-rail-station" ||
+      accraService.stops.some((stop) => stop.id === "odaw-rail-stop")) {
+    throw new Error("Rail service station-status validation failed.");
+  }
+  const initialRailState = createRailTrainOperationState();
+  if (!isRailTrainOperationStateValid(temaService, initialRailState) ||
+      isRailTrainOperationStateValid(temaService, { ...initialRailState, distanceM: -1 })) {
+    throw new Error("Rail operation state validation failed.");
+  }
+
   const engine = new Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true }, true);
   const scene = new Scene(engine);
   scene.clearColor = new Color4(0.58, 0.69, 0.75, 1);
