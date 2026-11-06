@@ -1,3 +1,4 @@
+import { isPedestrianCrossingLayoutValid } from "./pedestrianCrossingGeometry";
 import { getTrafficSignalState, isTrafficSignalPlanValid, mayProceedOnTrafficSignal } from "./trafficSignals";
 import {
   advanceRoadVehicleDynamics,
@@ -115,6 +116,17 @@ export function runTransportSmokeChecks(): void {
   assert(stoppedVehicle.speedMps === 0, "service brake can bring a low-speed vehicle to a stop");
   expectThrow(() => advanceRoadVehicleDynamics(dynamicsConfig, initialVehicle,
     { throttle: 2, brake: 0, steering: 0 }, 0.1), "invalid road vehicle input is rejected");
+
+  const crossingLayout = {
+    id: "smoke-crossing", centre: { x: 0, z: 0 }, acrossDirection: { x: 1, z: 0 },
+    crossingWidthM: 8, crossingDepthM: 4, stripeCount: 8, stripeWidthM: 0.65,
+    tactilePavingDepthM: 0.8, status: "planned" as const
+  };
+  assert(isPedestrianCrossingLayoutValid(crossingLayout), "pedestrian crossing layout validates");
+  assert(!isPedestrianCrossingLayoutValid({ ...crossingLayout, acrossDirection: { x: 2, z: 0 } }),
+    "non-unit crossing direction is rejected");
+  assert(!isPedestrianCrossingLayoutValid({ ...crossingLayout, stripeCount: 20 }),
+    "crosswalk stripes cannot exceed the available crossing width");
 
   const signalPlan = { id: "smoke-signal", greenSeconds: 20, amberSeconds: 3, redSeconds: 25, offsetSeconds: 0, status: "planned" as const };
   assert(isTrafficSignalPlanValid(signalPlan), "traffic signal plan validates");
