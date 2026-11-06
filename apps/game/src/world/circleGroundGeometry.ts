@@ -132,10 +132,11 @@ export function createCircleGroundGeometry(
       scene
     );
     road.rotation.y = bearing;
+    const roadCentreDistance = options.outerRadiusM + approach.roadLengthM / 2;
     road.position.set(
-      options.centerX + directionX * approach.roadLengthM / 2,
+      options.centerX + directionX * roadCentreDistance,
       options.groundElevationM + 0.015,
-      options.centerZ + directionZ * approach.roadLengthM / 2
+      options.centerZ + directionZ * roadCentreDistance
     );
     markStatic(road, asphalt);
     return road;
