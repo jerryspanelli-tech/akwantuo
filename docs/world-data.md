@@ -616,3 +616,10 @@ The rules deliberately do not assign numerical speed limits or assume that a roa
 The generic transport preview now includes a sheltered pedestrian walkway linking the station entrance to the interchange island. The parked trotro, city bus, taxi and ride-hailing placeholders have clearer low-poly silhouettes with window bands, windscreens, wheels and front lamps; the taxi also has a roof sign. These are still temporary visual placeholders, not final Ghanaian vehicle assets.
 
 The screenshot workflow now also runs when the station-access, station-interchange, rail-track, road-vehicle or traffic-rule foundations change. It verifies the TypeScript check and production build before capturing the 1440 × 1000 Chromium preview and uploading the screenshot plus a scope report. The workflow remains a developer validation tool and does not publish the game.
+
+
+## Commuter train visual prototype
+
+`apps/game/src/world/railTrainGeometry.ts` adds a reusable low-poly commuter-train visual for the ultra-modern station developer preview. It creates passenger-car bodies, side windows, a leading cab windscreen, roof panels, warm exterior trim, bogie frames, wheels and headlights. The preview currently displays a two-car static train alongside the generic station platform.
+
+This is presentation geometry only. It is not a final Ghana Railways rolling-stock model, does not represent a verified operator or service livery, and has no interior seating, opening doors, passenger boarding, traction, braking, rail-contact physics, signalling, sound or train AI. Car dimensions and placement are provisional game-design values; actual rolling-stock dimensions and station clearances require verified railway references. The train remains in the standalone developer preview and is not integrated into the playable Greater Accra world.
