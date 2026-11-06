@@ -279,6 +279,7 @@ async function start(): Promise<void> {
   document.documentElement.dataset.playableRailRoutes = String(greaterAccraTransportReport.railRouteCount);
   document.documentElement.dataset.playableRailStations = String(greaterAccraTransportReport.plannedStationAnchorCount);
   document.documentElement.dataset.playableCircleStructures = String(greaterAccraTransportReport.circleElevatedStructureCount);
+  document.documentElement.dataset.playableRailRoadCrossingCandidates = String(greaterAccraTransportReport.railRoadCrossingCandidateCount);
   const playableRailDemo = createPlayableRailDemo(scene);
   const greaterAccraMappedRailService = createGreaterAccraMappedRailService(scene);
   document.documentElement.dataset.playableMappedRailService = "true";
