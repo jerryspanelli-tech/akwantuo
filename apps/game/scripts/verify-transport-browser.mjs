@@ -22,7 +22,30 @@ try {
     const status = await page.locator("#boot-status").textContent();
     if (!status?.includes("Your world is ready")) failures.push(target.name + ": startup status was " + status);
     console.log(target.name + ": startup ready");
-    await page.waitForFunction(() => document.querySelector("#boot-screen")?.hasAttribute("hidden") === true, { timeout: 10000 });
+    try {
+      await page.waitForFunction(() => document.querySelector("#boot-screen")?.hasAttribute("hidden") === true, { timeout: 10000 });
+    } catch (error) {
+      const startupDom = await page.evaluate(() => {
+        const boot = document.querySelector("#boot-screen");
+        const shell = document.querySelector("#game-shell");
+        const menu = document.querySelector("#main-menu");
+        return {
+          status: document.querySelector("#boot-status")?.textContent,
+          bootExists: !!boot,
+          bootHiddenProperty: boot instanceof HTMLElement ? boot.hidden : null,
+          bootHasHiddenAttribute: boot?.hasAttribute("hidden") ?? false,
+          bootClass: boot?.className,
+          bootDisplay: boot instanceof HTMLElement ? getComputedStyle(boot).display : null,
+          shellExists: !!shell,
+          shellHiddenProperty: shell instanceof HTMLElement ? shell.hidden : null,
+          shellClass: shell?.className,
+          menuDisplay: menu instanceof HTMLElement ? getComputedStyle(menu).display : null,
+          menuBounds: menu?.getBoundingClientRect().toJSON()
+        };
+      });
+      console.error(target.name + ": boot handoff diagnostic " + JSON.stringify(startupDom));
+      throw error;
+    }
     await page.locator("#main-menu").waitFor({ state: "visible", timeout: 10000 });
     await page.locator("#play-button").waitFor({ state: "visible", timeout: 10000 });
     await page.locator("#play-button").click({ timeout: 10000 });
