@@ -9,7 +9,8 @@ import { createStationInterchangeGeometry } from "./world/stationInterchangeGeom
 import { createStationPlatformAccessGeometry } from "./world/railStationAccessGeometry";
 import { createRailTrainGeometry } from "./world/railTrainGeometry";
 import { createRailTrainRig } from "./world/railTrainRig";
-import { advanceRailTrain, createRailTrainOperationState } from "./world/railTrainOperations";
+import { advanceRailTrain, createRailTrainOperationState, isRailTrainOperationStateValid } from "./world/railTrainOperations";
+import { createRailServiceConfig } from "./world/railService";
 
 const canvas = document.querySelector<HTMLCanvasElement>("#station-preview-canvas");
 const errorPanel = document.querySelector<HTMLElement>("#station-preview-error");
