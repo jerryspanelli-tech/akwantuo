@@ -49,6 +49,7 @@ try {
   const light = new HemisphericLight("map-preview-light", new Vector3(0, 1, 0), scene);
   light.intensity = 1.05;
 
+  if (status) status.textContent = "Preparing coastline and terrain…";
   const land = MeshBuilder.CreateGround("greater-accra-land", {
     width: GREATER_ACCRA_MAP_EXTENT.widthM,
     height: GREATER_ACCRA_MAP_EXTENT.depthM,
@@ -87,8 +88,10 @@ try {
   coast.color = new Color3(0.86, 0.83, 0.68);
   coast.isPickable = false;
 
+  if (status) status.textContent = "Generating Greater Accra road corridors…";
   const roadMeshes = createGreaterAccraRoadGeometry(scene, { sampleSpacingM: 45 });
   const markingMeshes = createGreaterAccraRoadMarkings(scene, { sampleSpacingM: 22 });
+  if (status) status.textContent = "Generating Circle multi-level interchange…";
   const circleGeometry = createCircleInterchangeGeometry(scene);
   const junctionMaterial = new StandardMaterial("junction-reservation-material", scene);
   junctionMaterial.diffuseColor = new Color3(0.78, 0.59, 0.28);
@@ -108,6 +111,7 @@ try {
     reservation.isPickable = false;
   }
 
+  if (status) status.textContent = "Placing district anchors and finalising map…";
   const anchorMaterial = new StandardMaterial("district-anchor-material", scene);
   anchorMaterial.diffuseColor = new Color3(0.83, 0.76, 0.57);
   for (const anchor of GREATER_ACCRA_REGION_ANCHORS) {
