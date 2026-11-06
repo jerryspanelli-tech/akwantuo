@@ -391,8 +391,13 @@ async function start(): Promise<void> {
       event.preventDefault();
     }
     pressedKeys.add(key);
+    document.documentElement.dataset.transportLastKey = key;
+    document.documentElement.dataset.transportHasEnteredWorld = String(hasEnteredWorld);
     if (key === " " && hasEnteredWorld && interactionState.mode === "on_foot") jumpRequested = true;
-    if (key === "e" && hasEnteredWorld) vehicleActionRequested = true;
+    if (key === "e" && hasEnteredWorld) {
+      vehicleActionRequested = true;
+      document.documentElement.dataset.transportActionRequest = "keyboard_e";
+    }
     if (key === "c" && hasEnteredWorld && (interactionState.mode === "inside_vehicle" || passengerState.mode === "riding")) vehicleViewRequested = true;
   });
   window.addEventListener("keyup", (event: KeyboardEvent) => {
