@@ -19,7 +19,8 @@ export type BuildingUse =
   | "apartment"
   | "market_stall"
   | "guest_house"
-  | "clinic";
+  | "clinic"
+  | "event_venue";
 
 export type DistrictBuilding = Readonly<{
   id: string;
@@ -35,6 +36,8 @@ export type DistrictBuilding = Readonly<{
   exteriorStyle: "coastal" | "compound" | "modern" | "market";
   signText?: string;
   interiorId?: string;
+  anchorOffsetX?: number;
+  anchorOffsetZ?: number;
 }>;
 
 type DistrictBuildingTemplate = Omit<DistrictBuilding, "districtId">;
@@ -61,7 +64,8 @@ const BUILDING_TEMPLATES: readonly DistrictBuildingTemplate[] = [
   { id: "market-kiosk", name: "Street Market Kiosk", use: "market_stall", side: "west", x: -23, z: 46, width: 8, depth: 8, floors: 1, exteriorStyle: "market", signText: "KIOSK", interiorId: "shop-small" },
   { id: "northside-workshop", name: "Northside Repairs", use: "workshop", side: "east", x: 23, z: 46, width: 10, depth: 10, floors: 1, exteriorStyle: "market", signText: "REPAIRS", interiorId: "workshop" },
   { id: "heritage-house", name: "Heritage Family House", use: "compound_house", side: "west", x: -18, z: 59, width: 12, depth: 10, floors: 1, exteriorStyle: "compound", interiorId: "compound-house" },
-  { id: "city-view-apartments", name: "City View Apartments", use: "apartment", side: "east", x: 18, z: 59, width: 12, depth: 10, floors: 3, exteriorStyle: "modern", interiorId: "apartment" }
+  { id: "city-view-apartments", name: "City View Apartments", use: "apartment", side: "east", x: 18, z: 59, width: 12, depth: 10, floors: 3, exteriorStyle: "modern", interiorId: "apartment" },
+  { id: "akwaaba-creative-arts-centre", name: "Akwaaba Creative Arts & Events Centre", use: "event_venue", side: "east", x: 70, z: 100, width: 68, depth: 58, floors: 2, exteriorStyle: "modern", signText: "AKWAABA CREATIVE ARTS", interiorId: "creative-arts-centre", anchorOffsetX: 70, anchorOffsetZ: 100 }
 ] as const;
 
 /**
@@ -75,7 +79,7 @@ const BUILDING_DISTRICTS = [
 ] as const;
 
 export const DISTRICT_BUILDINGS: readonly DistrictBuilding[] = BUILDING_TEMPLATES.map((template, index) => {
-  const districtIndex = index < 20 ? Math.floor(index / 2) : 10 + (index - 20);
+  const districtIndex = index < 20 ? Math.floor(index / 2) : index === 20 ? 10 : index === 21 ? 11 : 3;
   const districtId = BUILDING_DISTRICTS[districtIndex];
   const anchor = GREATER_ACCRA_REGION_ANCHORS.find((item) => item.regionId === districtId);
   if (!anchor) throw new Error("Missing Greater Accra building anchor for " + districtId);
@@ -84,8 +88,8 @@ export const DISTRICT_BUILDINGS: readonly DistrictBuilding[] = BUILDING_TEMPLATE
     ...template,
     districtId,
     side,
-    x: anchor.x + (side === "west" ? -(template.width / 2 + 6) : template.width / 2 + 6),
-    z: anchor.z
+    x: anchor.x + (template.anchorOffsetX ?? (side === "west" ? -(template.width / 2 + 6) : template.width / 2 + 6)),
+    z: anchor.z + (template.anchorOffsetZ ?? 0)
   };
 });
 
@@ -255,6 +259,39 @@ export function createGhanaianStreetBuildings(scene: Scene): {
       gate.isPickable = false;
     }
 
+    if (building.use === "event_venue") {
+      const domeMaterial = material(scene, "creative-centre-dome", "#263d49");
+      const glassMaterial = material(scene, "creative-centre-glass", "#5b9aa5");
+      const goldMaterial = material(scene, "creative-centre-gold", "#d4a84f");
+      const dome = MeshBuilder.CreateSphere("creative-centre-roof-dome", { diameter: 1, segments: 32 }, scene);
+      dome.scaling.set(building.width * 0.52, 15, building.depth * 0.52);
+      dome.position.set(building.x, 12.2, building.z);
+      dome.material = domeMaterial;
+      dome.isPickable = false;
+      const glassFront = MeshBuilder.CreateBox("creative-centre-glass-front", { width: building.width * 0.72, height: 7.2, depth: 0.42 }, scene);
+      glassFront.position.set(building.x, 4.1, building.z + building.depth / 2 + 0.24);
+      glassFront.material = glassMaterial;
+      glassFront.isPickable = false;
+      const entranceCanopy = MeshBuilder.CreateBox("creative-centre-entry-canopy", { width: 22, height: 0.65, depth: 7 }, scene);
+      entranceCanopy.position.set(building.x, 7.2, building.z + building.depth / 2 + 3.2);
+      entranceCanopy.material = goldMaterial;
+      entranceCanopy.isPickable = false;
+      for (const side of [-1, 1]) {
+        const column = MeshBuilder.CreateCylinder("creative-centre-entry-column-" + side, { height: 7, diameter: 0.8, tessellation: 12 }, scene);
+        column.position.set(building.x + side * 10, 3.5, building.z + building.depth / 2 + 5.5);
+        column.material = goldMaterial;
+        column.isPickable = false;
+        const ledPanel = MeshBuilder.CreateBox("creative-centre-led-panel-" + side, { width: 1.1, height: 5.5, depth: 0.25 }, scene);
+        ledPanel.position.set(building.x + side * (building.width / 2 - 1), 5.4, building.z + building.depth / 2 + 0.5);
+        ledPanel.material = glassMaterial;
+        ledPanel.isPickable = false;
+      }
+      const forecourt = MeshBuilder.CreateGround("creative-centre-forecourt", { width: building.width + 30, height: 22 }, scene);
+      forecourt.position.set(building.x, 0.035, building.z + building.depth / 2 + 14);
+      forecourt.material = material(scene, "creative-centre-forecourt", "#8d8d82");
+      forecourt.isPickable = false;
+    }
+
     solidAreas.push({
       x: building.x,
       z: building.z,
@@ -282,6 +319,6 @@ export function isBuildingCatalogueValid(): boolean {
         building.floors >= 1 && building.floors <= 5 &&
         (building.interiorId === undefined || building.interiorId.length > 0);
     }) &&
-    ["provisions", "pharmacy", "salon", "food", "workshop", "office", "compound_house", "apartment", "market_stall", "guest_house", "clinic"]
+    ["provisions", "pharmacy", "salon", "food", "workshop", "office", "compound_house", "apartment", "market_stall", "guest_house", "clinic", "event_venue"]
       .every((use) => DISTRICT_BUILDINGS.some((building) => building.use === use));
 }
