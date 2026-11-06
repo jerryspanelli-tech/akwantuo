@@ -551,14 +551,15 @@ async function start(): Promise<void> {
     document.querySelector<HTMLButtonElement>("#vehicle-brake-button")?.addEventListener(eventName, () => { vehicleBrake = false; });
   }
 
-  engine.runRenderLoop(render);
-  window.addEventListener("resize", () => engine.resize());
-
+  // Reveal the game shell before starting the continuous render loop. This
+  // keeps the boot-to-menu handoff independent of frame scheduling on slower devices.
   bootStatus.textContent = "Your world is ready.";
-  await new Promise<void>((resolve) => window.setTimeout(resolve, 450));
   bootScreen.classList.add("is-hidden");
   gameShell.classList.remove("is-hidden");
   engine.resize();
+
+  engine.runRenderLoop(render);
+  window.addEventListener("resize", () => engine.resize());
 
   const openCharacterCreator = (): void => {
     if (!characterPanel || !characterForm) return;
