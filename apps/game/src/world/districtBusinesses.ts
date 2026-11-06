@@ -9,7 +9,8 @@ export type BusinessCategory =
   | "professional_office"
   | "market_retail"
   | "hospitality"
-  | "health_service";
+  | "health_service"
+  | "creative_venue";
 
 export type DistrictBusiness = Readonly<{
   id: string;
@@ -65,6 +66,10 @@ const BUSINESS_PROFILES: Record<BuildingUse, BusinessProfile | null> = {
   guest_house: {
     category: "hospitality", services: ["guest rooms", "check-in", "guest assistance"],
     staffRole: "guest-house attendant", opensAt: "00:00", closesAt: "23:59", openDays: DAILY, access: "public"
+  },
+  event_venue: {
+    category: "creative_venue", services: ["fashion and modelling runway shows", "modelling auditions and casting", "live music concerts", "dance and theatre performances", "creative exhibitions", "rehearsal and event hire"],
+    staffRole: "events coordinator", opensAt: "09:00", closesAt: "23:00", openDays: DAILY, access: "public"
   },
   clinic: {
     category: "health_service", services: ["basic consultation", "first aid", "patient reception"],
