@@ -24,7 +24,13 @@
 - The playable saloon now has an in-cabin window view, interior free-look and exterior follow camera modes, cycled with C / the on-screen VIEW control. Camera anchors follow the vehicle rig.
 - This first playable vehicle slice is local-only and uses the prototype kinematic model; it is not yet a complete vehicle fleet or network-authoritative system.
 
-### Road traffic controls\n- Added a deterministic traffic-signal phase model with configurable green, amber and red durations plus a simulation-time offset.\n- Smoke checks cover phase boundaries, cycle wrap, negative time offsets, invalid time rejection and protected-movement gating.\n- This is a reusable simulation foundation only: no signal heads are placed in the playable map, no junction conflict groups or signal timings have been approved, and it does not yet control traffic AI or player movement.\n\n### Public transport
+### Road traffic controls
+- Added a reusable zebra-crossing and tactile-paving geometry builder. Its layout validator checks unit direction, crossing dimensions, stripe count/width and tactile-paving depth; startup smoke checks cover valid layouts and reject invalid geometry inputs. No real Greater Accra crossing is placed yet because exact junction endpoints and pedestrian desire lines still need map integration and review.
+- Added a deterministic traffic-signal phase model with configurable green, amber and red durations plus a simulation-time offset.
+- Smoke checks cover phase boundaries, cycle wrap, negative time offsets, invalid time rejection and protected-movement gating.
+- This is a reusable simulation foundation only: no signal heads are placed in the playable map, no junction conflict groups or signal timings have been approved, and it does not yet control traffic AI or player movement.
+
+### Public transport
 - Passenger camera modes: interior window, interior free-look and exterior follow.
 - Passenger vehicle profiles for trotro, city bus, coach and taxi.
 - New boarding/alighting state machine checks stopped vehicle, open boarding/alighting, available seats and vehicle identity.
