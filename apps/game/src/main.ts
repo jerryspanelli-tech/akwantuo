@@ -986,20 +986,25 @@ async function start(): Promise<void> {
         if (watercraftMode && activeWatercraftKind) {
           const mainlandDistance = Math.hypot(watercraftState.x - mainlandMarina.x, watercraftState.z - mainlandMarina.z);
           const islandDistance = Math.hypot(watercraftState.x - islandMarina.x, watercraftState.z - islandMarina.z);
-          const atDock = mainlandDistance <= 38 || islandDistance <= 45;
+          const atMainlandDock = mainlandDistance <= 38;
+          const atIslandDock = islandDistance <= 45;
           if (Math.abs(watercraftState.speedMps) > 0.5) {
             showNotice("Slow down and stop at the marina before leaving your watercraft.");
-          } else if (!atDock) {
+          } else if (!atMainlandDock && !atIslandDock) {
             showNotice("You are offshore. Follow the marked buoys to Labadi Marina or Akwaaba Cay to disembark safely.");
+          } else if (atIslandDock && !ownedGameAssetIds.has("akwaaba-cay")) {
+            showNotice("Akwaaba Cay is private property. You can view the listing at the district office, but only its registered owner may come ashore.");
           } else {
-            const exitPoint = mainlandDistance <= islandDistance ? mainlandMarina : islandMarina;
-            player.root.position.set(exitPoint.x + 3, 0, exitPoint.z + (exitPoint === mainlandMarina ? 20 : 10));
+            const exitPoint = atMainlandDock ? mainlandMarina : islandMarina;
+            player.root.position.set(exitPoint.x + 3, 0, exitPoint.z + (atMainlandDock ? 20 : 10));
             player.root.setEnabled(true);
             watercraftMode = false;
             activeWatercraftKind = null;
             passengerCameraRig?.dispose();
             passengerCameraRig = null;
-            showNotice("You are safely ashore. Your watercraft remains at the dock.");
+            showNotice(atMainlandDock
+              ? "You are back at Labadi Marina. Your watercraft remains at the dock."
+              : "Welcome to Akwaaba Cay. Your ownership has been verified against your AKWANTUO account.");
           }
         } else if (activeInterior) {
           const room = interiorRooms.find((item) => item.id === activeInterior?.roomId);
