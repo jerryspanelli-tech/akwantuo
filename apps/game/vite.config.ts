@@ -15,7 +15,8 @@ export default defineConfig({
         main: "index.html",
         circlePreview: "circle-preview.html",
         stationPreview: "station-preview.html",
-        transportPreview: "transport-preview.html"
+        transportPreview: "transport-preview.html",
+        greaterAccraTransportPreview: "greater-accra-transport-preview.html"
       }
     }
   }
