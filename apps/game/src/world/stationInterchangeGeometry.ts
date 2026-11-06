@@ -125,13 +125,62 @@ export function createStationInterchangeGeometry(
       : bay.kind === "taxi" ? new Color3(0.82, 0.73, 0.2)
       : bay.kind === "ride_hailing" ? new Color3(0.2, 0.48, 0.36)
       : new Color3(0.68, 0.7, 0.72);
+    const vehicleWidth = Math.min(bay.widthM * 0.72, bay.kind === "city_bus" ? 3 : 2.2);
+    const vehicleHeight = bay.kind === "city_bus" ? 2.8 : bay.kind === "trotro" ? 2.1 : 1.25;
+    const vehicleLength = bay.kind === "city_bus" ? 9 : bay.kind === "trotro" ? 5.2 : 4.2;
+    const vehicleY = vehicleHeight / 2;
+    const vehicleZ = bay.centerZ - 1;
+    const vehicleMeshes: Mesh[] = [];
     const body = finish(MeshBuilder.CreateBox(`interchange-vehicle-${bay.id}`, {
-      width: Math.min(bay.widthM * 0.72, bay.kind === "city_bus" ? 3 : 2.2),
-      height: bay.kind === "city_bus" ? 2.8 : bay.kind === "trotro" ? 2.1 : 1.25,
-      depth: bay.kind === "city_bus" ? 9 : bay.kind === "trotro" ? 5.2 : 4.2
+      width: vehicleWidth, height: vehicleHeight, depth: vehicleLength
     }, scene), material(scene, `vehicle-${bay.kind}`, bodyColor));
-    body.position.set(bay.centerX, bay.kind === "city_bus" ? 1.45 : bay.kind === "trotro" ? 1.1 : 0.72, bay.centerZ - 1);
-    vehicles.push(body);
+    body.position.set(bay.centerX, vehicleY, vehicleZ);
+    vehicleMeshes.push(body);
+
+    // Low-poly window band and windscreen make each transport placeholder readable.
+    const windowBand = finish(MeshBuilder.CreateBox(`interchange-vehicle-windows-${bay.id}`, {
+      width: vehicleWidth * 0.91, height: vehicleHeight * 0.25, depth: vehicleLength * 0.72
+    }, scene), glassMat);
+    windowBand.position.set(bay.centerX, vehicleY + vehicleHeight * 0.2, vehicleZ);
+    vehicleMeshes.push(windowBand);
+    const windscreen = finish(MeshBuilder.CreateBox(`interchange-vehicle-windscreen-${bay.id}`, {
+      width: vehicleWidth * 0.82, height: vehicleHeight * 0.3, depth: 0.12
+    }, scene), glassMat);
+    windscreen.position.set(bay.centerX, vehicleY + vehicleHeight * 0.18, vehicleZ - vehicleLength / 2 - 0.035);
+    vehicleMeshes.push(windscreen);
+
+    const wheelMaterial = material(scene, "tyre", new Color3(0.055, 0.06, 0.065));
+    const wheelRadius = bay.kind === "city_bus" ? 0.52 : 0.4;
+    for (const side of [-1, 1]) {
+      for (const axle of [-1, 1]) {
+        const wheel = finish(MeshBuilder.CreateCylinder(`interchange-vehicle-wheel-${bay.id}-${side}-${axle}`, {
+          diameter: wheelRadius * 2, height: 0.28, tessellation: 10
+        }, scene), wheelMaterial);
+        wheel.rotation.z = Math.PI / 2;
+        wheel.position.set(
+          bay.centerX + side * (vehicleWidth / 2 + 0.08),
+          wheelRadius,
+          vehicleZ + axle * vehicleLength * 0.31
+        );
+        vehicleMeshes.push(wheel);
+      }
+    }
+    const lampMaterial = material(scene, "headlamp", new Color3(0.95, 0.88, 0.63));
+    for (const side of [-1, 1]) {
+      const lamp = finish(MeshBuilder.CreateBox(`interchange-vehicle-headlamp-${bay.id}-${side}`, {
+        width: 0.28, height: 0.16, depth: 0.08
+      }, scene), lampMaterial);
+      lamp.position.set(bay.centerX + side * vehicleWidth * 0.31, vehicleY - vehicleHeight * 0.2, vehicleZ - vehicleLength / 2 - 0.08);
+      vehicleMeshes.push(lamp);
+    }
+    if (bay.kind === "taxi") {
+      const roofSign = finish(MeshBuilder.CreateBox(`interchange-taxi-roof-sign-${bay.id}`, {
+        width: 0.75, height: 0.2, depth: 0.28
+      }, scene), paintMat);
+      roofSign.position.set(bay.centerX, vehicleHeight + 0.08, vehicleZ);
+      vehicleMeshes.push(roofSign);
+    }
+    vehicles.push(...vehicleMeshes);
   }
 
   const crossing = finish(MeshBuilder.CreateGround("interchange-pedestrian-crossing", {
