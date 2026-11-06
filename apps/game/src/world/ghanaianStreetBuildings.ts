@@ -68,7 +68,10 @@ const PALETTES = {
 } as const;
 
 function material(scene: Scene, name: string, hex: string): StandardMaterial {
-  const result = new StandardMaterial(name, scene);
+  const sharedName = "building-shared-material-" + hex;
+  const existing = scene.getMaterialByName(sharedName);
+  if (existing instanceof StandardMaterial) return existing;
+  const result = new StandardMaterial(sharedName, scene);
   result.diffuseColor = Color3.FromHexString(hex);
   result.specularColor = new Color3(0.12, 0.12, 0.12);
   return result;
