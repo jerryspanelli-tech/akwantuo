@@ -18,6 +18,7 @@
 - Keyboard driving plus mobile touch buttons for accelerate, reverse, brake and steering in the standalone transport preview.
 - New vehicle interaction state machine validates proximity, seat availability, vehicle availability, stopped speed and safe exit.
 - The starter saloon is now spawned in the main playable scene. The player can enter with E / the on-screen action control, drive with WASD or the touch joystick, brake, and exit only after stopping in a safe space.
+- The playable saloon now has an in-cabin window view, interior free-look and exterior follow camera modes, cycled with C / the on-screen VIEW control. Camera anchors follow the vehicle rig.
 - This first playable vehicle slice is local-only and uses the prototype kinematic model; it is not yet a complete vehicle fleet or network-authoritative system.
 
 ### Public transport
@@ -38,12 +39,12 @@ These are not being represented as finished systems:
 - Realistic final 3D assets for every Ghanaian vehicle class, interiors, articulated trailers and motorcycles.
 - Full collision, suspension, tyre grip, wheel steering/rotation, vehicle damage, fuel, ownership, insurance, licences or garages.
 - AI traffic, traffic-light phases, lane-level navigation, parking enforcement, emergency dispatch and road safety simulation.
-- Actual in-world enter/exit prompts, seat animations, passenger character placement and synchronized passenger cameras.
+- Driver entry/exit is connected for the starter saloon, but seat animations and visible driver placement are not yet implemented. The three camera modes are connected to that vehicle only; public-transport passenger seating/cameras remain unintegrated.
 - Real public-transport route/stop placements, timetables, live vehicles, conductor/mate interaction, stop announcements, fare UI and route destination boards.
 - Rail signalling, block occupancy, switches, dispatch, timetable conflicts, safety logic, train doors, passenger interiors and operational railway certification.
 - Multiplayer/server-authoritative vehicle ownership, seat reservations, fare transactions, economy integration, anti-cheat and persistence.
 - Integration of the preview models and transport controllers into the playable Greater Accra map.
-- Main-game mobile driving controls are now connected for the starter saloon; other vehicle classes and passenger journeys are not yet connected.
+- Main-game mobile driving and camera controls are now connected for the starter saloon; other vehicle classes and public-transport passenger journeys are not yet connected.
 
 ## Remaining work before this stage can close
 1. Complete and approve Greater Accra road/rail geometry and transport stop placements.
