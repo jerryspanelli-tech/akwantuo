@@ -413,9 +413,9 @@ async function start(): Promise<void> {
             railPassengerCameraRig = null;
             player.root.setEnabled(true);
             player.root.position.set(
-              mappedRailFrame.position.x + Math.cos(mappedRailFrame.headingRadians) * 8,
+              mappedRailFrame.position.x - Math.cos(mappedRailFrame.headingRadians) * 8,
               0,
-              mappedRailFrame.position.z - Math.sin(mappedRailFrame.headingRadians) * 8
+              mappedRailFrame.position.z + Math.sin(mappedRailFrame.headingRadians) * 8
             );
             showNotice("You alighted at Tema. No preview fare was charged.");
           } else {
