@@ -32,11 +32,11 @@ export const AKWANTUO_RETAIL_PRODUCTS: readonly RetailProduct[] = [
 ] as const;
 
 export function isAkwantuoRetailCatalogueValid(): boolean {
-  const ids = new Set(AKWANTUO_RETAIL_PRODUCTS.map((item) => item.id));
+  const ids = new Set(AKWANTUO_RETAIL_PRODUCTS.map((item) => item.id));\n  const realBrandName = /\\b(?:sprite|fanta|coke|coca[\\s-]?cola|pepsi|7[\\s-]?up|red[\\s-]?bull)\\b/i;
   return ids.size === AKWANTUO_RETAIL_PRODUCTS.length &&
     AKWANTUO_RETAIL_PRODUCTS.length >= 15 &&
     AKWANTUO_RETAIL_PRODUCTS.every((item) =>
-      item.id.length > 0 && item.name.length > 0 &&
+      item.id.length > 0 && item.name.length > 0 && !realBrandName.test(item.name) &&
       Number.isSafeInteger(item.pricePesewas) && item.pricePesewas > 0 &&
       Number.isInteger(item.openingStock) && item.openingStock > 0
     );
