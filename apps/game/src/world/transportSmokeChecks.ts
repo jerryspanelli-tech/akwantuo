@@ -31,6 +31,7 @@ import {
 import { createRailServiceConfig, createRailServiceConfigForRouteChain } from "./railService";
 import { deriveRailRoadCrossingCandidates, evaluateRailCrossingSafety, isRailRoadCrossingCatalogueValid } from "./railRoadCrossings";
 import { GREATER_ACCRA_PUBLIC_TRANSPORT_ROUTE_PLANS, isGreaterAccraPublicTransportRouteCatalogueValid } from "./publicTransportRoutes";
+import { isBuildingCatalogueValid } from "./ghanaianStreetBuildings";
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error("Transport smoke check failed: " + message);
@@ -52,6 +53,7 @@ function expectThrow(action: () => unknown, message: string): void {
  * railway certification, or authoritative multiplayer validation.
  */
 export function runTransportSmokeChecks(): void {
+  assert(isBuildingCatalogueValid(), "Ghanaian building catalogue has unique, dimensionally valid entries across every planned building use");
   assert(isGreaterAccraMapLayoutValid(), "Greater Accra map nodes, roads and coastline validate");
   assert(isGreaterAccraRailNetworkValid(), "Greater Accra Cape-gauge rail routes and station nodes validate");
   assert(isGreaterAccraTrackDesignValid(), "Greater Accra rail track design assignments validate");
