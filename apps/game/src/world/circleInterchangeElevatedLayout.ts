@@ -122,7 +122,7 @@ function pathLength(points: readonly ElevatedRoadPoint[]): number {
 
 export type CircleFeoOyeoRampLayout = Readonly<{
   id: string;
-  referenceId: "circle-ramp-down-feo-oye" | "circle-ramp-up-feo-oye";
+  referenceId: "circle-feo-oye-o-ramp-down" | "circle-feo-oye-o-ramp-up";
   lengthM: number;
   deckWidthM: number;
   points: readonly ElevatedRoadPoint[];
@@ -155,8 +155,8 @@ function makeFeoOyeoRamp(
 }
 
 export const CIRCLE_FEO_OYEO_RAMPS: readonly CircleFeoOyeoRampLayout[] = [
-  makeFeoOyeoRamp("circle-feo-oye-ramp-down-3d", "circle-ramp-down-feo-oye", feoOyeoRampDownLength, 185, -160),
-  makeFeoOyeoRamp("circle-feo-oye-ramp-up-3d", "circle-ramp-up-feo-oye", feoOyeoRampUpLength, 170, -178)
+  makeFeoOyeoRamp("circle-feo-oye-ramp-down-3d", "circle-feo-oye-o-ramp-down", feoOyeoRampDownLength, 185, -160),
+  makeFeoOyeoRamp("circle-feo-oye-ramp-up-3d", "circle-feo-oye-o-ramp-up", feoOyeoRampUpLength, 170, -178)
 ] as const;
 
 export function isCircleFeoOyeoRampLayoutValid(): boolean {
