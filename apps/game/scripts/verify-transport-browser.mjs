@@ -31,12 +31,14 @@ try {
       circleStructures: Number(document.documentElement.dataset.playableCircleStructures ?? 0),
       railRoadCrossingCandidates: Number(document.documentElement.dataset.playableRailRoadCrossingCandidates ?? 0),
       publicTransportCorridors: Number(document.documentElement.dataset.playablePublicTransportCorridors ?? 0),
-      mappedRailService: document.documentElement.dataset.playableMappedRailService === "true"
+      mappedRailService: document.documentElement.dataset.playableMappedRailService === "true",
+      mappedRailBoardingOpen: document.documentElement.dataset.playableMappedRailBoardingOpen === "true"
     }));
     if (playableTransport.roadSurfaces < 1 || playableTransport.roadMarkings < 1 ||
         playableTransport.railRoutes < 2 || playableTransport.plannedStations < 3 ||
         playableTransport.circleStructures < 1 || playableTransport.railRoadCrossingCandidates !== 4 ||
-        playableTransport.publicTransportCorridors !== 4 || !playableTransport.mappedRailService) {
+        playableTransport.publicTransportCorridors !== 4 || !playableTransport.mappedRailService ||
+        !playableTransport.mappedRailBoardingOpen) {
       failures.push(target.name + ": Greater Accra transport was not integrated into the playable scene: " +
         JSON.stringify(playableTransport));
     }
