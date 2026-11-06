@@ -248,7 +248,7 @@ async function start(): Promise<void> {
 
   // First real in-world road vehicle: a nearby saloon that can be entered,
   // driven and exited from the playable scene (not only the developer preview).
-  const vehicleOrigin = { x: 2.35, y: 0, z: 5 };
+  const vehicleOrigin = { x: -6, y: 0, z: 5 };
   const vehicleGeometry = createRoadVehicleGeometry(scene, {
     id: "playable-starter-saloon",
     centerX: vehicleOrigin.x,
@@ -386,7 +386,7 @@ async function start(): Promise<void> {
         window.setTimeout(() => notice?.classList.remove("is-visible"), 3000);
       }
 
-      if (interactionState.mode === "inside_vehicle") {
+      if (interactionState.mode === "inside_vehicle" || publicPassengerState.mode === "riding") {
         if (vehicleViewRequested && passengerCameraRig) {
           vehicleViewRequested = false;
           vehicleCameraModeIndex = (vehicleCameraModeIndex + 1) % vehicleCameraModes.length;
@@ -394,34 +394,40 @@ async function start(): Promise<void> {
           showNotice(`Vehicle view: ${vehicleCameraModes[vehicleCameraModeIndex].replaceAll("_", " ")}.`);
           window.setTimeout(() => notice?.classList.remove("is-visible"), 1800);
         }
-        let steering = touchInput.x;
-        let throttle = touchInput.z;
-        if (pressedKeys.has("a") || pressedKeys.has("arrowleft")) steering -= 1;
-        if (pressedKeys.has("d") || pressedKeys.has("arrowright")) steering += 1;
-        if (pressedKeys.has("w") || pressedKeys.has("arrowup")) throttle += 1;
-        if (pressedKeys.has("s") || pressedKeys.has("arrowdown")) throttle -= 1;
-        steering = Math.max(-1, Math.min(1, steering));
-        throttle = Math.max(-1, Math.min(1, throttle));
-        const next = advanceRoadVehicleDynamics({
-          wheelbaseM: 2.65, maximumForwardSpeedMps: 16, maximumReverseSpeedMps: 4,
-          maximumAccelerationMps2: 3.2, serviceBrakingMps2: 7,
-          maximumSteeringAngleRadians: 0.48, rollingDragMps2: 0.45
-        }, vehicleState, {
-          throttle, brake: vehicleBrake || pressedKeys.has(" ") ? 1 : 0, steering
-        }, Math.min(delta, 0.1));
-        const bounded = clampToWorld(next.x, next.z, {
-          minX: WORLD_CONFIG.bounds.minX + 2.5, maxX: WORLD_CONFIG.bounds.maxX - 2.5,
-          minZ: WORLD_CONFIG.bounds.minZ + 2.5, maxZ: WORLD_CONFIG.bounds.maxZ - 2.5
-        });
-        if (!isBlocked(bounded.x, bounded.z, solidAreas, 2.35)) {
-          vehicleState = { ...next, x: bounded.x, z: bounded.z };
+        if (publicPassengerState.mode === "riding") {
+          camera.target = Vector3.Lerp(camera.target, new Vector3(publicTaxiState.x, 1.8, publicTaxiState.z), Math.min(1, delta * 8));
+          camera.alpha = -Math.PI / 2 - publicTaxiState.headingRadians;
+          camera.radius = 9;
         } else {
-          vehicleState = { ...vehicleState, speedMps: 0 };
+          let steering = touchInput.x;
+          let throttle = touchInput.z;
+          if (pressedKeys.has("a") || pressedKeys.has("arrowleft")) steering -= 1;
+          if (pressedKeys.has("d") || pressedKeys.has("arrowright")) steering += 1;
+          if (pressedKeys.has("w") || pressedKeys.has("arrowup")) throttle += 1;
+          if (pressedKeys.has("s") || pressedKeys.has("arrowdown")) throttle -= 1;
+          steering = Math.max(-1, Math.min(1, steering));
+          throttle = Math.max(-1, Math.min(1, throttle));
+          const next = advanceRoadVehicleDynamics({
+            wheelbaseM: 2.65, maximumForwardSpeedMps: 16, maximumReverseSpeedMps: 4,
+            maximumAccelerationMps2: 3.2, serviceBrakingMps2: 7,
+            maximumSteeringAngleRadians: 0.48, rollingDragMps2: 0.45
+          }, vehicleState, {
+            throttle, brake: vehicleBrake || pressedKeys.has(" ") ? 1 : 0, steering
+          }, Math.min(delta, 0.1));
+          const bounded = clampToWorld(next.x, next.z, {
+            minX: WORLD_CONFIG.bounds.minX + 2.5, maxX: WORLD_CONFIG.bounds.maxX - 2.5,
+            minZ: WORLD_CONFIG.bounds.minZ + 2.5, maxZ: WORLD_CONFIG.bounds.maxZ - 2.5
+          });
+          if (!isBlocked(bounded.x, bounded.z, solidAreas, 2.35)) {
+            vehicleState = { ...next, x: bounded.x, z: bounded.z };
+          } else {
+            vehicleState = { ...vehicleState, speedMps: 0 };
+          }
+          vehicleRig.update(vehicleState);
+          camera.target = Vector3.Lerp(camera.target, new Vector3(vehicleState.x, 1.4, vehicleState.z), Math.min(1, delta * 8));
+          camera.alpha = -Math.PI / 2 - vehicleState.headingRadians;
+          camera.radius = 9;
         }
-        vehicleRig.update(vehicleState);
-        camera.target = Vector3.Lerp(camera.target, new Vector3(vehicleState.x, 1.4, vehicleState.z), Math.min(1, delta * 8));
-        camera.alpha = -Math.PI / 2 - vehicleState.headingRadians;
-        camera.radius = 9;
         if (interactButton) interactButton.textContent = publicPassengerState.mode === "riding" ? "ALIGHT" : "EXIT";
         if (jumpButton) jumpButton.classList.add("is-hidden");
         if (vehicleViewButton) vehicleViewButton.classList.remove("is-hidden");
@@ -434,7 +440,7 @@ async function start(): Promise<void> {
       let inputX = interactionState.mode === "on_foot" && publicPassengerState.mode !== "riding" ? touchInput.x : 0;
       let inputZ = interactionState.mode === "on_foot" && publicPassengerState.mode !== "riding" ? touchInput.z : 0;
       if (interactionState.mode === "on_foot" && publicPassengerState.mode !== "riding" && (pressedKeys.has("a") || pressedKeys.has("arrowleft"))) inputX -= 1;
-      if (interactionState.mode === "on_foot" && (pressedKeys.has("d") || pressedKeys.has("arrowright"))) inputX += 1;
+      if (interactionState.mode === "on_foot" && publicPassengerState.mode !== "riding" && (pressedKeys.has("d") || pressedKeys.has("arrowright"))) inputX += 1;
       if (interactionState.mode === "on_foot" && (pressedKeys.has("w") || pressedKeys.has("arrowup"))) inputZ += 1;
       if (interactionState.mode === "on_foot" && (pressedKeys.has("s") || pressedKeys.has("arrowdown"))) inputZ -= 1;
 
