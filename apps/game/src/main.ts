@@ -36,7 +36,7 @@ import { DISTRICT_BUSINESSES } from "./world/districtBusinesses";
 import { INTERIOR_BLUEPRINTS } from "./world/interiorBlueprints";
 import { createInteriorRooms } from "./world/interiorRooms";
 import { runStage6SmokeChecks } from "./world/stage6SmokeChecks";
-import { AKWAABA_VENUE_PROGRAMME, isVenueProgrammeValid } from "./world/venueProgramme";
+import { AKWAABA_VENUE_PROGRAMME, isVenueProgrammeValid } from "./world/venueProgramme";\nimport { AKWANTUO_RETAIL_PRODUCTS, isAkwantuoRetailCatalogueValid } from "./world/retailCatalogue";\nimport { AKWANTUO_PRIVATE_ISLAND, PRIVATE_ISLAND_WATERCRAFT, createAkwantuoPrivateIsland, isPrivateIslandCatalogueValid } from "./world/privateIsland";
 
 const bootScreen = document.querySelector<HTMLElement>("#boot-screen");
 const gameShell = document.querySelector<HTMLElement>("#game-shell");
@@ -303,12 +303,12 @@ async function start(): Promise<void> {
   // Fail early if core fare, boarding, vehicle, or rail-operation contracts regress.
   runTransportSmokeChecks();
   runStage6SmokeChecks();
-  if (!isVenueProgrammeValid()) throw new Error("Akwaaba Creative Arts Centre weekly programme failed validation.");
+  if (!isVenueProgrammeValid()) throw new Error("Akwaaba Creative Arts Centre weekly programme failed validation.");\n  if (!isAkwantuoRetailCatalogueValid()) throw new Error("Akwantuo convenience-store product catalogue failed validation.");\n  if (!isPrivateIslandCatalogueValid()) throw new Error("Akwaaba Cay private-island catalogue failed validation.");
   document.documentElement.dataset.akwantuoBuildingCount = String(DISTRICT_BUILDINGS.length);
   document.documentElement.dataset.akwantuoBuildingDistrictCount = String(new Set(DISTRICT_BUILDINGS.map((building) => building.districtId)).size);
   document.documentElement.dataset.akwantuoPropertyCount = String(DISTRICT_PROPERTIES.length);
   document.documentElement.dataset.akwantuoBusinessCount = String(DISTRICT_BUSINESSES.length);
-  document.documentElement.dataset.akwantuoVenueProgrammeCount = String(AKWAABA_VENUE_PROGRAMME.length);
+  document.documentElement.dataset.akwantuoVenueProgrammeCount = String(AKWAABA_VENUE_PROGRAMME.length);\n  document.documentElement.dataset.akwantuoRetailProductCount = String(AKWANTUO_RETAIL_PRODUCTS.length);\n  document.documentElement.dataset.akwantuoPrivateIslandName = AKWANTUO_PRIVATE_ISLAND.name;\n  document.documentElement.dataset.akwantuoPrivateIslandPrice = String(AKWANTUO_PRIVATE_ISLAND.purchasePricePesewas);\n  document.documentElement.dataset.akwantuoPrivateIslandWatercraftCount = String(PRIVATE_ISLAND_WATERCRAFT.length);
   document.documentElement.dataset.akwantuoInteriorBlueprintCount = String(INTERIOR_BLUEPRINTS.length);
   document.documentElement.dataset.akwantuoStage6Checks = "passed";
   document.documentElement.dataset.akwantuoBuildingInteriorLinkCount = String(DISTRICT_BUILDINGS.filter((building) => building.interiorId).length);
@@ -327,7 +327,7 @@ async function start(): Promise<void> {
   const interiorRooms = createInteriorRooms(scene);
   document.documentElement.dataset.akwantuoInteriorRoomCount = String(interiorRooms.length);
   for (const room of interiorRooms) solidAreas.push(...room.solidAreas);
-  const greaterAccraTransportReport = createGreaterAccraPlayableWorld(scene);
+  const privateIslandMeshCount = createAkwantuoPrivateIsland(scene);\n  document.documentElement.dataset.akwantuoPrivateIslandMeshCount = String(privateIslandMeshCount);\n  const greaterAccraTransportReport = createGreaterAccraPlayableWorld(scene);
   document.documentElement.dataset.playableRoadSurfaceMeshes = String(greaterAccraTransportReport.roadSurfaceMeshCount);
   document.documentElement.dataset.playableRoadMarkingMeshes = String(greaterAccraTransportReport.roadMarkingMeshCount);
   document.documentElement.dataset.playableRailRoutes = String(greaterAccraTransportReport.railRouteCount);
@@ -345,7 +345,7 @@ async function start(): Promise<void> {
   // Stage 6 interactions are deliberately session-local previews. Valuable
   // bookings, purchases and property transfers remain server-authoritative work.
   let venueInterestCount = 0;
-  let selectedBusinessServiceIndex = 0;
+  let selectedBusinessServiceIndex = 0;\n  let retailBasketPreviewCount = 0;\n  let retailBrowseIndex = 0;
   const stage6ActionPanel = document.createElement("div");
   stage6ActionPanel.id = "stage6-action-panel";
   stage6ActionPanel.hidden = true;
@@ -370,13 +370,13 @@ async function start(): Promise<void> {
     return button;
   };
   const serviceActionButton = makeStage6Button("stage6-service-action", "Use a service");
-  const propertyActionButton = makeStage6Button("stage6-property-action", "Property information");
+  const propertyActionButton = makeStage6Button("stage6-property-action", "Property information");\n  const retailBrowseButton = makeStage6Button("stage6-retail-browse", "Browse store products");\n  const retailBasketButton = makeStage6Button("stage6-retail-basket", "Add to basket preview");
   const venueActionButton = makeStage6Button("stage6-venue-action", "Join event interest list");
   document.body.append(stage6ActionPanel);
   const refreshStage6Actions = (): void => {
     const buildingId = activeInterior?.buildingId;
     const business = buildingId ? DISTRICT_BUSINESSES.find((item) => item.buildingId === buildingId) : undefined;
-    serviceActionButton.hidden = !business;
+    serviceActionButton.hidden = !business;\n    const isConvenienceStore = buildingId === "osu-corner-mart" || buildingId === "akwaaba-provisions";\n    retailBrowseButton.hidden = !isConvenienceStore;\n    retailBasketButton.hidden = !isConvenienceStore;
     venueActionButton.hidden = buildingId !== "akwaaba-creative-arts-centre";
     propertyActionButton.hidden = !buildingId;
     stage6ActionPanel.hidden = !buildingId;
@@ -390,6 +390,26 @@ async function start(): Promise<void> {
     selectedBusinessServiceIndex += 1;
     document.documentElement.dataset.stage6ServiceSelections = String(selectedBusinessServiceIndex);
     showNotice("Selected service at " + business.displayName + ": " + service + ". This is a service preview; no payment or transaction has been made.");
+  });
+  retailBrowseButton.addEventListener("click", () => {
+    if (activeInterior?.roomId !== "convenience-store") return;
+    const visible = AKWANTUO_RETAIL_PRODUCTS.slice(retailBrowseIndex, retailBrowseIndex + 4);
+    if (visible.length < 4) {
+      retailBrowseIndex = 0;
+    } else {
+      retailBrowseIndex += 4;
+    }
+    const items = visible.map((item) => item.name + " (GH₵" + (item.pricePesewas / 100).toFixed(2) + ")").join(", ");
+    showNotice("Store shelves: " + items + ". Fictional products; browsing preview only.");
+    document.documentElement.dataset.stage6RetailBrowseCount =
+      String(Number(document.documentElement.dataset.stage6RetailBrowseCount ?? 0) + 1);
+  });
+  retailBasketButton.addEventListener("click", () => {
+    if (activeInterior?.roomId !== "convenience-store") return;
+    const item = AKWANTUO_RETAIL_PRODUCTS[retailBasketPreviewCount % AKWANTUO_RETAIL_PRODUCTS.length];
+    retailBasketPreviewCount += 1;
+    document.documentElement.dataset.stage6RetailBasketPreviewCount = String(retailBasketPreviewCount);
+    showNotice(item.name + " added to your session basket preview. No money was charged and no stock was changed.");
   });
   propertyActionButton.addEventListener("click", () => {
     if (!activeInterior) return;
