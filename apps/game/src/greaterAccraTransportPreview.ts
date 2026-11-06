@@ -16,6 +16,7 @@ import {
 } from "./world/greaterAccraLayout";
 import { createGreaterAccraRoadGeometry } from "./world/roadGeometry";
 import { createGreaterAccraRoadMarkings } from "./world/roadMarkingGeometry";
+import { createCircleInterchangeGeometry } from "./world/circleInterchangeGeometry";
 import { GREATER_ACCRA_JUNCTION_LAYOUTS } from "./world/junctionLayouts";
 import "./../greater-accra-transport-preview.css";
 
@@ -88,6 +89,7 @@ try {
 
   const roadMeshes = createGreaterAccraRoadGeometry(scene, { sampleSpacingM: 45 });
   const markingMeshes = createGreaterAccraRoadMarkings(scene, { sampleSpacingM: 22 });
+  const circleGeometry = createCircleInterchangeGeometry(scene);
   const junctionMaterial = new StandardMaterial("junction-reservation-material", scene);
   junctionMaterial.diffuseColor = new Color3(0.78, 0.59, 0.28);
   junctionMaterial.alpha = 0.2;
@@ -122,7 +124,7 @@ try {
   engine.runRenderLoop(() => scene.render());
   window.addEventListener("resize", () => engine.resize());
   if (status) {
-    status.textContent = `Network preview ready · ${roadMeshes.length} road-surface meshes · ${markingMeshes.length} marking meshes · ${GREATER_ACCRA_REGION_ANCHORS.length} district anchors`;
+    status.textContent = `Network preview ready · ${roadMeshes.length} road-surface meshes · ${markingMeshes.length} road-marking meshes · Circle interchange: ${Object.keys(circleGeometry.elevatedStructures).length} elevated structures · ${GREATER_ACCRA_REGION_ANCHORS.length} district anchors`;
   }
 } catch (error) {
   if (status) status.textContent = "Map preview failed: " + (error instanceof Error ? error.message : String(error));
