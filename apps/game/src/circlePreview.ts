@@ -18,12 +18,12 @@ const errorPanel = document.querySelector<HTMLElement>("#preview-error");
 if (!canvas) throw new Error("Circle preview canvas was not found.");
 
 try {
-  const engine = new Engine(canvas, true, {
-    antialias: true,
-    preserveDrawingBuffer: false,
-    stencil: true,
-    adaptToDeviceRatio: true
-  });
+  const engine = new Engine(
+    canvas,
+    true,
+    { preserveDrawingBuffer: false, stencil: true },
+    true
+  );
   const scene = new Scene(engine);
   scene.clearColor = new Color3(0.58, 0.68, 0.72);
 
