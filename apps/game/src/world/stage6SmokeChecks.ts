@@ -2,17 +2,20 @@ import { DISTRICT_BUILDINGS, isBuildingCatalogueValid } from "./ghanaianStreetBu
 import { DISTRICT_PROPERTIES, isDistrictPropertyCatalogueValid } from "./districtProperties";
 import { INTERIOR_BLUEPRINTS, isInteriorBlueprintCatalogueValid } from "./interiorBlueprints";
 import { GREATER_ACCRA_REGION_ANCHORS } from "./greaterAccraLayout";
+import { DISTRICT_BUSINESSES, isDistrictBusinessCatalogueValid } from "./districtBusinesses";
 
 /** Fail-fast integrity checks for Stage 6 world content before the scene starts. */
 export function runStage6SmokeChecks(): void {
   if (!isBuildingCatalogueValid()) throw new Error("Stage 6 building catalogue failed structural validation.");
   if (!isInteriorBlueprintCatalogueValid()) throw new Error("Stage 6 interior blueprint catalogue failed structural validation.");
   if (!isDistrictPropertyCatalogueValid()) throw new Error("Stage 6 property directory failed structural validation.");
+  if (!isDistrictBusinessCatalogueValid()) throw new Error("Stage 6 business directory failed structural validation.");
 
   const blueprintIds = new Set(INTERIOR_BLUEPRINTS.map((blueprint) => blueprint.id));
   const buildingIds = new Set(DISTRICT_BUILDINGS.map((building) => building.id));
   const anchorIds = new Set(GREATER_ACCRA_REGION_ANCHORS.map((anchor) => anchor.regionId));
   const propertyByBuilding = new Map(DISTRICT_PROPERTIES.map((property) => [property.buildingId, property]));
+  const businessByBuilding = new Map(DISTRICT_BUSINESSES.map((business) => [business.buildingId, business]));
 
   for (const building of DISTRICT_BUILDINGS) {
     if (!anchorIds.has(building.districtId)) throw new Error("Building " + building.id + " references an unknown district anchor.");
@@ -20,12 +23,15 @@ export function runStage6SmokeChecks(): void {
       throw new Error("Building " + building.id + " references missing interior " + building.interiorId + ".");
     }
     const property = propertyByBuilding.get(building.id);
+    const business = businessByBuilding.get(building.id);
+    const isResidential = building.use === "compound_house" || building.use === "apartment";
+    if (isResidential ? !!business : !business) throw new Error("Building/business directory mismatch for " + building.id + ".");
     if (!property || property.displayName !== building.name || property.use !== building.use) {
       throw new Error("Building/property directory mismatch for " + building.id + ".");
     }
   }
 
-  if (propertyByBuilding.size !== buildingIds.size ||
+  if (businessByBuilding.size !== DISTRICT_BUSINESSES.length ||\n      DISTRICT_BUSINESSES.some((business) => !buildingIds.has(business.buildingId))) {\n    throw new Error("Stage 6 business directory references an unknown building.");\n  }\n\n  if (propertyByBuilding.size !== buildingIds.size ||
       DISTRICT_PROPERTIES.some((property) => !buildingIds.has(property.buildingId))) {
     throw new Error("Stage 6 property directory is not a one-to-one mirror of the building catalogue.");
   }
