@@ -96,7 +96,7 @@ try {
     try {
       await page.waitForFunction(() => (document.querySelector("#notice")?.textContent ?? "").includes("Boarded shared trotro"), { timeout: 5000 });
     } catch (error) {
-      const boardingDiagnostic = await page.evaluate(() => ({
+      const boardingDiagnostic = await page.evaluate((runtimeErrors) => ({
         notice: document.querySelector("#notice")?.textContent ?? "",
         playerX: document.documentElement.dataset.transportPlayerX,
         playerZ: document.documentElement.dataset.transportPlayerZ,
@@ -118,8 +118,8 @@ try {
         actionRequestAt: document.documentElement.dataset.transportActionRequestAt,
         visibilityAtInput: document.documentElement.dataset.transportVisibilityAtInput,
         visibilityNow: document.visibilityState,
-        runtimeErrors: failures.slice(-12)
-      }));
+        runtimeErrors: runtimeErrors.slice(-12)
+      }), failures);
       console.error(target.name + ": trotro boarding diagnostic " + JSON.stringify(boardingDiagnostic));
       throw error;
     }
