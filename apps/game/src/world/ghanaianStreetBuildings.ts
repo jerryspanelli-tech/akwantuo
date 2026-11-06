@@ -33,7 +33,7 @@ export type DistrictBuilding = Readonly<{
   width: number;
   depth: number;
   floors: number;
-  exteriorStyle: "coastal" | "compound" | "modern" | "market";
+  exteriorStyle: "coastal" | "compound" | "modern" | "market" | "convenience";
   signText?: string;
   interiorId?: string;
   anchorOffsetX?: number;
@@ -43,7 +43,7 @@ export type DistrictBuilding = Readonly<{
 type DistrictBuildingTemplate = Omit<DistrictBuilding, "districtId">;
 
 const BUILDING_TEMPLATES: readonly DistrictBuildingTemplate[] = [
-  { id: "osu-corner-mart", name: "Osu Corner Mart", use: "provisions", side: "west", x: -18, z: -72, width: 13, depth: 14, floors: 1, exteriorStyle: "modern", signText: "AKWANTUO MART", interiorId: "convenience-store" },
+  { id: "osu-corner-mart", name: "Osu Corner Mart", use: "provisions", side: "west", x: -18, z: -72, width: 13, depth: 14, floors: 1, exteriorStyle: "convenience", signText: "AKWANTUO MART", interiorId: "convenience-store" },
   { id: "community-pharmacy", name: "Community Pharmacy", use: "pharmacy", side: "east", x: 18, z: -72, width: 10, depth: 11, floors: 1, exteriorStyle: "modern", signText: "PHARMACY", interiorId: "shop-small" },
   { id: "ama-salon", name: "Ama's Hair Studio", use: "salon", side: "west", x: -23, z: -59, width: 10, depth: 9, floors: 1, exteriorStyle: "coastal", signText: "HAIR STUDIO", interiorId: "salon" },
   { id: "chop-bar", name: "Auntie Esi Chop Bar", use: "food", side: "east", x: 23, z: -59, width: 11, depth: 10, floors: 1, exteriorStyle: "market", signText: "CHOP BAR", interiorId: "restaurant" },
@@ -57,7 +57,7 @@ const BUILDING_TEMPLATES: readonly DistrictBuildingTemplate[] = [
   { id: "east-legon-apartments", name: "Palm Court Apartments", use: "apartment", side: "east", x: 23, z: -7, width: 13, depth: 12, floors: 3, exteriorStyle: "modern", signText: "PALM COURT", interiorId: "apartment" },
   { id: "old-town-house", name: "Old Town Family House", use: "compound_house", side: "west", x: -18, z: 7, width: 12, depth: 10, floors: 1, exteriorStyle: "compound", interiorId: "compound-house" },
   { id: "harbour-foods", name: "Harbour Foods", use: "food", side: "east", x: 18, z: 7, width: 10, depth: 10, floors: 1, exteriorStyle: "coastal", signText: "HARBOUR FOODS", interiorId: "restaurant" },
-  { id: "akwaaba-provisions", name: "Akwaaba Provisions", use: "provisions", side: "west", x: -23, z: 20, width: 12, depth: 13, floors: 1, exteriorStyle: "modern", signText: "AKWAABA EXPRESS", interiorId: "convenience-store" },
+  { id: "akwaaba-provisions", name: "Akwaaba Provisions", use: "provisions", side: "west", x: -23, z: 20, width: 12, depth: 13, floors: 1, exteriorStyle: "convenience", signText: "AKWAABA EXPRESS", interiorId: "convenience-store" },
   { id: "labadi-lodge", name: "Labadi Lodge", use: "guest_house", side: "east", x: 23, z: 20, width: 12, depth: 11, floors: 2, exteriorStyle: "coastal", signText: "LABADI LODGE", interiorId: "guest-house" },
   { id: "family-compound-north", name: "Northside Compound", use: "compound_house", side: "west", x: -18, z: 33, width: 12, depth: 10, floors: 1, exteriorStyle: "compound", interiorId: "compound-house" },
   { id: "digital-office", name: "Coastline Digital Hub", use: "office", side: "east", x: 18, z: 33, width: 11, depth: 10, floors: 2, exteriorStyle: "modern", signText: "DIGITAL HUB", interiorId: "office" },
@@ -97,7 +97,7 @@ const PALETTES = {
   coastal: { wall: "#d6b98c", trim: "#8a5538", roof: "#59483a", accent: "#c36b3f" },
   compound: { wall: "#c6b79a", trim: "#6c6254", roof: "#756b5c", accent: "#a56a45" },
   modern: { wall: "#c7d0cb", trim: "#596d70", roof: "#39494a", accent: "#d1ad63" },
-  market: { wall: "#c99b63", trim: "#684b36", roof: "#554536", accent: "#d5b477" }
+  market: { wall: "#c99b63", trim: "#684b36", roof: "#554536", accent: "#d5b477" },\n  convenience: { wall: "#e3e5df", trim: "#233744", roof: "#263b46", accent: "#d94d3d" }
 } as const;
 
 function material(scene: Scene, name: string, hex: string): StandardMaterial {
@@ -226,6 +226,47 @@ export function createGhanaianStreetBuildings(scene: Scene): {
           post.isPickable = false;
         }
       }
+    }
+
+    if (building.exteriorStyle === "convenience") {
+      const outward = building.side === "west" ? -1 : 1;
+      const canopy = MeshBuilder.CreateBox("convenience-store-canopy-" + building.id, {
+        width: 2.15, height: 0.22, depth: building.width * 0.94
+      }, scene);
+      canopy.position.set(frontX + outward * 1.02, 2.72, building.z);
+      canopy.rotation.y = building.side === "west" ? Math.PI / 2 : -Math.PI / 2;
+      canopy.material = trim;
+      canopy.isPickable = false;
+      const stripeColours = ["#d9483b", "#e8b83e", "#4a9369"];
+      for (let stripe = 0; stripe < stripeColours.length; stripe += 1) {
+        const band = MeshBuilder.CreateBox("convenience-store-brand-band-" + building.id + "-" + stripe, {
+          width: 0.16, height: 0.24, depth: building.width * 0.92 / 3
+        }, scene);
+        band.position.set(frontX + outward * 0.08, 2.48, building.z + (stripe - 1) * building.width * 0.3);
+        band.rotation.y = building.side === "west" ? Math.PI / 2 : -Math.PI / 2;
+        band.material = material(scene, "convenience-store-brand-" + stripe, stripeColours[stripe]);
+        band.isPickable = false;
+      }
+      const displayGlass = material(scene, "convenience-store-display-glass", "#6da1a5");
+      displayGlass.alpha = 0.52;
+      for (const side of [-1, 1]) {
+        const shopWindow = MeshBuilder.CreateBox("convenience-store-front-window-" + building.id + "-" + side, {
+          width: 1.9, height: 1.55, depth: 0.1
+        }, scene);
+        shopWindow.position.set(frontX + outward * 0.04, 1.55, building.z + side * building.width * 0.29);
+        shopWindow.rotation.y = building.side === "west" ? Math.PI / 2 : -Math.PI / 2;
+        shopWindow.material = displayGlass;
+        shopWindow.isPickable = false;
+      }
+      const entranceLight = material(scene, "convenience-store-entry-light", "#f3d78b");
+      entranceLight.emissiveColor = new Color3(0.3, 0.22, 0.08);
+      const entryMarker = MeshBuilder.CreateBox("convenience-store-entry-marker-" + building.id, {
+        width: 0.12, height: 0.18, depth: 1.5
+      }, scene);
+      entryMarker.position.set(frontX + outward * 0.16, 2.2, building.z);
+      entryMarker.rotation.y = building.side === "west" ? Math.PI / 2 : -Math.PI / 2;
+      entryMarker.material = entranceLight;
+      entryMarker.isPickable = false;
     }
 
     if (building.exteriorStyle === "market" || building.exteriorStyle === "coastal") {
