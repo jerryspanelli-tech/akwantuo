@@ -101,6 +101,7 @@ try {
   };
   window.addEventListener("keydown", driveKeyDown);
   window.addEventListener("keyup", driveKeyUp);
+  window.addEventListener("blur", () => driveKeys.clear());
   const trainGeometry = createRailTrainGeometry(scene, {
     id: "akwantuo-commuter-train", centerX: -35, centerZ: 24,
     groundElevationM: 0, carCount: 2
