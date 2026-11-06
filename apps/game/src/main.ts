@@ -32,6 +32,7 @@ import { createGreaterAccraMappedRailService } from "./world/mappedRailService";
 import { runTransportSmokeChecks } from "./world/transportSmokeChecks";
 import { DISTRICT_BUILDINGS } from "./world/ghanaianStreetBuildings";
 import { DISTRICT_PROPERTIES } from "./world/districtProperties";
+import { DISTRICT_BUSINESSES } from "./world/districtBusinesses";
 import { INTERIOR_BLUEPRINTS } from "./world/interiorBlueprints";
 import { createInteriorRooms } from "./world/interiorRooms";
 import { runStage6SmokeChecks } from "./world/stage6SmokeChecks";
@@ -304,6 +305,7 @@ async function start(): Promise<void> {
   document.documentElement.dataset.akwantuoBuildingCount = String(DISTRICT_BUILDINGS.length);
   document.documentElement.dataset.akwantuoBuildingDistrictCount = String(new Set(DISTRICT_BUILDINGS.map((building) => building.districtId)).size);
   document.documentElement.dataset.akwantuoPropertyCount = String(DISTRICT_PROPERTIES.length);
+  document.documentElement.dataset.akwantuoBusinessCount = String(DISTRICT_BUSINESSES.length);
   document.documentElement.dataset.akwantuoInteriorBlueprintCount = String(INTERIOR_BLUEPRINTS.length);
   document.documentElement.dataset.akwantuoStage6Checks = "passed";
   document.documentElement.dataset.akwantuoBuildingInteriorLinkCount = String(DISTRICT_BUILDINGS.filter((building) => building.interiorId).length);
