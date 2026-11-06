@@ -342,10 +342,7 @@ async function start(): Promise<void> {
       groundElevationM: 0,
       bodyColour: ["#b47a32", "#315a78", "#687a54"][index]
     });
-    const rig = createRoadVehicleRig(scene, {
-      ...geometry,
-      root: geometry.root
-    }, {
+    const rig = createRoadVehicleRig(scene, geometry, {
       id: "npc-n1-traffic-saloon-rig-" + (index + 1),
       origin
     });
