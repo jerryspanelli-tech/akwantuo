@@ -52,10 +52,17 @@
 - Startup diagnostics exposed a faulty traffic-signal smoke-test expectation: simulation time −1 second in a 48-second cycle correctly wraps to cycle position 47 (red), not green. The expectation has been corrected; the desktop/mobile browser journey is being rerun before the startup path is counted as verified.
 
 ### Road traffic controls
-- Added a reusable zebra-crossing and tactile-paving geometry builder. Its layout validator checks unit direction, crossing dimensions, stripe count/width and tactile-paving depth; startup smoke checks cover valid layouts and reject invalid geometry inputs. No real Greater Accra crossing is placed yet because exact junction endpoints and pedestrian desire lines still need map integration and review.
+- Added a reusable zebra-crossing and tactile-paving geometry builder. Its layout validator checks unit direction, crossing dimensions, stripe count/width and tactile-paving depth; startup smoke checks cover valid layouts and reject invalid geometry inputs. No real Greater Accra pedestrian crossing is approved yet because exact junction endpoints and pedestrian desire lines still need map integration and review.
 - Added a deterministic traffic-signal phase model with configurable green, amber and red durations plus a simulation-time offset.
 - Smoke checks cover phase boundaries, cycle wrap, negative time offsets, invalid time rejection and protected-movement gating.
 - This is a reusable simulation foundation only: no signal heads are placed in the playable map, no junction conflict groups or signal timings have been approved, and it does not yet control traffic AI or player movement.
+
+### Railway / road crossing review
+- Added geometry-based detection of road/rail centreline intersections using the first-release Greater Accra schematic road and Cape-gauge rail layouts.
+- Circle and Achimota intersections are excluded from level-crossing candidates because those locations are reserved for grade-separated junction treatments. Four other intersections are identified for design review: N1/Tema corridor, Liberation Road, Spintex Road and the Spintex–Tema connection.
+- The same four review markers are now shown in the playable Greater Accra transport scene and the developer map preview. They are explicitly marked in code and diagnostics as review-required; they are not approved real-world crossing locations or completed crossing structures.
+- Added a fail-safe crossing interlock helper: it warns as a train approaches, denies road entry, keeps barriers down until the train rear plus clearance has passed, and defaults to closed on system fault. Startup smoke checks cover clear, approach, occupied, rear-clear and fault cases.
+- Important limitation: the interlock is a pure tested helper, not yet connected to mapped train position, road traffic AI, signal heads, barrier animations or player vehicle movement. The crossing candidates are inferred from provisional schematic centre lines and require alignment/site review before operational use.
 
 ### Public transport
 - Passenger camera modes: interior window, interior free-look and exterior follow.
@@ -77,10 +84,10 @@
 These are not being represented as finished systems:
 - Realistic final 3D assets for every Ghanaian vehicle class, interiors, articulated trailers and motorcycles.
 - Complete physical collision and vehicle damage simulation; the new swept circular-footprint test is a conservative prototype check between the starter saloon and preview trotro, not full oriented-body physics or general traffic collision handling. Suspension, tyre grip, wheel steering/rotation, fuel, ownership, insurance, licences and garages are also outstanding.
-- AI traffic, in-world traffic-light placement and junction conflict-group control, lane-level navigation, parking enforcement, emergency dispatch and road safety simulation. The deterministic signal phase helper is not an integrated junction-control system.
+- AI traffic, in-world traffic-light placement and junction conflict-group control, lane-level navigation, parking enforcement, emergency dispatch and road safety simulation. The deterministic signal phase helper is not an integrated junction-control system. The rail crossing interlock is also not yet wired to train/road simulation or animated crossing equipment.
 - Driver entry/exit is connected for the starter saloon, but seat animations and visible driver placement are not yet implemented. The three camera modes are connected to the starter saloon and the preview trotro passenger ride; full passenger seat placement and animations remain unimplemented.
 - Approved Greater Accra public-transport route/stop placements, timetables, multiple live vehicles, conductor/mate interaction, stop announcements, full fare UI and real destination boards. The current two temporary preview stops are deliberately not presented as real Accra stops.
-- Rail signalling, block occupancy, switches, dispatch, timetable conflicts, safety logic, train doors, passenger interiors and operational railway certification.
+- Rail signalling, block occupancy, switches, dispatch, timetable conflicts, mapped passenger boarding/alighting, train doors, passenger interiors and operational railway certification. The four road/rail crossing markers remain review candidates; no crossing is operational.
 - Multiplayer/server-authoritative vehicle ownership, seat reservations, fare transactions, economy integration, anti-cheat and persistence.
 - Integration of the preview models and transport controllers into the playable Greater Accra map. The current playable scene remains a small 180m prototype and is not the Greater Accra map. The rail demo is local-only and not positioned on the schematic Greater Accra rail corridor.
 - Main-game mobile driving and camera controls are connected for the starter saloon. The preview trotro passenger journey uses the same on-screen interaction and view controls; additional vehicle classes and mapped public-transport services remain unconnected.
@@ -90,6 +97,6 @@ These are not being represented as finished systems:
 2. Integrate vehicle interaction, driver/passenger seats and passenger camera anchors into the actual player and vehicle assets.
 3. Add traffic collision/navigation and server-authoritative ownership/occupancy/fare transactions before online play.
 4. Add the remaining vehicle-specific models and handling, then test on ordinary phones and computers. The current browser automation is a desktop/mobile viewport test, not a real-device certification.
-5. Extend the mapped rail prototype with planned station geometry, passenger boarding/alighting, railway crossings, signalling, block occupancy and reviewed operational rules.
+5. Connect mapped rail passenger boarding/alighting to the planned Accra Central and Tema stations; turn the four provisional road/rail crossing candidates into reviewed layouts, then wire the fail-safe interlock to train movement, road traffic and visible crossing equipment; add signalling, block occupancy and reviewed operational rules.
 
 **Decision:** DO NOT advance to the next master-prompt stage. Transportation remains open. The next implementation pass must connect public transport journeys to approved in-world route/stop data, connect train operations and the existing local passenger boarding/alighting flow to the approved Greater Accra rail alignment/stations, add railway crossing/safety, and test road/rail interaction in the main game. Online authority and production assets remain explicit release dependencies; they must not be described as complete.
