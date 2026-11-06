@@ -15,6 +15,7 @@ import { getHairstyle } from "./character/hairstyles";
 import { WORLD_CONFIG } from "./world/config";
 import { clampToWorld, isBlocked } from "./world/collision";
 import { createPreviewWorld } from "./world/previewWorld";
+import { createGreaterAccraPlayableWorld } from "./world/greaterAccraPlayableWorld";
 import { advanceRoadVehicleDynamics, type RoadVehicleDynamicsState } from "./vehicles/roadVehicleDynamics";
 import { createRoadVehicleGeometry } from "./vehicles/roadVehicleGeometry";
 import { createRoadVehicleRig } from "./vehicles/roadVehicleRig";
@@ -270,7 +271,8 @@ async function start(): Promise<void> {
     powerPreference: "high-performance"
   });
   const scene = new Scene(engine);
-  const solidAreas = createPreviewWorld(scene);
+  const solidAreas = createPreviewWorld(scene, { includeGround: false });
+  createGreaterAccraPlayableWorld(scene);
   const playableRailDemo = createPlayableRailDemo(scene);
   let currentAppearance = loadAppearance(window.localStorage);
   const player = createPlayer(scene, currentAppearance);
@@ -321,6 +323,7 @@ async function start(): Promise<void> {
   );
   camera.lowerRadiusLimit = 5.5;
   camera.upperRadiusLimit = 11;
+  camera.maxZ = 30000;
   camera.lowerBetaLimit = 0.85;
   camera.upperBetaLimit = 1.42;
   camera.wheelPrecision = 65;
