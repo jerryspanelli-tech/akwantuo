@@ -121,10 +121,13 @@ export async function signUpAkwantuo(email: string, password: string, displayNam
 
 export async function signOutAkwantuo(): Promise<void> {
   const session = readStoredSession();
-  if (session?.access_token) {
-    await request<unknown>("/auth/v1/logout", { method: "POST" }, session.access_token);
+  try {
+    if (session?.access_token) {
+      await request<unknown>("/auth/v1/logout", { method: "POST" }, session.access_token);
+    }
+  } finally {
+    storeSession(null);
   }
-  storeSession(null);
 }
 
 export async function loadPlayerProfile(session: AkwantuoSession): Promise<PlayerProfile | null> {
