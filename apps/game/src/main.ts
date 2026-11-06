@@ -420,6 +420,13 @@ async function start(): Promise<void> {
     const delta = Math.min(rawDelta, 0.05);
 
     if (hasEnteredWorld) {
+      // Expose lightweight live state so browser smoke checks can distinguish
+      // an input failure from a proximity, fare, or vehicle-state rejection.
+      document.documentElement.dataset.transportPlayerX = player.root.position.x.toFixed(2);
+      document.documentElement.dataset.transportPlayerZ = player.root.position.z.toFixed(2);
+      document.documentElement.dataset.transportTrotroX = publicTaxiState.x.toFixed(2);
+      document.documentElement.dataset.transportTrotroZ = publicTaxiState.z.toFixed(2);
+      document.documentElement.dataset.transportPassengerMode = passengerState.mode;
       const npcControl = getRoadVehicleAutopilotControl({
         wheelbaseM: 2.65,
         maximumSteeringAngleRadians: 0.48,
@@ -571,6 +578,9 @@ async function start(): Promise<void> {
             showNotice(result.reason === "vehicle_moving" ? "Stop the vehicle before exiting." : "There is no safe space to exit here.");
           }
         }
+        document.documentElement.dataset.transportPassengerMode = passengerState.mode;
+        document.documentElement.dataset.transportLastNotice = notice?.textContent ?? "";
+        document.documentElement.dataset.transportLastActionAt = String(performance.now());
         window.setTimeout(() => notice?.classList.remove("is-visible"), 3000);
       }
 
