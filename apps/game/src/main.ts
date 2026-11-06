@@ -256,6 +256,37 @@ function installTouchControls(): void {
   joystick.addEventListener("lostpointercapture", resetStick);
 }
 
+function sampleRouteAtDistance(
+  route: readonly { x: number; z: number }[],
+  distanceM: number
+): { x: number; z: number; headingRadians: number } {
+  let remaining = Math.max(0, distanceM);
+  for (let index = 1; index < route.length; index += 1) {
+    const start = route[index - 1];
+    const end = route[index];
+    const dx = end.x - start.x;
+    const dz = end.z - start.z;
+    const length = Math.hypot(dx, dz);
+    if (length <= 1e-6) continue;
+    if (remaining <= length) {
+      const amount = remaining / length;
+      return {
+        x: start.x + dx * amount,
+        z: start.z + dz * amount,
+        headingRadians: Math.atan2(dx, dz)
+      };
+    }
+    remaining -= length;
+  }
+  const end = route[route.length - 1];
+  const previous = route[route.length - 2];
+  return {
+    x: end.x,
+    z: end.z,
+    headingRadians: Math.atan2(end.x - previous.x, end.z - previous.z)
+  };
+}
+
 async function start(): Promise<void> {
   if (!canvas || !bootScreen || !gameShell || !bootStatus) {
     throw new Error("The game startup interface could not be found.");
@@ -299,34 +330,36 @@ async function start(): Promise<void> {
     throw new Error("The first-release N1 NPC traffic route is unavailable.");
   }
   const npcTrafficRoute = npcTrafficPath.points.map((point) => ({ x: point.x, z: point.z }));
-  const npcTrafficOrigin = {
-    x: npcTrafficRoute[0].x,
-    y: 0,
-    z: npcTrafficRoute[0].z
-  };
-  const npcTrafficGeometry = createRoadVehicleGeometry(scene, {
-    id: "npc-n1-traffic-saloon",
-    centerX: npcTrafficOrigin.x,
-    centerZ: npcTrafficOrigin.z,
-    groundElevationM: 0,
-    bodyColour: "#b47a32"
-  });
-  const npcTrafficRig = createRoadVehicleRig(scene, npcTrafficGeometry, {
-    id: "npc-n1-traffic-saloon-rig",
-    origin: npcTrafficOrigin
-  });
-  let npcTrafficState: RoadVehicleDynamicsState = {
-    ...npcTrafficOrigin,
-    headingRadians: Math.atan2(
-      npcTrafficRoute[1].x - npcTrafficRoute[0].x,
-      npcTrafficRoute[1].z - npcTrafficRoute[0].z
-    ),
-    speedMps: 0
-  };
-  let npcTrafficDistanceM = 0;
   const npcTrafficRouteLengthM = npcTrafficRoute.slice(1).reduce((total, point, index) =>
     total + Math.hypot(point.x - npcTrafficRoute[index].x, point.z - npcTrafficRoute[index].z), 0);
-  document.documentElement.dataset.npcRoadTraffic = "1";
+  const npcTraffic = [0, 32, 64].map((startDistanceM, index) => {
+    const start = sampleRouteAtDistance(npcTrafficRoute, startDistanceM);
+    const origin = { x: start.x, y: 0, z: start.z };
+    const geometry = createRoadVehicleGeometry(scene, {
+      id: "npc-n1-traffic-saloon-" + (index + 1),
+      centerX: origin.x,
+      centerZ: origin.z,
+      groundElevationM: 0,
+      bodyColour: ["#b47a32", "#315a78", "#687a54"][index]
+    });
+    const rig = createRoadVehicleRig(scene, {
+      ...geometry,
+      root: geometry.root
+    }, {
+      id: "npc-n1-traffic-saloon-rig-" + (index + 1),
+      origin
+    });
+    return {
+      rig,
+      state: {
+        ...origin,
+        headingRadians: start.headingRadians,
+        speedMps: 0
+      } as RoadVehicleDynamicsState,
+      distanceM: startDistanceM
+    };
+  });
+  document.documentElement.dataset.npcRoadTraffic = String(npcTraffic.length);
   document.documentElement.dataset.npcRoadTrafficRoute = npcTrafficPath.roadSegmentId;
 
 
@@ -441,34 +474,53 @@ async function start(): Promise<void> {
       document.documentElement.dataset.transportTrotroX = publicTaxiState.x.toFixed(2);
       document.documentElement.dataset.transportTrotroZ = publicTaxiState.z.toFixed(2);
       document.documentElement.dataset.transportPassengerMode = passengerState.mode;
-      const npcControl = getRoadVehicleAutopilotControl({
-        wheelbaseM: 2.65,
-        maximumSteeringAngleRadians: 0.48,
-        targetSpeedMps: Math.min(9, Math.sqrt(2 * 1.6 * Math.max(0, npcTrafficRouteLengthM - npcTrafficDistanceM))),
-        baseLookaheadM: 9,
-        speedLookaheadFactor: 0.65,
-        throttleGain: 0.32,
-        brakeGain: 0.55
-      }, npcTrafficState, npcTrafficRoute);
-      npcTrafficState = advanceRoadVehicleElapsed({
-        wheelbaseM: 2.65,
-        maximumForwardSpeedMps: 12,
-        // The shared dynamics validator requires a strictly positive reverse
-        // limit; the autopilot never commands reverse, so keep it near zero.
-        maximumReverseSpeedMps: 0.1,
-        maximumAccelerationMps2: 2.2,
-        serviceBrakingMps2: 5.5,
-        maximumSteeringAngleRadians: 0.48,
-        rollingDragMps2: 0.28
-      }, npcTrafficState, {
-        throttle: npcControl.throttle,
-        brake: npcControl.brake,
-        steering: npcControl.steering
-      }, rawDelta);
-      npcTrafficRig.update(npcTrafficState);
-      npcTrafficDistanceM = npcControl.routeDistanceM;
-      document.documentElement.dataset.npcRoadTrafficDistanceM = npcTrafficDistanceM.toFixed(2);
-      document.documentElement.dataset.npcRoadTrafficSpeedMps = npcTrafficState.speedMps.toFixed(2);
+      // Follow the same authored corridor with a conservative headway controller.
+      // The nearest vehicle ahead limits target speed so the prototype convoy
+      // does not simply stack several cars at one point on the route.
+      const trafficInRouteOrder = [...npcTraffic].sort((a, b) => b.distanceM - a.distanceM);
+      for (let index = 0; index < trafficInRouteOrder.length; index += 1) {
+        const traffic = trafficInRouteOrder[index];
+        const leader = trafficInRouteOrder[index - 1];
+        const gapM = leader ? Math.max(0, leader.distanceM - traffic.distanceM) : Number.POSITIVE_INFINITY;
+        const routeEndSpeed = Math.sqrt(2 * 1.6 * Math.max(0, npcTrafficRouteLengthM - traffic.distanceM));
+        const headwaySpeed = Number.isFinite(gapM) ? Math.sqrt(2 * 2.0 * Math.max(0, gapM - 12)) : 9;
+        const npcControl = getRoadVehicleAutopilotControl({
+          wheelbaseM: 2.65,
+          maximumSteeringAngleRadians: 0.48,
+          targetSpeedMps: Math.min(9, routeEndSpeed, headwaySpeed),
+          baseLookaheadM: 9,
+          speedLookaheadFactor: 0.65,
+          throttleGain: 0.32,
+          brakeGain: 0.55
+        }, traffic.state, npcTrafficRoute);
+        traffic.state = advanceRoadVehicleElapsed({
+          wheelbaseM: 2.65,
+          maximumForwardSpeedMps: 12,
+          maximumReverseSpeedMps: 0.1,
+          maximumAccelerationMps2: 2.2,
+          serviceBrakingMps2: 5.5,
+          maximumSteeringAngleRadians: 0.48,
+          rollingDragMps2: 0.28
+        }, traffic.state, {
+          throttle: npcControl.throttle,
+          brake: npcControl.brake,
+          steering: npcControl.steering
+        }, rawDelta);
+        traffic.rig.update(traffic.state);
+        traffic.distanceM = npcControl.routeDistanceM;
+      }
+      const trafficProgress = [...npcTraffic].sort((a, b) => a.distanceM - b.distanceM);
+      const minimumTrafficGapM = trafficProgress.slice(1).reduce(
+        (minimum, traffic, index) => Math.min(minimum, traffic.distanceM - trafficProgress[index].distanceM),
+        Number.POSITIVE_INFINITY
+      );
+      document.documentElement.dataset.npcRoadTrafficDistanceM = trafficProgress[0].distanceM.toFixed(2);
+      document.documentElement.dataset.npcRoadTrafficSpeedMps = npcTraffic.reduce(
+        (total, traffic) => total + traffic.state.speedMps, 0
+      ).toFixed(2);
+      document.documentElement.dataset.npcRoadTrafficMinimumGapM = Number.isFinite(minimumTrafficGapM)
+        ? minimumTrafficGapM.toFixed(2)
+        : "";
 
       playableRailDemo.update(Math.min(rawDelta, 0.1));
       const mappedRailFrame = greaterAccraMappedRailService.update(rawDelta);
