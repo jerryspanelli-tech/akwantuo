@@ -82,6 +82,27 @@ function showNotice(message: string): void {
   notice.classList.add("is-visible");
 }
 
+/**
+ * Advance the prototype road-vehicle model in stable <=100ms slices while
+ * preserving elapsed time after a temporarily slow render frame. A one-second
+ * catch-up ceiling prevents a tab-resume pause from teleporting vehicles.
+ */
+function advanceRoadVehicleElapsed(
+  config: Parameters<typeof advanceRoadVehicleDynamics>[0],
+  state: RoadVehicleDynamicsState,
+  input: Parameters<typeof advanceRoadVehicleDynamics>[2],
+  elapsedSeconds: number
+): RoadVehicleDynamicsState {
+  let remaining = Math.max(0, Math.min(elapsedSeconds, 1));
+  let next = state;
+  while (remaining > 0) {
+    const step = Math.min(remaining, 0.1);
+    next = advanceRoadVehicleDynamics(config, next, input, step);
+    remaining -= step;
+  }
+  return next;
+}
+
 function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
   root: TransformNode;
   leftArm: TransformNode;
@@ -346,7 +367,7 @@ async function start(): Promise<void> {
       playableRailDemo.update(Math.min(rawDelta, 0.1));
       const railStatus = playableRailDemo.getStatus();
       if (passengerState.mode === "riding" && passengerState.vehicleId === "preview-shared-trotro") {
-        const taxiStep = advanceRoadVehicleDynamics({ wheelbaseM: 2.8, maximumForwardSpeedMps: 7, maximumReverseSpeedMps: 2, maximumAccelerationMps2: 1.8, serviceBrakingMps2: 4, maximumSteeringAngleRadians: 0.35, rollingDragMps2: 0.3 }, publicTaxiState, { throttle: publicRideArrived ? 0 : 1, brake: 0, steering: 0 }, Math.min(rawDelta, 0.1));
+        const taxiStep = advanceRoadVehicleElapsed({ wheelbaseM: 2.8, maximumForwardSpeedMps: 7, maximumReverseSpeedMps: 2, maximumAccelerationMps2: 1.8, serviceBrakingMps2: 4, maximumSteeringAngleRadians: 0.35, rollingDragMps2: 0.3 }, publicTaxiState, { throttle: publicRideArrived ? 0 : 1, brake: 0, steering: 0 }, rawDelta);
         if (taxiStep.z <= publicRideEndZ) { publicTaxiState = { ...taxiStep, z: publicRideEndZ, speedMps: 0 }; publicRideArrived = true; showNotice("You have reached the final stop. Press ALIGHT to leave the trotro."); }
         else publicTaxiState = taxiStep;
         publicTaxi.update(publicTaxiState);
@@ -436,13 +457,13 @@ async function start(): Promise<void> {
           if (pressedKeys.has("s") || pressedKeys.has("arrowdown")) throttle -= 1;
           steering = Math.max(-1, Math.min(1, steering));
           throttle = Math.max(-1, Math.min(1, throttle));
-          const next = advanceRoadVehicleDynamics({
+          const next = advanceRoadVehicleElapsed({
             wheelbaseM: 2.65, maximumForwardSpeedMps: 16, maximumReverseSpeedMps: 4,
             maximumAccelerationMps2: 3.2, serviceBrakingMps2: 7,
             maximumSteeringAngleRadians: 0.48, rollingDragMps2: 0.45
           }, vehicleState, {
             throttle, brake: vehicleBrake || pressedKeys.has(" ") ? 1 : 0, steering
-          }, Math.min(rawDelta, 0.1));
+          }, rawDelta);
           const bounded = clampToWorld(next.x, next.z, {
             minX: WORLD_CONFIG.bounds.minX + 2.5, maxX: WORLD_CONFIG.bounds.maxX - 2.5,
             minZ: WORLD_CONFIG.bounds.minZ + 2.5, maxZ: WORLD_CONFIG.bounds.maxZ - 2.5
