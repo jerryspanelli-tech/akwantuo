@@ -1,6 +1,6 @@
 # AKWANTUO transport work — close-out report
 
-**Status:** OPEN — the local playable transport slice is integrated and under automated browser verification. Do not hand over the next master-prompt stage until the Greater Accra transport network, remaining vehicle classes, traffic interactions and required device checks are completed.
+**Status:** OPEN — the Greater Accra road/rail visual network is integrated into the main scene, with local car/trotro journeys and a mapped prototype train. Do not hand over the next master-prompt stage until remaining vehicle classes, lane-constrained driving, traffic interactions, mapped rail operations and required device checks are completed.
 
 ## Added and validated foundations
 
@@ -12,7 +12,7 @@
 - Circle/Odaw remains a candidate location and is not silently promoted to an operational station.
 - Preview startup checks reject invalid train operation state and verify station eligibility.
 - The main playable scene creates a compact local rail corridor with paired rails, ballast, sleepers, an ultra-modern two-platform station, a sheltered terminal platform and a moving two-car train. The train uses the acceleration/braking controller, stops for an 8-second terminal dwell and opens alighting during that stop.
-- This is a local integration slice inside the 180m prototype district, not the Greater Accra mapped railway route. Local player boarding, fare deduction, passenger camera modes and terminal alighting are integrated; signals, crossings, switches and mapped Greater Accra service operations are not.
+- The local passenger rail demo remains a compact integration slice inside the starting district, with boarding, fare deduction, passenger camera modes and terminal alighting. In addition, the main Greater Accra scene now runs a two-car train along the schematic Accra Central–Odaw–Achimota route. It passes the candidate Odaw/Circle marker without stopping; only eligible planned stations can become service stops. This mapped train is still a visual prototype without signalling, dispatch, block occupancy, collision protection, mapped passenger boarding or a live timetable.
 
 ### Road vehicles
 - Vehicle family catalogue for private cars, taxis, trotros, city buses, motorcycles, vans, rigid trucks and emergency vehicles; intercity coaches and articulated trucks remain later-release content.
@@ -85,10 +85,10 @@ These are not being represented as finished systems:
 - Main-game mobile driving and camera controls are connected for the starter saloon. The preview trotro passenger journey uses the same on-screen interaction and view controls; additional vehicle classes and mapped public-transport services remain unconnected.
 
 ## Remaining work before this stage can close
-1. Complete and approve Greater Accra road/rail geometry and transport stop placements.
+1. Refine and approve the schematic Greater Accra road/rail alignments, add local streets, station buildings and approved public-transport stop placements.
 2. Integrate vehicle interaction, driver/passenger seats and passenger camera anchors into the actual player and vehicle assets.
 3. Add traffic collision/navigation and server-authoritative ownership/occupancy/fare transactions before online play.
 4. Add the remaining vehicle-specific models and handling, then test on ordinary phones and computers. The current browser automation is a desktop/mobile viewport test, not a real-device certification.
-5. Integrate mapped rail operations only after station/track geometry, signalling and operational rules have been reviewed.
+5. Extend the mapped rail prototype with planned station geometry, passenger boarding/alighting, railway crossings, signalling, block occupancy and reviewed operational rules.
 
 **Decision:** DO NOT advance to the next master-prompt stage. Transportation remains open. The next implementation pass must connect public transport journeys to approved in-world route/stop data, connect train operations and the existing local passenger boarding/alighting flow to the approved Greater Accra rail alignment/stations, add railway crossing/safety, and test road/rail interaction in the main game. Online authority and production assets remain explicit release dependencies; they must not be described as complete.
