@@ -135,3 +135,6 @@ button { font: inherit; }
 
 /* Keep the boot overlay dismissible: its base display rule must not override the hidden state. */
 .boot-screen.is-hidden { display: none !important; }
+
+/* Native hidden state must win over component display declarations. */
+[hidden] { display: none !important; }
