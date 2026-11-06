@@ -378,3 +378,16 @@ Added `apps/game/src/world/circleGroundGeometry.ts` with `createCircleGroundGeom
 This is the first Circle-specific ground-level mesh builder, but it is not yet integrated into the playable world. No real-world dimensions have been inferred from the historical reports, and no Circle approach arms are currently supplied. The ground-level roundabout is reported in the project descriptions, while the exact island dimensions, approach angles and current traffic controls still need map/reference review. The utility also does not create lane markings, pedestrian crossings, signs, traffic signals, collision meshes or vehicle navigation.
 
 Reference for the existence of the ground-level roundabout and its relationship to the elevated links: [Graphic Online — Work on Nkrumah Circle interchange begins](https://www.graphic.com.gh/news/general-news/work-on-nkrumah-circle-interchange-begins.html).
+
+
+### Circle ground-level local access routes
+
+Added `apps/game/src/world/circleGroundAccess.ts` to preserve three reported ground-level route relationships:
+
+1. **Feo Oyeo → Dadeban Road → Abotia Street → Otublohum Road → Obibini Street → Nsawam Road**, described in a 2023 World Bank project document as an alternative local route from the Circle roundabout to Nsawam Road.
+2. **Nsawam Road → Otublohum local roads → Circle Pedestrian Shopping Mall**, identified in the interchange project description as a local-access connection.
+3. **Ring Road East → Feo Oyeo intersection → Ring Road West**, identified as a road-improvement connection in the Circle project description.
+
+These are named connectivity references, not surveyed street centre-lines or confirmed current traffic directions. They give the local map a better ground-level access structure around the interchange and prevent the area from being represented only by its flyovers. Exact geometry, street widths, pedestrian crossings, terminal gates and current access restrictions still need map review.
+
+References: [World Bank project document (2023)](https://documents1.worldbank.org/curated/en/099110323104036687/pdf/P164330083329e040882900109f67ec4fc.pdf); [Graphic Online — Circle interchange project](https://www.graphic.com.gh/news/general-news/work-on-nkrumah-circle-interchange-project-progresses.html).
