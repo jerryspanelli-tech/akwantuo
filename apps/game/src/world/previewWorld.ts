@@ -14,7 +14,7 @@ import type { SolidArea } from "./collision";
  * Temporary Ghana-inspired street scene used while the production map is
  * being designed. Keep preview geometry separate from the game runtime.
  */
-export function createPreviewWorld(scene: Scene): SolidArea[] {
+export function createPreviewWorld(scene: Scene, options: { includeGround?: boolean } = {}): SolidArea[] {
   const solidAreas: SolidArea[] = [];
   scene.clearColor = new Color4(...WORLD_CONFIG.environment.clearColor);
 
@@ -25,10 +25,12 @@ export function createPreviewWorld(scene: Scene): SolidArea[] {
   ), scene);
   light.intensity = WORLD_CONFIG.environment.sunlightIntensity;
 
-  const groundMaterial = new StandardMaterial("warm-earth", scene);
-  groundMaterial.diffuseColor = new Color3(0.43, 0.39, 0.29);
-  const ground = MeshBuilder.CreateGround("terrain", { width: WORLD_CONFIG.ground.width, height: WORLD_CONFIG.ground.depth, subdivisions: 2 }, scene);
-  ground.material = groundMaterial;
+  if (options.includeGround !== false) {
+    const groundMaterial = new StandardMaterial("warm-earth", scene);
+    groundMaterial.diffuseColor = new Color3(0.43, 0.39, 0.29);
+    const ground = MeshBuilder.CreateGround("terrain", { width: WORLD_CONFIG.ground.width, height: WORLD_CONFIG.ground.depth, subdivisions: 2 }, scene);
+    ground.material = groundMaterial;
+  }
 
   const roadMaterial = new StandardMaterial("road-surface", scene);
   roadMaterial.diffuseColor = new Color3(0.12, 0.14, 0.14);
