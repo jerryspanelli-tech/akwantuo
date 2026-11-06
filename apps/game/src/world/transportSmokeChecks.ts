@@ -28,6 +28,7 @@ import {
 } from "./railTrainOperations";
 import { createRailServiceConfig, createRailServiceConfigForRouteChain } from "./railService";
 import { deriveRailRoadCrossingCandidates, evaluateRailCrossingSafety, isRailRoadCrossingCatalogueValid } from "./railRoadCrossings";
+import { GREATER_ACCRA_PUBLIC_TRANSPORT_ROUTE_PLANS, isGreaterAccraPublicTransportRouteCatalogueValid } from "./publicTransportRoutes";
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error("Transport smoke check failed: " + message);
@@ -53,6 +54,17 @@ export function runTransportSmokeChecks(): void {
   assert(isGreaterAccraRailNetworkValid(), "Greater Accra Cape-gauge rail routes and station nodes validate");
   assert(isGreaterAccraTrackDesignValid(), "Greater Accra rail track design assignments validate");
   assert(isGreaterAccraRoadDesignCatalogueValid(), "Greater Accra road cross-section assignments validate");
+  assert(isGreaterAccraPublicTransportRouteCatalogueValid() &&
+    GREATER_ACCRA_PUBLIC_TRANSPORT_ROUTE_PLANS.length === 4,
+    "Greater Accra proposed public transport corridors validate against the primary-road graph");
+  assert(GREATER_ACCRA_PUBLIC_TRANSPORT_ROUTE_PLANS.every((route) =>
+    route.status === "planning_only" && route.distanceM > 0 &&
+    route.waypointNodeIds.length >= 2 && route.roadSegmentIds.length > 0),
+    "public transport corridor plans contain connected road paths and remain explicitly planning-only");
+  assert(GREATER_ACCRA_PUBLIC_TRANSPORT_ROUTE_PLANS.some((route) => route.mode === "trotro") &&
+    GREATER_ACCRA_PUBLIC_TRANSPORT_ROUTE_PLANS.some((route) => route.mode === "city_bus") &&
+    GREATER_ACCRA_PUBLIC_TRANSPORT_ROUTE_PLANS.some((route) => route.mode === "shared_taxi"),
+    "proposed transport corridors cover trotro, city bus and shared taxi modes");
   const railCrossings = deriveRailRoadCrossingCandidates();
   assert(isRailRoadCrossingCatalogueValid() && railCrossings.length === 4,
     "four schematic at-grade road/rail crossing candidates are derived outside Circle and Achimota grade-separated junctions");
