@@ -39,6 +39,7 @@ import { runStage6SmokeChecks } from "./world/stage6SmokeChecks";
 import { AKWAABA_VENUE_PROGRAMME, isVenueProgrammeValid } from "./world/venueProgramme";
 import { AKWANTUO_RETAIL_PRODUCTS, isAkwantuoRetailCatalogueValid } from "./world/retailCatalogue";
 import { AKWANTUO_PRIVATE_ISLAND, PRIVATE_ISLAND_WATERCRAFT, createAkwantuoPrivateIsland, isPrivateIslandCatalogueValid } from "./world/privateIsland";
+import { getAkwantuoSession, loadPlayerProfile, savePlayerProfile, signInAkwantuo, signOutAkwantuo, signUpAkwantuo, type AkwantuoSession } from "./services/supabase";
 
 const bootScreen = document.querySelector<HTMLElement>("#boot-screen");
 const gameShell = document.querySelector<HTMLElement>("#game-shell");
@@ -60,6 +61,16 @@ const characterPanel = document.querySelector<HTMLElement>("#character-panel");
 const characterForm = document.querySelector<HTMLFormElement>("#character-form");
 const characterClose = document.querySelector<HTMLButtonElement>("#character-close");
 const characterSave = document.querySelector<HTMLButtonElement>("#character-save");
+const accountButton = document.querySelector<HTMLButtonElement>("#account-button");
+const accountPanel = document.querySelector<HTMLElement>("#account-panel");
+const accountForm = document.querySelector<HTMLFormElement>("#account-form");
+const accountClose = document.querySelector<HTMLButtonElement>("#account-close");
+const accountSignUp = document.querySelector<HTMLButtonElement>("#account-signup");
+const accountSignOut = document.querySelector<HTMLButtonElement>("#account-signout");
+const accountStatus = document.querySelector<HTMLElement>("#account-status");
+const accountEmail = document.querySelector<HTMLInputElement>("#account-email");
+const accountPassword = document.querySelector<HTMLInputElement>("#account-password");
+const accountDisplayName = document.querySelector<HTMLInputElement>("#account-display-name");
 
 const pressedKeys = new Set<string>();
 const touchInput = { x: 0, z: 0 };
@@ -359,7 +370,19 @@ async function start(): Promise<void> {
   const greaterAccraMappedRailService = createGreaterAccraMappedRailService(scene);
   document.documentElement.dataset.playableMappedRailService = "true";
   document.documentElement.dataset.playableMappedRailBoardingOpen = String(greaterAccraMappedRailService.isBoardingOpen());
+  let activeAccountSession: AkwantuoSession | null = await getAkwantuoSession();
   let currentAppearance = loadAppearance(window.localStorage);
+  if (activeAccountSession) {
+    try {
+      const cloudProfile = await loadPlayerProfile(activeAccountSession);
+      if (cloudProfile?.look) currentAppearance = resolveAppearance(cloudProfile.look);
+      if (accountStatus) accountStatus.textContent = `Signed in as ${activeAccountSession.user.email || "AKWANTUO player"}. Cloud saves are enabled.`;
+      if (accountSignOut) accountSignOut.classList.remove("is-hidden");
+      if (accountButton) accountButton.innerHTML = "ACCOUNT <small>CONNECTED</small>";
+    } catch (error) {
+      console.warn("AKWANTUO cloud profile could not be loaded:", error);
+    }
+  }
   const player = createPlayer(scene, currentAppearance);
   let activeInterior: { buildingId: string; roomId: string; exitX: number; exitZ: number } | null = null;
   // Stage 6 interactions are deliberately session-local previews. Valuable
@@ -1098,15 +1121,115 @@ async function start(): Promise<void> {
   };
   characterForm?.addEventListener("input", updateCharacterPreview);
   characterForm?.addEventListener("change", updateCharacterPreview);
-  characterForm?.addEventListener("submit", (event: SubmitEvent) => {
+  characterForm?.addEventListener("submit", async (event: SubmitEvent) => {
     event.preventDefault();
     updateCharacterPreview();
     const savedLocally = saveAppearance(currentAppearance, window.localStorage);
+    let cloudSaved = false;
+    if (activeAccountSession) {
+      try {
+        await savePlayerProfile(activeAccountSession, currentAppearance);
+        cloudSaved = true;
+      } catch (error) {
+        console.error("AKWANTUO cloud character save failed:", error);
+      }
+    }
     closeCharacterCreator();
-    showNotice(savedLocally
-      ? "Appearance saved on this device. Cloud account saving will come later."
-      : "Appearance updated for this session, but this browser could not save it.");
+    showNotice(cloudSaved
+      ? "Character saved to your AKWANTUO account and this device."
+      : savedLocally
+        ? "Appearance saved on this device. Sign in to enable cloud saves."
+        : "Appearance updated for this session, but this browser could not save it.");
     window.setTimeout(() => notice?.classList.remove("is-visible"), 4200);
+  });
+
+  const openAccountPanel = (): void => {
+    if (!accountPanel) return;
+    accountPanel.classList.remove("is-hidden");
+    accountPanel.setAttribute("aria-hidden", "false");
+    if (activeAccountSession && accountStatus) {
+      accountStatus.textContent = `Signed in as ${activeAccountSession.user.email || "AKWANTUO player"}. Character cloud saves are enabled.`;
+    }
+  };
+  const closeAccountPanel = (): void => {
+    accountPanel?.classList.add("is-hidden");
+    accountPanel?.setAttribute("aria-hidden", "true");
+  };
+  accountButton?.addEventListener("click", openAccountPanel);
+  accountClose?.addEventListener("click", closeAccountPanel);
+
+  accountForm?.addEventListener("submit", async (event: SubmitEvent) => {
+    event.preventDefault();
+    const email = accountEmail?.value.trim() || "";
+    const password = accountPassword?.value || "";
+    if (!email || password.length < 8) {
+      if (accountStatus) accountStatus.textContent = "Enter a valid email and a password of at least 8 characters.";
+      return;
+    }
+    const submit = document.querySelector<HTMLButtonElement>("#account-signin");
+    if (submit) submit.disabled = true;
+    if (accountStatus) accountStatus.textContent = "Signing in to AKWANTUO…";
+    try {
+      activeAccountSession = await signInAkwantuo(email, password);
+      const profile = await loadPlayerProfile(activeAccountSession);
+      if (profile?.look) {
+        currentAppearance = resolveAppearance(profile.look);
+        player.applyAppearance(currentAppearance);
+        if (characterForm) fillAppearanceForm(characterForm, currentAppearance);
+      } else {
+        await savePlayerProfile(activeAccountSession, currentAppearance);
+      }
+      if (accountStatus) accountStatus.textContent = `Signed in as ${email}. Your character profile is synced to AKWANTUO cloud saves.`;
+      if (accountSignOut) accountSignOut.classList.remove("is-hidden");
+      if (accountButton) accountButton.innerHTML = "ACCOUNT <small>CONNECTED</small>";
+      if (accountPassword) accountPassword.value = "";
+    } catch (error) {
+      if (accountStatus) accountStatus.textContent = error instanceof Error ? error.message : "Sign-in failed. Please try again.";
+    } finally {
+      if (submit) submit.disabled = false;
+    }
+  });
+
+  accountSignUp?.addEventListener("click", async () => {
+    const email = accountEmail?.value.trim() || "";
+    const password = accountPassword?.value || "";
+    const displayName = accountDisplayName?.value.trim() || "";
+    if (!email || password.length < 8 || !displayName) {
+      if (accountStatus) accountStatus.textContent = "Enter your email, a player name and a password of at least 8 characters.";
+      return;
+    }
+    accountSignUp.disabled = true;
+    if (accountStatus) accountStatus.textContent = "Creating your AKWANTUO account…";
+    try {
+      const result = await signUpAkwantuo(email, password, displayName);
+      if (!result.session) {
+        if (accountStatus) accountStatus.textContent = "Account created. Check your email to confirm it, then return here to sign in.";
+        return;
+      }
+      activeAccountSession = result.session;
+      await savePlayerProfile(activeAccountSession, currentAppearance, displayName);
+      if (accountStatus) accountStatus.textContent = `Welcome to AKWANTUO, ${displayName}. Your cloud profile is ready.`;
+      if (accountSignOut) accountSignOut.classList.remove("is-hidden");
+      if (accountButton) accountButton.innerHTML = "ACCOUNT <small>CONNECTED</small>";
+      if (accountPassword) accountPassword.value = "";
+    } catch (error) {
+      if (accountStatus) accountStatus.textContent = error instanceof Error ? error.message : "Account creation failed. Please try again.";
+    } finally {
+      accountSignUp.disabled = false;
+    }
+  });
+
+  accountSignOut?.addEventListener("click", async () => {
+    if (accountStatus) accountStatus.textContent = "Signing out…";
+    try {
+      await signOutAkwantuo();
+      activeAccountSession = null;
+      if (accountStatus) accountStatus.textContent = "Signed out. You can still play locally; sign in again to sync cloud saves.";
+      accountSignOut.classList.add("is-hidden");
+      if (accountButton) accountButton.innerHTML = "ACCOUNT <small>ONLINE SAVE</small>";
+    } catch (error) {
+      if (accountStatus) accountStatus.textContent = error instanceof Error ? error.message : "Sign-out failed.";
+    }
   });
 
   playButton?.addEventListener("click", () => {
