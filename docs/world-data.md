@@ -400,3 +400,6 @@ Added `apps/game/src/world/circleInterchangeGroundLevel.ts`. It anchors the grou
 The first prototype uses a 58 m outer radius, 18 m island radius, 14–18 m approach widths and 150 m approach lengths. **These are provisional game-layout values, not surveyed Circle dimensions.** Approach bearings are illustrative so we can test spatial composition and later replace them with reviewed alignment data. The approach meshes overlap the roundabout perimeter slightly to avoid visible seams.
 
 This builder is not yet called by the playable scene. It creates non-pickable, non-colliding visual meshes only. It does not yet create the elevated flyovers, local street splines, lane markings, traffic signals, pedestrian crossings, bridge/rail/river crossings, vehicle paths or collision meshes. The roundabout's existence is supported by the Circle project descriptions; the numeric dimensions and bearings are prototype assumptions for the game.
+
+
+The Circle ground-level prototype now also generates visual lane guidance: inner/outer circulating-road edge lines, a dashed circulating-lane divider, dashed approach centre lines and stop lines at each approach. These are presentation guides only. They are not approved local traffic-control markings and currently have no vehicle, pedestrian or signal behaviour behind them.
