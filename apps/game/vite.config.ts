@@ -14,7 +14,8 @@ export default defineConfig({
       input: {
         main: "index.html",
         circlePreview: "circle-preview.html",
-        stationPreview: "station-preview.html"
+        stationPreview: "station-preview.html",
+        transportPreview: "transport-preview.html"
       }
     }
   }
