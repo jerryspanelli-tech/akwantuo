@@ -609,3 +609,10 @@ The `.github/workflows/transport-preview.yml` workflow now builds this preview o
 Added `apps/game/src/world/trafficRules.ts` to define the initial road-traffic conventions for the Greater Accra simulation: right-hand driving, left-side overtaking where safe and permitted, counterclockwise roundabout circulation, giving way to traffic already circulating, keeping junctions clear, stopping at red signals, respecting marked pedestrian crossings, yielding to emergency vehicles and using designated public-transport stopping areas.
 
 The rules deliberately do not assign numerical speed limits or assume that a road class automatically determines a posted limit. Posted signs, local restrictions, signal phases, lane controls and junction priority must be supplied by reviewed road-control data. This is a gameplay baseline, not a complete legal code or a live traffic simulation. No AI drivers, vehicle physics, traffic lights, collision rules or multiplayer traffic authority are implemented by this catalogue.
+
+
+## Transport preview visual review update
+
+The generic transport preview now includes a sheltered pedestrian walkway linking the station entrance to the interchange island. The parked trotro, city bus, taxi and ride-hailing placeholders have clearer low-poly silhouettes with window bands, windscreens, wheels and front lamps; the taxi also has a roof sign. These are still temporary visual placeholders, not final Ghanaian vehicle assets.
+
+The screenshot workflow now also runs when the station-access, station-interchange, rail-track, road-vehicle or traffic-rule foundations change. It verifies the TypeScript check and production build before capturing the 1440 × 1000 Chromium preview and uploading the screenshot plus a scope report. The workflow remains a developer validation tool and does not publish the game.
