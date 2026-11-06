@@ -26,6 +26,7 @@ import {
   isRailTrainOperationConfigValid,
   type RailTrainOperationConfig
 } from "./railTrainOperations";
+import { createRailServiceConfig } from "./railService";
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error("Transport smoke check failed: " + message);
@@ -196,6 +197,15 @@ export function runTransportSmokeChecks(): void {
   assert(mayProceedOnTrafficSignal("green", true), "protected movement may proceed on green");
   assert(!mayProceedOnTrafficSignal("amber", true) && !mayProceedOnTrafficSignal("green", false), "amber and unprotected conflicting movements cannot proceed");
   expectThrow(() => getTrafficSignalState(signalPlan, Number.NaN), "invalid signal simulation time is rejected");
+
+  const mappedAccraTrunk = createRailServiceConfig("accra-odaw-achimota");
+  assert(mappedAccraTrunk.path.length >= 2 && mappedAccraTrunk.stops.length === 0,
+    "mapped Accra–Odaw–Achimota train passes the candidate Odaw corridor without inventing a station stop");
+  const mappedTemaBranch = createRailServiceConfig("achimota-to-tema");
+  assert(mappedTemaBranch.stops.length === 1 && mappedTemaBranch.stops[0].id === "tema-rail-station",
+    "mapped Achimota–Tema train stops only at the planned Tema terminal");
+  expectThrow(() => createRailServiceConfig("achimota-to-nsawam"),
+    "future Nsawam rail expansion cannot become a first-release service");
 
   const railConfig: RailTrainOperationConfig = {
     path: [{ x: 0, z: 0 }, { x: 0, z: 20 }],
