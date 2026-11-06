@@ -25,6 +25,13 @@
 - This first playable vehicle slice is local-only and uses the prototype kinematic model; it is not yet a complete vehicle fleet or network-authoritative system.
 
 
+
+### Greater Accra road route planning
+- Added a shortest-distance route planner over the conceptual primary-road graph. It returns ordered node and segment IDs plus distance derived from the schematic map polylines.
+- Future expansion stubs are excluded by default and can only be included when explicitly requested. Disconnected graph components return no route rather than inventing a connection.
+- Runtime smoke checks cover Mallam-to-Tema routing, the future Prampram gateway exclusion/opt-in, and the currently disconnected Achimota component.
+- Important limitation: the route is marked `planning_only`. The graph currently assumes bidirectional segments and does not enforce legal turns, grade-separated ramp transitions, lane directions, signal phases, congestion or vehicle-specific restrictions. It is not yet a driving/navigation system.
+
 ### Greater Accra road-network preview
 - Added a dedicated developer page at `/greater-accra-transport-preview.html` that renders the first-release Greater Accra road corridor ribbons and lane markings from the shared map layout, with district-anchor markers, junction reservation envelopes and the schematic Gulf of Guinea coastline.
 - The preview uses the same 21 km × 13.5 km planning coordinate frame as the Greater Accra layout. It is a navigable visual review scene, not a drivable map or a surveyed geographic representation.
