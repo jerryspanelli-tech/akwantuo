@@ -47,6 +47,11 @@ try {
   camera.upperBetaLimit = 1.48;
   camera.wheelPrecision = 24;
   camera.panningSensibility = 110;
+  const detailView = new URLSearchParams(window.location.search).get("view") === "detail";
+  if (detailView) {
+    camera.radius = 9500;
+    camera.setTarget(new Vector3(0, 0, 500));
+  }
   camera.attachControl(canvas, true);
   scene.activeCamera = camera;
 
