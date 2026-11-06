@@ -24,6 +24,10 @@ try {
   // Allow the first WebGL frame to finish after synchronous map construction.
   await page.waitForTimeout(1200);
   await page.screenshot({ path: "artifacts/akwantuo-greater-accra-road-network.png", fullPage: false, timeout: 30000 });
+  await page.mouse.move(720, 500);
+  await page.mouse.wheel(0, -1200);
+  await page.waitForTimeout(800);
+  await page.screenshot({ path: "artifacts/akwantuo-greater-accra-road-network-detail.png", fullPage: false, timeout: 30000 });
   console.log("Greater Accra road-network preview passed: " + status);
 } finally {
   await browser.close();
