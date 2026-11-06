@@ -263,7 +263,7 @@ export function runTransportSmokeChecks(): void {
     isMotorcycleDynamicsStateValid(motorcycleFastTurn, motorcycleConfig),
     "motorcycle lean remains bounded during a high-speed turn");
   const motorcycleBraking = advanceMotorcycleDynamics(
-    motorcycleTurning, { ...motorcycleTurning, speedMps: 0.8 },
+    motorcycleConfig, { ...motorcycleTurning, speedMps: 0.8 },
     { throttle: 0, brake: 1, steering: 0 },
     0.1
   );
