@@ -14,6 +14,7 @@ import {
 } from "../vehicles/roadVehicleDynamics";
 import { enterVehicle, exitVehicle, type VehicleInteractionState } from "../vehicles/vehicleInteraction";
 import { isVehiclePathClear } from "../vehicles/vehicleCollision";
+import { advanceMotorcycleDynamics, isMotorcycleDynamicsConfigValid, isMotorcycleDynamicsStateValid } from "../vehicles/motorcycleDynamics";
 import {
   alightPublicTransport,
   boardPublicTransport,
@@ -231,6 +232,46 @@ export function runTransportSmokeChecks(): void {
   assert(stoppedVehicle.speedMps === 0, "service brake can bring a low-speed vehicle to a stop");
   expectThrow(() => advanceRoadVehicleDynamics(dynamicsConfig, initialVehicle,
     { throttle: 2, brake: 0, steering: 0 }, 0.1), "invalid road vehicle input is rejected");
+  const motorcycleConfig = {
+    wheelbaseM: 1.4,
+    maximumForwardSpeedMps: 32,
+    maximumReverseSpeedMps: 2,
+    maximumAccelerationMps2: 4,
+    serviceBrakingMps2: 7,
+    maximumSteeringAngleRadians: 0.45,
+    maximumLeanAngleRadians: 0.61,
+    gravityMps2: 9.81,
+    rollingDragMps2: 0.25
+  };
+  const motorcycleStart = { x: 0, z: 0, headingRadians: 0, speedMps: 0, leanAngleRadians: 0 };
+  assert(isMotorcycleDynamicsConfigValid(motorcycleConfig) &&
+    isMotorcycleDynamicsStateValid(motorcycleStart, motorcycleConfig),
+    "motorcycle steering and lean configuration validates");
+  const motorcycleTurning = advanceMotorcycleDynamics(
+    motorcycleConfig, motorcycleStart, { throttle: 1, brake: 0, steering: 0.8 }, 0.2
+  );
+  assert(motorcycleTurning.speedMps > 0 && motorcycleTurning.headingRadians > 0 &&
+    motorcycleTurning.leanAngleRadians > 0,
+    "motorcycle accelerates, steers and leans into a turn");
+  const motorcycleFastTurn = advanceMotorcycleDynamics(
+    motorcycleConfig,
+    { ...motorcycleStart, speedMps: 28 },
+    { throttle: 0, brake: 0, steering: 1 },
+    0.1
+  );
+  assert(Math.abs(motorcycleFastTurn.leanAngleRadians) <= motorcycleConfig.maximumLeanAngleRadians &&
+    isMotorcycleDynamicsStateValid(motorcycleFastTurn, motorcycleConfig),
+    "motorcycle lean remains bounded during a high-speed turn");
+  const motorcycleBraking = advanceMotorcycleDynamics(
+    motorcycleTurning, { ...motorcycleTurning, speedMps: 0.8 },
+    { throttle: 0, brake: 1, steering: 0 },
+    0.1
+  );
+  assert(motorcycleBraking.speedMps < 0.8,
+    "motorcycle service braking reduces forward speed");
+  expectThrow(() => advanceMotorcycleDynamics(
+    motorcycleConfig, motorcycleStart, { throttle: 0, brake: 0, steering: 2 }, 0.1
+  ), "invalid motorcycle steering input is rejected");
 
   const crossingLayout = {
     id: "smoke-crossing", centre: { x: 0, z: 0 }, acrossDirection: { x: 1, z: 0 },
