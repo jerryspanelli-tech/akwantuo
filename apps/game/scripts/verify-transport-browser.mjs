@@ -46,10 +46,11 @@ try {
     const stageSixCatalogues = await page.evaluate(() => ({
       buildings: Number(document.documentElement.dataset.akwantuoBuildingCount ?? 0),
       properties: Number(document.documentElement.dataset.akwantuoPropertyCount ?? 0),
-      interiorBlueprints: Number(document.documentElement.dataset.akwantuoInteriorBlueprintCount ?? 0)
+      interiorBlueprints: Number(document.documentElement.dataset.akwantuoInteriorBlueprintCount ?? 0),
+      renderedInteriorRooms: Number(document.documentElement.dataset.akwantuoInteriorRoomCount ?? 0)
     }));
     if (stageSixCatalogues.buildings !== 22 || stageSixCatalogues.properties !== 22 ||
-        stageSixCatalogues.interiorBlueprints !== 8) {
+        stageSixCatalogues.interiorBlueprints !== 8 || stageSixCatalogues.renderedInteriorRooms !== 8) {
       failures.push(target.name + ": Stage 6 building/property/interior catalogues are incomplete: " +
         JSON.stringify(stageSixCatalogues));
     }
