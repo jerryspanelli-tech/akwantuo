@@ -14,7 +14,7 @@ import { createRailServiceConfig } from "./world/railService";
 import { advanceRoadVehicleDynamics, type RoadVehicleDynamicsState } from "./vehicles/roadVehicleDynamics";
 import { createRoadVehicleGeometry } from "./vehicles/roadVehicleGeometry";
 import { createRoadVehicleRig } from "./vehicles/roadVehicleRig";
-import { enterVehicle, exitVehicle, type VehicleInteractionState } from "./vehicles/vehicleInteraction";
+import { enterVehicle, exitVehicle } from "./vehicles/vehicleInteraction";
 import { boardPublicTransport, alightPublicTransport } from "./world/publicTransportOperations";
 
 const canvas = document.querySelector<HTMLCanvasElement>("#station-preview-canvas");
