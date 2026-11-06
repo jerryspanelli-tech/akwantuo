@@ -131,18 +131,39 @@ export function createInteriorRooms(scene: Scene): readonly InteriorRoomInstance
           for (let seat = 0; seat < 4; seat += 1) {
             const x = side * (6.5 + seat * 1.45);
             const z = 6 - row * 2.65;
+            const tierRise = (3 - row) * 0.28;
             const base = MeshBuilder.CreateBox("creative-centre-seat-base-" + side + "-" + row + "-" + seat, { width: 1.05, height: 0.42, depth: 0.95 }, scene);
             base.parent = root;
-            base.position.set(x, 0.38, z);
+            base.position.set(x, 0.38 + tierRise, z);
             base.material = seatMaterial;
             base.isPickable = false;
             const back = MeshBuilder.CreateBox("creative-centre-seat-back-" + side + "-" + row + "-" + seat, { width: 1.05, height: 0.95, depth: 0.2 }, scene);
             back.parent = root;
-            back.position.set(x, 0.9, z - 0.38);
+            back.position.set(x, 0.9 + tierRise, z - 0.38);
             back.material = seatMaterial;
             back.isPickable = false;
           }
         }
+      }
+      for (const side of [-1, 1]) {
+        for (let row = 0; row < 4; row += 1) {
+          const riser = MeshBuilder.CreateBox("creative-centre-audience-riser-" + side + "-" + row, {
+            width: 6.2, height: 0.28, depth: 2.2
+          }, scene);
+          riser.parent = root;
+          riser.position.set(side * 8.8, 0.14 + (3 - row) * 0.28, 6 - row * 2.65);
+          riser.material = frameMaterial;
+          riser.isPickable = false;
+        }
+      }
+      for (const side of [-1, 1]) {
+        const runwayEdge = MeshBuilder.CreateBox("creative-centre-runway-edge-" + side, {
+          width: 0.08, height: 0.06, depth: 12.4
+        }, scene);
+        runwayEdge.parent = root;
+        runwayEdge.position.set(side * 1.72, 0.14, -1);
+        runwayEdge.material = createMaterial(scene, "creative-centre-runway-edge", "#d4a84f");
+        runwayEdge.isPickable = false;
       }
       for (const side of [-1, 1]) {
         const truss = MeshBuilder.CreateBox("creative-centre-light-truss-" + side, { width: 0.22, height: 0.22, depth: 23 }, scene);
