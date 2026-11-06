@@ -518,3 +518,10 @@ The builder accepts explicit map position and provisional dimensions, and return
 Default dimensions are only a **visual massing prototype**. Platform count, platform arrangement, track spacing, heights, roof spans, structural systems, fire exits, evacuation capacity and accessible circulation must be reviewed against a verified site plan and railway engineering requirements before a station is treated as final.
 
 The builder is not yet integrated into the playable game or a standalone station preview. It creates visual meshes only; no trains, tracks, passenger systems, station services, collision or interactive ticketing are included.
+
+
+### Standalone ultra-modern station developer preview
+
+Added `apps/game/station-preview.html` and `apps/game/src/stationPreview.ts`, with matching preview styling and a Vite build entry. This developer page renders the reusable station massing prototype with an orbit camera, zoom and touch controls. Open `/station-preview.html` while running the game workspace to inspect the concept.
+
+The preview shows one generic flagship-scale station concept to review the visual direction. It is not yet an Accra Central, Achimota or Tema site-specific reconstruction, and it is not part of the playable game menu or deployed game.
