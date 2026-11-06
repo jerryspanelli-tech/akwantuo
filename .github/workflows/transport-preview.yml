@@ -42,6 +42,8 @@ on:
       - "apps/game/src/world/interiorRooms.ts"
       - "apps/game/src/world/stage6SmokeChecks.ts"
       - "apps/game/src/world/districtBusinesses.ts"
+      - "apps/game/src/world/retailCatalogue.ts"
+      - "apps/game/src/world/privateIsland.ts"
       - "apps/game/src/world/venueProgramme.ts"
       - "apps/game/src/world/railNetwork.ts"
       - "apps/game/src/world/railStations.ts"
