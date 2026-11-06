@@ -208,6 +208,18 @@ export function runTransportSmokeChecks(): void {
   assert(mappedAccraToTema.path.length === 13 && mappedAccraToTema.stops.length === 1 &&
     mappedAccraToTema.stops[0].id === "tema-rail-station",
     "connected Accra–Tema route chain passes Odaw and Achimota and stops only at Tema");
+  expectThrow(() => createRailServiceConfigForRouteChain(["achimota-to-tema", "accra-odaw-achimota"]),
+    "disconnected or reversed rail route chains are rejected");
+  let mappedRailState = createRailTrainOperationState();
+  let mappedRailSawTemaDwell = false;
+  for (let frame = 0; frame < 2000 && !mappedRailState.completed; frame += 1) {
+    mappedRailState = advanceRailTrain(mappedAccraToTema, mappedRailState, 1).state;
+    if (mappedRailState.currentStopId === "tema-rail-station" ||
+        mappedRailState.dwellRemainingSeconds > 0) mappedRailSawTemaDwell = true;
+  }
+  assert(mappedRailSawTemaDwell && mappedRailState.completed &&
+    mappedRailState.distanceM > 10000 && mappedRailState.speedMps === 0,
+    "mapped Accra-to-Tema train traverses the connected route and dwells at the Tema terminal");
   expectThrow(() => createRailServiceConfig("achimota-to-nsawam"),
     "future Nsawam rail expansion cannot become a first-release service");
 
