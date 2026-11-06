@@ -9,7 +9,11 @@ export type InteriorFixtureType =
   | "desk"
   | "medical_bed"
   | "tool_bench"
-  | "display";
+  | "display"
+  | "stage"
+  | "runway"
+  | "audience_seating"
+  | "screen";
 
 export type InteriorFixture = Readonly<{
   type: InteriorFixtureType;
@@ -88,6 +92,13 @@ export const INTERIOR_BLUEPRINTS: readonly InteriorBlueprint[] = [
     { type: "desk", x: 3.2, z: -2.8, rotationY: 0, scale: 0.9 },
     { type: "chair", x: 3.2, z: -1.2, rotationY: 0, scale: 0.9 },
     { type: "counter", x: 0, z: -4.3, rotationY: 0, scale: 0.8 }
+  ] },
+  { id: "creative-arts-centre", displayName: "Akwaaba Creative Arts & Events Hall", width: 32, depth: 28, wallHeight: 12, floorStyle: "concrete", fixtures: [
+    { type: "stage", x: 0, z: -10, rotationY: 0, scale: 1 },
+    { type: "runway", x: 0, z: -1, rotationY: 0, scale: 1 },
+    { type: "screen", x: 0, z: -13, rotationY: 0, scale: 1 },
+    { type: "audience_seating", x: -10, z: 2, rotationY: 0, scale: 1 },
+    { type: "audience_seating", x: 10, z: 2, rotationY: 0, scale: 1 }
   ] }
 ] as const;
 
