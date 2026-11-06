@@ -45,6 +45,7 @@ on:
       - "apps/game/src/vehicles/passengerCamera.ts"
       - "apps/game/scripts/verify-transport-browser.mjs"
       - "apps/game/src/world/publicTransportOperations.ts"
+      - "apps/game/src/world/publicTransportRoutes.ts"
       - "apps/game/station-preview.css"
       - "apps/game/src/transportPreview.ts"
       - "apps/game/src/greaterAccraTransportPreview.ts"
