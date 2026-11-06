@@ -24,6 +24,13 @@
 - The playable saloon now has an in-cabin window view, interior free-look and exterior follow camera modes, cycled with C / the on-screen VIEW control. Camera anchors follow the vehicle rig.
 - This first playable vehicle slice is local-only and uses the prototype kinematic model; it is not yet a complete vehicle fleet or network-authoritative system.
 
+
+### Greater Accra road-network preview
+- Added a dedicated developer page at `/greater-accra-transport-preview.html` that renders the first-release Greater Accra road corridor ribbons and lane markings from the shared map layout, with district-anchor markers, junction reservation envelopes and the schematic Gulf of Guinea coastline.
+- The preview uses the same 21 km × 13.5 km planning coordinate frame as the Greater Accra layout. It is a navigable visual review scene, not a drivable map or a surveyed geographic representation.
+- Added a Chromium browser check to open the preview, detect uncaught page errors, verify its ready status and capture a map screenshot as a workflow artifact.
+- The main-game startup handoff was also reordered so the boot overlay is dismissed and the menu shown before the continuous render loop starts. This avoids making the first menu transition depend on render-loop scheduling; the latest desktop/mobile journey test is pending.
+
 ### Road traffic controls
 - Added a reusable zebra-crossing and tactile-paving geometry builder. Its layout validator checks unit direction, crossing dimensions, stripe count/width and tactile-paving depth; startup smoke checks cover valid layouts and reject invalid geometry inputs. No real Greater Accra crossing is placed yet because exact junction endpoints and pedestrian desire lines still need map integration and review.
 - Added a deterministic traffic-signal phase model with configurable green, amber and red durations plus a simulation-time offset.
