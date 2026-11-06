@@ -58,7 +58,9 @@ export function isRailTrainOperationConfigValid(config: RailTrainOperationConfig
   }
 
   const measured = measurePath(config.path);
-  if (!(measured.totalDistanceM > 0)) return false;
+  if (!(measured.totalDistanceM > 0) || config.path.some((point, index) =>
+    index > 0 && Math.hypot(point.x - config.path[index - 1].x, point.z - config.path[index - 1].z) < 1e-6
+  )) return false;
   const ids = new Set<string>();
   let previousDistance = -1;
   return config.stops.every((stop) => {
