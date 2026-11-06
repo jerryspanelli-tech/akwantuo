@@ -30,11 +30,13 @@ export type CircleGroundGeometryResult = Readonly<{
   centralIsland: Mesh;
   islandKerb: Mesh;
   approachRoads: readonly Mesh[];
+  laneMarkings: readonly Mesh[];
 }>;
 
 const ASPHALT = new Color3(0.15, 0.16, 0.16);
 const ISLAND_GREEN = new Color3(0.16, 0.31, 0.17);
 const KERB_GREY = new Color3(0.62, 0.62, 0.58);
+const LINE_WHITE = new Color3(0.9, 0.9, 0.86);
 
 function material(scene: Scene, name: string, color: Color3): StandardMaterial {
   const existing = scene.getMaterialByName(name);
@@ -143,5 +145,109 @@ export function createCircleGroundGeometry(
     return road;
   });
 
-  return { circulatingSurface, centralIsland, islandKerb, approachRoads };
+  const markingY = options.groundElevationM + 0.075;
+  const circlePath = (radius: number): Vector3[] =>
+    Array.from({ length: 97 }, (_, index) => {
+      const angle = (index / 96) * Math.PI * 2;
+      return new Vector3(
+        options.centerX + Math.cos(angle) * radius,
+        markingY,
+        options.centerZ + Math.sin(angle) * radius
+      );
+    });
+  const laneDashRadius = (options.outerRadiusM + options.islandRadiusM) / 2;
+  const dashLines: Vector3[][] = [];
+  const dashCount = Math.max(24, Math.round(2 * Math.PI * laneDashRadius / 10));
+  for (let index = 0; index < dashCount; index += 1) {
+    const start = (index / dashCount) * Math.PI * 2;
+    const end = start + (Math.PI * 2 / dashCount) * 0.55;
+    dashLines.push([
+      new Vector3(
+        options.centerX + Math.cos(start) * laneDashRadius,
+        markingY,
+        options.centerZ + Math.sin(start) * laneDashRadius
+      ),
+      new Vector3(
+        options.centerX + Math.cos(end) * laneDashRadius,
+        markingY,
+        options.centerZ + Math.sin(end) * laneDashRadius
+      )
+    ]);
+  }
+
+  const laneMarkings: Mesh[] = [];
+  const laneDivider = MeshBuilder.CreateLineSystem(
+    `${options.id}-roundabout-lane-divider`,
+    { lines: dashLines, updatable: false },
+    scene
+  );
+  laneDivider.color = LINE_WHITE;
+  laneDivider.isPickable = false;
+  laneMarkings.push(laneDivider);
+
+  const edgeLines = MeshBuilder.CreateLineSystem(
+    `${options.id}-roundabout-edge-lines`,
+    { lines: [circlePath(options.outerRadiusM - 1.6), circlePath(options.islandRadiusM + 1.8)], updatable: false },
+    scene
+  );
+  edgeLines.color = LINE_WHITE;
+  edgeLines.isPickable = false;
+  laneMarkings.push(edgeLines);
+
+  (options.approaches ?? []).forEach((approach) => {
+    const bearing = approach.bearingRadians;
+    const directionX = Math.sin(bearing);
+    const directionZ = Math.cos(bearing);
+    const perpendicularX = Math.cos(bearing);
+    const perpendicularZ = -Math.sin(bearing);
+    const startDistance = options.outerRadiusM + 9;
+    const endDistance = options.outerRadiusM + approach.roadLengthM - 5;
+    const centreLine = MeshBuilder.CreateLines(
+      `${options.id}-approach-centreline-${approach.id}`,
+      {
+        points: [
+          new Vector3(
+            options.centerX + directionX * startDistance,
+            markingY,
+            options.centerZ + directionZ * startDistance
+          ),
+          new Vector3(
+            options.centerX + directionX * endDistance,
+            markingY,
+            options.centerZ + directionZ * endDistance
+          )
+        ]
+      },
+      scene
+    );
+    centreLine.color = LINE_WHITE;
+    centreLine.isPickable = false;
+    laneMarkings.push(centreLine);
+
+    const stopDistance = options.outerRadiusM + 3;
+    const halfWidth = approach.roadWidthM * 0.42;
+    const stopLine = MeshBuilder.CreateLines(
+      `${options.id}-approach-stopline-${approach.id}`,
+      {
+        points: [
+          new Vector3(
+            options.centerX + directionX * stopDistance - perpendicularX * halfWidth,
+            markingY,
+            options.centerZ + directionZ * stopDistance - perpendicularZ * halfWidth
+          ),
+          new Vector3(
+            options.centerX + directionX * stopDistance + perpendicularX * halfWidth,
+            markingY,
+            options.centerZ + directionZ * stopDistance + perpendicularZ * halfWidth
+          )
+        ]
+      },
+      scene
+    );
+    stopLine.color = LINE_WHITE;
+    stopLine.isPickable = false;
+    laneMarkings.push(stopLine);
+  });
+
+  return { circulatingSurface, centralIsland, islandKerb, approachRoads, laneMarkings };
 }
