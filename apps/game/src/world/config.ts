@@ -1,8 +1,8 @@
 import type { Vector3Data } from "@akwantuo/shared";
 
 export const WORLD_CONFIG = {
-  id: "accra-preview",
-  displayName: "Accra District",
+  id: "akwantuo-greater-accra",
+  displayName: "Osu, Greater Accra",
   coordinateUnit: "metres",
   ground: {
     width: 21000,
@@ -23,9 +23,9 @@ export const WORLD_CONFIG = {
     playerMaxZ: 8400
   },
   spawn: {
-    x: 0,
+    x: 1100,
     y: 0,
-    z: 5
+    z: -1250
   } satisfies Vector3Data,
   environment: {
     clearColor: [0.48, 0.62, 0.66, 1] as const,
