@@ -347,6 +347,9 @@ async function start(): Promise<void> {
         if (taxiStep.z <= publicRideEndZ) { publicTaxiState = { ...taxiStep, z: publicRideEndZ, speedMps: 0 }; publicRideArrived = true; showNotice("You have reached the final stop. Press ALIGHT to leave the trotro."); }
         else publicTaxiState = taxiStep;
         publicTaxi.update(publicTaxiState);
+        document.documentElement.dataset.trotroZ = publicTaxiState.z.toFixed(3);
+        document.documentElement.dataset.trotroSpeed = publicTaxiState.speedMps.toFixed(3);
+        document.documentElement.dataset.trotroArrived = String(publicRideArrived);
       }
       if (vehicleActionRequested) {
         vehicleActionRequested = false;
