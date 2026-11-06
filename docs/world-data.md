@@ -574,3 +574,19 @@ Added `apps/game/src/world/railStationAccessGeometry.ts` as a reusable Babylon.j
 The builder requires explicit start/end coordinates and dimensions for every connection. It does not assume where Accra Central, Achimota or Tema platforms, lifts, stairs or entrances will sit. This lets a later reviewed station-site layout provide the exact connection data without embedding guessed positions in shared geometry code.
 
 These meshes are visual prototypes only. They do not establish compliant ramp gradients, stair risers/treads, lift capacity, fire strategy, structural design, tactile standards or accessible-route certification. Those details must be checked against applicable Ghanaian requirements and the approved station design. No station-specific access links have been placed yet, and this module is not integrated into the generic station preview or playable world.
+
+
+## Railway station public-transport interchange
+
+Added `apps/game/src/world/railStationInterchange.ts` as the station-to-city transport service catalogue. Each planned first-release station has explicit interchange service briefs for:
+
+- trotros and city buses;
+- taxi ranks and ride-hailing pickup;
+- private-vehicle drop-off and pickup;
+- pedestrian access and bicycle access/parking.
+
+The catalogue requires clear separation between pedestrians and moving vehicles, sheltered waiting, visible wayfinding, step-free station connections and unobstructed emergency access. It intentionally does not invent bay counts, traffic capacity, exact station forecourt positions or local road connections. Those need a station-specific site layout.
+
+Added `apps/game/src/world/stationInterchangeGeometry.ts`, a configurable Babylon.js forecourt builder. It can create a marked vehicle forecourt, protected pedestrian island, shelter structures, pickup-bay markings, pedestrian crossing and representative parked-vehicle placeholders from explicitly supplied bay coordinates. These are visual meshes only; there is no vehicle routing, queue simulation, boarding logic, collision or traffic control.
+
+A generic interactive 3D preview is available at `/transport-preview.html` in the Vite game workspace. It combines the ultra-modern station concept with a sample trotro, city-bus, taxi and ride-hailing forecourt. The sample coordinates and dimensions are illustrative only and are not assigned to Accra Central, Achimota or Tema. This developer preview is separate from the main playable game and is not deployed.
