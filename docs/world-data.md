@@ -403,3 +403,26 @@ This builder is not yet called by the playable scene. It creates non-pickable, n
 
 
 The Circle ground-level prototype now also generates visual lane guidance: inner/outer circulating-road edge lines, a dashed circulating-lane divider, dashed approach centre lines and stop lines at each approach. These are presentation guides only. They are not approved local traffic-control markings and currently have no vehicle, pedestrian or signal behaviour behind them.
+
+
+### Circle elevated viaduct 3D layout prototype
+
+Added `apps/game/src/world/circleInterchangeElevatedLayout.ts` and the combined `createCircleInterchangeGeometry(scene)` entry point in `apps/game/src/world/circleInterchangeGeometry.ts`. The layout now has visual 3D deck, underside, fascia, guardrail and support geometry for four principal structures:
+
+| Structure | Reference length | Reference deck width | Prototype supports |
+|---|---:|---:|---:|
+| Ring Road main viaduct | 925 m | 24.0 m | 24 intermediate support stations across 25 spans |
+| Akasanoma viaduct | 168.3 m | 9.2 m | 4 intermediate support stations across 5 spans |
+| Nsawam viaduct | 167.8 m | 9.2 m | 4 intermediate support stations across 5 spans |
+| Loop viaduct | 323 m | 9.2 m | 9 intermediate support stations across 10 spans |
+
+The lengths, widths and span counts are transcribed from FHECOR's 2016 detailed-design project sheet. The main Ring Road deck is represented as a diagonal second-level structure, with the Akasanoma, Nsawam and loop decks at a lower provisional level. Support stations are evenly distributed from the reported span counts for the game prototype; they are not claimed to be the real pier coordinates.
+
+The 2023 aerial photograph is used only as a visual orientation reference for the broad diagonal viaduct and loop composition. The published project description identifies the Ring Road flyover between Fanofa Bridge and Feo Oyeo, connecting Ring Road Central to Ring Road West, and says it crosses the Odaw River and railway. The current local paths, heights, curve shapes, support sizes and exact crossing positions remain provisional. The geometry builder does not yet create the three single-span bridges, Feo Oyeo ramps, exact river/rail alignments, road approaches to the decks or traffic connections.
+
+The combined builder is **not yet called by the playable scene**. It produces visual-only Babylon meshes; collision, drivable surfaces, navigation, lane rules, traffic signals and vehicle movement are still separate work.
+
+References:
+- [FHECOR — Dr. Kwame Nkrumah Interchange (2016 detailed design)](https://fhecor.com/proyecto.php?id=345)
+- [Graphic Online — Odaw River bridge and interchange layout description](https://www.graphic.com.gh/news/general-news/odaw-river-bridge-to-be-demolished-to-pave-way-circle-interchange.html)
+- [2023 aerial view of Kwame Nkrumah Interchange, Wikimedia Commons, CC BY-SA 4.0](https://commons.wikimedia.org/wiki/File:Circle_the_Wonderland.jpg)
