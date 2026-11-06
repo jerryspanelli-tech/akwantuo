@@ -16,7 +16,18 @@
       </section>
       <section class="station-preview__note">
         <strong>Transport interchange prototype</strong>
-        <span>Orbit and zoom to inspect the station forecourt and train. Drive the demo saloon with W/S or ↑/↓, steer with A/D or ←/→, and brake with Space. Vehicle handling is a prototype without collision.</span>
+        <span>Orbit and zoom to inspect the station forecourt and train. Drive the demo saloon with keyboard or the touch controls. Vehicle handling is a prototype without collision.</span>
+      </section>
+      <section class="station-preview__drive" aria-label="Touch driving controls">
+        <div class="station-preview__drive-steer">
+          <button type="button" data-drive="a" aria-label="Steer left">◀</button>
+          <button type="button" data-drive="d" aria-label="Steer right">▶</button>
+        </div>
+        <div class="station-preview__drive-pedals">
+          <button type="button" data-drive="w" aria-label="Accelerate">ACCEL</button>
+          <button type="button" data-drive=" " aria-label="Brake">BRAKE</button>
+          <button type="button" data-drive="s" aria-label="Reverse">REV</button>
+        </div>
       </section>
       <div id="station-preview-error" class="station-preview__error" hidden></div>
     </main>
