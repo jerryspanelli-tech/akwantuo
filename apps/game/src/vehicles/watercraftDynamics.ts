@@ -94,7 +94,12 @@ export function advanceWatercraftDynamics(
 }
 
 export function isWatercraftInNavigableSea(state: WatercraftDynamicsState): boolean {
-  return Number.isFinite(state.x) && Number.isFinite(state.z) &&
-    state.x >= -8200 && state.x <= 13200 &&
-    state.z >= -10400 && state.z <= -3310;
+  if (!Number.isFinite(state.x) || !Number.isFinite(state.z) ||
+      state.x < -8200 || state.x > 13200 ||
+      state.z < -10400 || state.z > -3310) return false;
+  const islandX = (state.x - 7000) / 260;
+  const islandZ = (state.z + 4300) / 190;
+  const insideIsland = islandX * islandX + islandZ * islandZ < 1.12;
+  const atIslandMarina = Math.hypot(state.x - 7145, state.z + 4215) <= 48;
+  return !insideIsland || atIslandMarina;
 }
