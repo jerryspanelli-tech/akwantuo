@@ -30,6 +30,9 @@ import { alightPublicTransport, boardPublicTransport, type PublicTransportPassen
 import { createPlayableRailDemo } from "./world/playableRailDemo";
 import { createGreaterAccraMappedRailService } from "./world/mappedRailService";
 import { runTransportSmokeChecks } from "./world/transportSmokeChecks";
+import { DISTRICT_BUILDINGS } from "./world/ghanaianStreetBuildings";
+import { DISTRICT_PROPERTIES } from "./world/districtProperties";
+import { INTERIOR_BLUEPRINTS } from "./world/interiorBlueprints";
 
 const bootScreen = document.querySelector<HTMLElement>("#boot-screen");
 const gameShell = document.querySelector<HTMLElement>("#game-shell");
@@ -295,6 +298,9 @@ async function start(): Promise<void> {
 
   // Fail early if core fare, boarding, vehicle, or rail-operation contracts regress.
   runTransportSmokeChecks();
+  document.documentElement.dataset.akwantuoBuildingCount = String(DISTRICT_BUILDINGS.length);
+  document.documentElement.dataset.akwantuoPropertyCount = String(DISTRICT_PROPERTIES.length);
+  document.documentElement.dataset.akwantuoInteriorBlueprintCount = String(INTERIOR_BLUEPRINTS.length);
 
   bootStatus.textContent = "Loading the world engine…";
   await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
