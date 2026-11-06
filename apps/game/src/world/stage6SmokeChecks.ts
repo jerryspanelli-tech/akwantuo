@@ -3,6 +3,7 @@ import { DISTRICT_PROPERTIES, isDistrictPropertyCatalogueValid } from "./distric
 import { INTERIOR_BLUEPRINTS, isInteriorBlueprintCatalogueValid } from "./interiorBlueprints";
 import { GREATER_ACCRA_REGION_ANCHORS } from "./greaterAccraLayout";
 import { DISTRICT_BUSINESSES, isDistrictBusinessCatalogueValid } from "./districtBusinesses";
+import { isVenueProgrammeValid } from "./venueProgramme";
 
 /** Fail-fast integrity checks for Stage 6 world content before the scene starts. */
 export function runStage6SmokeChecks(): void {
@@ -10,6 +11,7 @@ export function runStage6SmokeChecks(): void {
   if (!isInteriorBlueprintCatalogueValid()) throw new Error("Stage 6 interior blueprint catalogue failed structural validation.");
   if (!isDistrictPropertyCatalogueValid()) throw new Error("Stage 6 property directory failed structural validation.");
   if (!isDistrictBusinessCatalogueValid()) throw new Error("Stage 6 business directory failed structural validation.");
+  if (!isVenueProgrammeValid()) throw new Error("Creative arts venue programme failed structural validation.");
 
   const blueprintIds = new Set(INTERIOR_BLUEPRINTS.map((blueprint) => blueprint.id));
   const buildingIds = new Set(DISTRICT_BUILDINGS.map((building) => building.id));
