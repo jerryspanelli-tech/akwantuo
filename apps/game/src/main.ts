@@ -617,6 +617,9 @@ async function start(): Promise<void> {
   const interiorTestBuildingId = new URLSearchParams(window.location.search).get("akwantuoInteriorTest") ?? "";
   const interiorTestMode = isLocalTransportTestHost && interiorTestBuildingId.length > 0;
   const islandTestMode = isLocalTransportTestHost && new URLSearchParams(window.location.search).get("akwantuoIslandTest") === "1";
+  const watercraftTestKind = new URLSearchParams(window.location.search).get("akwantuoWatercraftTest");
+  const watercraftTestMode = isLocalTransportTestHost &&
+    (watercraftTestKind === "speedboat" || watercraftTestKind === "jet_ski");
   if (transportRailTestMode) {
     // Local-only browser-test spawn; never active on a deployed game host.
     player.root.position.set(-250, 0, 150);
@@ -624,6 +627,10 @@ async function start(): Promise<void> {
   } else if (islandTestMode) {
     player.root.position.set(AKWANTUO_PRIVATE_ISLAND.position.x, 0, AKWANTUO_PRIVATE_ISLAND.position.z + 95);
     document.documentElement.dataset.islandTestMode = "true";
+  } else if (watercraftTestMode) {
+    player.root.position.set(watercraftTestKind === "jet_ski" ? mainlandMarina.x + 8 : mainlandMarina.x,
+      0, mainlandMarina.z + 24);
+    document.documentElement.dataset.watercraftTestMode = watercraftTestKind ?? "";
   } else if (interiorTestMode) {
     // Local-only spawn outside a selected catalogued building for entry/exit verification.
     const testBuilding = DISTRICT_BUILDINGS.find((building) => building.id === interiorTestBuildingId);
