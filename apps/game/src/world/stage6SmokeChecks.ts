@@ -31,7 +31,12 @@ export function runStage6SmokeChecks(): void {
     }
   }
 
-  if (businessByBuilding.size !== DISTRICT_BUSINESSES.length ||\n      DISTRICT_BUSINESSES.some((business) => !buildingIds.has(business.buildingId))) {\n    throw new Error("Stage 6 business directory references an unknown building.");\n  }\n\n  if (propertyByBuilding.size !== buildingIds.size ||
+  if (businessByBuilding.size !== DISTRICT_BUSINESSES.length ||
+      DISTRICT_BUSINESSES.some((business) => !buildingIds.has(business.buildingId))) {
+    throw new Error("Stage 6 business directory references an unknown building.");
+  }
+
+  if (propertyByBuilding.size !== buildingIds.size ||
       DISTRICT_PROPERTIES.some((property) => !buildingIds.has(property.buildingId))) {
     throw new Error("Stage 6 property directory is not a one-to-one mirror of the building catalogue.");
   }
