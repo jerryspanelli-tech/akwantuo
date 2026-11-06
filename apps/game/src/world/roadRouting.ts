@@ -141,7 +141,7 @@ export function isRoadRouteValid(
       route.nodeIds.length !== route.roadSegmentIds.length + 1 ||
       route.nodeIds[0] !== route.fromNodeId ||
       route.nodeIds[route.nodeIds.length - 1] !== route.toNodeId ||
-      !Number.isFinite(route.distanceM) || (route.distanceM ?? -1) < 0 ||
+      typeof route.distanceM !== "number" || !Number.isFinite(route.distanceM) || route.distanceM < 0 ||
       typeof route.includesFutureExpansion !== "boolean") return false;
   if (route.roadSegmentIds.length === 0) {
     return route.fromNodeId === route.toNodeId &&
