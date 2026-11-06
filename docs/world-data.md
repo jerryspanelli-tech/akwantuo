@@ -646,3 +646,12 @@ This is **not yet a drivable vehicle in the game**. It does not simulate tyre gr
 Added `apps/game/src/world/railService.ts` to turn the approved first-release schematic rail route IDs into train-operation configurations. The adapter copies the route centreline into the operation model and derives passenger stops only from first-release station nodes that exactly match points on that route. Junctions and future gateways are not automatically treated as stations. Prototype speed, acceleration, braking and dwell tuning can be overridden by the caller.
 
 This connects the rail network catalogue to the train-operation controller without embedding route coordinates twice. The routes remain schematic game-layout guides; derived stop distances inherit that limitation. This adapter does not verify real railway operations, station readiness, track clearance, signalling, timetables or safety. It is not yet connected to the preview train mesh or the playable game.
+
+
+## Rail service status and operation-state validation
+
+The rail service adapter now checks the station-design catalogue as well as the rail-node catalogue. Only a first-release station marked `planned` and exactly located on the route centreline can become an operational stop. Candidate locations such as Circle / Odaw remain excluded until their station status and site are verified. A route's origin station is treated as the departure terminal, not an intermediate stop.
+
+The train-operation controller now validates incoming simulation state before advancing it: distance, speed, stop index, dwell state and completion status must be internally consistent with the route configuration. Zero-length consecutive path segments are rejected so route sampling cannot produce an undefined heading. The transport preview runs startup smoke checks for the Tema terminal stop, candidate-stop exclusion and invalid-state rejection before rendering.
+
+These checks improve prototype integrity; they do not verify railway alignment, station construction, signalling, timetables or safe real-world operations.
