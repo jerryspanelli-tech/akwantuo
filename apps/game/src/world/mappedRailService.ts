@@ -1,7 +1,7 @@
 import type { Scene } from "@babylonjs/core";
 import { createRailTrainGeometry } from "./railTrainGeometry";
 import { createRailTrainRig } from "./railTrainRig";
-import { createRailServiceConfig } from "./railService";
+import { createRailServiceConfigForRouteChain } from "./railService";
 import {
   advanceRailTrain,
   createRailTrainOperationState,
@@ -17,15 +17,15 @@ export type MappedRailService = Readonly<{
 
 /**
  * Creates one moving two-car service on the schematic Accra Central–Odaw–
- * Achimota first-release rail alignment. Odaw remains a pass-through corridor
- * reference, not an operational station. This visual service has no signals,
+ * Achimota–Tema first-release rail chain. Odaw remains a pass-through corridor
+ * reference, not an operational station; Tema is the planned terminal stop.
+ * This visual service has no signals,
  * dispatch, block occupancy, train-to-train collision or server authority.
  */
 export function createGreaterAccraMappedRailService(scene: Scene): MappedRailService {
-  const routeId = "accra-odaw-achimota";
-  const config = createRailServiceConfig(routeId);
-  if (config.stops.length !== 0) {
-    throw new Error("Accra–Odaw–Achimota prototype service must not invent intermediate stations.");
+  const config = createRailServiceConfigForRouteChain(["accra-odaw-achimota", "achimota-to-tema"]);
+  if (config.stops.length !== 1 || config.stops[0].id !== "tema-rail-station") {
+    throw new Error("Accra–Tema prototype service must stop only at the planned Tema terminal.");
   }
 
   const geometry = createRailTrainGeometry(scene, {
