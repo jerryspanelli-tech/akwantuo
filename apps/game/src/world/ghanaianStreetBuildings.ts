@@ -267,15 +267,21 @@ export function createGhanaianStreetBuildings(scene: Scene): {
 
 export function isBuildingCatalogueValid(): boolean {
   const ids = new Set(DISTRICT_BUILDINGS.map((building) => building.id));
+  const coveredDistricts = new Set(DISTRICT_BUILDINGS.map((building) => building.districtId));
+  const anchorIds = new Set(GREATER_ACCRA_REGION_ANCHORS.map((anchor) => anchor.regionId));
   return ids.size === DISTRICT_BUILDINGS.length &&
     DISTRICT_BUILDINGS.length >= 20 &&
-    DISTRICT_BUILDINGS.every((building) =>
-      building.id.length > 0 && building.name.length > 0 &&
-      Number.isFinite(building.x) && Number.isFinite(building.z) &&
-      building.width >= 6 && building.depth >= 6 &&
-      building.floors >= 1 && building.floors <= 5 &&
-      (building.interiorId === undefined || building.interiorId.length > 0)
-    ) &&
+    coveredDistricts.size === 12 &&
+    DISTRICT_BUILDINGS.every((building) => {
+      const anchor = GREATER_ACCRA_REGION_ANCHORS.find((item) => item.regionId === building.districtId);
+      return building.id.length > 0 && building.name.length > 0 &&
+        anchorIds.has(building.districtId) && !!anchor &&
+        (building.side === "west" ? building.x < anchor.x : building.x > anchor.x) &&
+        Number.isFinite(building.x) && Number.isFinite(building.z) &&
+        building.width >= 6 && building.depth >= 6 &&
+        building.floors >= 1 && building.floors <= 5 &&
+        (building.interiorId === undefined || building.interiorId.length > 0);
+    }) &&
     ["provisions", "pharmacy", "salon", "food", "workshop", "office", "compound_house", "apartment", "market_stall", "guest_house", "clinic"]
       .every((use) => DISTRICT_BUILDINGS.some((building) => building.use === use));
 }
