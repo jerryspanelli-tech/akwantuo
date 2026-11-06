@@ -416,7 +416,7 @@ try {
         z: Number(document.documentElement.dataset.akwantuoWatercraftZ ?? 0)
       }));
       await page.keyboard.down("w");
-      await page.waitForTimeout(1200);
+      await page.waitForTimeout(6000);
       await page.keyboard.up("w");
       await page.keyboard.down("d");
       await page.waitForTimeout(600);
@@ -432,6 +432,7 @@ try {
           movingCraft.z > -3310) {
         throw new Error(target.name + ": " + craftKind + " did not drive and steer inside the Gulf navigation area: " + JSON.stringify(movingCraft));
       }
+      await page.screenshot({ path: "artifacts/akwantuo-" + target.name + "-" + craftKind + ".png", fullPage: false, timeout: 30000 });
       await page.keyboard.press("e");
       await page.waitForFunction(() => (document.querySelector("#notice")?.textContent ?? "").includes("offshore"), { timeout: 5000 });
       console.log(target.name + ": " + craftKind + " propulsion, steering and offshore docking safety passed");
