@@ -270,13 +270,18 @@ export function runTransportSmokeChecks(): void {
     "disconnected or reversed rail route chains are rejected");
   let mappedRailState = createRailTrainOperationState();
   let mappedRailSawTemaDwell = false;
+  let mappedRailTerminalState: ReturnType<typeof createRailTrainOperationState> | null = null;
   for (let frame = 0; frame < 2000 && !mappedRailState.completed; frame += 1) {
     mappedRailState = advanceRailTrain(mappedAccraToTema, mappedRailState, 1).state;
     if (mappedRailState.currentStopId === "tema-rail-station" ||
-        mappedRailState.dwellRemainingSeconds > 0) mappedRailSawTemaDwell = true;
+        mappedRailState.dwellRemainingSeconds > 0) {
+      mappedRailSawTemaDwell = true;
+      mappedRailTerminalState = mappedRailState;
+    }
   }
-  assert(mappedRailSawTemaDwell && mappedRailState.completed &&
-    mappedRailState.distanceM > 10000 && mappedRailState.speedMps === 0,
+  assert(mappedRailSawTemaDwell && mappedRailTerminalState !== null &&
+    mappedRailTerminalState.speedMps === 0 && mappedRailTerminalState.dwellRemainingSeconds > 0 &&
+    mappedRailState.completed && mappedRailState.distanceM > 10000 && mappedRailState.speedMps === 0,
     "mapped Accra-to-Tema train traverses the connected route and dwells at the Tema terminal");
   expectThrow(() => createRailServiceConfig("achimota-to-nsawam"),
     "future Nsawam rail expansion cannot become a first-release service");
@@ -297,7 +302,15 @@ export function runTransportSmokeChecks(): void {
   }
   const mappedRailAlight = alightPublicTransport(
     mappedRailPassenger.state,
-    { id: "tema-rail-station", vehicleStopped: true, boardingOpen: false, alightingOpen: true, remainingSeats: 0 },
+    {
+      id: "tema-rail-station",
+      vehicleStopped: mappedRailTerminalState !== null && mappedRailTerminalState.speedMps <= 0.01,
+      boardingOpen: false,
+      alightingOpen: mappedRailTerminalState !== null &&
+        (mappedRailTerminalState.currentStopId === "tema-rail-station" ||
+          mappedRailTerminalState.dwellRemainingSeconds > 0),
+      remainingSeats: 0
+    },
     "greater-accra-mapped-rail-train"
   );
   assert(mappedRailAlight.ok && mappedRailAlight.state.mode === "not_riding" &&
