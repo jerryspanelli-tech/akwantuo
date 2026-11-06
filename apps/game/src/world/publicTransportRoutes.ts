@@ -113,6 +113,12 @@ export function isPublicTransportRoutePlanValid(value: unknown): value is Public
       typeof route.serviceNote !== "string" || !route.serviceNote.trim()) return false;
 
   if (!route.waypointNodeIds.every((nodeId) => !!getRoadNode(nodeId))) return false;
+  let previousWaypointIndex = -1;
+  for (const waypointId of route.waypointNodeIds) {
+    const waypointIndex = route.roadNodeIds.indexOf(waypointId, previousWaypointIndex + 1);
+    if (waypointIndex < 0) return false;
+    previousWaypointIndex = waypointIndex;
+  }
   let distanceM = 0;
   for (let index = 0; index < route.roadSegmentIds.length; index += 1) {
     const segmentId = route.roadSegmentIds[index];
