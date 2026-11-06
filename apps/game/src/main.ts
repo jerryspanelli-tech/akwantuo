@@ -284,6 +284,7 @@ async function start(): Promise<void> {
   const playableRailDemo = createPlayableRailDemo(scene);
   const greaterAccraMappedRailService = createGreaterAccraMappedRailService(scene);
   document.documentElement.dataset.playableMappedRailService = "true";
+  document.documentElement.dataset.playableMappedRailBoardingOpen = String(greaterAccraMappedRailService.isBoardingOpen());
   let currentAppearance = loadAppearance(window.localStorage);
   const player = createPlayer(scene, currentAppearance);
 
@@ -380,6 +381,10 @@ async function start(): Promise<void> {
       playableRailDemo.update(Math.min(rawDelta, 0.1));
       const mappedRailFrame = greaterAccraMappedRailService.update(rawDelta);
       const mappedRailState = greaterAccraMappedRailService.getState();
+      document.documentElement.dataset.mappedRailBoardingOpen = String(greaterAccraMappedRailService.isBoardingOpen());
+      document.documentElement.dataset.mappedRailDistanceM = mappedRailState.distanceM.toFixed(2);
+      document.documentElement.dataset.mappedRailSpeedMps = mappedRailState.speedMps.toFixed(2);
+      document.documentElement.dataset.mappedRailStopId = mappedRailState.currentStopId ?? "";
       const railStatus = playableRailDemo.getStatus();
       if (passengerState.mode === "riding" && passengerState.vehicleId === "preview-shared-trotro") {
         const taxiStep = advanceRoadVehicleElapsed({ wheelbaseM: 2.8, maximumForwardSpeedMps: 7, maximumReverseSpeedMps: 2, maximumAccelerationMps2: 1.8, serviceBrakingMps2: 4, maximumSteeringAngleRadians: 0.35, rollingDragMps2: 0.3 }, publicTaxiState, { throttle: publicRideArrived ? 0 : 1, brake: 0, steering: 0 }, rawDelta);
@@ -562,7 +567,11 @@ async function start(): Promise<void> {
         if (jumpButton) jumpButton.classList.add("is-hidden");
         if (vehicleViewButton) vehicleViewButton.classList.remove("is-hidden");
       } else {
-        if (interactButton) interactButton.textContent = "ENTER";
+        const nearMappedRailBoarding = interactionState.mode === "on_foot" &&
+          passengerState.mode === "not_riding" &&
+          greaterAccraMappedRailService.isBoardingOpen() &&
+          Math.hypot(player.root.position.x + 250, player.root.position.z - 150) <= 14;
+        if (interactButton) interactButton.textContent = nearMappedRailBoarding ? "BOARD" : "ENTER";
         if (jumpButton) jumpButton.classList.remove("is-hidden");
         if (vehicleViewButton) vehicleViewButton.classList.add("is-hidden");
       }
