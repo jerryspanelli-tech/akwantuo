@@ -433,3 +433,12 @@ References:
 Added `apps/game/circle-preview.html` and `apps/game/src/circlePreview.ts`, included as a second Vite build entry. The page renders the current Circle geometry package with an orbit camera, lighting, ground plane and mobile touch/pinch controls. It is a developer inspection page, not the main game menu or a production game mode.
 
 After running the game workspace locally, open `/circle-preview.html` to inspect the roundabout and four elevated structure meshes. This preview makes it possible to review proportions and visual intersections before any attempt to merge the 21 km Greater Accra layout into the current 180 m playable prototype.
+
+
+### Feo Oyeo ramp geometry prototype
+
+The Circle elevated-structure builder now includes two Feo Oyeo ramp meshes: the ramp down (141.5 m) and ramp up (143 m), each using the published 6.5 m deck width. Both are generated through the reusable elevated-road builder with deck, underside, fascia and guardrails.
+
+The reference lengths and widths come from FHECOR's 2016 project sheet. The local endpoints, orientation, spacing and 7.5 m vertical change are **provisional visual-design assumptions** because the reference sheet does not provide a georeferenced centreline in the data currently available. These are not surveyed gradients, approved road levels or engineering designs. No support columns are added to these ramps, and they are not yet connected to the main viaducts or ground roads as drivable surfaces.
+
+The Circle developer preview now contains six elevated visual structures in total: four principal viaducts plus these two Feo Oyeo ramps. Traffic, collision and navigation remain unimplemented.
