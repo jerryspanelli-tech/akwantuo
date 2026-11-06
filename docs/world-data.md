@@ -623,3 +623,12 @@ The screenshot workflow now also runs when the station-access, station-interchan
 `apps/game/src/world/railTrainGeometry.ts` adds a reusable low-poly commuter-train visual for the ultra-modern station developer preview. It creates passenger-car bodies, side windows, a leading cab windscreen, roof panels, warm exterior trim, bogie frames, wheels and headlights. The preview currently displays a two-car static train alongside the generic station platform.
 
 This is presentation geometry only. It is not a final Ghana Railways rolling-stock model, does not represent a verified operator or service livery, and has no interior seating, opening doors, passenger boarding, traction, braking, rail-contact physics, signalling, sound or train AI. Car dimensions and placement are provisional game-design values; actual rolling-stock dimensions and station clearances require verified railway references. The train remains in the standalone developer preview and is not integrated into the playable Greater Accra world.
+
+
+## Deterministic rail-train operations foundation
+
+Added `apps/game/src/world/railTrainOperations.ts` as a reusable, deterministic train-motion controller. It accepts an explicit track centreline, ordered station stop distances, dwell times, maximum speed, acceleration and service braking. It calculates train position and heading along the route, accelerates and brakes toward the next stop, holds at a station during dwell, and completes the service at the route end.
+
+The controller uses bounded time steps and validates finite path points, positive motion limits, unique stop IDs, ordered stop distances and valid dwell durations. It is deliberately independent of Babylon meshes so the same movement state can later drive the train body, bogies, passenger camera anchors and animation without duplicating route logic.
+
+This is a **simulation foundation only**. It is not connected to the static train in the developer preview or the playable game. It does not implement railway signalling, block occupancy, dispatch, timetable conflict resolution, track switches, collision, traction physics, safety certification or server-authoritative multiplayer. Stop distances and route paths must come from reviewed track/station map data; the controller must not be used to imply that a schematic route is operationally safe.
