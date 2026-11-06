@@ -162,3 +162,52 @@ export async function savePlayerProfile(
     session.access_token
   );
 }
+
+export interface EconomyState {
+  wallet: { balance_pesewas: number } | null;
+  inventory: Array<{ product_id: string; name: string; quantity: number }>;
+  owned_assets: Array<{ asset_id: string; name: string; asset_type: string; purchased_at: string }>;
+}
+
+export interface ShopProductRecord {
+  product_id: string;
+  name: string;
+  category: string;
+  price_pesewas: number;
+  stock_quantity: number;
+}
+
+export async function loadEconomyState(session: AkwantuoSession): Promise<EconomyState> {
+  return request<EconomyState>("/rest/v1/rpc/akwantuo_get_economy_state", {
+    method: "POST",
+    body: "{}"
+  }, session.access_token);
+}
+
+export async function loadShopProducts(session: AkwantuoSession): Promise<ShopProductRecord[]> {
+  return request<ShopProductRecord[]>(
+    "/rest/v1/shop_products?select=product_id,name,category,price_pesewas,stock_quantity&order=category,name",
+    { method: "GET" },
+    session.access_token
+  );
+}
+
+export async function purchaseShopItems(
+  session: AkwantuoSession,
+  items: Array<{ product_id: string; quantity: number }>
+): Promise<{ transaction_id: number; total_pesewas: number; balance_pesewas: number; items: unknown[] }> {
+  return request("/rest/v1/rpc/akwantuo_purchase_retail", {
+    method: "POST",
+    body: JSON.stringify({ p_items: items })
+  }, session.access_token);
+}
+
+export async function purchaseGameAsset(
+  session: AkwantuoSession,
+  assetId: string
+): Promise<{ owned_asset_id: number; asset_id: string; name: string; price_pesewas: number; balance_pesewas: number }> {
+  return request("/rest/v1/rpc/akwantuo_purchase_asset", {
+    method: "POST",
+    body: JSON.stringify({ p_asset_id: assetId })
+  }, session.access_token);
+}
