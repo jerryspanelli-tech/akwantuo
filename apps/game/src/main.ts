@@ -397,6 +397,8 @@ async function start(): Promise<void> {
     if (key === "e" && hasEnteredWorld) {
       vehicleActionRequested = true;
       document.documentElement.dataset.transportActionRequest = "keyboard_e";
+      document.documentElement.dataset.transportActionRequestAt = String(performance.now());
+      document.documentElement.dataset.transportVisibilityAtInput = document.visibilityState;
     }
     if (key === "c" && hasEnteredWorld && (interactionState.mode === "inside_vehicle" || passengerState.mode === "riding")) vehicleViewRequested = true;
   });
@@ -407,6 +409,9 @@ async function start(): Promise<void> {
   interactButton?.addEventListener("pointerdown", (event: PointerEvent) => {
     event.preventDefault();
     vehicleActionRequested = true;
+    document.documentElement.dataset.transportActionRequest = "touch_interact";
+    document.documentElement.dataset.transportActionRequestAt = String(performance.now());
+    document.documentElement.dataset.transportVisibilityAtInput = document.visibilityState;
   });
   vehicleViewButton?.addEventListener("pointerdown", (event: PointerEvent) => {
     event.preventDefault(); vehicleViewRequested = true;
@@ -425,6 +430,10 @@ async function start(): Promise<void> {
     const delta = Math.min(rawDelta, 0.05);
 
     if (hasEnteredWorld) {
+      document.documentElement.dataset.transportRenderFrame = String(
+        Number(document.documentElement.dataset.transportRenderFrame ?? 0) + 1
+      );
+      document.documentElement.dataset.transportRenderFrameAt = String(performance.now());
       // Expose lightweight live state so browser smoke checks can distinguish
       // an input failure from a proximity, fare, or vehicle-state rejection.
       document.documentElement.dataset.transportPlayerX = player.root.position.x.toFixed(2);
