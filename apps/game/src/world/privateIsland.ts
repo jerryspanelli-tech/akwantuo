@@ -39,7 +39,7 @@ export function createAkwantuoPrivateIsland(scene: Scene): number {
   seaMaterial.diffuseColor = new Color3(0.08, 0.28, 0.39);
   seaMaterial.specularColor = new Color3(0.22, 0.36, 0.42);
   const sea = MeshBuilder.CreateGround("akwaaba-cay-surrounding-sea", { width: 1100, height: 900, subdivisions: 2 }, scene);
-  sea.position.set(x, -1.65, z);
+  sea.position.set(x, 0.2, z);
   sea.material = seaMaterial;
   sea.isPickable = false;
 
@@ -81,8 +81,8 @@ export function createAkwantuoPrivateIsland(scene: Scene): number {
   villaEntrance.material = roof;
   villaEntrance.isPickable = false;
 
-  const dock = MeshBuilder.CreateBox("akwaaba-cay-marina-dock", { width: 18, height: 1.8, depth: 125 }, scene);
-  dock.position.set(x + 145, 1.2, z + 85);
+  const dock = MeshBuilder.CreateBox("akwaaba-cay-marina-dock", { width: 18, height: 1.0, depth: 125 }, scene);
+  dock.position.set(x + 145, 0.8, z + 85);
   dock.material = dockMaterial;
   dock.isPickable = false;
   const helipad = MeshBuilder.CreateCylinder("akwaaba-cay-helipad", { diameter: 34, height: 0.7, tessellation: 32 }, scene);
@@ -111,25 +111,25 @@ export function createAkwantuoPrivateIsland(scene: Scene): number {
     const boatZ = z + 35 + index * 34;
     const hull = MeshBuilder.CreateSphere("akwaaba-cay-boat-hull-" + index, { diameter: 1, segments: 16 }, scene);
     hull.scaling.set(4.2 + index * 0.6, 0.82, 12 + index * 2.5);
-    hull.position.set(x + 145, 2.5, boatZ);
+    hull.position.set(x + 145, 0.7, boatZ);
     hull.material = boatHullMaterial;
     hull.isPickable = false;
     const deck = MeshBuilder.CreateBox("akwaaba-cay-boat-deck-" + index, {
       width: 6.2 + index * 0.7, height: 0.48, depth: 10 + index * 2
     }, scene);
-    deck.position.set(x + 145, 3.05, boatZ + 0.8);
+    deck.position.set(x + 145, 1.22, boatZ + 0.8);
     deck.material = watercraftMaterial;
     deck.isPickable = false;
     const cabin = MeshBuilder.CreateBox("akwaaba-cay-boat-cabin-" + index, {
       width: 4.2 + index * 0.4, height: 2.1 + index * 0.4, depth: 4.8 + index
     }, scene);
-    cabin.position.set(x + 145, 4.2, boatZ - 1.8);
+    cabin.position.set(x + 145, 2.35, boatZ - 1.8);
     cabin.material = index === 1 ? villa : boatTrimMaterial;
     cabin.isPickable = false;
     const windscreen = MeshBuilder.CreateBox("akwaaba-cay-boat-windscreen-" + index, {
       width: 3.8, height: 1.2, depth: 0.08
     }, scene);
-    windscreen.position.set(x + 145, 4.65, boatZ + 0.62);
+    windscreen.position.set(x + 145, 2.82, boatZ + 0.62);
     windscreen.material = windowMaterial;
     windscreen.isPickable = false;
   }
@@ -140,15 +140,15 @@ export function createAkwantuoPrivateIsland(scene: Scene): number {
     const skiZ = z - 5 + index * 9;
     const hull = MeshBuilder.CreateSphere("akwaaba-cay-jet-ski-hull-" + index, { diameter: 1, segments: 12 }, scene);
     hull.scaling.set(1.5, 0.55, 4.2);
-    hull.position.set(skiX, 2.85, skiZ);
+    hull.position.set(skiX, 0.78, skiZ);
     hull.material = jetSkiMaterial;
     hull.isPickable = false;
     const seat = MeshBuilder.CreateBox("akwaaba-cay-jet-ski-seat-" + index, { width: 0.8, height: 0.32, depth: 1.7 }, scene);
-    seat.position.set(skiX, 3.35, skiZ + 0.25);
+    seat.position.set(skiX, 1.28, skiZ + 0.25);
     seat.material = boatTrimMaterial;
     seat.isPickable = false;
     const handle = MeshBuilder.CreateCylinder("akwaaba-cay-jet-ski-handle-" + index, { height: 0.9, diameter: 0.08, tessellation: 8 }, scene);
-    handle.position.set(skiX, 3.65, skiZ - 1.15);
+    handle.position.set(skiX, 1.58, skiZ - 1.15);
     handle.rotation.z = Math.PI / 2;
     handle.material = boatTrimMaterial;
     handle.isPickable = false;
