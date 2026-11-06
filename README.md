@@ -48,3 +48,14 @@ Open the local URL printed by Vite. The current prototype includes the AKWANTUO 
 ## Ownership and safety
 
 The browser client is not trusted to grant currency, property, vehicles, staff privileges or other valuable game state. Those systems must be validated by trusted server-side code.
+
+
+## AKWANTUO cloud accounts
+
+The browser client connects to the dedicated AKWANTUO Supabase project using its project URL and **publishable** key. These are public client credentials; database access is protected by Row Level Security. Never add a Supabase secret or service-role key to the browser bundle.
+
+- Account sign-up and email/password sign-in use Supabase Auth.
+- Player character appearance is stored in `public.player_profiles` and scoped to the authenticated player's own user ID.
+- A signed-in player's character appearance is loaded from and saved to the cloud; local appearance storage remains as an offline fallback.
+- The game world, inventory, wallet, purchases, property ownership and multiplayer state are not yet cloud-backed. Those require server-authoritative services before valuable transactions are enabled.
+- Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` to override the AKWANTUO project defaults in local or hosted builds.
