@@ -98,25 +98,45 @@ export function createPlayableRailDemo(scene: Scene): PlayableRailDemo {
     id: "playable-commuter-train-rig",
     origin: { x: ROUTE.x, y: 0, z: ROUTE.startZ }
   });
+  const interiorWindow = new TransformNode("playable-train-passenger-window", scene);
+  interiorWindow.position.set(0, 1.8, 1.2);
+  interiorWindow.parent = trainRig.root;
+  const exteriorFollow = new TransformNode("playable-train-exterior-follow", scene);
+  exteriorFollow.position.set(0, 4.5, -14);
+  exteriorFollow.parent = trainRig.root;
+
   const config: RailTrainOperationConfig = {
     path: [{ x: ROUTE.x, z: ROUTE.startZ }, { x: ROUTE.x, z: ROUTE.endZ }],
-    stops: [{ id: "playable-preview-station", distanceM: ROUTE.stationZ - ROUTE.startZ, dwellSeconds: 10 }],
+    stops: [],
     maximumSpeedMps: 8,
     accelerationMps2: 1.2,
     serviceBrakingMps2: 1.6
   };
   let state: RailTrainOperationState = createRailTrainOperationState();
+  let serviceStarted = false;
+  let currentPosition = { x: ROUTE.x, z: ROUTE.startZ };
   let disposed = false;
   const update = (deltaSeconds: number) => {
-    if (disposed) return;
+    if (disposed || !serviceStarted) return;
     const frame = advanceRailTrain(config, state, Math.min(1, Math.max(0, deltaSeconds)));
     state = frame.state;
+    currentPosition = frame.position;
     trainRig.update(frame);
   };
+  const startService = () => {
+    if (!disposed && !serviceStarted) serviceStarted = true;
+  };
+  const getStatus = () => ({
+    boardingOpen: !serviceStarted,
+    completed: state.completed,
+    position: currentPosition
+  });
   const dispose = () => {
     if (disposed) return;
     disposed = true;
     trainRig.dispose();
+    interiorWindow.dispose(false, false);
+    exteriorFollow.dispose(false, false);
     stationRoot.dispose(false, false);
     for (const mesh of stationGeometry.allMeshes) if (!mesh.isDisposed()) mesh.dispose(false, false);
     ballast.dispose();
@@ -126,5 +146,5 @@ export function createPlayableRailDemo(scene: Scene): PlayableRailDemo {
     railMaterial.dispose();
     sleeperMaterial.dispose();
   };
-  return {\n    interiorWindow, exteriorFollow, update,\n    startService: () => { if (!disposed && !serviceStarted) serviceStarted = true; },\n    getStatus: () => ({ boardingOpen: !serviceStarted, completed: state.completed, position: currentPosition }),\n    dispose\n  };
+  return { interiorWindow, exteriorFollow, update, startService, getStatus, dispose };
 }
