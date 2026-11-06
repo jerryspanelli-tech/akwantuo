@@ -43,7 +43,7 @@ export type DistrictBuilding = Readonly<{
 type DistrictBuildingTemplate = Omit<DistrictBuilding, "districtId">;
 
 const BUILDING_TEMPLATES: readonly DistrictBuildingTemplate[] = [
-  { id: "osu-corner-mart", name: "Osu Corner Mart", use: "provisions", side: "west", x: -18, z: -72, width: 9, depth: 10, floors: 1, exteriorStyle: "coastal", signText: "CORNER MART", interiorId: "shop-small" },
+  { id: "osu-corner-mart", name: "Osu Corner Mart", use: "provisions", side: "west", x: -18, z: -72, width: 13, depth: 14, floors: 1, exteriorStyle: "modern", signText: "AKWANTUO MART", interiorId: "convenience-store" },
   { id: "community-pharmacy", name: "Community Pharmacy", use: "pharmacy", side: "east", x: 18, z: -72, width: 10, depth: 11, floors: 1, exteriorStyle: "modern", signText: "PHARMACY", interiorId: "shop-small" },
   { id: "ama-salon", name: "Ama's Hair Studio", use: "salon", side: "west", x: -23, z: -59, width: 10, depth: 9, floors: 1, exteriorStyle: "coastal", signText: "HAIR STUDIO", interiorId: "salon" },
   { id: "chop-bar", name: "Auntie Esi Chop Bar", use: "food", side: "east", x: 23, z: -59, width: 11, depth: 10, floors: 1, exteriorStyle: "market", signText: "CHOP BAR", interiorId: "restaurant" },
@@ -57,7 +57,7 @@ const BUILDING_TEMPLATES: readonly DistrictBuildingTemplate[] = [
   { id: "east-legon-apartments", name: "Palm Court Apartments", use: "apartment", side: "east", x: 23, z: -7, width: 13, depth: 12, floors: 3, exteriorStyle: "modern", signText: "PALM COURT", interiorId: "apartment" },
   { id: "old-town-house", name: "Old Town Family House", use: "compound_house", side: "west", x: -18, z: 7, width: 12, depth: 10, floors: 1, exteriorStyle: "compound", interiorId: "compound-house" },
   { id: "harbour-foods", name: "Harbour Foods", use: "food", side: "east", x: 18, z: 7, width: 10, depth: 10, floors: 1, exteriorStyle: "coastal", signText: "HARBOUR FOODS", interiorId: "restaurant" },
-  { id: "akwaaba-provisions", name: "Akwaaba Provisions", use: "provisions", side: "west", x: -23, z: 20, width: 10, depth: 10, floors: 1, exteriorStyle: "market", signText: "PROVISIONS", interiorId: "shop-small" },
+  { id: "akwaaba-provisions", name: "Akwaaba Provisions", use: "provisions", side: "west", x: -23, z: 20, width: 12, depth: 13, floors: 1, exteriorStyle: "modern", signText: "AKWAABA EXPRESS", interiorId: "convenience-store" },
   { id: "labadi-lodge", name: "Labadi Lodge", use: "guest_house", side: "east", x: 23, z: 20, width: 12, depth: 11, floors: 2, exteriorStyle: "coastal", signText: "LABADI LODGE", interiorId: "guest-house" },
   { id: "family-compound-north", name: "Northside Compound", use: "compound_house", side: "west", x: -18, z: 33, width: 12, depth: 10, floors: 1, exteriorStyle: "compound", interiorId: "compound-house" },
   { id: "digital-office", name: "Coastline Digital Hub", use: "office", side: "east", x: 18, z: 33, width: 11, depth: 10, floors: 2, exteriorStyle: "modern", signText: "DIGITAL HUB", interiorId: "office" },
