@@ -287,8 +287,7 @@ try {
         interiorCase.roomId,
         { timeout: 5000 }
       );
-      const retailCatalogCount = Number(document.documentElement.dataset.akwantuoRetailProductCount ?? 0);
-      if (interiorCase.retail && retailCatalogCount < 15) throw new Error(target.name + ": fictional convenience-store product catalogue is missing.");
+      if (interiorCase.retail && stageSixCatalogues.retailProducts < 15) throw new Error(target.name + ": fictional convenience-store product catalogue is missing.");
       const activeBusiness = await page.evaluate(() => ({
         id: document.documentElement.dataset.activeBusinessId ?? "",
         serviceCount: Number(document.documentElement.dataset.activeBusinessServiceCount ?? 0),
