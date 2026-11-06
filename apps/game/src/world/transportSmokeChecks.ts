@@ -59,8 +59,9 @@ export function runTransportSmokeChecks(): void {
   assert(railCrossings.some((crossing) => crossing.roadSegmentId === "n1-tema-corridor") &&
     railCrossings.some((crossing) => crossing.roadSegmentId === "liberation-road") &&
     railCrossings.some((crossing) => crossing.roadSegmentId === "spintex-road") &&
-    railCrossings.some((crossing) => crossing.roadSegmentId === "spintex-tema-connection"),
-    "crossing candidates identify the authored road corridors that intersect first-release rail alignments");
+    railCrossings.some((crossing) => crossing.roadSegmentId === "spintex-tema-connection") &&
+    railCrossings.some((crossing) => crossing.geometryReview === "shallow_angle"),
+    "crossing candidates identify the authored road corridors and flag the shallow Spintex–Tema intersection for geometry review");
   const crossingClear = evaluateRailCrossingSafety({
     trainFrontDistanceM: null, trainLengthM: 120, clearanceM: 15,
     warningDistanceM: 500, systemHealthy: true
