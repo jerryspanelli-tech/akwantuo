@@ -23,6 +23,20 @@ try {
     const status = await page.locator("#boot-status").textContent();
     if (!status?.includes("Your world is ready")) failures.push(target.name + ": startup status was " + status);
     console.log(target.name + ": startup ready");
+    const playableTransport = await page.evaluate(() => ({
+      roadSurfaces: Number(document.documentElement.dataset.playableRoadSurfaceMeshes ?? 0),
+      roadMarkings: Number(document.documentElement.dataset.playableRoadMarkingMeshes ?? 0),
+      railRoutes: Number(document.documentElement.dataset.playableRailRoutes ?? 0),
+      plannedStations: Number(document.documentElement.dataset.playableRailStations ?? 0),
+      circleStructures: Number(document.documentElement.dataset.playableCircleStructures ?? 0)
+    }));
+    if (playableTransport.roadSurfaces < 1 || playableTransport.roadMarkings < 1 ||
+        playableTransport.railRoutes < 2 || playableTransport.plannedStations < 3 ||
+        playableTransport.circleStructures < 1) {
+      failures.push(target.name + ": Greater Accra transport was not integrated into the playable scene: " +
+        JSON.stringify(playableTransport));
+    }
+    console.log(target.name + ": Greater Accra playable transport " + JSON.stringify(playableTransport));
     try {
       await page.waitForFunction(() => document.querySelector("#boot-screen")?.hasAttribute("hidden") === true, { timeout: 10000 });
     } catch (error) {
