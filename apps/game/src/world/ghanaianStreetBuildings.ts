@@ -6,6 +6,7 @@ import {
   StandardMaterial
 } from "@babylonjs/core";
 import type { SolidArea } from "./collision";
+import { GREATER_ACCRA_REGION_ANCHORS } from "./greaterAccraLayout";
 
 export type BuildingUse =
   | "provisions"
@@ -22,6 +23,7 @@ export type BuildingUse =
 
 export type DistrictBuilding = Readonly<{
   id: string;
+  districtId: string;
   name: string;
   use: BuildingUse;
   side: "west" | "east";
@@ -35,7 +37,9 @@ export type DistrictBuilding = Readonly<{
   interiorId?: string;
 }>;
 
-export const DISTRICT_BUILDINGS: readonly DistrictBuilding[] = [
+type DistrictBuildingTemplate = Omit<DistrictBuilding, "districtId">;
+
+const BUILDING_TEMPLATES: readonly DistrictBuildingTemplate[] = [
   { id: "osu-corner-mart", name: "Osu Corner Mart", use: "provisions", side: "west", x: -18, z: -72, width: 9, depth: 10, floors: 1, exteriorStyle: "coastal", signText: "CORNER MART", interiorId: "shop-small" },
   { id: "community-pharmacy", name: "Community Pharmacy", use: "pharmacy", side: "east", x: 18, z: -72, width: 10, depth: 11, floors: 1, exteriorStyle: "modern", signText: "PHARMACY", interiorId: "shop-small" },
   { id: "ama-salon", name: "Ama's Hair Studio", use: "salon", side: "west", x: -23, z: -59, width: 10, depth: 9, floors: 1, exteriorStyle: "coastal", signText: "HAIR STUDIO", interiorId: "salon" },
@@ -59,6 +63,31 @@ export const DISTRICT_BUILDINGS: readonly DistrictBuilding[] = [
   { id: "heritage-house", name: "Heritage Family House", use: "compound_house", side: "west", x: -18, z: 59, width: 12, depth: 10, floors: 1, exteriorStyle: "compound", interiorId: "compound-house" },
   { id: "city-view-apartments", name: "City View Apartments", use: "apartment", side: "east", x: 18, z: 59, width: 12, depth: 10, floors: 3, exteriorStyle: "modern" }
 ] as const;
+
+/**
+ * Distribute the first-release building set across the approved Greater Accra
+ * district anchors. Each storefront faces its local street corridor; the
+ * anchors remain approximate game-layout positions, not surveyed addresses.
+ */
+const BUILDING_DISTRICTS = [
+  "osu", "accra-central-makola", "labadi", "airport-city", "east-legon",
+  "legon", "madina-adenta", "achimota", "dansoman", "kaneshie", "spintex", "tema"
+] as const;
+
+export const DISTRICT_BUILDINGS: readonly DistrictBuilding[] = BUILDING_TEMPLATES.map((template, index) => {
+  const districtIndex = index < 20 ? Math.floor(index / 2) : 10 + (index - 20);
+  const districtId = BUILDING_DISTRICTS[districtIndex];
+  const anchor = GREATER_ACCRA_REGION_ANCHORS.find((item) => item.regionId === districtId);
+  if (!anchor) throw new Error("Missing Greater Accra building anchor for " + districtId);
+  const side = index < 20 ? (index % 2 === 0 ? "west" : "east") : template.side;
+  return {
+    ...template,
+    districtId,
+    side,
+    x: anchor.x + (side === "west" ? -(template.width / 2 + 6) : template.width / 2 + 6),
+    z: anchor.z
+  };
+});
 
 const PALETTES = {
   coastal: { wall: "#d6b98c", trim: "#8a5538", roof: "#59483a", accent: "#c36b3f" },
