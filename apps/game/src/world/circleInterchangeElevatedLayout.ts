@@ -140,16 +140,20 @@ function makeFeoOyeoRamp(
   const horizontalLengthM = Math.sqrt(lengthM * lengthM - riseM * riseM);
   const dx = horizontalLengthM * 0.8;
   const dz = horizontalLengthM * 0.6;
+  const ascendingPoints = [
+    { x: startX, y: 0, z: startZ },
+    { x: startX + dx / 2, y: riseM / 2, z: startZ + dz / 2 },
+    { x: startX + dx, y: riseM, z: startZ + dz }
+  ];
+  const points = id.includes("ramp-down")
+    ? [...ascendingPoints].reverse()
+    : ascendingPoints;
   return {
     id,
     referenceId,
     lengthM,
     deckWidthM: 6.5,
-    points: [
-      { x: startX, y: 0, z: startZ },
-      { x: startX + dx / 2, y: riseM / 2, z: startZ + dz / 2 },
-      { x: startX + dx, y: riseM, z: startZ + dz }
-    ],
+    points,
     designNote: "Published length and width; local alignment and vertical profile are provisional visual-design assumptions, not surveyed ramp geometry."
   };
 }
