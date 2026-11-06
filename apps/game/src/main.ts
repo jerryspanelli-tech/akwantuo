@@ -364,7 +364,7 @@ async function start(): Promise<void> {
           minX: WORLD_CONFIG.bounds.minX + 2.5, maxX: WORLD_CONFIG.bounds.maxX - 2.5,
           minZ: WORLD_CONFIG.bounds.minZ + 2.5, maxZ: WORLD_CONFIG.bounds.maxZ - 2.5
         });
-        if (!isBlocked(bounded.x, bounded.z, solidAreas, 1.45)) {
+        if (!isBlocked(bounded.x, bounded.z, solidAreas, 2.35)) {
           vehicleState = { ...next, x: bounded.x, z: bounded.z };
         } else {
           vehicleState = { ...vehicleState, speedMps: 0 };
