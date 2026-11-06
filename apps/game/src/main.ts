@@ -25,6 +25,7 @@ import { PassengerCameraRig } from "./vehicles/passengerCamera";
 import { createPublicTransportVehicle } from "./vehicles/publicTransportVehicle";
 import { alightPublicTransport, boardPublicTransport, type PublicTransportPassengerState } from "./world/publicTransportOperations";
 import { createPlayableRailDemo } from "./world/playableRailDemo";
+import { createGreaterAccraMappedRailService } from "./world/mappedRailService";
 import { runTransportSmokeChecks } from "./world/transportSmokeChecks";
 
 const bootScreen = document.querySelector<HTMLElement>("#boot-screen");
@@ -279,6 +280,8 @@ async function start(): Promise<void> {
   document.documentElement.dataset.playableRailStations = String(greaterAccraTransportReport.plannedStationAnchorCount);
   document.documentElement.dataset.playableCircleStructures = String(greaterAccraTransportReport.circleElevatedStructureCount);
   const playableRailDemo = createPlayableRailDemo(scene);
+  const greaterAccraMappedRailService = createGreaterAccraMappedRailService(scene);
+  document.documentElement.dataset.playableMappedRailService = "true";
   let currentAppearance = loadAppearance(window.localStorage);
   const player = createPlayer(scene, currentAppearance);
 
@@ -373,6 +376,7 @@ async function start(): Promise<void> {
 
     if (hasEnteredWorld) {
       playableRailDemo.update(Math.min(rawDelta, 0.1));
+      greaterAccraMappedRailService.update(rawDelta);
       const railStatus = playableRailDemo.getStatus();
       if (passengerState.mode === "riding" && passengerState.vehicleId === "preview-shared-trotro") {
         const taxiStep = advanceRoadVehicleElapsed({ wheelbaseM: 2.8, maximumForwardSpeedMps: 7, maximumReverseSpeedMps: 2, maximumAccelerationMps2: 1.8, serviceBrakingMps2: 4, maximumSteeringAngleRadians: 0.35, rollingDragMps2: 0.3 }, publicTaxiState, { throttle: publicRideArrived ? 0 : 1, brake: 0, steering: 0 }, rawDelta);
