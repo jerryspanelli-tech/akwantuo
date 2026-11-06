@@ -22,6 +22,7 @@ on:
       - "apps/game/src/world/trafficRules.ts"
       - "apps/game/src/world/trafficSignals.ts"
       - "apps/game/src/world/pedestrianCrossingGeometry.ts"
+      - "apps/game/src/world/railRoadCrossings.ts"
       - "apps/game/src/vehicles/roadVehicles.ts"
       - "apps/game/src/vehicles/roadVehicleGeometry.ts"
       - "apps/game/src/vehicles/roadVehicleRig.ts"
