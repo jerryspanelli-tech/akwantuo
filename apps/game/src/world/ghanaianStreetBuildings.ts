@@ -97,7 +97,8 @@ const PALETTES = {
   coastal: { wall: "#d6b98c", trim: "#8a5538", roof: "#59483a", accent: "#c36b3f" },
   compound: { wall: "#c6b79a", trim: "#6c6254", roof: "#756b5c", accent: "#a56a45" },
   modern: { wall: "#c7d0cb", trim: "#596d70", roof: "#39494a", accent: "#d1ad63" },
-  market: { wall: "#c99b63", trim: "#684b36", roof: "#554536", accent: "#d5b477" },\n  convenience: { wall: "#e3e5df", trim: "#233744", roof: "#263b46", accent: "#d94d3d" }
+  market: { wall: "#c99b63", trim: "#684b36", roof: "#554536", accent: "#d5b477" },
+  convenience: { wall: "#e3e5df", trim: "#233744", roof: "#263b46", accent: "#d94d3d" }
 } as const;
 
 function material(scene: Scene, name: string, hex: string): StandardMaterial {
