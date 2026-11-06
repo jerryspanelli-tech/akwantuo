@@ -57,5 +57,20 @@ The browser client connects to the dedicated AKWANTUO Supabase project using its
 - Account sign-up and email/password sign-in use Supabase Auth.
 - Player character appearance is stored in `public.player_profiles` and scoped to the authenticated player's own user ID.
 - A signed-in player's character appearance is loaded from and saved to the cloud; local appearance storage remains as an offline fallback.
-- The game world, inventory, wallet, purchases, property ownership and multiplayer state are not yet cloud-backed. Those require server-authoritative services before valuable transactions are enabled.
+- Wallets, shop stock, player inventory, purchase receipts, and private-island/watercraft ownership are stored in Supabase and updated by atomic, authenticated Postgres functions. The browser cannot set its own balance or stock.
+- New players receive GH₵500 starter cash (50,000 pesewas) for the first-release economy.
+- Convenience-store checkout deducts the player's wallet, decrements shared stock, adds items to inventory, and writes a receipt in one database transaction.
+- Akwaaba Cay and its five watercraft have server-checked purchase and ownership records. Akwaaba Cay landing is restricted to the saved owner.
+- Labadi Marina has a playable speedboat and jet ski rental route marked by buoys across the Gulf of Guinea to Akwaaba Cay. Use WASD or the touch joystick; stop at either dock before exiting.
 - Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` to override the AKWANTUO project defaults in local or hosted builds.
+
+
+## First-release economy and watercraft
+
+- Currency is stored as integer pesewas; display amounts are Ghana cedis.
+- Starter wallet is GH₵500 per new account.
+- Shop purchases use `akwantuo_purchase_retail`, which validates the basket, locks product stock and wallet rows, deducts funds, updates inventory, and writes a transaction atomically.
+- Premium property and watercraft purchases use `akwantuo_purchase_asset`; ownership is persisted in `player_owned_assets` and loaded at sign-in.
+- Shop stock and the wallet are never writable directly from the browser.
+- The Labadi Marina rental speedboat and jet ski are playable without purchase to make the island route accessible for navigation practice. Premium asset ownership is separate from marina rentals.
+- Automated Chromium tests cover desktop and mobile-sized layouts. They do not replace testing on a physical iPhone or Android device.
