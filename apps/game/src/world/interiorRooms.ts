@@ -30,7 +30,10 @@ const FIXTURE_COLOURS: Record<InteriorFixtureType, string> = {
 };
 
 function createMaterial(scene: Scene, id: string, colour: string): StandardMaterial {
-  const value = new StandardMaterial("interior-material-" + id, scene);
+  const sharedName = "interior-shared-material-" + colour;
+  const existing = scene.getMaterialByName(sharedName);
+  if (existing instanceof StandardMaterial) return existing;
+  const value = new StandardMaterial(sharedName, scene);
   value.diffuseColor = Color3.FromHexString(colour);
   value.specularColor = new Color3(0.08, 0.08, 0.08);
   return value;
