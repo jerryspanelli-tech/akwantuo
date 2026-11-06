@@ -26,7 +26,7 @@ import {
   isRailTrainOperationConfigValid,
   type RailTrainOperationConfig
 } from "./railTrainOperations";
-import { createRailServiceConfig } from "./railService";
+import { createRailServiceConfig, createRailServiceConfigForRouteChain } from "./railService";
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error("Transport smoke check failed: " + message);
@@ -204,6 +204,10 @@ export function runTransportSmokeChecks(): void {
   const mappedTemaBranch = createRailServiceConfig("achimota-to-tema");
   assert(mappedTemaBranch.stops.length === 1 && mappedTemaBranch.stops[0].id === "tema-rail-station",
     "mapped Achimota–Tema train stops only at the planned Tema terminal");
+  const mappedAccraToTema = createRailServiceConfigForRouteChain(["accra-odaw-achimota", "achimota-to-tema"]);
+  assert(mappedAccraToTema.path.length === 13 && mappedAccraToTema.stops.length === 1 &&
+    mappedAccraToTema.stops[0].id === "tema-rail-station",
+    "connected Accra–Tema route chain passes Odaw and Achimota and stops only at Tema");
   expectThrow(() => createRailServiceConfig("achimota-to-nsawam"),
     "future Nsawam rail expansion cannot become a first-release service");
 
