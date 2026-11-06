@@ -83,8 +83,9 @@ function addSign(scene: Scene, building: DistrictBuilding, faceX: number, y: num
   context.fillRect(0, 0, 512, 128);
   context.fillStyle = "#fff4df";
   context.font = "bold 42px Arial";
-  context.textAlign = "center";
-  context.textBaseline = "middle";
+  const canvasContext = context as unknown as CanvasRenderingContext2D;
+  canvasContext.textAlign = "center";
+  canvasContext.textBaseline = "middle";
   context.fillText(building.signText, 256, 64, 480);
   texture.update();
   const signMaterial = new StandardMaterial("sign-material-" + building.id, scene);
