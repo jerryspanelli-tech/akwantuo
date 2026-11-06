@@ -6,6 +6,7 @@ import "./../station-preview.css";
 import { createUltraModernRailStationGeometry } from "./world/railStationGeometry";
 import { createStationPassengerFitout } from "./world/railStationFitout";
 import { createStationInterchangeGeometry } from "./world/stationInterchangeGeometry";
+import { createStationPlatformAccessGeometry } from "./world/railStationAccessGeometry";
 
 const canvas = document.querySelector<HTMLCanvasElement>("#station-preview-canvas");
 const errorPanel = document.querySelector<HTMLElement>("#station-preview-error");
@@ -44,6 +45,16 @@ try {
   } as const;
   createUltraModernRailStationGeometry(scene, stationOptions);
   createStationPassengerFitout(scene, stationOptions);
+  createStationPlatformAccessGeometry(scene, {
+    stationId: "akwantuo-transport-hub-station",
+    connections: [{
+      id: "sheltered-forecourt-walkway",
+      mode: "sheltered_walkway",
+      from: { x: 0, y: 0, z: 23 },
+      to: { x: 0, y: 0, z: -49 },
+      widthM: 6
+    }]
+  });
 
   createStationInterchangeGeometry(scene, {
     centerX: 0, centerZ: -85,
