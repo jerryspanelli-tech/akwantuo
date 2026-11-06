@@ -12,8 +12,10 @@ import {
 import {
   GREATER_ACCRA_COASTLINE,
   GREATER_ACCRA_MAP_EXTENT,
-  GREATER_ACCRA_REGION_ANCHORS
+  GREATER_ACCRA_REGION_ANCHORS,
+  GREATER_ACCRA_ROAD_PATHS
 } from "./world/greaterAccraLayout";
+import { GREATER_ACCRA_ROAD_NETWORK } from "./world/roadNetwork";
 import { createGreaterAccraRoadGeometry } from "./world/roadGeometry";
 import { createGreaterAccraRoadMarkings } from "./world/roadMarkingGeometry";
 import { createCircleInterchangeGeometry } from "./world/circleInterchangeGeometry";
@@ -107,6 +109,41 @@ try {
   if (status) status.textContent = "Generating Greater Accra Cape-gauge railway corridors…";
   const railTracks = createGreaterAccraRailTrackGeometry(scene, { sleeperSpacingM: 1.2 });
   const railCrossingCandidates = deriveRailRoadCrossingCandidates();
+  const transitRouteMaterials = new Map<string, StandardMaterial>();
+  for (const [mode, colour] of [["trotro", "#2e9d67"], ["city_bus", "#4288c8"], ["shared_taxi", "#d8a23b"]] as const) {
+    const material = new StandardMaterial("proposed-transit-route-" + mode, scene);
+    material.diffuseColor = Color3.FromHexString(colour);
+    material.emissiveColor = Color3.FromHexString(colour).scale(0.28);
+    material.specularColor = Color3.Black();
+    transitRouteMaterials.set(mode, material);
+  }
+  for (const route of GREATER_ACCRA_PUBLIC_TRANSPORT_ROUTE_PLANS) {
+    const routePoints: Vector3[] = [];
+    for (let index = 0; index < route.roadSegmentIds.length; index += 1) {
+      const segmentId = route.roadSegmentIds[index];
+      const segment = GREATER_ACCRA_ROAD_NETWORK.segments.find((item) => item.id === segmentId);
+      const path = GREATER_ACCRA_ROAD_PATHS.find((item) => item.roadSegmentId === segmentId);
+      if (!segment || !path) throw new Error("Missing public transport road geometry for " + segmentId);
+      const forward = segment.fromNodeId === route.roadNodeIds[index] &&
+        segment.toNodeId === route.roadNodeIds[index + 1];
+      const orderedPoints = forward ? path.points : [...path.points].reverse();
+      for (const point of orderedPoints) {
+        const previous = routePoints[routePoints.length - 1];
+        if (!previous || Math.hypot(previous.x - point.x, previous.z - point.z) > 0.5) {
+          routePoints.push(new Vector3(point.x, 0.22, point.z));
+        }
+      }
+    }
+    if (routePoints.length < 2) throw new Error("Public transport corridor has no drawable route: " + route.id);
+    const line = MeshBuilder.CreateTube("proposed-transit-route-" + route.id, {
+      path: routePoints,
+      radius: 4.2,
+      tessellation: 8,
+      updatable: false
+    }, scene);
+    line.material = transitRouteMaterials.get(route.mode) ?? null;
+    line.isPickable = false;
+  }
   const crossingReviewMaterial = new StandardMaterial("rail-road-crossing-review-material", scene);
   crossingReviewMaterial.diffuseColor = new Color3(0.94, 0.58, 0.13);
   for (const crossing of railCrossingCandidates) {
