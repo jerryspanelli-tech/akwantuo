@@ -441,8 +441,8 @@ async function start(): Promise<void> {
       let inputZ = interactionState.mode === "on_foot" && publicPassengerState.mode !== "riding" ? touchInput.z : 0;
       if (interactionState.mode === "on_foot" && publicPassengerState.mode !== "riding" && (pressedKeys.has("a") || pressedKeys.has("arrowleft"))) inputX -= 1;
       if (interactionState.mode === "on_foot" && publicPassengerState.mode !== "riding" && (pressedKeys.has("d") || pressedKeys.has("arrowright"))) inputX += 1;
-      if (interactionState.mode === "on_foot" && (pressedKeys.has("w") || pressedKeys.has("arrowup"))) inputZ += 1;
-      if (interactionState.mode === "on_foot" && (pressedKeys.has("s") || pressedKeys.has("arrowdown"))) inputZ -= 1;
+      if (interactionState.mode === "on_foot" && publicPassengerState.mode !== "riding" && (pressedKeys.has("w") || pressedKeys.has("arrowup"))) inputZ += 1;
+      if (interactionState.mode === "on_foot" && publicPassengerState.mode !== "riding" && (pressedKeys.has("s") || pressedKeys.has("arrowdown"))) inputZ -= 1;
 
       const inputLength = Math.hypot(inputX, inputZ);
       if (inputLength > 1) {
@@ -472,7 +472,7 @@ async function start(): Promise<void> {
         onGround = false;
       }
       jumpRequested = false;
-      if (interactionState.mode === "on_foot") {
+      if (interactionState.mode === "on_foot" && publicPassengerState.mode !== "riding") {
         verticalVelocity -= WORLD_CONFIG.movement.gravity * delta;
         player.root.position.y += verticalVelocity * delta;
       }
@@ -495,7 +495,7 @@ async function start(): Promise<void> {
         player.rightArm.rotation.x *= 0.82;
       }
 
-      if (interactionState.mode === "on_foot") {
+      if (interactionState.mode === "on_foot" && publicPassengerState.mode !== "riding") {
       const target = player.root.position.add(new Vector3(0, 1.25, 0));
       camera.target = Vector3.Lerp(camera.target, target, Math.min(1, delta * 8));
       const boundedPosition = clampToWorld(player.root.position.x, player.root.position.z, {
