@@ -7,7 +7,13 @@ on:
     paths:
       - "apps/game/src/world/railStationGeometry.ts"
       - "apps/game/src/world/railStationFitout.ts"
+      - "apps/game/src/world/railStationAccessGeometry.ts"
+      - "apps/game/src/world/railStationInterchange.ts"
       - "apps/game/src/world/stationInterchangeGeometry.ts"
+      - "apps/game/src/world/railTrackDesign.ts"
+      - "apps/game/src/world/railTrackGeometry.ts"
+      - "apps/game/src/world/trafficRules.ts"
+      - "apps/game/src/vehicles/roadVehicles.ts"
       - "apps/game/src/transportPreview.ts"
       - "apps/game/transport-preview.html"
       - "apps/game/vite.config.ts"
@@ -54,6 +60,7 @@ jobs:
         run: |
           mkdir -p artifacts
           npx --yes playwright screenshot --browser chromium --viewport-size "1440,1000" --wait-for-timeout 6000 http://127.0.0.1:4173/transport-preview.html artifacts/akwantuo-transport-preview.png
+          test -s artifacts/akwantuo-transport-preview.png
       - name: Write build report
         run: |
           mkdir -p artifacts
@@ -63,8 +70,9 @@ jobs:
             echo "Page: /transport-preview.html"
             echo "Viewport: 1440 x 1000"
             echo "Screenshot: artifacts/akwantuo-transport-preview.png"
-            echo "Scope: ultra-modern railway station concept and illustrative trotro, city-bus, taxi and ride-hailing forecourt"
-            echo "Limitations: developer preview only; not integrated into the playable game; no traffic simulation, vehicle physics, collision or real station-site coordinates."
+            echo "Scope: ultra-modern railway station concept, passenger concourse fit-out, sheltered step-free forecourt walkway, and illustrative trotro, city-bus, taxi and ride-hailing forecourt."
+            echo "Validation: npm typecheck and production Vite build must pass before capture."
+            echo "Limitations: developer preview only; not integrated into the playable game; no live trains, traffic simulation, vehicle physics, collision or real station-site coordinates."
           } > artifacts/transport-preview-report.txt
       - name: Upload screenshot and report
         uses: actions/upload-artifact@v4
