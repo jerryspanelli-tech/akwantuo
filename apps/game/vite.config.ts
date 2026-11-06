@@ -9,6 +9,12 @@ export default defineConfig({
   },
   build: {
     target: "es2022",
-    sourcemap: true
+    sourcemap: true,
+    rollupOptions: {
+      input: {
+        main: "index.html",
+        circlePreview: "circle-preview.html"
+      }
+    }
   }
 });
