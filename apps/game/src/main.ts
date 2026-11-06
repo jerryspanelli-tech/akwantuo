@@ -477,6 +477,8 @@ async function start(): Promise<void> {
         document.documentElement.dataset.trotroArrived = String(publicRideArrived);
       }
       if (vehicleActionRequested) {
+        document.documentElement.dataset.transportActionConsumedAt = String(performance.now());
+        document.documentElement.dataset.transportActionPassengerModeBefore = passengerState.mode;
         vehicleActionRequested = false;
         if (passengerState.mode === "riding" && passengerState.vehicleId === "greater-accra-mapped-rail-train") {
           const atTemaTerminal = mappedRailState.currentStopId === "tema-rail-station" ||
@@ -545,7 +547,10 @@ async function start(): Promise<void> {
           if (result.ok) { passengerState = result.state; passengerCameraRig?.dispose(); passengerCameraRig = null; player.root.setEnabled(true); player.root.position.set(publicTaxiState.x - 1.7, 0, publicTaxiState.z); showNotice("You alighted. Balance: GH₵" + (passengerState.balancePesewas / 100).toFixed(2)); }
           else showNotice("The trotro is still travelling. Wait for the terminal stop.");
         } else if (interactionState.mode === "on_foot" && passengerState.mode === "not_riding" && Math.hypot(player.root.position.x - (publicTaxiState.x - 1.15), player.root.position.z - publicTaxiState.z) <= 3) {
+          document.documentElement.dataset.transportTrotroBranch = "entered";
+          document.documentElement.dataset.transportTrotroDistance = Math.hypot(player.root.position.x - (publicTaxiState.x - 1.15), player.root.position.z - publicTaxiState.z).toFixed(3);
           const result = boardPublicTransport(passengerState, { id: "preview-origin", vehicleStopped: publicTaxiState.speedMps === 0, boardingOpen: !publicRideArrived, alightingOpen: false, remainingSeats: 8 }, "preview-shared-trotro", "preview-route", 0.05, { baseFarePesewas: 200, perKilometrePesewas: 100 });
+          document.documentElement.dataset.transportTrotroBoardResult = result.ok ? "ok" : result.reason;
           if (result.ok && result.state.mode === "riding") { passengerState = result.state; passengerCameraRig = new PassengerCameraRig(scene, { interiorWindow: publicTaxi.interiorWindow, exteriorFollow: publicTaxi.exteriorFollow }); vehicleCameraModeIndex = 0; player.root.setEnabled(false); showNotice("Boarded shared trotro. Fare: GH₵" + (result.state.farePaidPesewas / 100).toFixed(2)); }
           else if (!result.ok) showNotice("Unable to board: " + result.reason.replaceAll("_", " ") + ".");
         } else if (interactionState.mode === "on_foot") {
