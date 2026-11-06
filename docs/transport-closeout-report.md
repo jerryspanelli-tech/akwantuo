@@ -1,6 +1,6 @@
 # AKWANTUO transport work — close-out report
 
-**Status:** OPEN — playable road-vehicle integration has begun, but the transportation stage is not closed and must not be handed to the next master-prompt stage yet.
+**Status:** OPEN — the local playable transport slice is integrated and under automated browser verification. Do not hand over the next master-prompt stage until the Greater Accra transport network, remaining vehicle classes, traffic interactions and required device checks are completed.
 
 ## Added and validated foundations
 
@@ -11,7 +11,7 @@
 - Route-to-service adapter only creates stops from eligible first-release station catalogue entries.
 - Circle/Odaw remains a candidate location and is not silently promoted to an operational station.
 - Preview startup checks reject invalid train operation state and verify station eligibility.
-- The main playable scene now also creates a compact local rail corridor with paired rails, ballast, sleepers, an ultra-modern two-platform station and a moving two-car train. The train uses the existing acceleration/braking controller and pauses for a station dwell.
+- The main playable scene creates a compact local rail corridor with paired rails, ballast, sleepers, an ultra-modern two-platform station, a sheltered terminal platform and a moving two-car train. The train uses the acceleration/braking controller, stops for an 8-second terminal dwell and opens alighting during that stop.
 - This is a local integration slice inside the 180m prototype district, not the Greater Accra mapped railway route, and it has no signals, crossings, switches or passenger boarding yet.
 
 ### Road vehicles
@@ -30,10 +30,10 @@
 - A Ghana-inspired shared-trotro minibus visual is now spawned in the main playable scene. The player can board at a temporary preview stop, pay a fare from a local pesewa balance, ride while the vehicle moves with an interior-window/free-look/exterior camera, and alight at the temporary terminal stop.
 - This is a short local preview journey inside the 180m test scene, not a Greater Accra route, a live schedule, an NPC-driven public transport service or a server-backed payment.
 - Fare quote and deduction use integer pesewas and validate balances.
-- Preview startup smoke checks exercise boarding, fare deduction, alighting, vehicle entry and safe/unsafe exit.
+- Main-game startup smoke checks exercise fare calculation, repeat boarding rejection, moving-vehicle boarding/alighting rejection, seat availability, insufficient funds, wallet carry-over between transport modes, vehicle entry/exit safety, road-vehicle acceleration/braking, and rail station dwell/terminal completion.
 
 ### Quality checks
-- Transport preview workflow runs TypeScript typecheck, production Vite build, Chromium screenshot capture and report artifact upload.
+- GitHub Actions runs TypeScript typecheck and production Vite build. The transport workflow also launches the actual main game in Chromium at desktop and mobile-sized viewports, enters gameplay, exercises the complete trotro boarding/camera/alighting journey, checks uncaught page errors, captures screenshots, and uploads a report artifact. This automated run is pending/should be checked before handoff; it is not a substitute for testing on a physical phone.
 - No public deployment was made.
 - Preview is a developer-only scene; it is not the main playable game.
 
@@ -54,7 +54,7 @@ These are not being represented as finished systems:
 1. Complete and approve Greater Accra road/rail geometry and transport stop placements.
 2. Integrate vehicle interaction, driver/passenger seats and passenger camera anchors into the actual player and vehicle assets.
 3. Add traffic collision/navigation and server-authoritative ownership/occupancy/fare transactions before online play.
-4. Add vehicle-specific models and handling, then test on ordinary phones and computers.
+4. Add the remaining vehicle-specific models and handling, then test on ordinary phones and computers. The current browser automation is a desktop/mobile viewport test, not a real-device certification.
 5. Integrate mapped rail operations only after station/track geometry, signalling and operational rules have been reviewed.
 
 **Decision:** DO NOT advance to the next master-prompt stage. Transportation remains open. The next implementation pass must connect public transport journeys to approved in-world route/stop data, connect train operations to the approved Greater Accra rail alignment/stations, add railway crossing/safety and passenger boarding, and test road/rail interaction in the main game. Online authority and production assets remain explicit release dependencies; they must not be described as complete.
