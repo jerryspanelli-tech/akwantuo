@@ -62,6 +62,10 @@ export function runTransportSmokeChecks(): void {
   const alighted = alightPublicTransport(boarded.state, { ...stop, vehicleStopped: true, alightingOpen: true }, "smoke-trotro");
   assert(alighted.ok && alighted.state.mode === "not_riding" && alighted.state.balancePesewas === 795,
     "passenger can alight and retains the correct balance");
+  const secondTrip = boardPublicTransport(alighted.state, stop, "smoke-train", "smoke-rail", 0.04,
+    { baseFarePesewas: 300, perKilometrePesewas: 100 });
+  assert(secondTrip.ok && secondTrip.state.mode === "riding" && secondTrip.state.balancePesewas === 491,
+    "the same wallet carries its remaining balance into a second transport mode");
 
   let interaction: VehicleInteractionState = { mode: "on_foot" };
   const vehicle = {
