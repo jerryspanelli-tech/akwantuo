@@ -14,6 +14,8 @@ import { createRailServiceConfig } from "./world/railService";
 import { advanceRoadVehicleDynamics, type RoadVehicleDynamicsState } from "./vehicles/roadVehicleDynamics";
 import { createRoadVehicleGeometry } from "./vehicles/roadVehicleGeometry";
 import { createRoadVehicleRig } from "./vehicles/roadVehicleRig";
+import { enterVehicle, exitVehicle, type VehicleInteractionState } from "./vehicles/vehicleInteraction";
+import { boardPublicTransport, alightPublicTransport } from "./world/publicTransportOperations";
 
 const canvas = document.querySelector<HTMLCanvasElement>("#station-preview-canvas");
 const errorPanel = document.querySelector<HTMLElement>("#station-preview-error");
@@ -32,6 +34,30 @@ try {
   if (!isRailTrainOperationStateValid(temaService, initialRailState) ||
       isRailTrainOperationStateValid(temaService, { ...initialRailState, distanceM: -1 })) {
     throw new Error("Rail operation state validation failed.");
+  }
+
+  // Smoke-test vehicle entry/exit and passenger fare/boarding state transitions.
+  const parkedVehicle = {
+    id: "smoke-test-car", enabled: true, speedMps: 0, distanceToEntryM: 1.2,
+    driverSeatAvailable: true, passengerSeatsAvailable: 3, safeExitAvailable: true
+  } as const;
+  const entered = enterVehicle({ mode: "on_foot" }, parkedVehicle, "driver");
+  if (!entered.ok || entered.state.mode !== "inside_vehicle" ||
+      exitVehicle(entered.state, { ...parkedVehicle, speedMps: 2 }).ok ||
+      !exitVehicle(entered.state, parkedVehicle).ok) {
+    throw new Error("Vehicle entry/exit interaction checks failed.");
+  }
+  const boarded = boardPublicTransport(
+    { mode: "not_riding", balancePesewas: 10000 },
+    { id: "preview-stop", vehicleStopped: true, boardingOpen: true, alightingOpen: true, remainingSeats: 4 },
+    "preview-trotro", "preview-route", 2,
+    { baseFarePesewas: 200, perKilometrePesewas: 300 }
+  );
+  if (!boarded.ok || boarded.state.mode !== "riding" || boarded.state.balancePesewas !== 9200 ||
+      !alightPublicTransport(boarded.state, {
+        id: "preview-destination", vehicleStopped: true, boardingOpen: false, alightingOpen: true, remainingSeats: 4
+      }, "preview-trotro").ok) {
+    throw new Error("Public transport boarding/fare/alighting checks failed.");
   }
 
   const engine = new Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true }, true);
@@ -103,6 +129,24 @@ try {
   window.addEventListener("keydown", driveKeyDown);
   window.addEventListener("keyup", driveKeyUp);
   window.addEventListener("blur", () => driveKeys.clear());
+  const touchDriveButtons = document.querySelectorAll<HTMLButtonElement>("[data-drive]");
+  for (const button of touchDriveButtons) {
+    const key = button.dataset.drive;
+    if (!key) continue;
+    const press = (event: PointerEvent): void => {
+      event.preventDefault();
+      driveKeys.add(key);
+      button.setPointerCapture?.(event.pointerId);
+    };
+    const release = (event: PointerEvent): void => {
+      event.preventDefault();
+      driveKeys.delete(key);
+    };
+    button.addEventListener("pointerdown", press);
+    button.addEventListener("pointerup", release);
+    button.addEventListener("pointercancel", release);
+    button.addEventListener("lostpointercapture", () => driveKeys.delete(key));
+  }
   const trainGeometry = createRailTrainGeometry(scene, {
     id: "akwantuo-commuter-train", centerX: -35, centerZ: 24,
     groundElevationM: 0, carCount: 2
@@ -169,6 +213,11 @@ try {
     scene.render();
   });
   window.addEventListener("resize", () => engine.resize());
+  window.addEventListener("pagehide", () => {
+    driveKeys.clear();
+    engine.stopRenderLoop();
+    engine.dispose();
+  }, { once: true });
 } catch (error) {
   if (errorPanel) {
     errorPanel.hidden = false;
