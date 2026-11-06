@@ -35,7 +35,7 @@ export type DistrictBuilding = Readonly<{
   interiorId?: string;
 }>;
 
-const BUILDINGS: readonly DistrictBuilding[] = [
+export const DISTRICT_BUILDINGS: readonly DistrictBuilding[] = [
   { id: "osu-corner-mart", name: "Osu Corner Mart", use: "provisions", side: "west", x: -18, z: -72, width: 9, depth: 10, floors: 1, exteriorStyle: "coastal", signText: "CORNER MART", interiorId: "shop-small" },
   { id: "community-pharmacy", name: "Community Pharmacy", use: "pharmacy", side: "east", x: 18, z: -72, width: 10, depth: 11, floors: 1, exteriorStyle: "modern", signText: "PHARMACY", interiorId: "shop-small" },
   { id: "ama-salon", name: "Ama's Hair Studio", use: "salon", side: "west", x: -23, z: -59, width: 10, depth: 9, floors: 1, exteriorStyle: "coastal", signText: "HAIR STUDIO", interiorId: "salon" },
@@ -103,7 +103,7 @@ export function createGhanaianStreetBuildings(scene: Scene): {
   solidAreas: SolidArea[];
 } {
   const solidAreas: SolidArea[] = [];
-  for (const building of BUILDINGS) {
+  for (const building of DISTRICT_BUILDINGS) {
     const palette = PALETTES[building.exteriorStyle];
     const wall = material(scene, "building-wall-" + building.id, palette.wall);
     const trim = material(scene, "building-trim-" + building.id, palette.trim);
@@ -199,14 +199,14 @@ export function createGhanaianStreetBuildings(scene: Scene): {
       halfDepth: building.depth / 2 + 0.2
     });
   }
-  return { buildings: BUILDINGS, solidAreas };
+  return { buildings: DISTRICT_BUILDINGS, solidAreas };
 }
 
 export function isBuildingCatalogueValid(): boolean {
-  const ids = new Set(BUILDINGS.map((building) => building.id));
-  return ids.size === BUILDINGS.length &&
-    BUILDINGS.length >= 20 &&
-    BUILDINGS.every((building) =>
+  const ids = new Set(DISTRICT_BUILDINGS.map((building) => building.id));
+  return ids.size === DISTRICT_BUILDINGS.length &&
+    DISTRICT_BUILDINGS.length >= 20 &&
+    DISTRICT_BUILDINGS.every((building) =>
       building.id.length > 0 && building.name.length > 0 &&
       Number.isFinite(building.x) && Number.isFinite(building.z) &&
       building.width >= 6 && building.depth >= 6 &&
@@ -214,5 +214,5 @@ export function isBuildingCatalogueValid(): boolean {
       (building.interiorId === undefined || building.interiorId.length > 0)
     ) &&
     ["provisions", "pharmacy", "salon", "food", "workshop", "office", "compound_house", "apartment", "market_stall", "guest_house", "clinic"]
-      .every((use) => BUILDINGS.some((building) => building.use === use));
+      .every((use) => DISTRICT_BUILDINGS.some((building) => building.use === use));
 }
