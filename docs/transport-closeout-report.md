@@ -33,7 +33,7 @@
 - Main-game startup smoke checks exercise fare calculation, repeat boarding rejection, moving-vehicle boarding/alighting rejection, seat availability, insufficient funds, wallet carry-over between transport modes, vehicle entry/exit safety, road-vehicle acceleration/braking, and rail station dwell/terminal completion.
 
 ### Quality checks
-- GitHub Actions runs TypeScript typecheck and production Vite build. The transport workflow also launches the actual main game in Chromium at desktop and mobile-sized viewports, enters gameplay, exercises the complete trotro boarding/camera/alighting journey, checks uncaught page errors, captures screenshots, and uploads a report artifact. This automated run is pending/should be checked before handoff; it is not a substitute for testing on a physical phone.
+- GitHub Actions runs TypeScript typecheck and production Vite build. The transport workflow also launches the actual main game in Chromium at desktop and mobile-sized viewports, enters gameplay, exercises the complete trotro boarding/camera/alighting journey, checks uncaught page errors, captures screenshots, and uploads a report artifact. A completed automated run passed main-game startup checks on desktop and mobile-sized Chromium viewports and captured screenshots. A newer expanded run that also exercises the full trotro boarding/camera/alighting journey is still being verified. These are browser viewport tests, not a substitute for testing on a physical phone.
 - No public deployment was made.
 - Preview is a developer-only scene; it is not the main playable game.
 
