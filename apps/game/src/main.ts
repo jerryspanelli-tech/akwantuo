@@ -401,10 +401,11 @@ async function start(): Promise<void> {
       }
 
       if (interactionState.mode === "inside_vehicle" || publicPassengerState.mode === "riding" || railPassengerState.mode === "riding") {
-        if (vehicleViewRequested && passengerCameraRig) {
+        const activePassengerCameraRig = railPassengerCameraRig ?? passengerCameraRig;
+        if (vehicleViewRequested && activePassengerCameraRig) {
           vehicleViewRequested = false;
           vehicleCameraModeIndex = (vehicleCameraModeIndex + 1) % vehicleCameraModes.length;
-          passengerCameraRig.setMode(vehicleCameraModes[vehicleCameraModeIndex], canvas ?? undefined);
+          activePassengerCameraRig.setMode(vehicleCameraModes[vehicleCameraModeIndex], canvas ?? undefined);
           showNotice(`Vehicle view: ${vehicleCameraModes[vehicleCameraModeIndex].replaceAll("_", " ")}.`);
           window.setTimeout(() => notice?.classList.remove("is-visible"), 1800);
         }
@@ -412,6 +413,10 @@ async function start(): Promise<void> {
           camera.target = Vector3.Lerp(camera.target, new Vector3(publicTaxiState.x, 1.8, publicTaxiState.z), Math.min(1, delta * 8));
           camera.alpha = -Math.PI / 2 - publicTaxiState.headingRadians;
           camera.radius = 9;
+        } else if (railPassengerState.mode === "riding") {
+          const railPosition = playableRailDemo.getStatus().position;
+          camera.target = Vector3.Lerp(camera.target, new Vector3(railPosition.x, 2, railPosition.z), Math.min(1, delta * 8));
+          camera.radius = 12;
         } else {
           let steering = touchInput.x;
           let throttle = touchInput.z;
