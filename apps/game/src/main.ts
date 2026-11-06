@@ -491,8 +491,8 @@ async function start(): Promise<void> {
     selectedShopProductIndex = (retailBrowseIndex + AKWANTUO_RETAIL_PRODUCTS.length - 4) % AKWANTUO_RETAIL_PRODUCTS.length;
     const items = visible.map((item) => item.name + " (GH₵" + (item.pricePesewas / 100).toFixed(2) +
       "; stock " + (shopStockById.get(item.id) ?? "sign in") + ")").join(", ");
-    showNotice('Shopkeeper: "Welcome! Take a look at today\'s goods." Shelves: " + items +
-      ". The first item in this group is selected; use Add selected item to put it in your basket.");
+    showNotice('Shopkeeper: "Welcome! Take a look at today\'s goods." Shelves: ' + items +
+      '. The first item in this group is selected; use Add selected item to put it in your basket.');
     document.documentElement.dataset.stage6RetailBrowseCount =
       String(Number(document.documentElement.dataset.stage6RetailBrowseCount ?? 0) + 1);
   });
@@ -502,7 +502,7 @@ async function start(): Promise<void> {
     retailBasket.set(item.id, (retailBasket.get(item.id) ?? 0) + 1);
     const count = [...retailBasket.values()].reduce((sum, quantity) => sum + quantity, 0);
     document.documentElement.dataset.stage6RetailBasketCount = String(count);
-    showNotice('Shopkeeper: "One " + item.name + " added. Anything else?" Basket: " + count + " item(s).');
+    showNotice('Shopkeeper: "One ' + item.name + ' added. Anything else?" Basket: ' + count + ' item(s).');
   });
   shopkeeperTalkButton.addEventListener("click", () => {
     if (activeInterior?.roomId !== "convenience-store") return;
