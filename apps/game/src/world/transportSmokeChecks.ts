@@ -31,7 +31,9 @@ import {
 import { createRailServiceConfig, createRailServiceConfigForRouteChain } from "./railService";
 import { deriveRailRoadCrossingCandidates, evaluateRailCrossingSafety, isRailRoadCrossingCatalogueValid } from "./railRoadCrossings";
 import { GREATER_ACCRA_PUBLIC_TRANSPORT_ROUTE_PLANS, isGreaterAccraPublicTransportRouteCatalogueValid } from "./publicTransportRoutes";
-import { isBuildingCatalogueValid } from "./ghanaianStreetBuildings";
+import { isBuildingCatalogueValid, DISTRICT_BUILDINGS } from "./ghanaianStreetBuildings";
+import { isDistrictPropertyCatalogueValid } from "./districtProperties";
+import { INTERIOR_BLUEPRINTS, isInteriorBlueprintCatalogueValid } from "./interiorBlueprints";
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error("Transport smoke check failed: " + message);
@@ -54,6 +56,11 @@ function expectThrow(action: () => unknown, message: string): void {
  */
 export function runTransportSmokeChecks(): void {
   assert(isBuildingCatalogueValid(), "Ghanaian building catalogue has unique, dimensionally valid entries across every planned building use");
+  assert(isDistrictPropertyCatalogueValid(), "district property records match buildings and cannot grant client-side ownership");
+  assert(isInteriorBlueprintCatalogueValid(), "eight business and home interior plans have valid dimensions and fixture placements");
+  const interiorIds = new Set(INTERIOR_BLUEPRINTS.map((blueprint) => blueprint.id));
+  assert(DISTRICT_BUILDINGS.every((building) => !building.interiorId || interiorIds.has(building.interiorId)),
+    "every advertised building interior resolves to a known interior blueprint");
   assert(isGreaterAccraMapLayoutValid(), "Greater Accra map nodes, roads and coastline validate");
   assert(isGreaterAccraRailNetworkValid(), "Greater Accra Cape-gauge rail routes and station nodes validate");
   assert(isGreaterAccraTrackDesignValid(), "Greater Accra rail track design assignments validate");
