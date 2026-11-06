@@ -1228,7 +1228,12 @@ async function start(): Promise<void> {
       accountSignOut.classList.add("is-hidden");
       if (accountButton) accountButton.innerHTML = "ACCOUNT <small>ONLINE SAVE</small>";
     } catch (error) {
-      if (accountStatus) accountStatus.textContent = error instanceof Error ? error.message : "Sign-out failed.";
+      activeAccountSession = null;
+      accountSignOut.classList.add("is-hidden");
+      if (accountButton) accountButton.innerHTML = "ACCOUNT <small>ONLINE SAVE</small>";
+      if (accountStatus) accountStatus.textContent = error instanceof Error
+        ? `Signed out locally. The server ended the session with a message: ${error.message}`
+        : "Signed out locally.";
     }
   });
 
