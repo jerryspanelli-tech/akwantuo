@@ -7,6 +7,7 @@ import { createUltraModernRailStationGeometry } from "./world/railStationGeometr
 import { createStationPassengerFitout } from "./world/railStationFitout";
 import { createStationInterchangeGeometry } from "./world/stationInterchangeGeometry";
 import { createStationPlatformAccessGeometry } from "./world/railStationAccessGeometry";
+import { createRailTrainGeometry } from "./world/railTrainGeometry";
 
 const canvas = document.querySelector<HTMLCanvasElement>("#station-preview-canvas");
 const errorPanel = document.querySelector<HTMLElement>("#station-preview-error");
@@ -44,6 +45,10 @@ try {
     platformLengthM: 180, platformWidthM: 8, platformCount: 2
   } as const;
   createUltraModernRailStationGeometry(scene, stationOptions);
+  createRailTrainGeometry(scene, {
+    id: "akwantuo-commuter-train", centerX: 0, centerZ: 24,
+    groundElevationM: 0, carCount: 2
+  });
   createStationPassengerFitout(scene, stationOptions);
   createStationPlatformAccessGeometry(scene, {
     stationId: "akwantuo-transport-hub-station",
