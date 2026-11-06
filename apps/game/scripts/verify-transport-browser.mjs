@@ -37,7 +37,8 @@ try {
     else await page.keyboard.press("c");
     await page.waitForFunction(() => (document.querySelector("#notice")?.textContent ?? "").includes("Vehicle view"), { timeout: 5000 });
     console.log(target.name + ": trotro boarded and passenger camera switched");
-    await page.waitForTimeout(15000);
+    await page.waitForFunction(() => (document.querySelector("#notice")?.textContent ?? "").includes("You have reached the final stop"), { timeout: 30000 });
+    console.log(target.name + ": trotro reached terminal");
     if (target.isMobile) await page.locator("#interact-button").click({ timeout: 5000 });
     else await page.keyboard.press("e");
     await page.waitForFunction(() => (document.querySelector("#notice")?.textContent ?? "").includes("You alighted"), { timeout: 5000 });
