@@ -371,7 +371,7 @@ async function start(): Promise<void> {
         }
         vehicleRig.update(vehicleState);
         camera.target = Vector3.Lerp(camera.target, new Vector3(vehicleState.x, 1.4, vehicleState.z), Math.min(1, delta * 8));
-        camera.alpha = Math.PI / 2 - vehicleState.headingRadians;
+        camera.alpha = -Math.PI / 2 - vehicleState.headingRadians;
         camera.radius = 9;
         if (interactButton) interactButton.textContent = "EXIT";
         if (jumpButton) jumpButton.classList.add("is-hidden");
