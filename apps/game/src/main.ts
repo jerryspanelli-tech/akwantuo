@@ -36,6 +36,7 @@ import { DISTRICT_BUSINESSES } from "./world/districtBusinesses";
 import { INTERIOR_BLUEPRINTS } from "./world/interiorBlueprints";
 import { createInteriorRooms } from "./world/interiorRooms";
 import { runStage6SmokeChecks } from "./world/stage6SmokeChecks";
+import { AKWAABA_VENUE_PROGRAMME, isVenueProgrammeValid } from "./world/venueProgramme";
 
 const bootScreen = document.querySelector<HTMLElement>("#boot-screen");
 const gameShell = document.querySelector<HTMLElement>("#game-shell");
@@ -302,10 +303,12 @@ async function start(): Promise<void> {
   // Fail early if core fare, boarding, vehicle, or rail-operation contracts regress.
   runTransportSmokeChecks();
   runStage6SmokeChecks();
+  if (!isVenueProgrammeValid()) throw new Error("Akwaaba Creative Arts Centre weekly programme failed validation.");
   document.documentElement.dataset.akwantuoBuildingCount = String(DISTRICT_BUILDINGS.length);
   document.documentElement.dataset.akwantuoBuildingDistrictCount = String(new Set(DISTRICT_BUILDINGS.map((building) => building.districtId)).size);
   document.documentElement.dataset.akwantuoPropertyCount = String(DISTRICT_PROPERTIES.length);
   document.documentElement.dataset.akwantuoBusinessCount = String(DISTRICT_BUSINESSES.length);
+  document.documentElement.dataset.akwantuoVenueProgrammeCount = String(AKWAABA_VENUE_PROGRAMME.length);
   document.documentElement.dataset.akwantuoInteriorBlueprintCount = String(INTERIOR_BLUEPRINTS.length);
   document.documentElement.dataset.akwantuoStage6Checks = "passed";
   document.documentElement.dataset.akwantuoBuildingInteriorLinkCount = String(DISTRICT_BUILDINGS.filter((building) => building.interiorId).length);
@@ -650,7 +653,10 @@ async function start(): Promise<void> {
               const businessSummary = business
                 ? " Services: " + business.services.join(", ") + ". Hours: " + business.opensAt + "–" + business.closesAt + "."
                 : "";
-              showNotice("Entered " + nearbyBuilding.building.name + "." + businessSummary + " Press E to leave.");
+              const venueProgramme = nearbyBuilding.building.id === "akwaaba-creative-arts-centre"
+                ? " Weekly programme: " + AKWAABA_VENUE_PROGRAMME.map((item) => item.day + " " + item.start + " " + item.title).join("; ") + "."
+                : "";
+              showNotice("Entered " + nearbyBuilding.building.name + "." + businessSummary + venueProgramme + " Press E to leave.");
             } else {
               showNotice("This building interior is not ready yet.");
             }
