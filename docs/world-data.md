@@ -538,3 +538,10 @@ Added `apps/game/src/world/railStationFitout.ts` and integrated it into the stan
 - interior planters to soften the concourse while retaining a central circulation area.
 
 These are static Babylon.js visual meshes. The displays do not yet show live train data, kiosks do not sell tickets, fare gates do not validate passes, and no passenger AI or station security logic is connected. The current arrangement is a visual composition for the generic preview, not a final circulation or evacuation plan. All positions must be reviewed against an approved station layout before site-specific use.
+
+
+## Railway station passenger circulation model
+
+Added `apps/game/src/world/railStationCirculation.ts` to define passenger movement through station forecourts, entrances, ticketing, concourses, accessible circulation, platforms, boarding areas and interchange spaces. The catalogue creates stable station-specific zone IDs, planned connections, access-control classifications and step-free route requirements. It also records a planned accessible egress connection from each public passenger zone back to a designated safe-area zone.
+
+This is a route-planning foundation for later wayfinding, passenger NPC navigation, ticket checks and emergency systems. It does **not** certify fire egress, evacuation capacity, accessibility compliance or building-code compliance. It contains no final corridor widths, stair dimensions, lift locations, gradients, exit doors or crowd simulation; those must be designed from verified station plans and applicable standards.
