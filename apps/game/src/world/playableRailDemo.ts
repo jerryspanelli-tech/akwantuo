@@ -5,13 +5,17 @@ import { advanceRailTrain, createRailTrainOperationState, type RailTrainOperatio
 import { createUltraModernRailStationGeometry } from "./railStationGeometry";
 
 export type PlayableRailDemo = Readonly<{
+  interiorWindow: TransformNode;
+  exteriorFollow: TransformNode;
   update: (deltaSeconds: number) => void;
+  startService: () => void;
+  getStatus: () => Readonly<{ boardingOpen: boolean; completed: boolean; position: Readonly<{ x: number; z: number }> }>;
   dispose: () => void;
 }>;
 
 const ROUTE = {
   x: -41,
-  startZ: -45,
+  startZ: -20,
   stationZ: -20,
   endZ: 55
 } as const;
@@ -122,5 +126,5 @@ export function createPlayableRailDemo(scene: Scene): PlayableRailDemo {
     railMaterial.dispose();
     sleeperMaterial.dispose();
   };
-  return { update, dispose };
+  return {\n    interiorWindow, exteriorFollow, update,\n    startService: () => { if (!disposed && !serviceStarted) serviceStarted = true; },\n    getStatus: () => ({ boardingOpen: !serviceStarted, completed: state.completed, position: currentPosition }),\n    dispose\n  };
 }
