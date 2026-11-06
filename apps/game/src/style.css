@@ -132,3 +132,6 @@ button { font: inherit; }
   .hud-actions { gap: 7px; }
   .interact-button, .vehicle-view-button, .vehicle-brake-button { min-width: 55px; height: 45px; font-size: 8px; }
 }
+
+/* Keep the boot overlay dismissible: its base display rule must not override the hidden state. */
+.boot-screen.is-hidden { display: none !important; }
