@@ -48,14 +48,14 @@ try {
       districts: Number(document.documentElement.dataset.akwantuoBuildingDistrictCount ?? 0),
       properties: Number(document.documentElement.dataset.akwantuoPropertyCount ?? 0),
       businesses: Number(document.documentElement.dataset.akwantuoBusinessCount ?? 0),
-      venueProgramme: Number(document.documentElement.dataset.akwantuoVenueProgrammeCount ?? 0),
+      venueProgramme: Number(document.documentElement.dataset.akwantuoVenueProgrammeCount ?? 0),\n      retailProducts: Number(document.documentElement.dataset.akwantuoRetailProductCount ?? 0),\n      privateIsland: document.documentElement.dataset.akwantuoPrivateIslandName ?? "",\n      privateIslandPrice: Number(document.documentElement.dataset.akwantuoPrivateIslandPrice ?? 0),\n      privateIslandWatercraft: Number(document.documentElement.dataset.akwantuoPrivateIslandWatercraftCount ?? 0),\n      privateIslandMeshes: Number(document.documentElement.dataset.akwantuoPrivateIslandMeshCount ?? 0),
       interiorBlueprints: Number(document.documentElement.dataset.akwantuoInteriorBlueprintCount ?? 0),
       renderedInteriorRooms: Number(document.documentElement.dataset.akwantuoInteriorRoomCount ?? 0),
       interiorLinks: Number(document.documentElement.dataset.akwantuoBuildingInteriorLinkCount ?? 0),
       stage6Checks: document.documentElement.dataset.akwantuoStage6Checks === "passed"
     }));
     if (stageSixCatalogues.buildings !== 23 || stageSixCatalogues.districts !== 12 || stageSixCatalogues.properties !== 23 || stageSixCatalogues.businesses !== 17 || stageSixCatalogues.venueProgramme !== 7 ||
-        stageSixCatalogues.interiorBlueprints !== 10 || stageSixCatalogues.renderedInteriorRooms !== 10 ||
+        stageSixCatalogues.interiorBlueprints !== 11 || stageSixCatalogues.renderedInteriorRooms !== 11 ||\n        stageSixCatalogues.retailProducts < 15 || stageSixCatalogues.privateIsland !== "Akwaaba Cay Private Island" ||\n        stageSixCatalogues.privateIslandPrice < 10_000_000_000 || stageSixCatalogues.privateIslandWatercraft < 4 || stageSixCatalogues.privateIslandMeshes !== 1 ||
         stageSixCatalogues.interiorLinks !== 23 || !stageSixCatalogues.stage6Checks) {
       failures.push(target.name + ": Stage 6 building/district/property/interior catalogues are incomplete: " +
         JSON.stringify(stageSixCatalogues));
