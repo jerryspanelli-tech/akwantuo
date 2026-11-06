@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#101a23" />
+    <title>AKWANTUO — Railway Station Preview</title>
+  </head>
+  <body>
+    <main class="station-preview">
+      <canvas id="station-preview-canvas" aria-label="Interactive 3D ultra-modern railway station preview"></canvas>
+      <section class="station-preview__heading">
+        <span class="station-preview__eyebrow">AKWANTUO · WORLD DEVELOPMENT</span>
+        <h1>Greater Accra Railway</h1>
+        <p>Ultra-modern Ghanaian station concept</p>
+      </section>
+      <section class="station-preview__note">
+        <strong>Design prototype</strong>
+        <span>Orbit and zoom to inspect the concourse, glass façade, covered platforms and solar canopies. Dimensions and platform arrangement are provisional, not a surveyed station plan.</span>
+      </section>
+      <div id="station-preview-error" class="station-preview__error" hidden></div>
+    </main>
+    <script type="module" src="/src/stationPreview.ts"></script>
+  </body>
+</html>
