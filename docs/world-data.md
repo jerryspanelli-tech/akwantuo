@@ -442,3 +442,12 @@ The Circle elevated-structure builder now includes two Feo Oyeo ramp meshes: the
 The reference lengths and widths come from FHECOR's 2016 project sheet. The local endpoints, orientation, spacing and 7.5 m vertical change are **provisional visual-design assumptions** because the reference sheet does not provide a georeferenced centreline in the data currently available. These are not surveyed gradients, approved road levels or engineering designs. No support columns are added to these ramps, and they are not yet connected to the main viaducts or ground roads as drivable surfaces.
 
 The Circle developer preview now contains six elevated visual structures in total: four principal viaducts plus these two Feo Oyeo ramps. Traffic, collision and navigation remain unimplemented.
+
+
+### Circle local ground-access road geometry prototype
+
+Added a separate local-access geometry layer matching the three named topology references: Feo Oyeo–Dadeban–Abotia–Otublohum–Obibini toward Nsawam Road, a pedestrian-only Otublohum path toward the Circle Pedestrian Shopping Mall, and a Ring Road East–Feo Oyeo–Ring Road West connection.
+
+The 3D preview now draws two provisional asphalt access roads and one pedestrian-paved access path. The road and path widths, waypoint positions, bends and exact relationships to the interchange are game-layout assumptions, not surveyed centre-lines or verified current traffic directions. The mall connection is pedestrian-only in this prototype. These surfaces have no collision, traffic rules, navigation or vehicle routing yet.
+
+The geometry is deliberately kept in a separate module so its provisional coordinates can be replaced after site-layout review without changing the named route references.
