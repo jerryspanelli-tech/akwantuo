@@ -263,9 +263,9 @@ export function createGhanaianStreetBuildings(scene: Scene): {
       const domeMaterial = material(scene, "creative-centre-dome", "#263d49");
       const glassMaterial = material(scene, "creative-centre-glass", "#5b9aa5");
       const goldMaterial = material(scene, "creative-centre-gold", "#d4a84f");
-      const dome = MeshBuilder.CreateSphere("creative-centre-roof-dome", { diameter: 1, segments: 32 }, scene);
+      const dome = MeshBuilder.CreateSphere("creative-centre-roof-dome", { diameter: 1, segments: 32, slice: 0.5 }, scene);
       dome.scaling.set(building.width * 0.52, 15, building.depth * 0.52);
-      dome.position.set(building.x, 12.2, building.z);
+      dome.position.set(building.x, 7.15, building.z);
       dome.material = domeMaterial;
       dome.isPickable = false;
       const glassFront = MeshBuilder.CreateBox("creative-centre-glass-front", { width: building.width * 0.72, height: 7.2, depth: 0.42 }, scene);
@@ -278,11 +278,11 @@ export function createGhanaianStreetBuildings(scene: Scene): {
       entranceCanopy.isPickable = false;
       for (const side of [-1, 1]) {
         const column = MeshBuilder.CreateCylinder("creative-centre-entry-column-" + side, { height: 7, diameter: 0.8, tessellation: 12 }, scene);
-        column.position.set(building.x + side * 10, 3.5, building.z + building.depth / 2 + 5.5);
+        column.position.set(building.x - building.width / 2 - 5.5, 3.5, building.z + side * 10);
         column.material = goldMaterial;
         column.isPickable = false;
         const ledPanel = MeshBuilder.CreateBox("creative-centre-led-panel-" + side, { width: 1.1, height: 5.5, depth: 0.25 }, scene);
-        ledPanel.position.set(building.x + side * (building.width / 2 - 1), 5.4, building.z + building.depth / 2 + 0.5);
+        ledPanel.position.set(building.x - building.width / 2 - 0.5, 5.4, building.z + side * (building.depth / 2 - 1));
         ledPanel.material = glassMaterial;
         ledPanel.isPickable = false;
       }
