@@ -30,6 +30,7 @@ const FIXTURE_COLOURS: Record<InteriorFixtureType, string> = {
 };
 
 function createMaterial(scene: Scene, id: string, colour: string): StandardMaterial {
+  void id;
   const sharedName = "interior-shared-material-" + colour;
   const existing = scene.getMaterialByName(sharedName);
   if (existing instanceof StandardMaterial) return existing;
