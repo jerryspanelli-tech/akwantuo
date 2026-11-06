@@ -3,7 +3,7 @@ import { COMPLEXIONS, OUTFITS, type CharacterAppearance } from "./appearance";
 import { getHairstyle } from "./hairstyles";
 import { WORLD_CONFIG } from "../world/config";
 
-function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
+export function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
   root: TransformNode;
   leftArm: TransformNode;
   rightArm: TransformNode;
