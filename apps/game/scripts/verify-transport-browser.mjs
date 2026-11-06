@@ -52,6 +52,7 @@ try {
       retailProducts: Number(document.documentElement.dataset.akwantuoRetailProductCount ?? 0),
       storeFridges: Number(document.documentElement.dataset.akwantuoStoreFridgeCount ?? 0),
       storeSnackRacks: Number(document.documentElement.dataset.akwantuoStoreSnackRackCount ?? 0),
+      storeCollisionAreas: Number(document.documentElement.dataset.akwantuoStoreCollisionCount ?? 0),
       shopkeeperRig: document.documentElement.dataset.akwantuoStoreShopkeeperRig === "true",
       privateIsland: document.documentElement.dataset.akwantuoPrivateIslandName ?? "",
       privateIslandPrice: Number(document.documentElement.dataset.akwantuoPrivateIslandPrice ?? 0),
@@ -65,7 +66,7 @@ try {
     if (stageSixCatalogues.buildings !== 23 || stageSixCatalogues.districts !== 12 || stageSixCatalogues.properties !== 23 || stageSixCatalogues.businesses !== 17 || stageSixCatalogues.venueProgramme !== 7 ||
         stageSixCatalogues.interiorBlueprints !== 11 || stageSixCatalogues.renderedInteriorRooms !== 11 ||
         stageSixCatalogues.retailProducts < 15 || stageSixCatalogues.storeFridges < 3 ||
-        stageSixCatalogues.storeSnackRacks < 2 || !stageSixCatalogues.shopkeeperRig || stageSixCatalogues.privateIsland !== "Akwaaba Cay Private Island" ||
+        stageSixCatalogues.storeSnackRacks < 2 || stageSixCatalogues.storeCollisionAreas < 12 || !stageSixCatalogues.shopkeeperRig || stageSixCatalogues.privateIsland !== "Akwaaba Cay Private Island" ||
         stageSixCatalogues.privateIslandPrice < 10_000_000_000 || stageSixCatalogues.privateIslandWatercraft < 4 || stageSixCatalogues.privateIslandMeshes !== 1 ||
         stageSixCatalogues.interiorLinks !== 23 || !stageSixCatalogues.stage6Checks) {
       failures.push(target.name + ": Stage 6 building/district/property/interior catalogues are incomplete: " +
