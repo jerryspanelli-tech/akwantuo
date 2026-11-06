@@ -84,7 +84,7 @@ try {
     await page.waitForFunction(() => (document.querySelector("#notice")?.textContent ?? "").includes("You alighted"), { timeout: 5000 });
 
     if (failures.length) throw new Error(failures.join("\n"));
-    await page.screenshot({ path: "artifacts/akwantuo-" + target.name + "-transport-game.png", fullPage: false, timeout: 10000 });
+    await page.screenshot({ path: "artifacts/akwantuo-" + target.name + "-transport-game.png", fullPage: false, timeout: 30000 });
     console.log(target.name + ": trotro journey passed and screenshot captured");
     await context.close();
   }
