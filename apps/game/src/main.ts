@@ -321,6 +321,15 @@ async function start(): Promise<void> {
   document.documentElement.dataset.playableMappedRailBoardingOpen = String(greaterAccraMappedRailService.isBoardingOpen());
   let currentAppearance = loadAppearance(window.localStorage);
   const player = createPlayer(scene, currentAppearance);
+  const isLocalTransportTestHost = window.location.hostname === "127.0.0.1" ||
+    window.location.hostname === "localhost";
+  const transportRailTestMode = isLocalTransportTestHost &&
+    new URLSearchParams(window.location.search).get("akwantuoTransportTest") === "rail";
+  if (transportRailTestMode) {
+    // Local-only browser-test spawn; never active on a deployed game host.
+    player.root.position.set(-250, 0, 150);
+    document.documentElement.dataset.transportTestMode = "rail";
+  }
 
   // First live NPC road vehicle: follows the authored N1 Tema corridor in the
   // playable world. Speed tapers toward the route end so it stops safely rather
@@ -532,12 +541,15 @@ async function start(): Promise<void> {
         : "";
 
       playableRailDemo.update(Math.min(rawDelta, 0.1));
-      const mappedRailFrame = greaterAccraMappedRailService.update(rawDelta);
+      const mappedRailFrame = greaterAccraMappedRailService.update(
+        rawDelta * (transportRailTestMode ? 120 : 1)
+      );
       const mappedRailState = greaterAccraMappedRailService.getState();
       document.documentElement.dataset.mappedRailBoardingOpen = String(greaterAccraMappedRailService.isBoardingOpen());
       document.documentElement.dataset.mappedRailDistanceM = mappedRailState.distanceM.toFixed(2);
       document.documentElement.dataset.mappedRailSpeedMps = mappedRailState.speedMps.toFixed(2);
       document.documentElement.dataset.mappedRailStopId = mappedRailState.currentStopId ?? "";
+      document.documentElement.dataset.mappedRailCompleted = String(mappedRailState.completed);
       const railStatus = playableRailDemo.getStatus();
       if (passengerState.mode === "riding" && passengerState.vehicleId === "preview-shared-trotro") {
         const taxiStep = advanceRoadVehicleElapsed({ wheelbaseM: 2.8, maximumForwardSpeedMps: 7, maximumReverseSpeedMps: 2, maximumAccelerationMps2: 1.8, serviceBrakingMps2: 4, maximumSteeringAngleRadians: 0.35, rollingDragMps2: 0.3 }, publicTaxiState, { throttle: publicRideArrived ? 0 : 1, brake: 0, steering: 0 }, rawDelta);
@@ -553,7 +565,8 @@ async function start(): Promise<void> {
         document.documentElement.dataset.transportActionPassengerModeBefore = passengerState.mode;
         vehicleActionRequested = false;
         if (passengerState.mode === "riding" && passengerState.vehicleId === "greater-accra-mapped-rail-train") {
-          const atTemaTerminal = mappedRailState.currentStopId === "tema-rail-station" ||
+          const atTemaTerminal = mappedRailState.completed ||
+            mappedRailState.currentStopId === "tema-rail-station" ||
             mappedRailState.dwellRemainingSeconds > 0;
           const result = alightPublicTransport(passengerState, {
             id: "tema-rail-station",
