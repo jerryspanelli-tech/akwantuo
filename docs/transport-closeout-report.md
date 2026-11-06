@@ -41,7 +41,7 @@
 
 These are not being represented as finished systems:
 - Realistic final 3D assets for every Ghanaian vehicle class, interiors, articulated trailers and motorcycles.
-- Full collision, suspension, tyre grip, wheel steering/rotation, vehicle damage, fuel, ownership, insurance, licences or garages.
+- Complete physical collision and vehicle damage simulation; only basic local checks between the player, starter saloon and preview trotro are currently present. Suspension, tyre grip, wheel steering/rotation, fuel, ownership, insurance, licences and garages are also outstanding.
 - AI traffic, traffic-light phases, lane-level navigation, parking enforcement, emergency dispatch and road safety simulation.
 - Driver entry/exit is connected for the starter saloon, but seat animations and visible driver placement are not yet implemented. The three camera modes are connected to the starter saloon and the preview trotro passenger ride; full passenger seat placement and animations remain unimplemented.
 - Approved Greater Accra public-transport route/stop placements, timetables, multiple live vehicles, conductor/mate interaction, stop announcements, full fare UI and real destination boards. The current two temporary preview stops are deliberately not presented as real Accra stops.
