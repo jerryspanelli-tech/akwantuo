@@ -149,7 +149,9 @@ export function runTransportSmokeChecks(): void {
   assert(getTrafficSignalState(signalPlan, 20).phase === "amber", "signal changes to amber at the configured boundary");
   assert(getTrafficSignalState(signalPlan, 23).phase === "red", "signal changes to red after amber");
   assert(getTrafficSignalState(signalPlan, 48).phase === "green", "signal cycle repeats deterministically");
-  assert(getTrafficSignalState(signalPlan, -1).phase === "green", "negative simulation offsets wrap safely");
+  const negativeSignalTime = getTrafficSignalState(signalPlan, -1);
+  assert(negativeSignalTime.phase === "red" && negativeSignalTime.cyclePositionSeconds === 47,
+    "negative simulation time wraps to the equivalent position at the end of the cycle");
   assert(mayProceedOnTrafficSignal("green", true), "protected movement may proceed on green");
   assert(!mayProceedOnTrafficSignal("amber", true) && !mayProceedOnTrafficSignal("green", false), "amber and unprotected conflicting movements cannot proceed");
   expectThrow(() => getTrafficSignalState(signalPlan, Number.NaN), "invalid signal simulation time is rejected");
