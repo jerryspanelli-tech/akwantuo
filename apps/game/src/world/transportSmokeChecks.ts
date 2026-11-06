@@ -1,4 +1,6 @@
 import { findShortestRoadRoute, isRoadRouteValid } from "./roadRouting";
+import { GREATER_ACCRA_ROAD_PATHS } from "./greaterAccraLayout";
+import { findNearestRoadProjection, getRoadLaneCenterOffset, getRoadLaneCenterPoint, isPointOnRoadNetwork, isRoadProjectionValid } from "./roadNavigation";
 import { isGreaterAccraMapLayoutValid } from "./greaterAccraLayout";
 import { isGreaterAccraRailNetworkValid } from "./railNetwork";
 import { isGreaterAccraTrackDesignValid } from "./railTrackDesign";
@@ -63,6 +65,35 @@ export function runTransportSmokeChecks(): void {
     "future expansion can be previewed when explicitly enabled");
   assert(findShortestRoadRoute("achimota-interchange", "mallam-junction") === null,
     "disconnected primary-road components do not invent a connecting route");
+
+  const firstRoad = GREATER_ACCRA_ROAD_PATHS.find((road) => road.roadSegmentId === "n1-west-approach");
+  assert(!!firstRoad, "first-release N1 road path exists for road projection");
+  const roadStart = firstRoad.points[0];
+  const roadProjection = findNearestRoadProjection(roadStart.x, roadStart.z, { maxDistanceM: 1 });
+  assert(!!roadProjection && isRoadProjectionValid(roadProjection) &&
+    roadProjection.roadSegmentId === "n1-west-approach" && roadProjection.distanceM < 0.001,
+    "road projection finds the exact nearest first-release road centreline");
+  assert(isPointOnRoadNetwork(roadStart.x, roadStart.z, { maxDistanceM: 1 }),
+    "road centreline points are inside the drivable corridor");
+  assert(!isPointOnRoadNetwork(roadStart.x + 500, roadStart.z + 500, { maxDistanceM: 1 }),
+    "distant off-road points are not snapped onto the network");
+  const forwardLaneOffset = getRoadLaneCenterOffset("n1-west-approach", "forward", 0);
+  const reverseLaneOffset = getRoadLaneCenterOffset("n1-west-approach", "reverse", 0);
+  assert(forwardLaneOffset > 0 && reverseLaneOffset < 0,
+    "opposing traffic directions receive separate lane-centre offsets");
+  const laneCentre = getRoadLaneCenterPoint(roadProjection, "forward", 0);
+  assert(Number.isFinite(laneCentre.x) && Number.isFinite(laneCentre.z),
+    "road projection can produce a world-space lane centre");
+  const futureRoad = GREATER_ACCRA_ROAD_PATHS.find((road) => road.roadSegmentId === "n6-nsawam-expansion");
+  assert(!!futureRoad, "future Nsawam road stub exists in the planning catalogue");
+  const futurePoint = futureRoad.points[1];
+  assert(findNearestRoadProjection(futurePoint.x, futurePoint.z, { maxDistanceM: 1 }) === null,
+    "future road stubs are excluded from normal road projection");
+  const futureProjection = findNearestRoadProjection(futurePoint.x, futurePoint.z,
+    { maxDistanceM: 1, includeFutureExpansion: true });
+  assert(!!futureProjection && futureProjection.roadSegmentId === "n6-nsawam-expansion" &&
+    !futureProjection.playableInFirstRelease,
+    "future road stubs can be projected only when explicitly enabled");
 
   const fare = { baseFarePesewas: 200, perKilometrePesewas: 100 };
   assert(quotePublicTransportFare(0.05, fare) === 205, "fare is quoted in integer pesewas");
