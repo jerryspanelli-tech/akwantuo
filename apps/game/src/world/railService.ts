@@ -4,10 +4,11 @@ import {
   isRailTrainOperationConfigValid
 } from "./railTrainOperations";
 import { GREATER_ACCRA_RAIL_NODES, getRailRoute } from "./railNetwork";
+import { GREATER_ACCRA_RAIL_STATIONS } from "./railStations";
 
 /**
  * Builds a deterministic prototype service config from a named schematic rail
- * route. Only station nodes exactly on the route centreline become stops.
+ * route. Only planned first-release stations whose nodes exactly match the\n * route centreline become operational stops. Candidate stops remain excluded.
  */
 export function createRailServiceConfig(
   routeId: string,
@@ -26,6 +27,10 @@ export function createRailServiceConfig(
   const stops: RailStationStop[] = [];
   for (const node of GREATER_ACCRA_RAIL_NODES) {
     if (node.kind !== "station" || !node.firstRelease) continue;
+    const stationDesign = GREATER_ACCRA_RAIL_STATIONS.find((station) =>
+      station.railNodeId === node.id && station.firstRelease && station.status === "planned"
+    );
+    if (!stationDesign) continue;
     const pointIndex = route.points.findIndex((point) =>
       point.x === node.position.x && point.z === node.position.z
     );
