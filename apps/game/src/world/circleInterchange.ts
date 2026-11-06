@@ -58,6 +58,7 @@ export const CIRCLE_INTERCHANGE_FLYOVER_LINKS: readonly CircleFlyoverLink[] = [
     fromCorridor: "Nsawam Road",
     toCorridor: "Kwame Nkrumah Avenue",
     level: "first_elevated",
+    trafficDirection: "one_way",
     status: "planned",
     designNote: "First-level flyover corridor reported in the Circle interchange project description; exact ramp geometry remains to be authored."
   },
