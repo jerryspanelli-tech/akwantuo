@@ -48,10 +48,13 @@ try {
       districts: Number(document.documentElement.dataset.akwantuoBuildingDistrictCount ?? 0),
       properties: Number(document.documentElement.dataset.akwantuoPropertyCount ?? 0),
       interiorBlueprints: Number(document.documentElement.dataset.akwantuoInteriorBlueprintCount ?? 0),
-      renderedInteriorRooms: Number(document.documentElement.dataset.akwantuoInteriorRoomCount ?? 0)
+      renderedInteriorRooms: Number(document.documentElement.dataset.akwantuoInteriorRoomCount ?? 0),
+      interiorLinks: Number(document.documentElement.dataset.akwantuoBuildingInteriorLinkCount ?? 0),
+      stage6Checks: document.documentElement.dataset.akwantuoStage6Checks === "passed"
     }));
     if (stageSixCatalogues.buildings !== 22 || stageSixCatalogues.districts !== 12 || stageSixCatalogues.properties !== 22 ||
-        stageSixCatalogues.interiorBlueprints !== 8 || stageSixCatalogues.renderedInteriorRooms !== 8) {
+        stageSixCatalogues.interiorBlueprints !== 9 || stageSixCatalogues.renderedInteriorRooms !== 9 ||
+        stageSixCatalogues.interiorLinks !== 22 || !stageSixCatalogues.stage6Checks) {
       failures.push(target.name + ": Stage 6 building/district/property/interior catalogues are incomplete: " +
         JSON.stringify(stageSixCatalogues));
     }
@@ -228,41 +231,62 @@ try {
     console.log(target.name + ": mapped Accra–Tema train reached Tema and passenger alighted");
     await page.screenshot({ path: "artifacts/akwantuo-" + target.name + "-mapped-rail.png", fullPage: false, timeout: 30000 });
 
-    // Verify a real 3D business interior can be entered and exited on both viewports.
-    await page.goto("http://127.0.0.1:4173/?akwantuoInteriorTest=shop", {
-      waitUntil: "networkidle",
-      timeout: 30000
-    });
-    await page.waitForFunction(() =>
-      (document.querySelector("#boot-status")?.textContent ?? "").includes("Your world is ready"),
-      { timeout: 30000 }
-    );
-    await page.waitForFunction(() =>
-      document.querySelector("#boot-screen")?.hasAttribute("hidden") === true,
-      { timeout: 10000 }
-    );
-    await page.locator("#play-button").click({ timeout: 10000 });
-    await page.waitForFunction(() => !document.querySelector("#game-hud")?.classList.contains("is-hidden"), { timeout: 10000 });
-    if (target.isMobile) await page.locator("#interact-button").click({ timeout: 5000 });
-    else await page.keyboard.press("e");
-    await page.waitForFunction(() =>
-      document.documentElement.dataset.activeInteriorId === "shop-small" &&
-      (document.querySelector("#notice")?.textContent ?? "").includes("Entered Osu Corner Mart"),
-      { timeout: 5000 }
-    );
-    const interiorActionLabel = await page.locator("#interact-button").textContent();
-    if (interiorActionLabel?.trim() !== "EXIT") {
-      throw new Error(target.name + ": in-building interaction did not change to EXIT: " + interiorActionLabel);
+    // Walk into and back out of one representative building for every
+    // distinct interior blueprint on both desktop and mobile-sized viewports.
+    const interiorCases = [
+      { buildingId: "osu-corner-mart", roomId: "shop-small", screenshot: true },
+      { buildingId: "ama-salon", roomId: "salon" },
+      { buildingId: "chop-bar", roomId: "restaurant" },
+      { buildingId: "adom-compound", roomId: "compound-house" },
+      { buildingId: "coastal-guest-house", roomId: "guest-house" },
+      { buildingId: "district-office", roomId: "office" },
+      { buildingId: "ridge-clinic", roomId: "clinic" },
+      { buildingId: "kwame-auto-works", roomId: "workshop" },
+      { buildingId: "east-legon-apartments", roomId: "apartment" }
+    ];
+    for (const interiorCase of interiorCases) {
+      await page.goto("http://127.0.0.1:4173/?akwantuoInteriorTest=" + interiorCase.buildingId, {
+        waitUntil: "networkidle",
+        timeout: 30000
+      });
+      await page.waitForFunction(() =>
+        (document.querySelector("#boot-status")?.textContent ?? "").includes("Your world is ready"),
+        { timeout: 30000 }
+      );
+      await page.waitForFunction(() =>
+        document.querySelector("#boot-screen")?.hasAttribute("hidden") === true,
+        { timeout: 10000 }
+      );
+      const testBuilding = await page.evaluate(() => document.documentElement.dataset.interiorTestMode ?? "");
+      if (testBuilding !== interiorCase.buildingId) {
+        throw new Error(target.name + ": requested interior test spawn was not selected: " + testBuilding);
+      }
+      await page.locator("#play-button").click({ timeout: 10000 });
+      await page.waitForFunction(() => !document.querySelector("#game-hud")?.classList.contains("is-hidden"), { timeout: 10000 });
+      if (target.isMobile) await page.locator("#interact-button").click({ timeout: 5000 });
+      else await page.keyboard.press("e");
+      await page.waitForFunction((roomId) =>
+        document.documentElement.dataset.activeInteriorId === roomId &&
+        (document.querySelector("#notice")?.textContent ?? "").includes("Entered "),
+        interiorCase.roomId,
+        { timeout: 5000 }
+      );
+      const interiorActionLabel = await page.locator("#interact-button").textContent();
+      if (interiorActionLabel?.trim() !== "EXIT") {
+        throw new Error(target.name + ": " + interiorCase.buildingId + " did not switch interaction to EXIT: " + interiorActionLabel);
+      }
+      if (interiorCase.screenshot) {
+        await page.screenshot({ path: "artifacts/akwantuo-" + target.name + "-shop-interior.png", fullPage: false, timeout: 30000 });
+      }
+      if (target.isMobile) await page.locator("#interact-button").click({ timeout: 5000 });
+      else await page.keyboard.press("e");
+      await page.waitForFunction(() =>
+        document.documentElement.dataset.activeInteriorId === "" &&
+        (document.querySelector("#notice")?.textContent ?? "").includes("stepped back outside"),
+        { timeout: 5000 }
+      );
+      console.log(target.name + ": entered and exited " + interiorCase.roomId + " at " + interiorCase.buildingId);
     }
-    await page.screenshot({ path: "artifacts/akwantuo-" + target.name + "-shop-interior.png", fullPage: false, timeout: 30000 });
-    if (target.isMobile) await page.locator("#interact-button").click({ timeout: 5000 });
-    else await page.keyboard.press("e");
-    await page.waitForFunction(() =>
-      document.documentElement.dataset.activeInteriorId === "" &&
-      (document.querySelector("#notice")?.textContent ?? "").includes("stepped back outside"),
-      { timeout: 5000 }
-    );
-    console.log(target.name + ": entered and exited the Osu Corner Mart 3D interior");
     await context.close();
   }
 } finally {
