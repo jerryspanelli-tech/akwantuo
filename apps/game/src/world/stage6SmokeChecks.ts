@@ -3,7 +3,7 @@ import { DISTRICT_PROPERTIES, isDistrictPropertyCatalogueValid } from "./distric
 import { INTERIOR_BLUEPRINTS, isInteriorBlueprintCatalogueValid } from "./interiorBlueprints";
 import { GREATER_ACCRA_REGION_ANCHORS } from "./greaterAccraLayout";
 import { DISTRICT_BUSINESSES, isDistrictBusinessCatalogueValid } from "./districtBusinesses";
-import { isVenueProgrammeValid } from "./venueProgramme";
+import { isVenueProgrammeValid } from "./venueProgramme";\nimport { isAkwantuoRetailCatalogueValid, AKWANTUO_RETAIL_PRODUCTS } from "./retailCatalogue";\nimport { isPrivateIslandCatalogueValid, AKWANTUO_PRIVATE_ISLAND, PRIVATE_ISLAND_WATERCRAFT } from "./privateIsland";
 
 /** Fail-fast integrity checks for Stage 6 world content before the scene starts. */
 export function runStage6SmokeChecks(): void {
@@ -11,7 +11,7 @@ export function runStage6SmokeChecks(): void {
   if (!isInteriorBlueprintCatalogueValid()) throw new Error("Stage 6 interior blueprint catalogue failed structural validation.");
   if (!isDistrictPropertyCatalogueValid()) throw new Error("Stage 6 property directory failed structural validation.");
   if (!isDistrictBusinessCatalogueValid()) throw new Error("Stage 6 business directory failed structural validation.");
-  if (!isVenueProgrammeValid()) throw new Error("Creative arts venue programme failed structural validation.");
+  if (!isVenueProgrammeValid()) throw new Error("Creative arts venue programme failed structural validation.");\n  if (!isAkwantuoRetailCatalogueValid()) throw new Error("Fictional convenience-store retail catalogue failed structural validation.");\n  if (!isPrivateIslandCatalogueValid()) throw new Error("Luxury private-island catalogue failed structural validation.");\n  if (AKWANTUO_RETAIL_PRODUCTS.length < 15 || !AKWANTUO_RETAIL_PRODUCTS.some((item) => item.category === "soft_drink") || !AKWANTUO_RETAIL_PRODUCTS.some((item) => item.category === "snack")) throw new Error("Convenience store is missing core drink or snack stock.");\n  if (AKWANTUO_PRIVATE_ISLAND.purchasePricePesewas < 10_000_000_000 || !PRIVATE_ISLAND_WATERCRAFT.some((item) => item.kind === "jet_ski") || !PRIVATE_ISLAND_WATERCRAFT.some((item) => item.kind === "yacht")) throw new Error("Private island must remain premium and include boats and jet skis.");
 
   const blueprintIds = new Set(INTERIOR_BLUEPRINTS.map((blueprint) => blueprint.id));
   const buildingIds = new Set(DISTRICT_BUILDINGS.map((building) => building.id));
