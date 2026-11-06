@@ -24,7 +24,7 @@
 - The playable saloon now has an in-cabin window view, interior free-look and exterior follow camera modes, cycled with C / the on-screen VIEW control. Camera anchors follow the vehicle rig.
 - This first playable vehicle slice is local-only and uses the prototype kinematic model; it is not yet a complete vehicle fleet or network-authoritative system.
 
-### Public transport
+### Road traffic controls\n- Added a deterministic traffic-signal phase model with configurable green, amber and red durations plus a simulation-time offset.\n- Smoke checks cover phase boundaries, cycle wrap, negative time offsets, invalid time rejection and protected-movement gating.\n- This is a reusable simulation foundation only: no signal heads are placed in the playable map, no junction conflict groups or signal timings have been approved, and it does not yet control traffic AI or player movement.\n\n### Public transport
 - Passenger camera modes: interior window, interior free-look and exterior follow.
 - Passenger vehicle profiles for trotro, city bus, coach and taxi.
 - New boarding/alighting state machine checks stopped vehicle, open boarding/alighting, available seats and vehicle identity.
@@ -43,7 +43,7 @@
 These are not being represented as finished systems:
 - Realistic final 3D assets for every Ghanaian vehicle class, interiors, articulated trailers and motorcycles.
 - Complete physical collision and vehicle damage simulation; the new swept circular-footprint test is a conservative prototype check between the starter saloon and preview trotro, not full oriented-body physics or general traffic collision handling. Suspension, tyre grip, wheel steering/rotation, fuel, ownership, insurance, licences and garages are also outstanding.
-- AI traffic, traffic-light phases, lane-level navigation, parking enforcement, emergency dispatch and road safety simulation.
+- AI traffic, in-world traffic-light placement and junction conflict-group control, lane-level navigation, parking enforcement, emergency dispatch and road safety simulation. The deterministic signal phase helper is not an integrated junction-control system.
 - Driver entry/exit is connected for the starter saloon, but seat animations and visible driver placement are not yet implemented. The three camera modes are connected to the starter saloon and the preview trotro passenger ride; full passenger seat placement and animations remain unimplemented.
 - Approved Greater Accra public-transport route/stop placements, timetables, multiple live vehicles, conductor/mate interaction, stop announcements, full fare UI and real destination boards. The current two temporary preview stops are deliberately not presented as real Accra stops.
 - Rail signalling, block occupancy, switches, dispatch, timetable conflicts, safety logic, train doors, passenger interiors and operational railway certification.
