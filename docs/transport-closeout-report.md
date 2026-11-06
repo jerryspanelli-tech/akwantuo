@@ -37,6 +37,7 @@
 - Added nearest-road projection against the authored centreline paths, including along-route distance, heading, lateral offset and cross-section width.
 - Added forward/reverse lane-centre offsets and world-space lane-centre points. Divided-road median space is explicitly excluded from the drivable corridor test; shoulders remain included.
 - Runtime smoke checks cover exact centreline projection, lane-centre placement, median/off-road rejection, opposing lane offsets and future Nsawam stub exclusion unless expansion is explicitly enabled.
+- These road-navigation smoke checks passed inside the desktop and mobile-sized main-game browser run 42200398632, alongside the full trotro journey and Greater Accra map preview check.
 - Limitation: this is a reusable navigation foundation only. The starter saloon/trotro controls are not yet constrained to these mapped lanes, and it does not enforce legal turns, signals, traffic or collisions.
 
 ### Greater Accra road-network preview
