@@ -655,3 +655,12 @@ The rail service adapter now checks the station-design catalogue as well as the 
 The train-operation controller now validates incoming simulation state before advancing it: distance, speed, stop index, dwell state and completion status must be internally consistent with the route configuration. Zero-length consecutive path segments are rejected so route sampling cannot produce an undefined heading. The transport preview runs startup smoke checks for the Tema terminal stop, candidate-stop exclusion and invalid-state rejection before rendering.
 
 These checks improve prototype integrity; they do not verify railway alignment, station construction, signalling, timetables or safe real-world operations.
+
+
+## Road-vehicle visual and control prototype
+
+Added `apps/game/src/vehicles/roadVehicleGeometry.ts` and `roadVehicleRig.ts`. The first reusable road-vehicle model is a Ghana-road saloon-car visual with body panels, cabin glazing, wheels, hubs, lamps and bumpers. The rig groups its meshes and applies position and heading from the shared road-vehicle dynamics state.
+
+The standalone transport preview now includes a keyboard-driven demonstration car: W/S or arrow up/down for throttle/reverse, A/D or arrow left/right for steering, and Space for braking. The preview uses the existing bounded kinematic bicycle model and clears held controls when the browser window loses focus.
+
+This is a **developer-preview vehicle**, not yet a playable-world vehicle. It has no road collision, tyre grip, suspension, wheel animation, damage, fuel, entry/exit, interior, traffic AI, multiplayer authority or mobile touch-driving controls. The saloon model is a temporary generic visual and does not represent a specific licensed manufacturer or final Ghanaian vehicle asset.
