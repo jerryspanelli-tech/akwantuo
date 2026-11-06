@@ -12,6 +12,7 @@ import {
 } from "@babylonjs/core";
 import "./../station-preview.css";
 import { createUltraModernRailStationGeometry } from "./world/railStationGeometry";
+import { createStationPassengerFitout } from "./world/railStationFitout";
 
 const canvas = document.querySelector<HTMLCanvasElement>("#station-preview-canvas");
 const errorPanel = document.querySelector<HTMLElement>("#station-preview-error");
@@ -58,7 +59,7 @@ try {
   ground.material = groundMaterial;
   ground.isPickable = false;
 
-  createUltraModernRailStationGeometry(scene, {
+  const stationOptions = {
     id: "akwantuo-ultra-modern-station-concept",
     centerX: 0,
     centerZ: 0,
@@ -69,7 +70,9 @@ try {
     platformLengthM: 180,
     platformWidthM: 8,
     platformCount: 2
-  });
+  } as const;
+  createUltraModernRailStationGeometry(scene, stationOptions);
+  createStationPassengerFitout(scene, stationOptions);
 
   engine.setHardwareScalingLevel(Math.max(1, window.devicePixelRatio / 1.5));
   engine.runRenderLoop(() => scene.render());
