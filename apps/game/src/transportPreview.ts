@@ -16,9 +16,9 @@ try {
   const engine = new Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true }, true);
   const scene = new Scene(engine);
   scene.clearColor = new Color4(0.58, 0.69, 0.75, 1);
-  const camera = new ArcRotateCamera("transport-preview-camera", -Math.PI / 2.5, 1.05, 300, new Vector3(0, 4, -34), scene);
-  camera.lowerRadiusLimit = 70;
-  camera.upperRadiusLimit = 520;
+  const camera = new ArcRotateCamera("transport-preview-camera", -Math.PI / 2.5, 1.05, 225, new Vector3(0, 3, -18), scene);
+  camera.lowerRadiusLimit = 55;
+  camera.upperRadiusLimit = 420;
   camera.lowerBetaLimit = 0.16;
   camera.upperBetaLimit = 1.48;
   camera.wheelPrecision = 35;
