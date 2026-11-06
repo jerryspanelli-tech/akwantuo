@@ -49,6 +49,8 @@ const ringLength = 925;
 const akasanomaLength = 168.3;
 const nsawamLength = 167.8;
 const loopLength = 323;
+const feoOyeoRampDownLength = 141.5;
+const feoOyeoRampUpLength = 143;
 
 export const CIRCLE_ELEVATED_STRUCTURE_LAYOUTS: readonly CircleElevatedStructureLayout[] = [
   {
@@ -117,9 +119,63 @@ function pathLength(points: readonly ElevatedRoadPoint[]): number {
   return length;
 }
 
+
+export type CircleFeoOyeoRampLayout = Readonly<{
+  id: string;
+  referenceId: "circle-ramp-down-feo-oye" | "circle-ramp-up-feo-oye";
+  lengthM: number;
+  deckWidthM: number;
+  points: readonly ElevatedRoadPoint[];
+  designNote: string;
+}>;
+
+function makeFeoOyeoRamp(
+  id: string,
+  referenceId: CircleFeoOyeoRampLayout["referenceId"],
+  lengthM: number,
+  startX: number,
+  startZ: number
+): CircleFeoOyeoRampLayout {
+  const riseM = 7.5;
+  const horizontalLengthM = Math.sqrt(lengthM * lengthM - riseM * riseM);
+  const dx = horizontalLengthM * 0.8;
+  const dz = horizontalLengthM * 0.6;
+  return {
+    id,
+    referenceId,
+    lengthM,
+    deckWidthM: 6.5,
+    points: [
+      { x: startX, y: 0, z: startZ },
+      { x: startX + dx / 2, y: riseM / 2, z: startZ + dz / 2 },
+      { x: startX + dx, y: riseM, z: startZ + dz }
+    ],
+    designNote: "Published length and width; local alignment and vertical profile are provisional visual-design assumptions, not surveyed ramp geometry."
+  };
+}
+
+export const CIRCLE_FEO_OYEO_RAMPS: readonly CircleFeoOyeoRampLayout[] = [
+  makeFeoOyeoRamp("circle-feo-oye-ramp-down-3d", "circle-ramp-down-feo-oye", feoOyeoRampDownLength, 185, -160),
+  makeFeoOyeoRamp("circle-feo-oye-ramp-up-3d", "circle-ramp-up-feo-oye", feoOyeoRampUpLength, 170, -178)
+] as const;
+
+export function isCircleFeoOyeoRampLayoutValid(): boolean {
+  const ids = new Set(CIRCLE_FEO_OYEO_RAMPS.map((ramp) => ramp.id));
+  const refs = new Set(CIRCLE_FEO_OYEO_RAMPS.map((ramp) => ramp.referenceId));
+  return CIRCLE_FEO_OYEO_RAMPS.length === 2 && ids.size === 2 && refs.size === 2 &&
+    CIRCLE_FEO_OYEO_RAMPS.every((ramp) =>
+      ramp.points.length >= 2 &&
+      Math.abs(pathLength(ramp.points) - ramp.lengthM) < 0.01 &&
+      ramp.deckWidthM === 6.5 &&
+      ramp.points.every((point) =>
+        Number.isFinite(point.x) && Number.isFinite(point.y) && Number.isFinite(point.z)
+      )
+    );
+}
+
 export function isCircleElevatedStructureLayoutValid(): boolean {
   const centre = getMapNodePosition("circle-junction");
-  if (!centre || CIRCLE_ELEVATED_STRUCTURE_LAYOUTS.length !== 4) return false;
+  if (!centre || CIRCLE_ELEVATED_STRUCTURE_LAYOUTS.length !== 4 || !isCircleFeoOyeoRampLayoutValid()) return false;
   const ids = new Set(CIRCLE_ELEVATED_STRUCTURE_LAYOUTS.map((layout) => layout.id));
   const references = new Set(CIRCLE_ELEVATED_STRUCTURE_LAYOUTS.map((layout) => layout.referenceId));
   if (ids.size !== CIRCLE_ELEVATED_STRUCTURE_LAYOUTS.length || references.size !== 4) return false;
@@ -164,6 +220,22 @@ export function createCircleInterchangeElevatedStructures(
       supportDepthM: layout.level === "second_elevated" ? 2.2 : 1.6,
       guardrailHeightM: 1.15,
       guardrailInsetM: 0.3
+    });
+  }
+  for (const ramp of CIRCLE_FEO_OYEO_RAMPS) {
+    const reference = referenceFor(ramp.referenceId);
+    results[ramp.id] = createElevatedRoadGeometry(scene, {
+      id: ramp.id,
+      points: ramp.points.map((point) => ({
+        x: centre.x + point.x,
+        y: point.y,
+        z: centre.z + point.z
+      })),
+      deckWidthM: reference.deckWidthM,
+      deckThicknessM: 0.8,
+      groundElevationM: 0,
+      guardrailHeightM: 0.9,
+      guardrailInsetM: 0.25
     });
   }
   return results;
