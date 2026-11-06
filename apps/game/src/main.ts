@@ -300,6 +300,7 @@ async function start(): Promise<void> {
   // Fail early if core fare, boarding, vehicle, or rail-operation contracts regress.
   runTransportSmokeChecks();
   document.documentElement.dataset.akwantuoBuildingCount = String(DISTRICT_BUILDINGS.length);
+  document.documentElement.dataset.akwantuoBuildingDistrictCount = String(new Set(DISTRICT_BUILDINGS.map((building) => building.districtId)).size);
   document.documentElement.dataset.akwantuoPropertyCount = String(DISTRICT_PROPERTIES.length);
   document.documentElement.dataset.akwantuoInteriorBlueprintCount = String(INTERIOR_BLUEPRINTS.length);
 
@@ -344,7 +345,13 @@ async function start(): Promise<void> {
     document.documentElement.dataset.transportTestMode = "rail";
   } else if (interiorTestMode) {
     // Local-only spawn directly outside Osu Corner Mart for entry/exit verification.
-    player.root.position.set(-12.1, 0, -72);
+    const testBuilding = DISTRICT_BUILDINGS.find((building) => building.id === "osu-corner-mart");
+    if (!testBuilding) throw new Error("Osu Corner Mart is missing from the district building catalogue.");
+    const frontX = testBuilding.side === "west"
+      ? testBuilding.x + testBuilding.width / 2
+      : testBuilding.x - testBuilding.width / 2;
+    const exitX = frontX + (testBuilding.side === "west" ? 1.4 : -1.4);
+    player.root.position.set(exitX, 0, testBuilding.z);
     document.documentElement.dataset.interiorTestMode = "shop";
   }
 
