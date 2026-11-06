@@ -69,6 +69,7 @@ try {
   });
 
   engine.setHardwareScalingLevel(Math.max(1, window.devicePixelRatio / 1.5));
+  engine.resize();
   engine.runRenderLoop(() => scene.render());
   window.addEventListener("resize", () => engine.resize());
 } catch (error) {
