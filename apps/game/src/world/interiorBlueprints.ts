@@ -80,13 +80,21 @@ export const INTERIOR_BLUEPRINTS: readonly InteriorBlueprint[] = [
     { type: "tool_bench", x: -3.2, z: -2.8, rotationY: 0, scale: 1 },
     { type: "tool_bench", x: 3.2, z: -2.8, rotationY: 0, scale: 1 },
     { type: "display", x: 0, z: 3.2, rotationY: 0, scale: 1.2 }
+  ] },
+  { id: "apartment", displayName: "Modern Apartment", width: 12, depth: 11, wallHeight: 3.4, floorStyle: "tile", fixtures: [
+    { type: "sofa", x: 0, z: 2.8, rotationY: 0, scale: 1.1 },
+    { type: "table", x: 0, z: 0.8, rotationY: 0, scale: 0.9 },
+    { type: "bed", x: -3.2, z: -2.8, rotationY: 0, scale: 1 },
+    { type: "desk", x: 3.2, z: -2.8, rotationY: 0, scale: 0.9 },
+    { type: "chair", x: 3.2, z: -1.2, rotationY: 0, scale: 0.9 },
+    { type: "counter", x: 0, z: -4.3, rotationY: 0, scale: 0.8 }
   ] }
 ] as const;
 
 export function isInteriorBlueprintCatalogueValid(): boolean {
   const ids = new Set(INTERIOR_BLUEPRINTS.map((blueprint) => blueprint.id));
   return ids.size === INTERIOR_BLUEPRINTS.length &&
-    INTERIOR_BLUEPRINTS.length >= 8 &&
+    INTERIOR_BLUEPRINTS.length >= 9 &&
     INTERIOR_BLUEPRINTS.every((blueprint) =>
       blueprint.id.length > 0 && blueprint.displayName.length > 0 &&
       blueprint.width >= 6 && blueprint.depth >= 6 && blueprint.wallHeight >= 2.5 &&
