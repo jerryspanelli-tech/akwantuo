@@ -134,6 +134,16 @@ export function runTransportSmokeChecks(): void {
   assert(!!roadProjection && isRoadProjectionValid(roadProjection) &&
     roadProjection.roadSegmentId === "n1-west-approach" && roadProjection.distanceM < 0.001,
     "road projection finds the exact nearest first-release road centreline");
+  const segmentProjection = findNearestRoadProjection(roadStart.x, roadStart.z, {
+    maxDistanceM: 1,
+    roadSegmentId: firstRoad.roadSegmentId
+  });
+  assert(!!segmentProjection && segmentProjection.roadSegmentId === firstRoad.roadSegmentId,
+    "road-specific projection remains on the requested corridor");
+  expectThrow(() => findNearestRoadProjection(roadStart.x, roadStart.z, {
+    maxDistanceM: 1,
+    roadSegmentId: " "
+  }), "empty road-segment projection filters are rejected");
   assert(!isPointOnRoadNetwork(roadStart.x, roadStart.z, { maxDistanceM: 1 }),
     "a divided-road median is not treated as a drivable lane");
   assert(!isPointOnRoadNetwork(roadStart.x + 500, roadStart.z + 500, { maxDistanceM: 1 }),
