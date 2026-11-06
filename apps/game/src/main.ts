@@ -449,12 +449,16 @@ async function start(): Promise<void> {
   const transportRailTestMode = isLocalTransportTestHost &&
     new URLSearchParams(window.location.search).get("akwantuoTransportTest") === "rail";
   const interiorTestBuildingId = new URLSearchParams(window.location.search).get("akwantuoInteriorTest") ?? "";
-  const interiorTestMode = isLocalTransportTestHost && interiorTestBuildingId.length > 0;\n  const islandTestMode = isLocalTransportTestHost && new URLSearchParams(window.location.search).get("akwantuoIslandTest") === "1";
+  const interiorTestMode = isLocalTransportTestHost && interiorTestBuildingId.length > 0;
+  const islandTestMode = isLocalTransportTestHost && new URLSearchParams(window.location.search).get("akwantuoIslandTest") === "1";
   if (transportRailTestMode) {
     // Local-only browser-test spawn; never active on a deployed game host.
     player.root.position.set(-250, 0, 150);
     document.documentElement.dataset.transportTestMode = "rail";
-  } else if (islandTestMode) {\n    player.root.position.set(AKWANTUO_PRIVATE_ISLAND.position.x, 0, AKWANTUO_PRIVATE_ISLAND.position.z + 95);\n    document.documentElement.dataset.islandTestMode = "true";\n  } else if (interiorTestMode) {
+  } else if (islandTestMode) {
+    player.root.position.set(AKWANTUO_PRIVATE_ISLAND.position.x, 0, AKWANTUO_PRIVATE_ISLAND.position.z + 95);
+    document.documentElement.dataset.islandTestMode = "true";
+  } else if (interiorTestMode) {
     // Local-only spawn outside a selected catalogued building for entry/exit verification.
     const testBuilding = DISTRICT_BUILDINGS.find((building) => building.id === interiorTestBuildingId);
     if (!testBuilding?.interiorId) throw new Error("Interior test building is missing or has no linked room: " + interiorTestBuildingId);
