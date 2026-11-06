@@ -632,3 +632,11 @@ Added `apps/game/src/world/railTrainOperations.ts` as a reusable, deterministic 
 The controller uses bounded time steps and validates finite path points, positive motion limits, unique stop IDs, ordered stop distances and valid dwell durations. It is deliberately independent of Babylon meshes so the same movement state can later drive the train body, bogies, passenger camera anchors and animation without duplicating route logic.
 
 This is a **simulation foundation only**. It is not connected to the static train in the developer preview or the playable game. It does not implement railway signalling, block occupancy, dispatch, timetable conflict resolution, track switches, collision, traction physics, safety certification or server-authoritative multiplayer. Stop distances and route paths must come from reviewed track/station map data; the controller must not be used to imply that a schematic route is operationally safe.
+
+## Road-vehicle kinematics foundation
+
+Added `apps/game/src/vehicles/roadVehicleDynamics.ts` with a lightweight kinematic bicycle model for future drivable cars, taxis, trotros and vans. It accepts normalised throttle, brake and steering input, then updates speed, heading and world position using configurable wheelbase, speed limits, acceleration, service braking, steering angle and rolling drag.
+
+The model validates tuning values and input ranges, clamps forward/reverse speed and uses short bounded time steps. It is a reusable handling foundation that can later be adapted per vehicle class and connected to a real vehicle root, wheels, camera and collision representation.
+
+This is **not yet a drivable vehicle in the game**. It does not simulate tyre grip, suspension, wheel spin, differential behaviour, collisions, damage, fuel, road-surface friction, traffic AI or server-authoritative multiplayer. Motorcycle handling requires a separate lean-aware model, and articulated trucks require a separate trailer model. The values must be tuned through playtesting rather than treated as real vehicle specifications.
