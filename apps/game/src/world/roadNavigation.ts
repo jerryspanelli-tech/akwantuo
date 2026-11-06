@@ -105,7 +105,14 @@ export function isPointOnRoadNetwork(
   options: RoadProjectionOptions = {}
 ): boolean {
   const projection = findNearestRoadProjection(x, z, options);
-  return !!projection && Math.abs(projection.lateralOffsetM) <= projection.roadWidthM / 2;
+  if (!projection) return false;
+  const design = GREATER_ACCRA_ROAD_DESIGNS.find((item) => item.roadSegmentId === projection.roadSegmentId);
+  const profile = design && getRoadCrossSectionProfile(design.crossSectionProfileId);
+  if (!profile) return false;
+  const offset = Math.abs(projection.lateralOffsetM);
+  const innerEdge = profile.medianWidthM / 2;
+  const outerEdge = innerEdge + profile.lanesPerDirection * profile.laneWidthM + profile.shoulderWidthM;
+  return offset >= innerEdge && offset <= outerEdge;
 }
 
 /** Signed lane-centre offset from the authored road centreline. */
