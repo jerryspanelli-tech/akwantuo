@@ -68,16 +68,20 @@ try {
         JSON.stringify(stageSixCatalogues));
     }
     console.log(target.name + ": Stage 6 catalogues " + JSON.stringify(stageSixCatalogues));
-    await page.goto("http://127.0.0.1:4173/?akwantuoIslandTest=1", { waitUntil: "networkidle", timeout: 30000 });
-    await page.waitForFunction(() => (document.querySelector("#boot-status")?.textContent ?? "").includes("Your world is ready"), { timeout: 30000 });
-    await page.waitForFunction(() => document.querySelector("#boot-screen")?.hasAttribute("hidden") === true, { timeout: 10000 });
-    const islandSpawn = await page.evaluate(() => document.documentElement.dataset.islandTestMode === "true");
+    const islandPage = await context.newPage();
+    islandPage.on("pageerror", (error) => failures.push(target.name + " island: " + error.message));
+    islandPage.on("console", (message) => { if (message.type() === "error") failures.push(target.name + " island console: " + message.text()); });
+    await islandPage.goto("http://127.0.0.1:4173/?akwantuoIslandTest=1", { waitUntil: "networkidle", timeout: 30000 });
+    await islandPage.waitForFunction(() => (document.querySelector("#boot-status")?.textContent ?? "").includes("Your world is ready"), { timeout: 30000 });
+    await islandPage.waitForFunction(() => document.querySelector("#boot-screen")?.hasAttribute("hidden") === true, { timeout: 10000 });
+    const islandSpawn = await islandPage.evaluate(() => document.documentElement.dataset.islandTestMode === "true");
     if (!islandSpawn) throw new Error(target.name + ": local private-island preview spawn was not activated.");
-    await page.locator("#play-button").click({ timeout: 10000 });
-    await page.waitForFunction(() => !document.querySelector("#game-hud")?.classList.contains("is-hidden"), { timeout: 10000 });
-    await page.waitForTimeout(700);
-    await page.screenshot({ path: "artifacts/akwantuo-" + target.name + "-private-island.png", fullPage: false, timeout: 30000 });
+    await islandPage.locator("#play-button").click({ timeout: 10000 });
+    await islandPage.waitForFunction(() => !document.querySelector("#game-hud")?.classList.contains("is-hidden"), { timeout: 10000 });
+    await islandPage.waitForTimeout(700);
+    await islandPage.screenshot({ path: "artifacts/akwantuo-" + target.name + "-private-island.png", fullPage: false, timeout: 30000 });
     console.log(target.name + ": private island preview screenshot captured");
+    await islandPage.close();
     try {
       await page.waitForFunction(() => document.querySelector("#boot-screen")?.hasAttribute("hidden") === true, { timeout: 10000 });
     } catch (error) {
