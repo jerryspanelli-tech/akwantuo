@@ -280,6 +280,29 @@ export function runTransportSmokeChecks(): void {
     "mapped Accra-to-Tema train traverses the connected route and dwells at the Tema terminal");
   expectThrow(() => createRailServiceConfig("achimota-to-nsawam"),
     "future Nsawam rail expansion cannot become a first-release service");
+  const mappedRailPassenger = boardPublicTransport(
+    { mode: "not_riding", balancePesewas: 10000 },
+    { id: "accra-central-rail-station", vehicleStopped: true, boardingOpen: true, alightingOpen: false, remainingSeats: 80 },
+    "greater-accra-mapped-rail-train",
+    "accra-central-tema",
+    0.1,
+    { baseFarePesewas: 0, perKilometrePesewas: 0 }
+  );
+  assert(mappedRailPassenger.ok && mappedRailPassenger.state.mode === "riding" &&
+    mappedRailPassenger.state.vehicleId === "greater-accra-mapped-rail-train" &&
+    mappedRailPassenger.state.balancePesewas === 10000,
+    "passenger can board the mapped Accra Central–Tema train without inventing an unapproved preview fare");
+  if (!mappedRailPassenger.ok || mappedRailPassenger.state.mode !== "riding") {
+    throw new Error("Mapped rail boarding assertion narrowed unexpectedly.");
+  }
+  const mappedRailAlight = alightPublicTransport(
+    mappedRailPassenger.state,
+    { id: "tema-rail-station", vehicleStopped: true, boardingOpen: false, alightingOpen: true, remainingSeats: 0 },
+    "greater-accra-mapped-rail-train"
+  );
+  assert(mappedRailAlight.ok && mappedRailAlight.state.mode === "not_riding" &&
+    mappedRailAlight.state.balancePesewas === 10000,
+    "passenger can alight from the mapped Accra–Tema train at its planned terminal");
 
   const railConfig: RailTrainOperationConfig = {
     path: [{ x: 0, z: 0 }, { x: 0, z: 20 }],
