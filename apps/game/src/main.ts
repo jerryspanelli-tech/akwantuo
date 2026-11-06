@@ -39,7 +39,7 @@ import { runStage6SmokeChecks } from "./world/stage6SmokeChecks";
 import { AKWAABA_VENUE_PROGRAMME, isVenueProgrammeValid } from "./world/venueProgramme";
 import { AKWANTUO_RETAIL_PRODUCTS, isAkwantuoRetailCatalogueValid } from "./world/retailCatalogue";
 import { AKWANTUO_PRIVATE_ISLAND, PRIVATE_ISLAND_WATERCRAFT, createAkwantuoPrivateIsland, isPrivateIslandCatalogueValid } from "./world/privateIsland";
-import { getAkwantuoSession, loadPlayerProfile, savePlayerProfile, signInAkwantuo, signOutAkwantuo, signUpAkwantuo, loadEconomyState, loadShopProducts, purchaseShopItems, purchaseGameAsset, type AkwantuoSession, type ShopProductRecord } from "./services/supabase";
+import { getAkwantuoSession, loadPlayerProfile, savePlayerProfile, signInAkwantuo, signOutAkwantuo, signUpAkwantuo, loadEconomyState, loadShopProducts, purchaseShopItems, purchaseGameAsset, type AkwantuoSession } from "./services/supabase";
 
 const bootScreen = document.querySelector<HTMLElement>("#boot-screen");
 const gameShell = document.querySelector<HTMLElement>("#game-shell");
@@ -428,7 +428,7 @@ async function start(): Promise<void> {
   const propertyActionButton = makeStage6Button("stage6-property-action", "Property information");
   const retailBrowseButton = makeStage6Button("stage6-retail-browse", "Browse store products");
   const retailBasketButton = makeStage6Button("stage6-retail-basket", "Add selected item");\n  const retailCheckoutButton = makeStage6Button("stage6-retail-checkout", "Checkout basket");\n  const shopkeeperTalkButton = makeStage6Button("stage6-shopkeeper-talk", "Talk to shopkeeper");
-  const premiumAssetsButton = makeStage6Button("stage6-premium-assets", "Luxury island & boats");
+  const premiumAssetsButton = makeStage6Button("stage6-premium-assets", "Browse island & boats");\n  const premiumPurchaseButton = makeStage6Button("stage6-premium-purchase", "Purchase selected asset");\n  let premiumAssetIndex = 0;
   const venueActionButton = makeStage6Button("stage6-venue-action", "Join event interest list");
   document.body.append(stage6ActionPanel);
   const refreshStage6Actions = (): void => {
@@ -438,7 +438,7 @@ async function start(): Promise<void> {
     const isConvenienceStore = buildingId === "osu-corner-mart" || buildingId === "akwaaba-provisions";
     retailBrowseButton.hidden = !isConvenienceStore;
     retailBasketButton.hidden = !isConvenienceStore;\n    retailCheckoutButton.hidden = !isConvenienceStore;\n    shopkeeperTalkButton.hidden = !isConvenienceStore;
-    premiumAssetsButton.hidden = buildingId !== "district-office";
+    premiumAssetsButton.hidden = buildingId !== "district-office";\n    premiumPurchaseButton.hidden = buildingId !== "district-office";
     venueActionButton.hidden = buildingId !== "akwaaba-creative-arts-centre";
     propertyActionButton.hidden = !buildingId;
     stage6ActionPanel.hidden = !buildingId;
@@ -531,15 +531,51 @@ async function start(): Promise<void> {
   });
   premiumAssetsButton.addEventListener("click", () => {
     if (activeInterior?.buildingId !== "district-office") return;
-    const islandPrice = AKWANTUO_PRIVATE_ISLAND.purchasePriceLabel;
-    const craft = PRIVATE_ISLAND_WATERCRAFT.map((item) =>
-      item.name + " — " + item.label
-    ).join("; ");
+    const asset = [
+      { id: AKWANTUO_PRIVATE_ISLAND.id, name: AKWANTUO_PRIVATE_ISLAND.name, price: AKWANTUO_PRIVATE_ISLAND.purchasePricePesewas, label: AKWANTUO_PRIVATE_ISLAND.purchasePriceLabel },
+      ...PRIVATE_ISLAND_WATERCRAFT.map((item) => ({ id: item.id, name: item.name, price: item.pricePesewas, label: item.label }))
+    ][premiumAssetIndex % (PRIVATE_ISLAND_WATERCRAFT.length + 1)];
+    premiumAssetIndex = (premiumAssetIndex + 1) % (PRIVATE_ISLAND_WATERCRAFT.length + 1);
     document.documentElement.dataset.stage6PremiumListingViews =
       String(Number(document.documentElement.dataset.stage6PremiumListingViews ?? 0) + 1);
-    showNotice("Premium property listing: " + AKWANTUO_PRIVATE_ISLAND.name + " — " + islandPrice +
-      ". Private villa, marina and helipad. Watercraft: " + craft +
-      ". Listing preview only; purchase and ownership transfer are not enabled.");
+    const owned = ownedGameAssetIds.has(asset.id);
+    showNotice("AKWANTUO private marina listing: " + asset.name + " — " + asset.label +
+      ". " + (owned ? "You already own this asset." : "Selected for purchase. ") +
+      "Wallet: GH₵" + (walletBalancePesewas / 100).toFixed(2) + ". Use Purchase selected asset to complete a secure transaction.");
+    document.documentElement.dataset.akwantuoSelectedAssetId = asset.id;
+  });
+  premiumPurchaseButton.addEventListener("click", async () => {
+    if (activeInterior?.buildingId !== "district-office") return;
+    if (!activeAccountSession) {
+      showNotice("Sign in to AKWANTUO to purchase and save property or watercraft ownership.");
+      accountPanel?.classList.remove("is-hidden");
+      accountPanel?.setAttribute("aria-hidden", "false");
+      return;
+    }
+    const assetId = document.documentElement.dataset.akwantuoSelectedAssetId;
+    if (!assetId) {
+      showNotice("Browse the island and watercraft listings first, then select an asset to purchase.");
+      return;
+    }
+    if (ownedGameAssetIds.has(assetId)) {
+      showNotice("This asset is already registered to your AKWANTUO account.");
+      return;
+    }
+    premiumPurchaseButton.disabled = true;
+    premiumPurchaseButton.textContent = "Processing…";
+    try {
+      const receipt = await purchaseGameAsset(activeAccountSession, assetId);
+      await refreshPlayerEconomy();
+      document.documentElement.dataset.stage6AssetPurchaseCount =
+        String(Number(document.documentElement.dataset.stage6AssetPurchaseCount ?? 0) + 1);
+      showNotice("Purchase complete: " + receipt.name + ". GH₵" +
+        (receipt.price_pesewas / 100).toFixed(2) + " paid. Ownership is now saved to your AKWANTUO account.");
+    } catch (error) {
+      showNotice(error instanceof Error ? error.message : "Purchase failed. No money was taken.");
+    } finally {
+      premiumPurchaseButton.disabled = false;
+      premiumPurchaseButton.textContent = "Purchase selected asset";
+    }
   });
   propertyActionButton.addEventListener("click", () => {
     if (!activeInterior) return;
@@ -1238,7 +1274,7 @@ async function start(): Promise<void> {
     try {
       activeAccountSession = await signInAkwantuo(email, password);
       const profile = await loadPlayerProfile(activeAccountSession);
-      if (profile?.look) {
+      await refreshPlayerEconomy();\n      if (profile?.look) {
         currentAppearance = resolveAppearance(profile.look);
         player.applyAppearance(currentAppearance);
         if (characterForm) fillAppearanceForm(characterForm, currentAppearance);
@@ -1273,7 +1309,7 @@ async function start(): Promise<void> {
         return;
       }
       activeAccountSession = result.session;
-      await savePlayerProfile(activeAccountSession, currentAppearance, displayName);
+      await savePlayerProfile(activeAccountSession, currentAppearance, displayName);\n      await refreshPlayerEconomy();
       if (accountStatus) accountStatus.textContent = `Welcome to AKWANTUO, ${displayName}. Your cloud profile is ready.`;
       if (accountSignOut) accountSignOut.classList.remove("is-hidden");
       if (accountButton) accountButton.innerHTML = "ACCOUNT <small>CONNECTED</small>";
