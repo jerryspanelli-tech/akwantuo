@@ -66,7 +66,7 @@ try {
     platformLengthM: 180, platformWidthM: 8, platformCount: 2
   } as const;
   createUltraModernRailStationGeometry(scene, stationOptions);
-  const roadVehicleOrigin = { x: -24, y: 0, z: -120 };
+  const roadVehicleOrigin = { x: -18, y: 0, z: -105 };
   const roadVehicleGeometry = createRoadVehicleGeometry(scene, {
     id: "akwantuo-preview-saloon",
     centerX: roadVehicleOrigin.x,
