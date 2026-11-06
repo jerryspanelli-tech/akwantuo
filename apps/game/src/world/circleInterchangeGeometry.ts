@@ -4,11 +4,13 @@ import { createCircleInterchangeElevatedStructures } from "./circleInterchangeEl
 import type { CircleGroundGeometryResult } from "./circleGroundGeometry";
 import type { ElevatedRoadGeometryResult } from "./elevatedRoadGeometry";
 import { createCircleGroundAccessGeometry, type CircleGroundAccessGeometryResult } from "./circleGroundAccessGeometry";
+import { createCircleRiverRailGeometry, type CircleRiverRailGeometryResult } from "./circleRiverRailGeometry";
 
 export type CircleInterchangeGeometryResult = Readonly<{
   groundLevel: CircleGroundGeometryResult;
   elevatedStructures: Readonly<Record<string, ElevatedRoadGeometryResult>>;
   localAccess: CircleGroundAccessGeometryResult;
+  riverRail: CircleRiverRailGeometryResult;
 }>;
 
 /**
@@ -22,5 +24,6 @@ export function createCircleInterchangeGeometry(
   const groundLevel = createCircleInterchangeGroundLevel(scene);
   const elevatedStructures = createCircleInterchangeElevatedStructures(scene);
   const localAccess = createCircleGroundAccessGeometry(scene);
-  return { groundLevel, elevatedStructures, localAccess };
+  const riverRail = createCircleRiverRailGeometry(scene);
+  return { groundLevel, elevatedStructures, localAccess, riverRail };
 }
