@@ -124,6 +124,114 @@ export function createInteriorRooms(scene: Scene): readonly InteriorRoomInstance
       mesh.rotation.y = fixture.rotationY;
       mesh.material = material;
       mesh.isPickable = false;
+
+      if (fixture.type === "refrigerator") {
+        const glassMaterial = createMaterial(scene, "shop-fridge-glass", "#8ab6c2");
+        glassMaterial.alpha = 0.42;
+        const glass = MeshBuilder.CreateBox("shop-fridge-glass-" + fixtureIndex, {
+          width: 1.88 * scale, height: 2.02 * scale, depth: 0.055
+        }, scene);
+        glass.parent = root;
+        glass.position.set(fixture.x, 1.2 * scale, fixture.z + 0.47 * scale);
+        glass.material = glassMaterial;
+        glass.isPickable = false;
+        const innerShelfMaterial = createMaterial(scene, "shop-fridge-shelf", "#e4e7df");
+        for (let shelf = 0; shelf < 4; shelf += 1) {
+          const rail = MeshBuilder.CreateBox("shop-fridge-shelf-" + fixtureIndex + "-" + shelf, {
+            width: 1.72 * scale, height: 0.045, depth: 0.72 * scale
+          }, scene);
+          rail.parent = root;
+          rail.position.set(fixture.x, 0.48 * scale + shelf * 0.48 * scale, fixture.z + 0.02);
+          rail.material = innerShelfMaterial;
+          rail.isPickable = false;
+          for (let bottle = 0; bottle < 5; bottle += 1) {
+            const drink = MeshBuilder.CreateCylinder("shop-fridge-drink-" + fixtureIndex + "-" + shelf + "-" + bottle, {
+              height: 0.31 * scale, diameter: 0.12 * scale, tessellation: 8
+            }, scene);
+            drink.parent = root;
+            drink.position.set(fixture.x - 0.68 * scale + bottle * 0.34 * scale, 0.67 * scale + shelf * 0.48 * scale, fixture.z + 0.05);
+            drink.material = createMaterial(scene, "shop-fridge-drink-colour-" + ((bottle + shelf) % 4), ["#b94735", "#e8a72f", "#5c9c65", "#d9d5c7"][(bottle + shelf) % 4]);
+            drink.isPickable = false;
+          }
+        }
+        const header = MeshBuilder.CreateBox("shop-fridge-header-" + fixtureIndex, {
+          width: 2.02 * scale, height: 0.18 * scale, depth: 0.12
+        }, scene);
+        header.parent = root;
+        header.position.set(fixture.x, 2.25 * scale, fixture.z + 0.48 * scale);
+        header.material = createMaterial(scene, "shop-fridge-header", "#315d68");
+        header.isPickable = false;
+      }
+
+      if (fixture.type === "snack_rack") {
+        const packetColours = ["#c84d36", "#d9a63b", "#4c8b65", "#4c6f9c"];
+        for (let shelf = 0; shelf < 3; shelf += 1) {
+          const ledge = MeshBuilder.CreateBox("snack-rack-ledge-" + fixtureIndex + "-" + shelf, {
+            width: 1.38 * scale, height: 0.08, depth: 0.72 * scale
+          }, scene);
+          ledge.parent = root;
+          ledge.position.set(fixture.x, 0.42 + shelf * 0.58, fixture.z + 0.08);
+          ledge.material = trimMaterial;
+          ledge.isPickable = false;
+          for (let pack = 0; pack < 4; pack += 1) {
+            const packet = MeshBuilder.CreateBox("snack-rack-pack-" + fixtureIndex + "-" + shelf + "-" + pack, {
+              width: 0.22, height: 0.34, depth: 0.13
+            }, scene);
+            packet.parent = root;
+            packet.position.set(fixture.x - 0.48 + pack * 0.32, 0.65 + shelf * 0.58, fixture.z + 0.14);
+            packet.material = createMaterial(scene, "snack-pack-" + packetColours[pack], packetColours[pack]);
+            packet.isPickable = false;
+          }
+        }
+      }
+
+      if (fixture.type === "counter") {
+        const till = MeshBuilder.CreateBox("shop-checkout-till", { width: 0.48, height: 0.18, depth: 0.38 }, scene);
+        till.parent = root;
+        till.position.set(fixture.x - 0.45, 1.12 * scale, fixture.z - 0.08);
+        till.material = createMaterial(scene, "shop-checkout-till", "#29343b");
+        till.isPickable = false;
+        const screen = MeshBuilder.CreateBox("shop-checkout-screen", { width: 0.34, height: 0.24, depth: 0.035 }, scene);
+        screen.parent = root;
+        screen.position.set(fixture.x - 0.45, 1.31 * scale, fixture.z - 0.12);
+        screen.rotation.x = -0.24;
+        screen.material = createMaterial(scene, "shop-checkout-screen", "#65a8a0");
+        screen.isPickable = false;
+      }
+
+      if (fixture.type === "shopkeeper") {
+        const skin = createMaterial(scene, "shopkeeper-skin", "#81543a");
+        const uniform = createMaterial(scene, "shopkeeper-uniform", "#315d55");
+        const trousers = createMaterial(scene, "shopkeeper-trousers", "#26323a");
+        const head = MeshBuilder.CreateSphere("shopkeeper-head", { diameter: 0.34, segments: 12 }, scene);
+        head.parent = root;
+        head.position.set(fixture.x, 1.52, fixture.z);
+        head.material = skin;
+        head.isPickable = false;
+        const torso = MeshBuilder.CreateBox("shopkeeper-torso", { width: 0.48, height: 0.7, depth: 0.27 }, scene);
+        torso.parent = root;
+        torso.position.set(fixture.x, 0.98, fixture.z);
+        torso.material = uniform;
+        torso.isPickable = false;
+        for (const side of [-1, 1]) {
+          const arm = MeshBuilder.CreateCylinder("shopkeeper-arm-" + side, { height: 0.58, diameter: 0.12, tessellation: 8 }, scene);
+          arm.parent = root;
+          arm.position.set(fixture.x + side * 0.32, 0.98, fixture.z + 0.02);
+          arm.rotation.z = side * -0.12;
+          arm.material = uniform;
+          arm.isPickable = false;
+          const leg = MeshBuilder.CreateCylinder("shopkeeper-leg-" + side, { height: 0.58, diameter: 0.15, tessellation: 8 }, scene);
+          leg.parent = root;
+          leg.position.set(fixture.x + side * 0.13, 0.32, fixture.z);
+          leg.material = trousers;
+          leg.isPickable = false;
+        }
+        const apron = MeshBuilder.CreateBox("shopkeeper-apron", { width: 0.4, height: 0.42, depth: 0.035 }, scene);
+        apron.parent = root;
+        apron.position.set(fixture.x, 0.93, fixture.z + 0.15);
+        apron.material = createMaterial(scene, "shopkeeper-apron", "#d2b47a");
+        apron.isPickable = false;
+      }
     }
 
     if (blueprint.id === "creative-arts-centre") {
