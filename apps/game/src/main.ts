@@ -378,7 +378,8 @@ async function start(): Promise<void> {
 
     if (hasEnteredWorld) {
       playableRailDemo.update(Math.min(rawDelta, 0.1));
-      greaterAccraMappedRailService.update(rawDelta);
+      const mappedRailFrame = greaterAccraMappedRailService.update(rawDelta);
+      const mappedRailState = greaterAccraMappedRailService.getState();
       const railStatus = playableRailDemo.getStatus();
       if (passengerState.mode === "riding" && passengerState.vehicleId === "preview-shared-trotro") {
         const taxiStep = advanceRoadVehicleElapsed({ wheelbaseM: 2.8, maximumForwardSpeedMps: 7, maximumReverseSpeedMps: 2, maximumAccelerationMps2: 1.8, serviceBrakingMps2: 4, maximumSteeringAngleRadians: 0.35, rollingDragMps2: 0.3 }, publicTaxiState, { throttle: publicRideArrived ? 0 : 1, brake: 0, steering: 0 }, rawDelta);
@@ -391,10 +392,64 @@ async function start(): Promise<void> {
       }
       if (vehicleActionRequested) {
         vehicleActionRequested = false;
-        if (passengerState.mode === "riding" && passengerState.vehicleId === "preview-commuter-train") {
+        if (passengerState.mode === "riding" && passengerState.vehicleId === "greater-accra-mapped-rail-train") {
+          const atTemaTerminal = mappedRailState.currentStopId === "tema-rail-station" ||
+            mappedRailState.dwellRemainingSeconds > 0;
+          const result = alightPublicTransport(passengerState, {
+            id: "tema-rail-station",
+            vehicleStopped: mappedRailState.speedMps <= 0.01,
+            boardingOpen: false,
+            alightingOpen: atTemaTerminal,
+            remainingSeats: 0
+          }, "greater-accra-mapped-rail-train");
+          if (result.ok) {
+            passengerState = result.state;
+            railPassengerCameraRig?.dispose();
+            railPassengerCameraRig = null;
+            player.root.setEnabled(true);
+            player.root.position.set(
+              mappedRailFrame.position.x + Math.cos(mappedRailFrame.headingRadians) * 8,
+              0,
+              mappedRailFrame.position.z - Math.sin(mappedRailFrame.headingRadians) * 8
+            );
+            showNotice("You alighted at Tema. No preview fare was charged.");
+          } else {
+            showNotice("The Accra–Tema train has not reached its Tema terminal yet. Please wait.");
+          }
+        } else if (passengerState.mode === "riding" && passengerState.vehicleId === "preview-commuter-train") {
           const result = alightPublicTransport(passengerState, { id: "preview-rail-terminal", vehicleStopped: railStatus.alightingOpen, boardingOpen: false, alightingOpen: railStatus.alightingOpen, remainingSeats: 0 }, "preview-commuter-train");
           if (result.ok) { passengerState = result.state; railPassengerCameraRig?.dispose(); railPassengerCameraRig = null; player.root.setEnabled(true); player.root.position.set(-36, 0, railStatus.position.z); showNotice("You alighted from the train. Balance: GH₵" + (passengerState.balancePesewas / 100).toFixed(2)); }
           else showNotice("The train has not reached an alighting stop yet. Please wait.");
+        } else if (interactionState.mode === "on_foot" && passengerState.mode === "not_riding" &&
+          greaterAccraMappedRailService.isBoardingOpen() &&
+          Math.hypot(player.root.position.x + 250, player.root.position.z - 150) <= 14) {
+          const result = boardPublicTransport(
+            passengerState,
+            {
+              id: "accra-central-rail-station",
+              vehicleStopped: mappedRailState.speedMps <= 0.01,
+              boardingOpen: greaterAccraMappedRailService.isBoardingOpen(),
+              alightingOpen: false,
+              remainingSeats: 80
+            },
+            "greater-accra-mapped-rail-train",
+            "accra-central-tema",
+            0.1,
+            { baseFarePesewas: 0, perKilometrePesewas: 0 }
+          );
+          if (result.ok && result.state.mode === "riding") {
+            passengerState = result.state;
+            railPassengerCameraRig = new PassengerCameraRig(scene, {
+              interiorWindow: greaterAccraMappedRailService.interiorWindow,
+              exteriorFollow: greaterAccraMappedRailService.exteriorFollow
+            });
+            vehicleCameraModeIndex = 0;
+            player.root.setEnabled(false);
+            greaterAccraMappedRailService.startService();
+            showNotice("Boarded the Accra–Tema train at Accra Central. Preview ride: no fare charged.");
+          } else if (!result.ok) {
+            showNotice("Unable to board the mapped train: " + result.reason.replaceAll("_", " ") + ".");
+          }
         } else if (interactionState.mode === "on_foot" && passengerState.mode === "not_riding" && railStatus.boardingOpen && Math.hypot(player.root.position.x + 41, player.root.position.z + 20) <= 9) {
           const result = boardPublicTransport(passengerState, { id: "preview-rail-station", vehicleStopped: true, boardingOpen: true, alightingOpen: false, remainingSeats: 40 }, "preview-commuter-train", "preview-rail-route", 0.04, { baseFarePesewas: 300, perKilometrePesewas: 100 });
           if (result.ok && result.state.mode === "riding") { passengerState = result.state; railPassengerCameraRig = new PassengerCameraRig(scene, { interiorWindow: playableRailDemo.interiorWindow, exteriorFollow: playableRailDemo.exteriorFollow }); vehicleCameraModeIndex = 0; player.root.setEnabled(false); playableRailDemo.startService(); showNotice("Boarded the commuter train. Fare: GH₵" + (result.state.farePaidPesewas / 100).toFixed(2) + ". The train is departing."); }
@@ -458,6 +513,13 @@ async function start(): Promise<void> {
           camera.target = Vector3.Lerp(camera.target, new Vector3(publicTaxiState.x, 1.8, publicTaxiState.z), Math.min(1, delta * 8));
           camera.alpha = -Math.PI / 2 - publicTaxiState.headingRadians;
           camera.radius = 9;
+        } else if (passengerState.mode === "riding" && passengerState.vehicleId === "greater-accra-mapped-rail-train") {
+          camera.target = Vector3.Lerp(
+            camera.target,
+            new Vector3(mappedRailFrame.position.x, 2.2, mappedRailFrame.position.z),
+            Math.min(1, delta * 8)
+          );
+          camera.radius = 16;
         } else if (passengerState.mode === "riding" && passengerState.vehicleId === "preview-commuter-train") {
           const railPosition = playableRailDemo.getStatus().position;
           camera.target = Vector3.Lerp(camera.target, new Vector3(railPosition.x, 2, railPosition.z), Math.min(1, delta * 8));
