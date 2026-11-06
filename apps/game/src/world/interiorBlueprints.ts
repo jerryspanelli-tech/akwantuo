@@ -13,7 +13,10 @@ export type InteriorFixtureType =
   | "stage"
   | "runway"
   | "audience_seating"
-  | "screen"\n  | "refrigerator"\n  | "snack_rack"\n  | "shopkeeper";
+  | "screen"
+  | "refrigerator"
+  | "snack_rack"
+  | "shopkeeper";
 
 export type InteriorFixture = Readonly<{
   type: InteriorFixtureType;
