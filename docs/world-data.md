@@ -426,3 +426,10 @@ References:
 - [FHECOR — Dr. Kwame Nkrumah Interchange (2016 detailed design)](https://fhecor.com/proyecto.php?id=345)
 - [Graphic Online — Odaw River bridge and interchange layout description](https://www.graphic.com.gh/news/general-news/odaw-river-bridge-to-be-demolished-to-pave-way-circle-interchange.html)
 - [2023 aerial view of Kwame Nkrumah Interchange, Wikimedia Commons, CC BY-SA 4.0](https://commons.wikimedia.org/wiki/File:Circle_the_Wonderland.jpg)
+
+
+### Standalone Circle 3D developer preview
+
+Added `apps/game/circle-preview.html` and `apps/game/src/circlePreview.ts`, included as a second Vite build entry. The page renders the current Circle geometry package with an orbit camera, lighting, ground plane and mobile touch/pinch controls. It is a developer inspection page, not the main game menu or a production game mode.
+
+After running the game workspace locally, open `/circle-preview.html` to inspect the roundabout and four elevated structure meshes. This preview makes it possible to review proportions and visual intersections before any attempt to merge the 21 km Greater Accra layout into the current 180 m playable prototype.
