@@ -236,7 +236,7 @@ try {
     // Walk into and back out of one representative building for every
     // distinct interior blueprint on both desktop and mobile-sized viewports.
     const interiorCases = [
-      { buildingId: "osu-corner-mart", roomId: "shop-small", business: true, screenshot: true },
+      { buildingId: "osu-corner-mart", roomId: "convenience-store", business: true, retail: true, screenshot: true },\n      { buildingId: "akwaaba-provisions", roomId: "convenience-store", business: true, retail: true },
       { buildingId: "ama-salon", business: true, roomId: "salon" },
       { buildingId: "chop-bar", business: true, roomId: "restaurant" },
       { buildingId: "adom-compound", roomId: "compound-house", business: false },
@@ -274,7 +274,7 @@ try {
         interiorCase.roomId,
         { timeout: 5000 }
       );
-      const activeBusiness = await page.evaluate(() => ({
+      const retailCatalogCount = Number(document.documentElement.dataset.akwantuoRetailProductCount ?? 0);\n      if (interiorCase.retail && retailCatalogCount < 15) throw new Error(target.name + ": fictional convenience-store product catalogue is missing.");\n      const activeBusiness = await page.evaluate(() => ({
         id: document.documentElement.dataset.activeBusinessId ?? "",
         serviceCount: Number(document.documentElement.dataset.activeBusinessServiceCount ?? 0),
         notice: document.querySelector("#notice")?.textContent ?? ""
