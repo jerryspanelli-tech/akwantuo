@@ -29,6 +29,7 @@
 - Added a dedicated developer page at `/greater-accra-transport-preview.html` that renders the first-release Greater Accra road corridor ribbons and lane markings from the shared map layout, with district-anchor markers, junction reservation envelopes and the schematic Gulf of Guinea coastline.
 - The preview uses the same 21 km × 13.5 km planning coordinate frame as the Greater Accra layout. It is a navigable visual review scene, not a drivable map or a surveyed geographic representation.
 - Added a Chromium browser check to open the preview, detect uncaught page errors, verify its ready status and capture a map screenshot as a workflow artifact.
+- The preview now also instantiates the authored Circle interchange package: ground-level circulating surface and approaches, multi-level flyover/ramp structures, local vehicle/pedestrian access paths, and the Odaw river/rail corridor. These are visible design meshes only; no road traffic, collisions, navigation or full-city interchange integration is implied.
 - The main-game startup handoff was also reordered so the boot overlay is dismissed and the menu shown before the continuous render loop starts. This avoids making the first menu transition depend on render-loop scheduling; the latest desktop/mobile journey test is pending.
 
 ### Road traffic controls
