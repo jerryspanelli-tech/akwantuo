@@ -295,6 +295,9 @@ try {
       if (interiorCase.screenshot) {
         await page.screenshot({ path: "artifacts/akwantuo-" + target.name + "-shop-interior.png", fullPage: false, timeout: 30000 });
       }
+      if (interiorCase.buildingId === "akwaaba-creative-arts-centre") {
+        await page.screenshot({ path: "artifacts/akwantuo-" + target.name + "-creative-arts-centre.png", fullPage: false, timeout: 30000 });
+      }
       if (target.isMobile) await page.locator("#interact-button").click({ timeout: 5000 });
       else await page.keyboard.press("e");
       await page.waitForFunction(() =>
