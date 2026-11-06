@@ -59,6 +59,7 @@
 
 ### Quality checks
 - GitHub Actions runs TypeScript typecheck and production Vite build. The transport workflow also launches the actual main game in Chromium at desktop and mobile-sized viewports, enters gameplay, exercises the complete trotro boarding/camera/alighting journey, checks uncaught page errors, captures screenshots, and uploads a report artifact. A completed automated run passed the full main-game trotro journey on desktop and mobile-sized Chromium viewports: startup, gameplay entry, boarding, passenger-camera switching, route completion, terminal alighting and screenshot capture. The run also passed TypeScript typecheck and the production Vite build. The trotro route now uses a separately bounded frame delta so it continues to advance on lower-frame-rate devices while the rest of the game retains its tighter simulation cap. These are browser viewport tests, not a substitute for testing on a physical phone.
+- A complete GitHub Actions verification run (run 42197748189, commit `35a01af`) passed TypeScript typecheck, production build, desktop and mobile-sized main-game trotro journeys, Greater Accra road-and-rail map preview readiness, screenshot capture, report generation and artifact upload. The map screenshot includes the schematic rail corridors and planned station anchors. This remains automated Chromium viewport verification, not physical-device testing.
 - No public deployment was made.
 - Preview is a developer-only scene; it is not the main playable game.
 
