@@ -51,24 +51,17 @@ export function createPlayableRailDemo(scene: Scene): PlayableRailDemo {
     railMeshes.push(rail);
   }
 
-  const sleeper = MeshBuilder.CreateBox("playable-rail-sleepers", {
-    width: 2.35, height: 0.18, depth: 0.24
-  }, scene);
-  sleeper.position.set(ROUTE.x, 0.14, ROUTE.startZ);
-  sleeper.material = sleeperMaterial;
-  sleeper.isPickable = false;
+  const sleeperMeshes: Mesh[] = [];
   const sleeperCount = Math.floor((ROUTE.endZ - ROUTE.startZ + 8) / 0.72) + 1;
-  const matrices = new Float32Array(sleeperCount * 16);
   for (let index = 0; index < sleeperCount; index += 1) {
-    const z = ROUTE.startZ - 4 + index * 0.72;
-    const matrix = MeshBuilder.CreateBox;
-    void matrix;
-    const transform = new TransformNode("unused-sleeper-transform-" + index, scene);
-    transform.position.set(ROUTE.x, 0.14, z);
-    transform.getWorldMatrix().copyToArray(matrices, index * 16);
-    transform.dispose();
+    const tie = MeshBuilder.CreateBox("playable-rail-sleeper-" + index, {
+      width: 2.35, height: 0.18, depth: 0.24
+    }, scene);
+    tie.position.set(ROUTE.x, 0.14, ROUTE.startZ - 4 + index * 0.72);
+    tie.material = sleeperMaterial;
+    tie.isPickable = false;
+    sleeperMeshes.push(tie);
   }
-  sleeper.thinInstanceSetBuffer("matrix", matrices, 16, true);
 
   const stationGeometry = createUltraModernRailStationGeometry(scene, {
     id: "playable-ultra-modern-rail-station",
@@ -124,7 +117,7 @@ export function createPlayableRailDemo(scene: Scene): PlayableRailDemo {
     for (const mesh of stationGeometry.allMeshes) if (!mesh.isDisposed()) mesh.dispose(false, false);
     ballast.dispose();
     for (const mesh of railMeshes) mesh.dispose();
-    sleeper.dispose();
+    for (const tie of sleeperMeshes) tie.dispose();
     ballastMaterial.dispose();
     railMaterial.dispose();
     sleeperMaterial.dispose();
