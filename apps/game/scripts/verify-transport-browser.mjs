@@ -179,8 +179,7 @@ try {
     else await page.keyboard.press("e");
     await page.waitForFunction(() => (document.querySelector("#notice")?.textContent ?? "").includes("You alighted"), { timeout: 5000 });
 
-    if (failures.length) throw new Error(failures.join("
-"));
+    if (failures.length) throw new Error(failures.join("\n"));
     await page.screenshot({ path: "artifacts/akwantuo-" + target.name + "-transport-game.png", fullPage: false, timeout: 30000 });
     console.log(target.name + ": trotro journey passed and screenshot captured");
 
@@ -390,8 +389,7 @@ try {
   await browser.close();
 }
 if (failures.length) {
-  console.error(failures.join("
-"));
+  console.error(failures.join("\n"));
   process.exit(1);
 }
 console.log("Transport browser smoke checks passed on desktop and mobile viewports.");
