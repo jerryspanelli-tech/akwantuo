@@ -49,7 +49,10 @@ try {
       properties: Number(document.documentElement.dataset.akwantuoPropertyCount ?? 0),
       businesses: Number(document.documentElement.dataset.akwantuoBusinessCount ?? 0),
       venueProgramme: Number(document.documentElement.dataset.akwantuoVenueProgrammeCount ?? 0),
-      retailProducts: Number(document.documentElement.dataset.akwantuoRetailProductCount ?? 0),\n      storeFridges: Number(document.documentElement.dataset.akwantuoStoreFridgeCount ?? 0),\n      storeSnackRacks: Number(document.documentElement.dataset.akwantuoStoreSnackRackCount ?? 0),\n      shopkeeperRig: document.documentElement.dataset.akwantuoStoreShopkeeperRig === "true",
+      retailProducts: Number(document.documentElement.dataset.akwantuoRetailProductCount ?? 0),
+      storeFridges: Number(document.documentElement.dataset.akwantuoStoreFridgeCount ?? 0),
+      storeSnackRacks: Number(document.documentElement.dataset.akwantuoStoreSnackRackCount ?? 0),
+      shopkeeperRig: document.documentElement.dataset.akwantuoStoreShopkeeperRig === "true",
       privateIsland: document.documentElement.dataset.akwantuoPrivateIslandName ?? "",
       privateIslandPrice: Number(document.documentElement.dataset.akwantuoPrivateIslandPrice ?? 0),
       privateIslandWatercraft: Number(document.documentElement.dataset.akwantuoPrivateIslandWatercraftCount ?? 0),
@@ -61,7 +64,8 @@ try {
     }));
     if (stageSixCatalogues.buildings !== 23 || stageSixCatalogues.districts !== 12 || stageSixCatalogues.properties !== 23 || stageSixCatalogues.businesses !== 17 || stageSixCatalogues.venueProgramme !== 7 ||
         stageSixCatalogues.interiorBlueprints !== 11 || stageSixCatalogues.renderedInteriorRooms !== 11 ||
-        stageSixCatalogues.retailProducts < 15 || stageSixCatalogues.storeFridges < 3 ||\n        stageSixCatalogues.storeSnackRacks < 2 || !stageSixCatalogues.shopkeeperRig || stageSixCatalogues.privateIsland !== "Akwaaba Cay Private Island" ||
+        stageSixCatalogues.retailProducts < 15 || stageSixCatalogues.storeFridges < 3 ||
+        stageSixCatalogues.storeSnackRacks < 2 || !stageSixCatalogues.shopkeeperRig || stageSixCatalogues.privateIsland !== "Akwaaba Cay Private Island" ||
         stageSixCatalogues.privateIslandPrice < 10_000_000_000 || stageSixCatalogues.privateIslandWatercraft < 4 || stageSixCatalogues.privateIslandMeshes !== 1 ||
         stageSixCatalogues.interiorLinks !== 23 || !stageSixCatalogues.stage6Checks) {
       failures.push(target.name + ": Stage 6 building/district/property/interior catalogues are incomplete: " +
@@ -175,7 +179,8 @@ try {
     else await page.keyboard.press("e");
     await page.waitForFunction(() => (document.querySelector("#notice")?.textContent ?? "").includes("You alighted"), { timeout: 5000 });
 
-    if (failures.length) throw new Error(failures.join("\n"));
+    if (failures.length) throw new Error(failures.join("
+"));
     await page.screenshot({ path: "artifacts/akwantuo-" + target.name + "-transport-game.png", fullPage: false, timeout: 30000 });
     console.log(target.name + ": trotro journey passed and screenshot captured");
 
@@ -385,7 +390,8 @@ try {
   await browser.close();
 }
 if (failures.length) {
-  console.error(failures.join("\n"));
+  console.error(failures.join("
+"));
   process.exit(1);
 }
 console.log("Transport browser smoke checks passed on desktop and mobile viewports.");
