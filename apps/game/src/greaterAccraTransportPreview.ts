@@ -17,6 +17,9 @@ import {
 import { createGreaterAccraRoadGeometry } from "./world/roadGeometry";
 import { createGreaterAccraRoadMarkings } from "./world/roadMarkingGeometry";
 import { createCircleInterchangeGeometry } from "./world/circleInterchangeGeometry";
+import { createGreaterAccraRailTrackGeometry } from "./world/railTrackGeometry";
+import { GREATER_ACCRA_RAIL_NODES } from "./world/railNetwork";
+import { GREATER_ACCRA_RAIL_STATIONS } from "./world/railStations";
 import { GREATER_ACCRA_JUNCTION_LAYOUTS } from "./world/junctionLayouts";
 import "./../greater-accra-transport-preview.css";
 
@@ -93,6 +96,23 @@ try {
   const markingMeshes = createGreaterAccraRoadMarkings(scene, { sampleSpacingM: 22 });
   if (status) status.textContent = "Generating Circle multi-level interchange…";
   const circleGeometry = createCircleInterchangeGeometry(scene);
+  if (status) status.textContent = "Generating Greater Accra Cape-gauge railway corridors…";
+  const railTracks = createGreaterAccraRailTrackGeometry(scene, { sleeperSpacingM: 1.2 });
+  const railStationMaterial = new StandardMaterial("rail-station-anchor-material", scene);
+  railStationMaterial.diffuseColor = new Color3(0.88, 0.67, 0.29);
+  const plannedRailStations = GREATER_ACCRA_RAIL_STATIONS.filter((station) => station.status === "planned");
+  for (const station of plannedRailStations) {
+    const node = GREATER_ACCRA_RAIL_NODES.find((candidate) => candidate.id === station.railNodeId);
+    if (!node) throw new Error("Missing rail map anchor for station " + station.id);
+    const marker = MeshBuilder.CreateCylinder(
+      "rail-station-anchor-" + station.id,
+      { height: 26, diameter: 38, tessellation: 16 },
+      scene
+    );
+    marker.position.set(node.position.x, 13, node.position.z);
+    marker.material = railStationMaterial;
+    marker.isPickable = false;
+  }
   const junctionMaterial = new StandardMaterial("junction-reservation-material", scene);
   junctionMaterial.diffuseColor = new Color3(0.78, 0.59, 0.28);
   junctionMaterial.alpha = 0.2;
@@ -128,7 +148,7 @@ try {
   engine.runRenderLoop(() => scene.render());
   window.addEventListener("resize", () => engine.resize());
   if (status) {
-    status.textContent = `Network preview ready · ${roadMeshes.length} road-surface meshes · ${markingMeshes.length} road-marking meshes · Circle interchange: ${Object.keys(circleGeometry.elevatedStructures).length} elevated structures · ${GREATER_ACCRA_REGION_ANCHORS.length} district anchors`;
+    status.textContent = `Network preview ready · ${roadMeshes.length} road-surface meshes · ${markingMeshes.length} road-marking meshes · Circle: ${Object.keys(circleGeometry.elevatedStructures).length} elevated structures · ${railTracks.length} rail routes · ${plannedRailStations.length} planned station anchors · ${GREATER_ACCRA_REGION_ANCHORS.length} district anchors`;
   }
 } catch (error) {
   if (status) status.textContent = "Map preview failed: " + (error instanceof Error ? error.message : String(error));
