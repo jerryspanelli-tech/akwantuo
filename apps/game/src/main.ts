@@ -441,7 +441,7 @@ async function start(): Promise<void> {
   });
   premiumAssetsButton.addEventListener("click", () => {
     if (activeInterior?.buildingId !== "district-office") return;
-    const islandPrice = "GH₵" + (AKWANTUO_PRIVATE_ISLAND.purchasePricePesewas / 100).toLocaleString("en-GH");
+    const islandPrice = AKWANTUO_PRIVATE_ISLAND.purchasePriceLabel;
     const craft = PRIVATE_ISLAND_WATERCRAFT.map((item) =>
       item.name + " — " + item.label
     ).join("; ");
