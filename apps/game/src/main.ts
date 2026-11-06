@@ -342,6 +342,71 @@ async function start(): Promise<void> {
   let currentAppearance = loadAppearance(window.localStorage);
   const player = createPlayer(scene, currentAppearance);
   let activeInterior: { buildingId: string; roomId: string; exitX: number; exitZ: number } | null = null;
+  // Stage 6 interactions are deliberately session-local previews. Valuable
+  // bookings, purchases and property transfers remain server-authoritative work.
+  let venueInterestCount = 0;
+  let selectedBusinessServiceIndex = 0;
+  const stage6ActionPanel = document.createElement("div");
+  stage6ActionPanel.id = "stage6-action-panel";
+  stage6ActionPanel.hidden = true;
+  Object.assign(stage6ActionPanel.style, {
+    position: "fixed", left: "50%", bottom: "104px", transform: "translateX(-50%)",
+    zIndex: "30", display: "flex", flexWrap: "wrap", justifyContent: "center",
+    gap: "8px", width: "min(94vw, 620px)", padding: "10px",
+    borderRadius: "14px", background: "rgba(10, 18, 24, 0.92)",
+    border: "1px solid rgba(255,255,255,0.22)", boxSizing: "border-box"
+  });
+  const makeStage6Button = (id: string, label: string): HTMLButtonElement => {
+    const button = document.createElement("button");
+    button.id = id;
+    button.type = "button";
+    button.textContent = label;
+    Object.assign(button.style, {
+      minHeight: "42px", padding: "9px 14px", borderRadius: "9px",
+      border: "1px solid rgba(255,255,255,0.35)", color: "#fff",
+      background: "#24545a", font: "600 13px system-ui", cursor: "pointer"
+    });
+    stage6ActionPanel.append(button);
+    return button;
+  };
+  const serviceActionButton = makeStage6Button("stage6-service-action", "Use a service");
+  const propertyActionButton = makeStage6Button("stage6-property-action", "Property information");
+  const venueActionButton = makeStage6Button("stage6-venue-action", "Join event interest list");
+  document.body.append(stage6ActionPanel);
+  const refreshStage6Actions = (): void => {
+    const buildingId = activeInterior?.buildingId;
+    const business = buildingId ? DISTRICT_BUSINESSES.find((item) => item.buildingId === buildingId) : undefined;
+    serviceActionButton.hidden = !business;
+    venueActionButton.hidden = buildingId !== "akwaaba-creative-arts-centre";
+    propertyActionButton.hidden = !buildingId;
+    stage6ActionPanel.hidden = !buildingId;
+    stage6ActionPanel.style.display = buildingId ? "flex" : "none";
+  };
+  serviceActionButton.addEventListener("click", () => {
+    if (!activeInterior) return;
+    const business = DISTRICT_BUSINESSES.find((item) => item.buildingId === activeInterior?.buildingId);
+    if (!business?.services.length) return;
+    const service = business.services[selectedBusinessServiceIndex % business.services.length];
+    selectedBusinessServiceIndex += 1;
+    document.documentElement.dataset.stage6ServiceSelections = String(selectedBusinessServiceIndex);
+    showNotice("Selected service at " + business.displayName + ": " + service + ". This is a service preview; no payment or transaction has been made.");
+  });
+  propertyActionButton.addEventListener("click", () => {
+    if (!activeInterior) return;
+    const property = DISTRICT_PROPERTIES.find((item) => item.buildingId === activeInterior?.buildingId);
+    if (!property) return;
+    document.documentElement.dataset.stage6PropertyInspections =
+      String(Number(document.documentElement.dataset.stage6PropertyInspections ?? 0) + 1);
+    showNotice("Property information: " + property.displayName + ". Use: " + property.use.replaceAll("_", " ") +
+      ". Occupancy: " + property.occupancy + ". Player purchase or rental is not enabled in this stage.");
+  });
+  venueActionButton.addEventListener("click", () => {
+    if (activeInterior?.buildingId !== "akwaaba-creative-arts-centre") return;
+    const event = AKWAABA_VENUE_PROGRAMME[venueInterestCount % AKWAABA_VENUE_PROGRAMME.length];
+    venueInterestCount += 1;
+    document.documentElement.dataset.stage6VenueInterestCount = String(venueInterestCount);
+    showNotice("Interest noted for " + event.title + " (" + event.day + " at " + event.start + "). This is a local session preview, not a saved booking or confirmed audition.");
+  });
   const isLocalTransportTestHost = window.location.hostname === "127.0.0.1" ||
     window.location.hostname === "localhost";
   const transportRailTestMode = isLocalTransportTestHost &&
@@ -607,6 +672,7 @@ async function start(): Promise<void> {
           room?.root.setEnabled(false);
           player.root.position.set(activeInterior.exitX, 0, activeInterior.exitZ);
           activeInterior = null;
+          refreshStage6Actions();
           document.documentElement.dataset.activeInteriorId = "";
           document.documentElement.dataset.activeBusinessId = "";
           document.documentElement.dataset.activeBusinessServiceCount = "0";
@@ -646,6 +712,8 @@ async function start(): Promise<void> {
                 exitX: nearbyBuilding.exitX,
                 exitZ: nearbyBuilding.exitZ
               };
+              refreshStage6Actions();
+              selectedBusinessServiceIndex = 0;
               document.documentElement.dataset.activeInteriorId = room.id;
               const business = DISTRICT_BUSINESSES.find((item) => item.buildingId === nearbyBuilding.building.id);
               document.documentElement.dataset.activeBusinessId = business?.id ?? "";
