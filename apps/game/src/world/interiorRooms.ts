@@ -48,7 +48,7 @@ function createMaterial(scene: Scene, id: string, colour: string): StandardMater
 }
 
 export function createInteriorRooms(scene: Scene): readonly InteriorRoomInstance[] {
-  return INTERIOR_BLUEPRINTS.map((blueprint, index) => {
+  const rooms = INTERIOR_BLUEPRINTS.map((blueprint, index) => {
     const root = new TransformNode("interior-room-" + blueprint.id, scene);
     // Interiors are streamed as dormant room modules and enabled only on entry.
     root.position.set(10400 + index * 40, 0, 7800);
@@ -310,4 +310,15 @@ export function createInteriorRooms(scene: Scene): readonly InteriorRoomInstance
       solidAreas
     };
   });
+  scene.onBeforeRenderObservable.add(() => {
+    const head = scene.getMeshByName("shopkeeper-head");
+    const leftArm = scene.getMeshByName("shopkeeper-arm--1");
+    const rightArm = scene.getMeshByName("shopkeeper-arm-1");
+    if (!head || !leftArm || !rightArm) return;
+    const seconds = performance.now() / 1000;
+    head.rotation.y = Math.sin(seconds * 0.72) * 0.12;
+    leftArm.rotation.z = -0.12 + Math.sin(seconds * 1.1) * 0.035;
+    rightArm.rotation.z = 0.12 + Math.sin(seconds * 1.1 + 1.2) * 0.035;
+  });
+  return rooms;
 }
