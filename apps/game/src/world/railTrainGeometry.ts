@@ -7,7 +7,9 @@ import {
   Vector3
 } from "@babylonjs/core";
 
-const CAPE_GAUGE_METRES = 1.067;
+import { GREATER_ACCRA_TRACK_PROFILE } from "./railTrackDesign";
+
+const CAPE_GAUGE_METRES = GREATER_ACCRA_TRACK_PROFILE.gaugeM;
 
 export type RailTrainGeometryOptions = Readonly<{
   id: string;
