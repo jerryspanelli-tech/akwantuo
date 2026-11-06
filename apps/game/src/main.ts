@@ -337,13 +337,14 @@ async function start(): Promise<void> {
   let walkClock = 0;
 
   const render = (): void => {
-    const delta = Math.min(engine.getDeltaTime() / 1000, 0.05);
+    const rawDelta = engine.getDeltaTime() / 1000;
+    const delta = Math.min(rawDelta, 0.05);
 
     if (hasEnteredWorld) {
       playableRailDemo.update(delta);
       const railStatus = playableRailDemo.getStatus();
       if (passengerState.mode === "riding" && passengerState.vehicleId === "preview-shared-trotro") {
-        const taxiStep = advanceRoadVehicleDynamics({ wheelbaseM: 2.8, maximumForwardSpeedMps: 7, maximumReverseSpeedMps: 2, maximumAccelerationMps2: 1.8, serviceBrakingMps2: 4, maximumSteeringAngleRadians: 0.35, rollingDragMps2: 0.3 }, publicTaxiState, { throttle: publicRideArrived ? 0 : 1, brake: 0, steering: 0 }, Math.min(delta, 0.1));
+        const taxiStep = advanceRoadVehicleDynamics({ wheelbaseM: 2.8, maximumForwardSpeedMps: 7, maximumReverseSpeedMps: 2, maximumAccelerationMps2: 1.8, serviceBrakingMps2: 4, maximumSteeringAngleRadians: 0.35, rollingDragMps2: 0.3 }, publicTaxiState, { throttle: publicRideArrived ? 0 : 1, brake: 0, steering: 0 }, Math.min(rawDelta, 0.1));
         if (taxiStep.z <= publicRideEndZ) { publicTaxiState = { ...taxiStep, z: publicRideEndZ, speedMps: 0 }; publicRideArrived = true; showNotice("You have reached the final stop. Press ALIGHT to leave the trotro."); }
         else publicTaxiState = taxiStep;
         publicTaxi.update(publicTaxiState);
