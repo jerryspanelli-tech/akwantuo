@@ -87,6 +87,45 @@ export function createPlayableRailDemo(scene: Scene): PlayableRailDemo {
     mesh.parent = stationRoot;
   }
 
+  // Small sheltered terminal platform beside the final stopping point.
+  const terminalMaterial = new StandardMaterial("playable-rail-terminal-platform-material", scene);
+  terminalMaterial.diffuseColor = new Color3(0.53, 0.55, 0.53);
+  const terminalTactileMaterial = new StandardMaterial("playable-rail-terminal-tactile-material", scene);
+  terminalTactileMaterial.diffuseColor = new Color3(0.88, 0.68, 0.25);
+  const terminalRoofMaterial = new StandardMaterial("playable-rail-terminal-roof-material", scene);
+  terminalRoofMaterial.diffuseColor = new Color3(0.22, 0.27, 0.3);
+  const terminalMeshes: Mesh[] = [];
+  const terminalPlatform = MeshBuilder.CreateBox("playable-rail-terminal-platform", {
+    width: 5.6, height: 0.42, depth: 28
+  }, scene);
+  terminalPlatform.position.set(-36.8, 0.21, ROUTE.endZ);
+  terminalPlatform.material = terminalMaterial;
+  terminalPlatform.isPickable = false;
+  terminalMeshes.push(terminalPlatform);
+  const terminalTactile = MeshBuilder.CreateBox("playable-rail-terminal-tactile-edge", {
+    width: 0.65, height: 0.08, depth: 28
+  }, scene);
+  terminalTactile.position.set(-39.25, 0.46, ROUTE.endZ);
+  terminalTactile.material = terminalTactileMaterial;
+  terminalTactile.isPickable = false;
+  terminalMeshes.push(terminalTactile);
+  const terminalCanopy = MeshBuilder.CreateBox("playable-rail-terminal-canopy", {
+    width: 8, height: 0.5, depth: 18
+  }, scene);
+  terminalCanopy.position.set(-36.8, 6.1, ROUTE.endZ);
+  terminalCanopy.material = terminalRoofMaterial;
+  terminalCanopy.isPickable = false;
+  terminalMeshes.push(terminalCanopy);
+  for (const z of [ROUTE.endZ - 7, ROUTE.endZ, ROUTE.endZ + 7]) {
+    const column = MeshBuilder.CreateBox("playable-rail-terminal-column-" + z, {
+      width: 0.35, height: 5.8, depth: 0.35
+    }, scene);
+    column.position.set(-36.8, 3.1, z);
+    column.material = terminalRoofMaterial;
+    column.isPickable = false;
+    terminalMeshes.push(column);
+  }
+
   const trainGeometry = createRailTrainGeometry(scene, {
     id: "playable-commuter-train",
     centerX: ROUTE.x,
@@ -143,6 +182,10 @@ export function createPlayableRailDemo(scene: Scene): PlayableRailDemo {
     ballast.dispose();
     for (const mesh of railMeshes) mesh.dispose();
     for (const tie of sleeperMeshes) tie.dispose();
+    for (const mesh of terminalMeshes) if (!mesh.isDisposed()) mesh.dispose();
+    terminalMaterial.dispose();
+    terminalTactileMaterial.dispose();
+    terminalRoofMaterial.dispose();
     ballastMaterial.dispose();
     railMaterial.dispose();
     sleeperMaterial.dispose();
