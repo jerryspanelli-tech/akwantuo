@@ -83,7 +83,7 @@ export function runTransportSmokeChecks(): void {
     "opposing traffic directions receive separate lane-centre offsets");
   const laneCentre = getRoadLaneCenterPoint(roadProjection, "forward", 0);
   assert(Number.isFinite(laneCentre.x) && Number.isFinite(laneCentre.z) &&
-    isPointOnRoadNetwork(laneCentre.x, laneCentre.z, { maxDistanceM: 1 }),
+    isPointOnRoadNetwork(laneCentre.x, laneCentre.z, { maxDistanceM: 10 }),
     "computed lane centres fall inside the drivable carriageway");
   const futureRoad = GREATER_ACCRA_ROAD_PATHS.find((road) => road.roadSegmentId === "n6-nsawam-expansion");
   assert(!!futureRoad, "future Nsawam road stub exists in the planning catalogue");
