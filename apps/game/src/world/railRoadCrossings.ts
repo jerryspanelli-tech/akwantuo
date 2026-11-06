@@ -45,6 +45,7 @@ type Intersection = Readonly<{
   position: MapPoint;
   roadHeadingRadians: number;
   railHeadingRadians: number;
+  crossingAngleDegrees: number;
   railDistanceM: number;
 }>;
 
