@@ -249,6 +249,10 @@ try {
       (document.querySelector("#notice")?.textContent ?? "").includes("Entered Osu Corner Mart"),
       { timeout: 5000 }
     );
+    const interiorActionLabel = await page.locator("#interact-button").textContent();
+    if (interiorActionLabel?.trim() !== "EXIT") {
+      throw new Error(target.name + ": in-building interaction did not change to EXIT: " + interiorActionLabel);
+    }
     await page.screenshot({ path: "artifacts/akwantuo-" + target.name + "-shop-interior.png", fullPage: false, timeout: 30000 });
     if (target.isMobile) await page.locator("#interact-button").click({ timeout: 5000 });
     else await page.keyboard.press("e");
