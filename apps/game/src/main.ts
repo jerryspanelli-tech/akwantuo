@@ -411,13 +411,14 @@ async function start(): Promise<void> {
     }
   }
   const player = createPlayer(scene, currentAppearance);
+  const mainlandMarina = { x: 2700, z: -3380 };
   let activeInterior: { buildingId: string; roomId: string; exitX: number; exitZ: number } | null = null;
-  // Stage 6 interactions are deliberately session-local previews. Valuable
-  // bookings, purchases and property transfers remain server-authoritative work.
+  // Shop checkout and premium asset ownership are committed server-side.
   let venueInterestCount = 0;
   let selectedBusinessServiceIndex = 0;
-  let retailBasketPreviewCount = 0;
   let retailBrowseIndex = 0;
+  const retailBasket = new Map<string, number>();
+  let selectedShopProductIndex = 0;
   const stage6ActionPanel = document.createElement("div");
   stage6ActionPanel.id = "stage6-action-panel";
   stage6ActionPanel.hidden = true;
@@ -778,7 +779,6 @@ async function start(): Promise<void> {
     exterior.parent = root;
     return { root, interior, exterior };
   };
-  const mainlandMarina = { x: 2700, z: -3380 };
   const islandMarina = { x: AKWANTUO_PRIVATE_ISLAND.position.x + 145, z: AKWANTUO_PRIVATE_ISLAND.position.z + 85 };
   const mainlandDock = MeshBuilder.CreateBox("akwantuo-labadi-marina-dock", { width: 30, height: 1.4, depth: 190 }, scene);
   mainlandDock.position.set(mainlandMarina.x, 0.35, -3275);
