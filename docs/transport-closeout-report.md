@@ -39,6 +39,7 @@
 - Added a Chromium browser check to open the preview, detect uncaught page errors, verify its ready status and capture a map screenshot as a workflow artifact.
 - Fixed the production multi-page build inputs so `greater-accra-transport-preview.html` is emitted as its own page rather than falling back to the main game entry. The browser check had exposed that the source HTML existed but was omitted from Vite's explicit Rollup input list.
 - The preview now also instantiates the authored Circle interchange package: ground-level circulating surface and approaches, multi-level flyover/ramp structures, local vehicle/pedestrian access paths, and the Odaw river/rail corridor. These are visible design meshes only; no road traffic, collisions, navigation or full-city interchange integration is implied.
+- Added the first-release schematic Cape-gauge rail corridors to the same map preview, with instanced sleepers, paired rails and ballast, plus markers for the three planned stations (Accra Central, Achimota and Tema). The candidate Circle/Odaw stop is intentionally not shown as a confirmed station. These are planning visuals, not surveyed track geometry or operational service.
 - Startup diagnostics exposed a faulty traffic-signal smoke-test expectation: simulation time −1 second in a 48-second cycle correctly wraps to cycle position 47 (red), not green. The expectation has been corrected; the desktop/mobile browser journey is being rerun before the startup path is counted as verified.
 
 ### Road traffic controls
