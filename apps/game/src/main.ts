@@ -341,22 +341,22 @@ async function start(): Promise<void> {
     window.location.hostname === "localhost";
   const transportRailTestMode = isLocalTransportTestHost &&
     new URLSearchParams(window.location.search).get("akwantuoTransportTest") === "rail";
-  const interiorTestMode = isLocalTransportTestHost &&
-    new URLSearchParams(window.location.search).get("akwantuoInteriorTest") === "shop";
+  const interiorTestBuildingId = new URLSearchParams(window.location.search).get("akwantuoInteriorTest") ?? "";
+  const interiorTestMode = isLocalTransportTestHost && interiorTestBuildingId.length > 0;
   if (transportRailTestMode) {
     // Local-only browser-test spawn; never active on a deployed game host.
     player.root.position.set(-250, 0, 150);
     document.documentElement.dataset.transportTestMode = "rail";
   } else if (interiorTestMode) {
-    // Local-only spawn directly outside Osu Corner Mart for entry/exit verification.
-    const testBuilding = DISTRICT_BUILDINGS.find((building) => building.id === "osu-corner-mart");
-    if (!testBuilding) throw new Error("Osu Corner Mart is missing from the district building catalogue.");
+    // Local-only spawn outside a selected catalogued building for entry/exit verification.
+    const testBuilding = DISTRICT_BUILDINGS.find((building) => building.id === interiorTestBuildingId);
+    if (!testBuilding?.interiorId) throw new Error("Interior test building is missing or has no linked room: " + interiorTestBuildingId);
     const frontX = testBuilding.side === "west"
       ? testBuilding.x + testBuilding.width / 2
       : testBuilding.x - testBuilding.width / 2;
     const exitX = frontX + (testBuilding.side === "west" ? 1.4 : -1.4);
     player.root.position.set(exitX, 0, testBuilding.z);
-    document.documentElement.dataset.interiorTestMode = "shop";
+    document.documentElement.dataset.interiorTestMode = testBuilding.id;
   }
 
   // First live NPC road vehicle: follows the authored N1 Tema corridor in the
