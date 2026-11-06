@@ -1,6 +1,6 @@
 # AKWANTUO transport work — close-out report
 
-**Status:** Transport prototype foundations consolidated; not production-complete and not yet integrated into the playable world.
+**Status:** OPEN — playable road-vehicle integration has begun, but the transportation stage is not closed and must not be handed to the next master-prompt stage yet.
 
 ## Added and validated foundations
 
@@ -17,7 +17,8 @@
 - Reusable saloon-car prototype geometry, transform rig and bounded kinematic bicycle handling model.
 - Keyboard driving plus mobile touch buttons for accelerate, reverse, brake and steering in the standalone transport preview.
 - New vehicle interaction state machine validates proximity, seat availability, vehicle availability, stopped speed and safe exit.
-- Interaction functions are local gameplay foundations only; they do not reserve seats or grant authoritative ownership.
+- The starter saloon is now spawned in the main playable scene. The player can enter with E / the on-screen action control, drive with WASD or the touch joystick, brake, and exit only after stopping in a safe space.
+- This first playable vehicle slice is local-only and uses the prototype kinematic model; it is not yet a complete vehicle fleet or network-authoritative system.
 
 ### Public transport
 - Passenger camera modes: interior window, interior free-look and exterior follow.
@@ -42,13 +43,13 @@ These are not being represented as finished systems:
 - Rail signalling, block occupancy, switches, dispatch, timetable conflicts, safety logic, train doors, passenger interiors and operational railway certification.
 - Multiplayer/server-authoritative vehicle ownership, seat reservations, fare transactions, economy integration, anti-cheat and persistence.
 - Integration of the preview models and transport controllers into the playable Greater Accra map.
-- Mobile driving controls are present in the developer preview only, not yet in the main game.
+- Main-game mobile driving controls are now connected for the starter saloon; other vehicle classes and passenger journeys are not yet connected.
 
-## Required later integration sequence
+## Remaining work before this stage can close
 1. Complete and approve Greater Accra road/rail geometry and transport stop placements.
 2. Integrate vehicle interaction, driver/passenger seats and passenger camera anchors into the actual player and vehicle assets.
 3. Add traffic collision/navigation and server-authoritative ownership/occupancy/fare transactions before online play.
 4. Add vehicle-specific models and handling, then test on ordinary phones and computers.
 5. Integrate mapped rail operations only after station/track geometry, signalling and operational rules have been reviewed.
 
-**Decision:** The transportation foundation phase is ready to hand back to the master prompt's next section. Transportation as a playable, online, fully populated world system remains future integration work, not a completed release feature.
+**Decision:** DO NOT advance to the next master-prompt stage. Transportation remains open. The next implementation pass must connect public transport journeys and passenger camera modes to actual in-world vehicles/stops, connect train operations to in-world track/station geometry, and test road/rail interaction in the main game. Online authority and production assets remain explicit release dependencies; they must not be described as complete.
