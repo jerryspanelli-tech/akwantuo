@@ -407,7 +407,7 @@ async function start(): Promise<void> {
 
   // First real in-world road vehicle: a nearby saloon that can be entered,
   // driven and exited from the playable scene (not only the developer preview).
-  const vehicleOrigin = { x: -6, y: 0, z: 5 };
+  const vehicleOrigin = { x: WORLD_CONFIG.spawn.x - 6, y: 0, z: WORLD_CONFIG.spawn.z };
   const vehicleGeometry = createRoadVehicleGeometry(scene, {
     id: "playable-starter-saloon",
     centerX: vehicleOrigin.x,
@@ -419,14 +419,14 @@ async function start(): Promise<void> {
     id: "playable-starter-saloon-rig",
     origin: vehicleOrigin
   });
-  const publicTaxiOrigin = { x: 2.8, y: 0, z: 5 };
+  const publicTaxiOrigin = { x: WORLD_CONFIG.spawn.x + 2.8, y: 0, z: WORLD_CONFIG.spawn.z };
   const publicTaxi = createPublicTransportVehicle(scene, "playable-shared-trotro", publicTaxiOrigin);
   let publicTaxiState: RoadVehicleDynamicsState = { x: publicTaxiOrigin.x, z: publicTaxiOrigin.z, headingRadians: Math.PI, speedMps: 0 };
   // One local wallet and one passenger session are shared across every public mode.
   let passengerState: PublicTransportPassengerState = { mode: "not_riding", balancePesewas: 10000 };
   let railPassengerCameraRig: PassengerCameraRig | null = null;
   let publicRideArrived = false;
-  const publicRideEndZ = -45;
+  const publicRideEndZ = WORLD_CONFIG.spawn.z - 45;
   let vehicleState: RoadVehicleDynamicsState = {
     x: vehicleOrigin.x, z: vehicleOrigin.z, headingRadians: 0, speedMps: 0
   };
@@ -446,7 +446,7 @@ async function start(): Promise<void> {
     0,
     1.18,
     8,
-    new Vector3(0, 1.2, 5),
+    new Vector3(WORLD_CONFIG.spawn.x, 1.2, WORLD_CONFIG.spawn.z),
     scene
   );
   camera.lowerRadiusLimit = 5.5;
