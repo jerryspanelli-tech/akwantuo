@@ -9,6 +9,7 @@ import {
 } from "@babylonjs/core";
 import { WORLD_CONFIG } from "./config";
 import type { SolidArea } from "./collision";
+import { createGhanaianStreetBuildings } from "./ghanaianStreetBuildings";
 
 /**
  * Temporary Ghana-inspired street scene used while the production map is
@@ -38,33 +39,8 @@ export function createPreviewWorld(scene: Scene, options: { includeGround?: bool
   road.position.y = 0.025;
   road.material = roadMaterial;
 
-  const buildingPalette = [
-    new Color3(0.72, 0.56, 0.39),
-    new Color3(0.77, 0.72, 0.59),
-    new Color3(0.48, 0.57, 0.53),
-    new Color3(0.68, 0.43, 0.31)
-  ];
-
-  for (let i = 0; i < 22; i += 1) {
-    const side = i % 2 === 0 ? -1 : 1;
-    const depth = -72 + Math.floor(i / 2) * 13;
-    const width = 7 + (i % 3) * 2;
-    const buildingDepth = 8 + (i % 2) * 3;
-    const height = 5 + ((i * 7) % 13);
-    const material = new StandardMaterial(`building-material-${i}`, scene);
-    material.diffuseColor = buildingPalette[i % buildingPalette.length];
-    const building = MeshBuilder.CreateBox(`street-building-${i}`, {
-      width, height, depth: buildingDepth
-    }, scene);
-    building.position.set(side * (15 + (i % 3) * 5), height / 2, depth);
-    building.material = material;
-    solidAreas.push({
-      x: building.position.x,
-      z: building.position.z,
-      halfWidth: width / 2,
-      halfDepth: buildingDepth / 2
-    });
-  }
+  const buildingDistrict = createGhanaianStreetBuildings(scene);
+  solidAreas.push(...buildingDistrict.solidAreas);
 
   const skylineMaterial = new StandardMaterial("distant-skyline", scene);
   skylineMaterial.diffuseColor = new Color3(0.37, 0.46, 0.44);
