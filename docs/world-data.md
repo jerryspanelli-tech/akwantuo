@@ -391,3 +391,12 @@ Added `apps/game/src/world/circleGroundAccess.ts` to preserve three reported gro
 These are named connectivity references, not surveyed street centre-lines or confirmed current traffic directions. They give the local map a better ground-level access structure around the interchange and prevent the area from being represented only by its flyovers. Exact geometry, street widths, pedestrian crossings, terminal gates and current access restrictions still need map review.
 
 References: [World Bank project document (2023)](https://documents1.worldbank.org/curated/en/099110323104036687/pdf/P164330083329e040882900109f67ec4fc.pdf); [Graphic Online — Circle interchange project](https://www.graphic.com.gh/news/general-news/work-on-nkrumah-circle-interchange-project-progresses.html).
+
+
+### Circle ground-level spatial prototype
+
+Added `apps/game/src/world/circleInterchangeGroundLevel.ts`. It anchors the ground-level roundabout to the existing `circle-junction` point in the Greater Accra map and provides a scene builder for a circular asphalt surface, raised central island, kerb ring and six approach arms: N1 west, N1/Tema east, Nsawam Road, Kwame Nkrumah Avenue, Ring Road West and a Feo Oyeo connection.
+
+The first prototype uses a 58 m outer radius, 18 m island radius, 14–18 m approach widths and 150 m approach lengths. **These are provisional game-layout values, not surveyed Circle dimensions.** Approach bearings are illustrative so we can test spatial composition and later replace them with reviewed alignment data. The approach meshes overlap the roundabout perimeter slightly to avoid visible seams.
+
+This builder is not yet called by the playable scene. It creates non-pickable, non-colliding visual meshes only. It does not yet create the elevated flyovers, local street splines, lane markings, traffic signals, pedestrian crossings, bridge/rail/river crossings, vehicle paths or collision meshes. The roundabout's existence is supported by the Circle project descriptions; the numeric dimensions and bearings are prototype assumptions for the game.
