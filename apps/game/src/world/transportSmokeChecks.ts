@@ -115,7 +115,7 @@ export function runTransportSmokeChecks(): void {
   expectThrow(() => advanceRoadVehicleDynamics(dynamicsConfig, initialVehicle,
     { throttle: 2, brake: 0, steering: 0 }, 0.1), "invalid road vehicle input is rejected");
 
-  const railConfig: RailTrainOperationConfig = {
+  const signalPlan = { id: "smoke-signal", greenSeconds: 20, amberSeconds: 3, redSeconds: 25, offsetSeconds: 0, status: "planned" as const };\n  assert(isTrafficSignalPlanValid(signalPlan), "traffic signal plan validates");\n  assert(getTrafficSignalState(signalPlan, 0).phase === "green", "signal begins in green phase");\n  assert(getTrafficSignalState(signalPlan, 20).phase === "amber", "signal changes to amber at the configured boundary");\n  assert(getTrafficSignalState(signalPlan, 23).phase === "red", "signal changes to red after amber");\n  assert(getTrafficSignalState(signalPlan, 48).phase === "green", "signal cycle repeats deterministically");\n  assert(getTrafficSignalState(signalPlan, -1).phase === "green", "negative simulation offsets wrap safely");\n  assert(mayProceedOnTrafficSignal("green", true), "protected movement may proceed on green");\n  assert(!mayProceedOnTrafficSignal("amber", true) && !mayProceedOnTrafficSignal("green", false), "amber and unprotected conflicting movements cannot proceed");\n  expectThrow(() => getTrafficSignalState(signalPlan, Number.NaN), "invalid signal simulation time is rejected");\n\n  const railConfig: RailTrainOperationConfig = {
     path: [{ x: 0, z: 0 }, { x: 0, z: 20 }],
     stops: [{ id: "smoke-platform", distanceM: 5, dwellSeconds: 2 }],
     maximumSpeedMps: 6, accelerationMps2: 1.2, serviceBrakingMps2: 1.6
