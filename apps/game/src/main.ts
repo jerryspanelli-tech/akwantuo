@@ -15,6 +15,10 @@ import { getHairstyle } from "./character/hairstyles";
 import { WORLD_CONFIG } from "./world/config";
 import { clampToWorld, isBlocked } from "./world/collision";
 import { createPreviewWorld } from "./world/previewWorld";
+import { advanceRoadVehicleDynamics, type RoadVehicleDynamicsState } from "./vehicles/roadVehicleDynamics";
+import { createRoadVehicleGeometry } from "./vehicles/roadVehicleGeometry";
+import { createRoadVehicleRig } from "./vehicles/roadVehicleRig";
+import { enterVehicle, exitVehicle, type VehicleInteractionState } from "./vehicles/vehicleInteraction";
 
 const bootScreen = document.querySelector<HTMLElement>("#boot-screen");
 const gameShell = document.querySelector<HTMLElement>("#game-shell");
@@ -27,6 +31,7 @@ const gameHud = document.querySelector<HTMLElement>("#game-hud");
 const joystick = document.querySelector<HTMLElement>("#joystick");
 const joystickStick = document.querySelector<HTMLElement>("#joystick-stick");
 const jumpButton = document.querySelector<HTMLButtonElement>("#jump-button");
+const interactButton = document.querySelector<HTMLButtonElement>("#interact-button");
 const notice = document.querySelector<HTMLElement>("#notice");
 const characterButton = document.querySelector<HTMLButtonElement>("#character-button");
 const characterPanel = document.querySelector<HTMLElement>("#character-panel");
@@ -38,6 +43,8 @@ const pressedKeys = new Set<string>();
 const touchInput = { x: 0, z: 0 };
 let jumpRequested = false;
 let hasEnteredWorld = false;
+let vehicleActionRequested = false;
+let vehicleBrake = false;
 
 function readAppearanceForm(form: HTMLFormElement): CharacterAppearance {
   const data = new FormData(form);
@@ -234,6 +241,25 @@ async function start(): Promise<void> {
   let currentAppearance = loadAppearance(window.localStorage);
   const player = createPlayer(scene, currentAppearance);
 
+  // First real in-world road vehicle: a nearby saloon that can be entered,
+  // driven and exited from the playable scene (not only the developer preview).
+  const vehicleOrigin = { x: 2.35, y: 0, z: 5 };
+  const vehicleGeometry = createRoadVehicleGeometry(scene, {
+    id: "playable-starter-saloon",
+    centerX: vehicleOrigin.x,
+    centerZ: vehicleOrigin.z,
+    groundElevationM: 0,
+    bodyColour: "#315a78"
+  });
+  const vehicleRig = createRoadVehicleRig(scene, vehicleGeometry, {
+    id: "playable-starter-saloon-rig",
+    origin: vehicleOrigin
+  });
+  let vehicleState: RoadVehicleDynamicsState = {
+    x: vehicleOrigin.x, z: vehicleOrigin.z, headingRadians: 0, speedMps: 0
+  };
+  let interactionState: VehicleInteractionState = { mode: "on_foot" };
+
   const camera = new ArcRotateCamera(
     "third-person-camera",
     0,
@@ -254,16 +280,21 @@ async function start(): Promise<void> {
   installTouchControls();
   window.addEventListener("keydown", (event: KeyboardEvent) => {
     const key = event.key.toLowerCase();
-    if (["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(key)) {
+    if (["w", "a", "s", "d", "e", "arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(key)) {
       event.preventDefault();
     }
     pressedKeys.add(key);
-    if (key === " " && hasEnteredWorld) jumpRequested = true;
+    if (key === " " && hasEnteredWorld && interactionState.mode === "on_foot") jumpRequested = true;
+    if (key === "e" && hasEnteredWorld) vehicleActionRequested = true;
   });
   window.addEventListener("keyup", (event: KeyboardEvent) => {
     pressedKeys.delete(event.key.toLowerCase());
   });
-  window.addEventListener("blur", () => pressedKeys.clear());
+  window.addEventListener("blur", () => { pressedKeys.clear(); vehicleBrake = false; });
+  interactButton?.addEventListener("pointerdown", (event: PointerEvent) => {
+    event.preventDefault();
+    vehicleActionRequested = true;
+  });
   jumpButton?.addEventListener("pointerdown", (event: PointerEvent) => {
     event.preventDefault();
     jumpRequested = true;
@@ -278,11 +309,11 @@ async function start(): Promise<void> {
 
     if (hasEnteredWorld) {
       let inputX = touchInput.x;
-      let inputZ = touchInput.z;
-      if (pressedKeys.has("a") || pressedKeys.has("arrowleft")) inputX -= 1;
-      if (pressedKeys.has("d") || pressedKeys.has("arrowright")) inputX += 1;
-      if (pressedKeys.has("w") || pressedKeys.has("arrowup")) inputZ += 1;
-      if (pressedKeys.has("s") || pressedKeys.has("arrowdown")) inputZ -= 1;
+      let inputZ = interactionState.mode === "on_foot" ? touchInput.z : 0;
+      if (interactionState.mode === "on_foot" && (pressedKeys.has("a") || pressedKeys.has("arrowleft"))) inputX -= 1;
+      if (interactionState.mode === "on_foot" && (pressedKeys.has("d") || pressedKeys.has("arrowright"))) inputX += 1;
+      if (interactionState.mode === "on_foot" && (pressedKeys.has("w") || pressedKeys.has("arrowup"))) inputZ += 1;
+      if (interactionState.mode === "on_foot" && (pressedKeys.has("s") || pressedKeys.has("arrowdown"))) inputZ -= 1;
 
       const inputLength = Math.hypot(inputX, inputZ);
       if (inputLength > 1) {
@@ -293,7 +324,7 @@ async function start(): Promise<void> {
       const forward = new Vector3(-Math.sin(camera.alpha), 0, -Math.cos(camera.alpha));
       const right = new Vector3(-forward.z, 0, forward.x);
       const direction = forward.scale(inputZ).add(right.scale(inputX));
-      const moving = direction.lengthSquared() > 0.001;
+      const moving = interactionState.mode === "on_foot" && direction.lengthSquared() > 0.001;
 
       if (moving) {
         direction.normalize();
@@ -307,7 +338,7 @@ async function start(): Promise<void> {
         walkClock += delta * 9;
       }
 
-      if (jumpRequested && onGround) {
+      if (interactionState.mode === "on_foot" && jumpRequested && onGround) {
         verticalVelocity = WORLD_CONFIG.movement.jumpVelocity;
         onGround = false;
       }
@@ -347,6 +378,13 @@ async function start(): Promise<void> {
 
     scene.render();
   };
+
+  document.querySelector<HTMLButtonElement>("#vehicle-brake-button")?.addEventListener("pointerdown", (event) => {
+    event.preventDefault(); vehicleBrake = true;
+  });
+  for (const eventName of ["pointerup", "pointercancel", "lostpointercapture"] as const) {
+    document.querySelector<HTMLButtonElement>("#vehicle-brake-button")?.addEventListener(eventName, () => { vehicleBrake = false; });
+  }
 
   engine.runRenderLoop(render);
   window.addEventListener("resize", () => engine.resize());
