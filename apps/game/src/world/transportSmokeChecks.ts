@@ -49,17 +49,17 @@ export function runTransportSmokeChecks(): void {
   if (!boarded.ok || boarded.state.mode !== "riding") throw new Error("Boarding assertion narrowed unexpectedly.");
   assert(boarded.state.balancePesewas === 795 && boarded.state.farePaidPesewas === 205,
     "boarding deducts the exact fare once");
-  assert(boardPublicTransport(boarded.state, stop, "other", "route", 1, fare).reason === "already_riding",
+  assert(!boardPublicTransport(boarded.state, stop, "other", "route", 1, fare).ok && boardPublicTransport(boarded.state, stop, "other", "route", 1, fare).reason === "already_riding",
     "passenger cannot board twice");
-  assert(boardPublicTransport(wallet, { ...stop, vehicleStopped: false }, "v", "r", 1, fare).reason === "vehicle_not_stopped",
+  assert(!boardPublicTransport(wallet, { ...stop, vehicleStopped: false }, "v", "r", 1, fare).ok && boardPublicTransport(wallet, { ...stop, vehicleStopped: false }, "v", "r", 1, fare).reason === "vehicle_not_stopped",
     "moving vehicles reject boarding");
-  assert(boardPublicTransport(wallet, { ...stop, remainingSeats: 0 }, "v", "r", 1, fare).reason === "no_seats",
+  assert(!boardPublicTransport(wallet, { ...stop, remainingSeats: 0 }, "v", "r", 1, fare).ok && boardPublicTransport(wallet, { ...stop, remainingSeats: 0 }, "v", "r", 1, fare).reason === "no_seats",
     "full vehicles reject boarding");
-  assert(boardPublicTransport({ mode: "not_riding", balancePesewas: 1 }, stop, "v", "r", 1, fare).reason === "insufficient_funds",
+  assert(!boardPublicTransport({ mode: "not_riding", balancePesewas: 1 }, stop, "v", "r", 1, fare).ok && boardPublicTransport({ mode: "not_riding", balancePesewas: 1 }, stop, "v", "r", 1, fare).reason === "insufficient_funds",
     "insufficient wallet balance rejects boarding");
-  assert(alightPublicTransport(boarded.state, { ...stop, vehicleStopped: false, alightingOpen: true }, "smoke-trotro").reason === "vehicle_not_stopped",
+  assert(!alightPublicTransport(boarded.state, { ...stop, vehicleStopped: false, alightingOpen: true }, "smoke-trotro").ok && alightPublicTransport(boarded.state, { ...stop, vehicleStopped: false, alightingOpen: true }, "smoke-trotro").reason === "vehicle_not_stopped",
     "passenger cannot alight while moving");
-  assert(alightPublicTransport(boarded.state, { ...stop, vehicleStopped: true, alightingOpen: true }, "wrong-vehicle").reason === "wrong_vehicle",
+  assert(!alightPublicTransport(boarded.state, { ...stop, vehicleStopped: true, alightingOpen: true }, "wrong-vehicle").ok && alightPublicTransport(boarded.state, { ...stop, vehicleStopped: true, alightingOpen: true }, "wrong-vehicle").reason === "wrong_vehicle",
     "passenger cannot alight from a different vehicle");
   const alighted = alightPublicTransport(boarded.state, { ...stop, vehicleStopped: true, alightingOpen: true }, "smoke-trotro");
   assert(alighted.ok && alighted.state.mode === "not_riding" && alighted.state.balancePesewas === 795,
@@ -74,13 +74,13 @@ export function runTransportSmokeChecks(): void {
   assert(entered.ok && entered.state.mode === "inside_vehicle", "player can enter an available nearby car");
   if (!entered.ok) throw new Error("Vehicle entry assertion narrowed unexpectedly.");
   interaction = entered.state;
-  assert(exitVehicle(interaction, { ...vehicle, speedMps: 1 }).reason === "vehicle_moving",
+  assert(!exitVehicle(interaction, { ...vehicle, speedMps: 1 }).ok && exitVehicle(interaction, { ...vehicle, speedMps: 1 }).reason === "vehicle_moving",
     "player cannot exit a moving car");
-  assert(exitVehicle(interaction, { ...vehicle, safeExitAvailable: false }).reason === "unsafe_exit",
+  assert(!exitVehicle(interaction, { ...vehicle, safeExitAvailable: false }).ok && exitVehicle(interaction, { ...vehicle, safeExitAvailable: false }).reason === "unsafe_exit",
     "player cannot exit into an unsafe space");
   const exited = exitVehicle(interaction, vehicle);
   assert(exited.ok && exited.state.mode === "on_foot", "player can exit a stopped car safely");
-  assert(enterVehicle({ mode: "on_foot" }, { ...vehicle, distanceToEntryM: 20 }, "driver").reason === "too_far",
+  assert(!enterVehicle({ mode: "on_foot" }, { ...vehicle, distanceToEntryM: 20 }, "driver").ok && enterVehicle({ mode: "on_foot" }, { ...vehicle, distanceToEntryM: 20 }, "driver").reason === "too_far",
     "vehicle entry distance is enforced");
 
   const dynamicsConfig: RoadVehicleDynamicsConfig = {
