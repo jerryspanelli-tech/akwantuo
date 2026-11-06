@@ -114,7 +114,7 @@ export function createPlayableRailDemo(scene: Scene): PlayableRailDemo {
   };
   let state: RailTrainOperationState = createRailTrainOperationState();
   let serviceStarted = false;
-  let currentPosition = { x: ROUTE.x, z: ROUTE.startZ };
+  let currentPosition: { x: number; z: number } = { x: ROUTE.x, z: ROUTE.startZ };
   let disposed = false;
   const update = (deltaSeconds: number) => {
     if (disposed || !serviceStarted) return;
