@@ -308,7 +308,7 @@ try {
         if (!greeting?.includes("Akwaaba! Welcome in")) throw new Error(target.name + ": shopkeeper greeting did not appear.");
         await page.locator("#stage6-retail-browse").click({ timeout: 5000 });
         const shelves = await page.locator("#notice").textContent();
-        if (!shelves?.includes("KolaPop Classic") || !shelves.includes("ClearSpring Water")) {
+        if (!shelves?.includes("KolaPop Classic") || !shelves.includes("SunBurst Orange")) {
           throw new Error(target.name + ": live shop catalogue browsing failed: " + shelves);
         }
         await page.locator("#stage6-retail-basket").click({ timeout: 5000 });
