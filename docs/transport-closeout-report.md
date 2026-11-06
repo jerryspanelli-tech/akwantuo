@@ -23,6 +23,7 @@
 - The starter saloon is now spawned in the main playable scene. The player can enter with E / the on-screen action control, drive with WASD or the touch joystick, brake, and exit only after stopping in a safe space.
 - The playable saloon now has an in-cabin window view, interior free-look and exterior follow camera modes, cycled with C / the on-screen VIEW control. Camera anchors follow the vehicle rig.
 - Road-vehicle simulation now preserves elapsed time through slow render frames by subdividing up to one second of catch-up into stable 100 ms dynamics steps. This avoids making the trotro journey crawl when browser rendering is temporarily slow; long tab-resume pauses remain bounded.
+- Added a separate single-track motorcycle dynamics foundation with speed-scaled steering, acceleration/braking, yaw response and a bounded lean angle. Startup smoke checks cover turning lean, high-speed lean limits, braking and invalid controls. This is not yet connected to a rendered motorcycle, rider animation, wheel/suspension physics or the player control loop.
 - This first playable vehicle slice is local-only and uses the prototype kinematic model; it is not yet a complete vehicle fleet or network-authoritative system.
 
 
@@ -85,7 +86,7 @@
 ## Explicitly not complete
 
 These are not being represented as finished systems:
-- Realistic final 3D assets for every Ghanaian vehicle class, interiors, articulated trailers and motorcycles.
+- Realistic final 3D assets for every Ghanaian vehicle class, interiors, articulated trailers and motorcycles. The new motorcycle dynamics helper is not a motorcycle model or a complete rideable vehicle.
 - Complete physical collision and vehicle damage simulation; the new swept circular-footprint test is a conservative prototype check between the starter saloon and preview trotro, not full oriented-body physics or general traffic collision handling. Suspension, tyre grip, wheel steering/rotation, fuel, ownership, insurance, licences and garages are also outstanding.
 - AI traffic, in-world traffic-light placement and junction conflict-group control, lane-level navigation, parking enforcement, emergency dispatch and road safety simulation. The deterministic signal phase helper is not an integrated junction-control system. The rail crossing interlock is also not yet wired to train/road simulation or animated crossing equipment.
 - Driver entry/exit is connected for the starter saloon, but seat animations and visible driver placement are not yet implemented. The three camera modes are connected to the starter saloon and the preview trotro passenger ride; full passenger seat placement and animations remain unimplemented.
