@@ -39,6 +39,7 @@ on:
       - "apps/game/src/world/circleInterchangeGeometry.ts"
       - "apps/game/src/world/transportSmokeChecks.ts"
       - "apps/game/src/world/roadRouting.ts"
+      - "apps/game/src/world/roadNavigation.ts"
       - "apps/game/src/vehicles/passengerCamera.ts"
       - "apps/game/scripts/verify-transport-browser.mjs"
       - "apps/game/src/world/publicTransportOperations.ts"
