@@ -1,7 +1,7 @@
 import type { CharacterAppearance } from "../character/appearance";
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://fktvbxmgseojcvztheqz.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "sb_publishable_4oyGhQ6mUqtEXocFiqq2FA_GvFpSOuC";
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL?.trim() ?? "";
+const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim() ?? "";
 const SESSION_KEY = "akwantuo.auth.session.v1";
 
 export interface AkwantuoUser {
@@ -45,6 +45,9 @@ function storeSession(session: AkwantuoSession | null): void {
 }
 
 async function request<T>(path: string, init: RequestInit = {}, accessToken?: string): Promise<T> {
+  if (!isSupabaseConfigured()) {
+    throw new Error("AKWANTUO online services are not configured yet. Connect a dedicated AKWANTUO Supabase project first.");
+  }
   const response = await fetch(`${SUPABASE_URL}${path}`, {
     ...init,
     headers: {
