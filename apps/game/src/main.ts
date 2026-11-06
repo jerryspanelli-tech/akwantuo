@@ -347,7 +347,7 @@ async function start(): Promise<void> {
         } else if (interactionState.mode === "on_foot" && Math.hypot(player.root.position.x - (publicTaxiState.x - 1.15), player.root.position.z - publicTaxiState.z) <= 3) {
           const result = boardPublicTransport(publicPassengerState, { id: "preview-origin", vehicleStopped: publicTaxiState.speedMps === 0, boardingOpen: !publicRideArrived, alightingOpen: false, remainingSeats: 8 }, "preview-shared-trotro", "preview-route", 0.05, { baseFarePesewas: 200, perKilometrePesewas: 100 });
           if (result.ok && result.state.mode === "riding") { publicPassengerState = result.state; passengerCameraRig = new PassengerCameraRig(scene, { interiorWindow: publicTaxi.interiorWindow, exteriorFollow: publicTaxi.exteriorFollow }); vehicleCameraModeIndex = 0; player.root.setEnabled(false); showNotice("Boarded shared trotro. Fare: GH₵" + (result.state.farePaidPesewas / 100).toFixed(2)); }
-          else showNotice("Unable to board: " + result.reason.replaceAll("_", " ") + ".");
+          else if (!result.ok) showNotice("Unable to board: " + result.reason.replaceAll("_", " ") + ".");
         } else if (interactionState.mode === "on_foot") {
           const entryX = vehicleState.x - Math.cos(vehicleState.headingRadians) * 1.15;
           const entryZ = vehicleState.z + Math.sin(vehicleState.headingRadians) * 1.15;
