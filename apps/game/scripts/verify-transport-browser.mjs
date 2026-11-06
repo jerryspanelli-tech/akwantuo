@@ -79,15 +79,17 @@ try {
       count: Number(document.documentElement.dataset.npcRoadTraffic ?? 0),
       route: document.documentElement.dataset.npcRoadTrafficRoute ?? "",
       distanceM: Number(document.documentElement.dataset.npcRoadTrafficDistanceM ?? 0),
-      speedMps: Number(document.documentElement.dataset.npcRoadTrafficSpeedMps ?? 0)
+      speedMps: Number(document.documentElement.dataset.npcRoadTrafficSpeedMps ?? 0),
+      minimumGapM: Number(document.documentElement.dataset.npcRoadTrafficMinimumGapM ?? 0)
     }));
-    if (npcTraffic.count !== 1 || npcTraffic.route !== "n1-tema-corridor" ||
+    if (npcTraffic.count !== 3 || npcTraffic.route !== "n1-tema-corridor" ||
         !Number.isFinite(npcTraffic.distanceM) || npcTraffic.distanceM <= 0 ||
-        !Number.isFinite(npcTraffic.speedMps) || npcTraffic.speedM < 0) {
-      failures.push(target.name + ": live NPC road traffic did not spawn and advance on the N1 corridor: " +
+        !Number.isFinite(npcTraffic.speedMps) || npcTraffic.speedMps < 0 ||
+        !Number.isFinite(npcTraffic.minimumGapM) || npcTraffic.minimumGapM < 8) {
+      failures.push(target.name + ": headway-controlled NPC traffic did not spawn three separated cars and advance on the N1 corridor: " +
         JSON.stringify(npcTraffic));
     } else {
-      console.log(target.name + ": live NPC road traffic advanced " + JSON.stringify(npcTraffic));
+      console.log(target.name + ": headway-controlled N1 traffic advanced " + JSON.stringify(npcTraffic));
     }
 
     // Exercise a complete trotro journey, including the passenger camera control.
