@@ -21,6 +21,8 @@ try {
   const status = await page.locator("#map-status").textContent();
   if (!status?.includes("Network preview ready")) failures.push("Map preview did not become ready: " + status);
   if (failures.length) throw new Error(failures.join("\n"));
+  // Allow the first WebGL frame to finish after synchronous map construction.
+  await page.waitForTimeout(1200);
   await page.screenshot({ path: "artifacts/akwantuo-greater-accra-road-network.png", fullPage: false, timeout: 30000 });
   console.log("Greater Accra road-network preview passed: " + status);
 } finally {
