@@ -22,6 +22,8 @@ jobs:
           node-version: 22
       - name: Install dependencies
         run: npm install
+      - name: Verify live AKWANTUO Supabase connection
+        run: node apps/game/scripts/verify-supabase-connection.mjs
       - name: Typecheck
         run: npm run typecheck
       - name: Build
