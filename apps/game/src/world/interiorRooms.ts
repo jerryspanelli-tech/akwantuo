@@ -26,7 +26,11 @@ const FIXTURE_COLOURS: Record<InteriorFixtureType, string> = {
   desk: "#76583d",
   medical_bed: "#d9e5e1",
   tool_bench: "#5c5143",
-  display: "#b88b4c"
+  display: "#b88b4c",
+  stage: "#202d39",
+  runway: "#d9d9d3",
+  audience_seating: "#8d3d36",
+  screen: "#172a38"
 };
 
 function createMaterial(scene: Scene, id: string, colour: string): StandardMaterial {
@@ -106,9 +110,9 @@ export function createInteriorRooms(scene: Scene): readonly InteriorRoomInstance
       const scale = fixture.scale;
       const isSeat = fixture.type === "chair" || fixture.type === "sofa";
       const isBed = fixture.type === "bed" || fixture.type === "medical_bed";
-      const width = fixture.type === "counter" || fixture.type === "desk" || fixture.type === "tool_bench" ? 2.1 : isBed ? 2.2 : isSeat ? 0.9 : 1.2;
-      const height = fixture.type === "shelf" ? 1.9 : fixture.type === "mirror" ? 1.7 : isSeat ? 0.9 : isBed ? 0.55 : 0.95;
-      const depth = isBed ? 1.9 : fixture.type === "shelf" ? 0.55 : 0.85;
+      const width = fixture.type === "stage" ? 14 : fixture.type === "runway" ? 3.2 : fixture.type === "screen" ? 12 : fixture.type === "audience_seating" ? 2.1 : fixture.type === "counter" || fixture.type === "desk" || fixture.type === "tool_bench" ? 2.1 : isBed ? 2.2 : isSeat ? 0.9 : 1.2;
+      const height = fixture.type === "stage" ? 0.65 : fixture.type === "runway" ? 0.18 : fixture.type === "screen" ? 5.5 : fixture.type === "audience_seating" ? 0.95 : fixture.type === "shelf" ? 1.9 : fixture.type === "mirror" ? 1.7 : isSeat ? 0.9 : isBed ? 0.55 : 0.95;
+      const depth = fixture.type === "stage" ? 4.5 : fixture.type === "runway" ? 13 : fixture.type === "screen" ? 0.35 : fixture.type === "audience_seating" ? 1.6 : isBed ? 1.9 : fixture.type === "shelf" ? 0.55 : 0.85;
       const mesh = MeshBuilder.CreateBox("interior-fixture-" + blueprint.id + "-" + fixtureIndex, {
         width: width * scale, height: height * scale, depth: depth * scale
       }, scene);
@@ -117,6 +121,43 @@ export function createInteriorRooms(scene: Scene): readonly InteriorRoomInstance
       mesh.rotation.y = fixture.rotationY;
       mesh.material = material;
       mesh.isPickable = false;
+    }
+
+    if (blueprint.id === "creative-arts-centre") {
+      const seatMaterial = createMaterial(scene, "creative-centre-seat", "#8d3d36");
+      const frameMaterial = createMaterial(scene, "creative-centre-truss", "#303b43");
+      for (const side of [-1, 1]) {
+        for (let row = 0; row < 4; row += 1) {
+          for (let seat = 0; seat < 4; seat += 1) {
+            const x = side * (6.5 + seat * 1.45);
+            const z = 6 - row * 2.65;
+            const base = MeshBuilder.CreateBox("creative-centre-seat-base-" + side + "-" + row + "-" + seat, { width: 1.05, height: 0.42, depth: 0.95 }, scene);
+            base.parent = root;
+            base.position.set(x, 0.38, z);
+            base.material = seatMaterial;
+            base.isPickable = false;
+            const back = MeshBuilder.CreateBox("creative-centre-seat-back-" + side + "-" + row + "-" + seat, { width: 1.05, height: 0.95, depth: 0.2 }, scene);
+            back.parent = root;
+            back.position.set(x, 0.9, z - 0.38);
+            back.material = seatMaterial;
+            back.isPickable = false;
+          }
+        }
+      }
+      for (const side of [-1, 1]) {
+        const truss = MeshBuilder.CreateBox("creative-centre-light-truss-" + side, { width: 0.22, height: 0.22, depth: 23 }, scene);
+        truss.parent = root;
+        truss.position.set(side * 12.5, 10.4, -0.5);
+        truss.material = frameMaterial;
+        truss.isPickable = false;
+        for (let lamp = 0; lamp < 5; lamp += 1) {
+          const light = MeshBuilder.CreateSphere("creative-centre-stage-light-" + side + "-" + lamp, { diameter: 0.42, segments: 8 }, scene);
+          light.parent = root;
+          light.position.set(side * 12.5, 9.9, -9 + lamp * 4.2);
+          light.material = createMaterial(scene, "creative-centre-stage-light", "#e6c46e");
+          light.isPickable = false;
+        }
+      }
     }
 
     const centreX = root.position.x;
