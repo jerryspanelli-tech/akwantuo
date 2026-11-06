@@ -39,7 +39,7 @@ import { runStage6SmokeChecks } from "./world/stage6SmokeChecks";
 import { AKWAABA_VENUE_PROGRAMME, isVenueProgrammeValid } from "./world/venueProgramme";
 import { AKWANTUO_RETAIL_PRODUCTS, isAkwantuoRetailCatalogueValid } from "./world/retailCatalogue";
 import { AKWANTUO_PRIVATE_ISLAND, PRIVATE_ISLAND_WATERCRAFT, createAkwantuoPrivateIsland, isPrivateIslandCatalogueValid } from "./world/privateIsland";
-import { getAkwantuoSession, loadPlayerProfile, savePlayerProfile, signInAkwantuo, signOutAkwantuo, signUpAkwantuo, type AkwantuoSession } from "./services/supabase";
+import { getAkwantuoSession, loadPlayerProfile, savePlayerProfile, signInAkwantuo, signOutAkwantuo, signUpAkwantuo, loadEconomyState, loadShopProducts, purchaseShopItems, purchaseGameAsset, type AkwantuoSession, type ShopProductRecord } from "./services/supabase";
 
 const bootScreen = document.querySelector<HTMLElement>("#boot-screen");
 const gameShell = document.querySelector<HTMLElement>("#game-shell");
@@ -372,10 +372,20 @@ async function start(): Promise<void> {
   document.documentElement.dataset.playableMappedRailBoardingOpen = String(greaterAccraMappedRailService.isBoardingOpen());
   let activeAccountSession: AkwantuoSession | null = await getAkwantuoSession();
   let currentAppearance = loadAppearance(window.localStorage);
+  let walletBalancePesewas = 0;
+  let ownedGameAssetIds = new Set<string>();
+  let shopStockById = new Map<string, number>();
   if (activeAccountSession) {
     try {
       const cloudProfile = await loadPlayerProfile(activeAccountSession);
       if (cloudProfile?.look) currentAppearance = resolveAppearance(cloudProfile.look);
+      const economy = await loadEconomyState(activeAccountSession);
+      walletBalancePesewas = economy.wallet?.balance_pesewas ?? 0;
+      ownedGameAssetIds = new Set(economy.owned_assets.map((asset) => asset.asset_id));
+      document.documentElement.dataset.akwantuoWalletPesewas = String(walletBalancePesewas);
+      document.documentElement.dataset.akwantuoOwnedAssetCount = String(ownedGameAssetIds.size);
+      const shopProducts = await loadShopProducts(activeAccountSession);
+      shopStockById = new Map(shopProducts.map((item) => [item.product_id, item.stock_quantity]));
       if (accountStatus) accountStatus.textContent = `Signed in as ${activeAccountSession.user.email || "AKWANTUO player"}. Cloud saves are enabled.`;
       if (accountSignOut) accountSignOut.classList.remove("is-hidden");
       if (accountButton) accountButton.innerHTML = "ACCOUNT <small>CONNECTED</small>";
@@ -417,7 +427,7 @@ async function start(): Promise<void> {
   const serviceActionButton = makeStage6Button("stage6-service-action", "Use a service");
   const propertyActionButton = makeStage6Button("stage6-property-action", "Property information");
   const retailBrowseButton = makeStage6Button("stage6-retail-browse", "Browse store products");
-  const retailBasketButton = makeStage6Button("stage6-retail-basket", "Add to basket preview");
+  const retailBasketButton = makeStage6Button("stage6-retail-basket", "Add selected item");\n  const retailCheckoutButton = makeStage6Button("stage6-retail-checkout", "Checkout basket");\n  const shopkeeperTalkButton = makeStage6Button("stage6-shopkeeper-talk", "Talk to shopkeeper");
   const premiumAssetsButton = makeStage6Button("stage6-premium-assets", "Luxury island & boats");
   const venueActionButton = makeStage6Button("stage6-venue-action", "Join event interest list");
   document.body.append(stage6ActionPanel);
@@ -427,7 +437,7 @@ async function start(): Promise<void> {
     serviceActionButton.hidden = !business;
     const isConvenienceStore = buildingId === "osu-corner-mart" || buildingId === "akwaaba-provisions";
     retailBrowseButton.hidden = !isConvenienceStore;
-    retailBasketButton.hidden = !isConvenienceStore;
+    retailBasketButton.hidden = !isConvenienceStore;\n    retailCheckoutButton.hidden = !isConvenienceStore;\n    shopkeeperTalkButton.hidden = !isConvenienceStore;
     premiumAssetsButton.hidden = buildingId !== "district-office";
     venueActionButton.hidden = buildingId !== "akwaaba-creative-arts-centre";
     propertyActionButton.hidden = !buildingId;
@@ -443,25 +453,81 @@ async function start(): Promise<void> {
     document.documentElement.dataset.stage6ServiceSelections = String(selectedBusinessServiceIndex);
     showNotice("Selected service at " + business.displayName + ": " + service + ". This is a service preview; no payment or transaction has been made.");
   });
+  const refreshPlayerEconomy = async (): Promise<void> => {
+    if (!activeAccountSession) return;
+    const [economy, products] = await Promise.all([
+      loadEconomyState(activeAccountSession),
+      loadShopProducts(activeAccountSession)
+    ]);
+    walletBalancePesewas = economy.wallet?.balance_pesewas ?? 0;
+    ownedGameAssetIds = new Set(economy.owned_assets.map((asset) => asset.asset_id));
+    shopStockById = new Map(products.map((item) => [item.product_id, item.stock_quantity]));
+    document.documentElement.dataset.akwantuoWalletPesewas = String(walletBalancePesewas);
+    document.documentElement.dataset.akwantuoOwnedAssetCount = String(ownedGameAssetIds.size);
+    document.documentElement.dataset.akwantuoInventoryItemCount = String(economy.inventory.reduce((sum, item) => sum + item.quantity, 0));
+  };
   retailBrowseButton.addEventListener("click", () => {
     if (activeInterior?.roomId !== "convenience-store") return;
     const visible = AKWANTUO_RETAIL_PRODUCTS.slice(retailBrowseIndex, retailBrowseIndex + 4);
-    if (visible.length < 4) {
-      retailBrowseIndex = 0;
-    } else {
-      retailBrowseIndex += 4;
-    }
-    const items = visible.map((item) => item.name + " (GH₵" + (item.pricePesewas / 100).toFixed(2) + ")").join(", ");
-    showNotice("Store shelves: " + items + ". Fictional products; browsing preview only.");
+    if (visible.length < 4) retailBrowseIndex = 0;
+    else retailBrowseIndex += 4;
+    selectedShopProductIndex = (retailBrowseIndex + AKWANTUO_RETAIL_PRODUCTS.length - 4) % AKWANTUO_RETAIL_PRODUCTS.length;
+    const items = visible.map((item) => item.name + " (GH₵" + (item.pricePesewas / 100).toFixed(2) +
+      "; stock " + (shopStockById.get(item.id) ?? "sign in") + ")").join(", ");
+    showNotice("Shopkeeper: "Welcome! Take a look at today's goods." Shelves: " + items +
+      ". The first item in this group is selected; use Add selected item to put it in your basket.");
     document.documentElement.dataset.stage6RetailBrowseCount =
       String(Number(document.documentElement.dataset.stage6RetailBrowseCount ?? 0) + 1);
   });
   retailBasketButton.addEventListener("click", () => {
     if (activeInterior?.roomId !== "convenience-store") return;
-    const item = AKWANTUO_RETAIL_PRODUCTS[retailBasketPreviewCount % AKWANTUO_RETAIL_PRODUCTS.length];
-    retailBasketPreviewCount += 1;
-    document.documentElement.dataset.stage6RetailBasketPreviewCount = String(retailBasketPreviewCount);
-    showNotice(item.name + " added to your session basket preview. No money was charged and no stock was changed.");
+    const item = AKWANTUO_RETAIL_PRODUCTS[selectedShopProductIndex];
+    retailBasket.set(item.id, (retailBasket.get(item.id) ?? 0) + 1);
+    const count = [...retailBasket.values()].reduce((sum, quantity) => sum + quantity, 0);
+    document.documentElement.dataset.stage6RetailBasketCount = String(count);
+    showNotice("Shopkeeper: "One " + item.name + " added. Anything else?" Basket: " + count + " item(s).");
+  });
+  shopkeeperTalkButton.addEventListener("click", () => {
+    if (activeInterior?.roomId !== "convenience-store") return;
+    const lines = [
+      "Shopkeeper: "Akwaaba! Welcome in. Cold drinks are in the fridges and snacks are on the racks."",
+      "Shopkeeper: "You can browse the shelves, add what you need, then pay at the counter."",
+      "Shopkeeper: "Prices are displayed beside each item. I will let you know if something is out of stock.""
+    ];
+    const index = Number(document.documentElement.dataset.stage6ShopkeeperDialogue ?? 0) % lines.length;
+    document.documentElement.dataset.stage6ShopkeeperDialogue = String(index + 1);
+    showNotice(lines[index]);
+  });
+  retailCheckoutButton.addEventListener("click", async () => {
+    if (activeInterior?.roomId !== "convenience-store") return;
+    if (!activeAccountSession) {
+      showNotice("Please sign in to your AKWANTUO account before paying. Your basket is still on this device.");
+      accountPanel?.classList.remove("is-hidden");
+      accountPanel?.setAttribute("aria-hidden", "false");
+      return;
+    }
+    const items = [...retailBasket.entries()].map(([product_id, quantity]) => ({ product_id, quantity }));
+    if (!items.length) {
+      showNotice("Your basket is empty. Browse the shelves and add an item first.");
+      return;
+    }
+    retailCheckoutButton.disabled = true;
+    retailCheckoutButton.textContent = "Processing…";
+    try {
+      const receipt = await purchaseShopItems(activeAccountSession, items);
+      retailBasket.clear();
+      await refreshPlayerEconomy();
+      document.documentElement.dataset.stage6RetailCheckoutCount =
+        String(Number(document.documentElement.dataset.stage6RetailCheckoutCount ?? 0) + 1);
+      showNotice("Payment successful. Receipt #" + receipt.transaction_id + ". Total GH₵" +
+        (receipt.total_pesewas / 100).toFixed(2) + ". Wallet balance GH₵" +
+        (receipt.balance_pesewas / 100).toFixed(2) + ". Stock and inventory have been updated in AKWANTUO.");
+    } catch (error) {
+      showNotice(error instanceof Error ? error.message : "Checkout failed. No payment was taken.");
+    } finally {
+      retailCheckoutButton.disabled = false;
+      retailCheckoutButton.textContent = "Checkout basket";
+    }
   });
   premiumAssetsButton.addEventListener("click", () => {
     if (activeInterior?.buildingId !== "district-office") return;
