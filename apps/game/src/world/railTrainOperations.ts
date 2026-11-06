@@ -168,7 +168,10 @@ export function advanceRailTrain(
   if (!isRailTrainOperationConfigValid(config)) {
     throw new Error("Invalid rail train operation configuration.");
   }
-  if (!isRailTrainOperationStateValid(config, state)) {\n    throw new Error("Invalid rail train operation state.");\n  }\n  if (!Number.isFinite(deltaSeconds) || deltaSeconds < 0 || deltaSeconds > 1) {
+  if (!isRailTrainOperationStateValid(config, state)) {
+    throw new Error("Invalid rail train operation state.");
+  }
+  if (!Number.isFinite(deltaSeconds) || deltaSeconds < 0 || deltaSeconds > 1) {
     throw new Error("Rail train time step must be between 0 and 1 second.");
   }
 
