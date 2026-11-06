@@ -73,8 +73,8 @@ export function runTransportSmokeChecks(): void {
   assert(!!roadProjection && isRoadProjectionValid(roadProjection) &&
     roadProjection.roadSegmentId === "n1-west-approach" && roadProjection.distanceM < 0.001,
     "road projection finds the exact nearest first-release road centreline");
-  assert(isPointOnRoadNetwork(roadStart.x, roadStart.z, { maxDistanceM: 1 }),
-    "road centreline points are inside the drivable corridor");
+  assert(!isPointOnRoadNetwork(roadStart.x, roadStart.z, { maxDistanceM: 1 }),
+    "a divided-road median is not treated as a drivable lane");
   assert(!isPointOnRoadNetwork(roadStart.x + 500, roadStart.z + 500, { maxDistanceM: 1 }),
     "distant off-road points are not snapped onto the network");
   const forwardLaneOffset = getRoadLaneCenterOffset("n1-west-approach", "forward", 0);
@@ -82,8 +82,9 @@ export function runTransportSmokeChecks(): void {
   assert(forwardLaneOffset > 0 && reverseLaneOffset < 0,
     "opposing traffic directions receive separate lane-centre offsets");
   const laneCentre = getRoadLaneCenterPoint(roadProjection, "forward", 0);
-  assert(Number.isFinite(laneCentre.x) && Number.isFinite(laneCentre.z),
-    "road projection can produce a world-space lane centre");
+  assert(Number.isFinite(laneCentre.x) && Number.isFinite(laneCentre.z) &&
+    isPointOnRoadNetwork(laneCentre.x, laneCentre.z, { maxDistanceM: 1 }),
+    "computed lane centres fall inside the drivable carriageway");
   const futureRoad = GREATER_ACCRA_ROAD_PATHS.find((road) => road.roadSegmentId === "n6-nsawam-expansion");
   assert(!!futureRoad, "future Nsawam road stub exists in the planning catalogue");
   const futurePoint = futureRoad.points[1];
