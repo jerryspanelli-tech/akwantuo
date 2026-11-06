@@ -109,7 +109,7 @@ export function isPublicTransportRoutePlanValid(value: unknown): value is Public
       route.roadNodeIds.length !== route.roadSegmentIds.length + 1 ||
       route.roadNodeIds[0] !== route.waypointNodeIds[0] ||
       route.roadNodeIds[route.roadNodeIds.length - 1] !== route.waypointNodeIds[route.waypointNodeIds.length - 1] ||
-      !Number.isFinite(route.distanceM) || route.distanceM! <= 0 ||
+      typeof route.distanceM !== "number" || !Number.isFinite(route.distanceM) || route.distanceM <= 0 ||
       typeof route.serviceNote !== "string" || !route.serviceNote.trim()) return false;
 
   if (!route.waypointNodeIds.every((nodeId) => !!getRoadNode(nodeId))) return false;
