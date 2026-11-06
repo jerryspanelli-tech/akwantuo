@@ -315,6 +315,7 @@ async function start(): Promise<void> {
   const scene = new Scene(engine);
   const solidAreas = createPreviewWorld(scene, { includeGround: false });
   const interiorRooms = createInteriorRooms(scene);
+  document.documentElement.dataset.akwantuoInteriorRoomCount = String(interiorRooms.length);
   for (const room of interiorRooms) solidAreas.push(...room.solidAreas);
   const greaterAccraTransportReport = createGreaterAccraPlayableWorld(scene);
   document.documentElement.dataset.playableRoadSurfaceMeshes = String(greaterAccraTransportReport.roadSurfaceMeshCount);
