@@ -334,6 +334,15 @@ async function start(): Promise<void> {
   const solidAreas = createPreviewWorld(scene, { includeGround: false });
   const interiorRooms = createInteriorRooms(scene);
   document.documentElement.dataset.akwantuoInteriorRoomCount = String(interiorRooms.length);
+  const convenienceStoreBlueprint = INTERIOR_BLUEPRINTS.find((blueprint) => blueprint.id === "convenience-store");
+  document.documentElement.dataset.akwantuoStoreFridgeCount = String(
+    convenienceStoreBlueprint?.fixtures.filter((fixture) => fixture.type === "refrigerator").length ?? 0
+  );
+  document.documentElement.dataset.akwantuoStoreSnackRackCount = String(
+    convenienceStoreBlueprint?.fixtures.filter((fixture) => fixture.type === "snack_rack").length ?? 0
+  );
+  document.documentElement.dataset.akwantuoStoreShopkeeperRig =
+    String(!!scene.getMeshByName("shopkeeper-head") && !!scene.getMeshByName("shopkeeper-arm--1") && !!scene.getMeshByName("shopkeeper-arm-1"));
   for (const room of interiorRooms) solidAreas.push(...room.solidAreas);
   const privateIslandMeshCount = createAkwantuoPrivateIsland(scene);
   document.documentElement.dataset.akwantuoPrivateIslandMeshCount = String(privateIslandMeshCount);
