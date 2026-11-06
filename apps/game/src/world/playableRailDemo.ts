@@ -52,7 +52,7 @@ export function createPlayableRailDemo(scene: Scene): PlayableRailDemo {
   }
 
   const sleeperMeshes: Mesh[] = [];
-  const sleeperCount = Math.floor((ROUTE.endZ - ROUTE.startZ + 8) / 0.72) + 1;
+  const sleeperCount = Math.floor((ROUTE.endZ - ROUTE.startZ + 34) / 0.72) + 1;
   for (let index = 0; index < sleeperCount; index += 1) {
     const tie = MeshBuilder.CreateBox("playable-rail-sleeper-" + index, {
       width: 2.35, height: 0.18, depth: 0.24
