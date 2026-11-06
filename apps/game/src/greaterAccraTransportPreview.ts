@@ -22,6 +22,7 @@ import { GREATER_ACCRA_RAIL_NODES } from "./world/railNetwork";
 import { GREATER_ACCRA_RAIL_STATIONS } from "./world/railStations";
 import { GREATER_ACCRA_JUNCTION_LAYOUTS } from "./world/junctionLayouts";
 import { deriveRailRoadCrossingCandidates } from "./world/railRoadCrossings";
+import { GREATER_ACCRA_PUBLIC_TRANSPORT_ROUTE_PLANS } from "./world/publicTransportRoutes";
 import "./../greater-accra-transport-preview.css";
 
 const canvas = document.querySelector<HTMLCanvasElement>("#map-canvas");
@@ -168,7 +169,7 @@ try {
   engine.runRenderLoop(() => scene.render());
   window.addEventListener("resize", () => engine.resize());
   if (status) {
-    status.textContent = `Network preview ready · ${roadMeshes.length} road-surface meshes · ${markingMeshes.length} road-marking meshes · Circle: ${Object.keys(circleGeometry.elevatedStructures).length} elevated structures · ${railTracks.length} rail routes · ${plannedRailStations.length} planned station anchors · ${railCrossingCandidates.length} rail-road crossing candidates (review required) · ${GREATER_ACCRA_REGION_ANCHORS.length} district anchors`;
+    status.textContent = `Network preview ready · ${roadMeshes.length} road-surface meshes · ${markingMeshes.length} road-marking meshes · Circle: ${Object.keys(circleGeometry.elevatedStructures).length} elevated structures · ${railTracks.length} rail routes · ${plannedRailStations.length} planned station anchors · ${railCrossingCandidates.length} rail-road crossing candidates (review required) · ${GREATER_ACCRA_PUBLIC_TRANSPORT_ROUTE_PLANS.length} proposed public transport corridors · ${GREATER_ACCRA_REGION_ANCHORS.length} district anchors`;
   }
 } catch (error) {
   if (status) status.textContent = "Map preview failed: " + (error instanceof Error ? error.message : String(error));
