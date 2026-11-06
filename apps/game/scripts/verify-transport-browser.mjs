@@ -187,6 +187,7 @@ try {
     await page.waitForFunction(() =>
       document.documentElement.dataset.mappedRailCompleted === "true" &&
       Number(document.documentElement.dataset.mappedRailSpeedMps ?? 1) <= 0.01,
+      null,
       { timeout: 45000 }
     );
     const mappedTerminal = await page.evaluate(() => ({
