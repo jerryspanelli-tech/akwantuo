@@ -4,12 +4,20 @@ const browser = await chromium.launch({ headless: true, args: ["--use-gl=angle",
 const failures = [];
 try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
-  page.on("pageerror", error => failures.push(error.message));
-  await page.goto("http://127.0.0.1:4173/greater-accra-transport-preview.html", { waitUntil: "networkidle", timeout: 30000 });
+  page.on("pageerror", error => failures.push("pageerror: " + error.message));
+  page.on("console", message => { if (message.type() === "error") failures.push("console: " + message.text()); });
+  await page.goto("http://127.0.0.1:4173/greater-accra-transport-preview.html", { waitUntil: "domcontentloaded", timeout: 30000 });
   await page.waitForFunction(() => {
     const text = document.querySelector("#map-status")?.textContent ?? "";
     return text.includes("Network preview ready") || text.includes("Map preview failed");
-  }, { timeout: 30000 });
+  }, { timeout: 60000 }).catch(async error => {
+    const diagnostic = await page.evaluate(() => ({
+      status: document.querySelector("#map-status")?.textContent,
+      canvas: !!document.querySelector("#map-canvas"),
+      title: document.title
+    }));
+    throw new Error("Map preview timed out: " + JSON.stringify(diagnostic) + " · " + error.message);
+  });
   const status = await page.locator("#map-status").textContent();
   if (!status?.includes("Network preview ready")) failures.push("Map preview did not become ready: " + status);
   if (failures.length) throw new Error(failures.join("\n"));
