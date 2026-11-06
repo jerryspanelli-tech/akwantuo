@@ -1,3 +1,4 @@
+import { findShortestRoadRoute, isRoadRouteValid } from "./roadRouting";
 import { isPedestrianCrossingLayoutValid } from "./pedestrianCrossingGeometry";
 import { getTrafficSignalState, isTrafficSignalPlanValid, mayProceedOnTrafficSignal } from "./trafficSignals";
 import {
@@ -40,6 +41,20 @@ function expectThrow(action: () => unknown, message: string): void {
  * railway certification, or authoritative multiplayer validation.
  */
 export function runTransportSmokeChecks(): void {
+  const mallamToTema = findShortestRoadRoute("mallam-junction", "tema-motorway-junction");
+  assert(!!mallamToTema && isRoadRouteValid(mallamToTema) &&
+    mallamToTema.roadSegmentIds.length > 0 && !mallamToTema.includesFutureExpansion,
+    "shortest road route connects Mallam to Tema without future expansion stubs");
+  assert(findShortestRoadRoute("mallam-junction", "prampram-expansion-gateway") === null,
+    "future Prampram gateway is excluded from first-release road routing");
+  const futureRoute = findShortestRoadRoute("mallam-junction", "prampram-expansion-gateway",
+    { includeFutureExpansion: true });
+  assert(!!futureRoute && futureRoute.includesFutureExpansion &&
+    isRoadRouteValid(futureRoute, { includeFutureExpansion: true }),
+    "future expansion can be previewed when explicitly enabled");
+  assert(findShortestRoadRoute("achimota-interchange", "mallam-junction") === null,
+    "disconnected primary-road components do not invent a connecting route");
+
   const fare = { baseFarePesewas: 200, perKilometrePesewas: 100 };
   assert(quotePublicTransportFare(0.05, fare) === 205, "fare is quoted in integer pesewas");
 
