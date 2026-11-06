@@ -22,6 +22,7 @@ import { enterVehicle, exitVehicle, type VehicleInteractionState } from "./vehic
 import { PassengerCameraRig } from "./vehicles/passengerCamera";
 import { createPublicTransportVehicle } from "./vehicles/publicTransportVehicle";
 import { alightPublicTransport, boardPublicTransport, type PublicTransportPassengerState } from "./world/publicTransportOperations";
+import { createPlayableRailDemo } from "./world/playableRailDemo";
 
 const bootScreen = document.querySelector<HTMLElement>("#boot-screen");
 const gameShell = document.querySelector<HTMLElement>("#game-shell");
@@ -243,6 +244,7 @@ async function start(): Promise<void> {
   });
   const scene = new Scene(engine);
   const solidAreas = createPreviewWorld(scene);
+  const playableRailDemo = createPlayableRailDemo(scene);
   let currentAppearance = loadAppearance(window.localStorage);
   const player = createPlayer(scene, currentAppearance);
 
