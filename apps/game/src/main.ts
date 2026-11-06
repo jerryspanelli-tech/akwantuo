@@ -984,7 +984,7 @@ async function start(): Promise<void> {
             showNotice("You are offshore. Follow the marked buoys to Labadi Marina or Akwaaba Cay to disembark safely.");
           } else {
             const exitPoint = mainlandDistance <= islandDistance ? mainlandMarina : islandMarina;
-            player.root.position.set(exitPoint.x + 3, 0, exitPoint.z + 5);
+            player.root.position.set(exitPoint.x + 3, 0, exitPoint.z + (exitPoint === mainlandMarina ? 20 : 10));
             player.root.setEnabled(true);
             watercraftMode = false;
             activeWatercraftKind = null;
@@ -1313,8 +1313,16 @@ async function start(): Promise<void> {
         const stepZ = direction.z * WORLD_CONFIG.movement.walkSpeed * delta;
         const nextX = player.root.position.x + stepX;
         const nextZ = player.root.position.z + stepZ;
-        if (!isBlocked(nextX, player.root.position.z, solidAreas, WORLD_CONFIG.movement.collisionRadius) && Math.hypot(nextX - vehicleState.x, player.root.position.z - vehicleState.z) >= 2.0 && Math.hypot(nextX - publicTaxiState.x, player.root.position.z - publicTaxiState.z) >= 2.0) player.root.position.x = nextX;
-        if (!isBlocked(player.root.position.x, nextZ, solidAreas, WORLD_CONFIG.movement.collisionRadius) && Math.hypot(player.root.position.x - vehicleState.x, nextZ - vehicleState.z) >= 2.0 && Math.hypot(player.root.position.x - publicTaxiState.x, nextZ - publicTaxiState.z) >= 2.0) player.root.position.z = nextZ;
+        const onMainlandMarinaDock = Math.abs(nextX - mainlandMarina.x) <= 16 &&
+          nextZ >= -3370 && nextZ <= -3180;
+        const islandDx = (nextX - AKWANTUO_PRIVATE_ISLAND.position.x) / 260;
+        const islandDz = (nextZ - AKWANTUO_PRIVATE_ISLAND.position.z) / 190;
+        const onIslandLand = islandDx * islandDx + islandDz * islandDz <= 1.08;
+        const onIslandDock = Math.abs(nextX - islandMarina.x) <= 12 &&
+          Math.abs(nextZ - islandMarina.z) <= 70;
+        const onWalkableShore = nextZ >= -3310 || onMainlandMarinaDock || onIslandLand || onIslandDock;
+        if (onWalkableShore && !isBlocked(nextX, player.root.position.z, solidAreas, WORLD_CONFIG.movement.collisionRadius) && Math.hypot(nextX - vehicleState.x, player.root.position.z - vehicleState.z) >= 2.0 && Math.hypot(nextX - publicTaxiState.x, player.root.position.z - publicTaxiState.z) >= 2.0) player.root.position.x = nextX;
+        if (onWalkableShore && !isBlocked(player.root.position.x, nextZ, solidAreas, WORLD_CONFIG.movement.collisionRadius) && Math.hypot(player.root.position.x - vehicleState.x, nextZ - vehicleState.z) >= 2.0 && Math.hypot(player.root.position.x - publicTaxiState.x, nextZ - publicTaxiState.z) >= 2.0) player.root.position.z = nextZ;
         player.root.rotation.y = Math.atan2(direction.x, direction.z);
         walkClock += delta * 9;
       }
