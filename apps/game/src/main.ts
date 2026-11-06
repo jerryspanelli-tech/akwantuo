@@ -308,7 +308,79 @@ async function start(): Promise<void> {
     const delta = Math.min(engine.getDeltaTime() / 1000, 0.05);
 
     if (hasEnteredWorld) {
-      let inputX = touchInput.x;
+      if (vehicleActionRequested) {
+        vehicleActionRequested = false;
+        if (interactionState.mode === "on_foot") {
+          const entryX = vehicleState.x - Math.cos(vehicleState.headingRadians) * 1.15;
+          const entryZ = vehicleState.z + Math.sin(vehicleState.headingRadians) * 1.15;
+          const distanceToEntryM = Math.hypot(player.root.position.x - entryX, player.root.position.z - entryZ);
+          const result = enterVehicle(interactionState, {
+            id: "starter-saloon", enabled: true, speedMps: vehicleState.speedMps,
+            distanceToEntryM, driverSeatAvailable: true, passengerSeatsAvailable: 3,
+            safeExitAvailable: true
+          }, "driver");
+          if (result.ok) {
+            interactionState = result.state;
+            player.root.setEnabled(false);
+            showNotice("Driving: WASD or the touch joystick controls the car. Press E to exit when stopped.");
+          } else {
+            showNotice(result.reason === "too_far" ? "Move closer to the driver's door to enter." : "You cannot enter this vehicle right now.");
+          }
+        } else {
+          const result = exitVehicle(interactionState, {
+            id: "starter-saloon", enabled: true, speedMps: vehicleState.speedMps,
+            distanceToEntryM: 0, driverSeatAvailable: true, passengerSeatsAvailable: 3,
+            safeExitAvailable: !isBlocked(vehicleState.x - 1.8, vehicleState.z, solidAreas, WORLD_CONFIG.movement.collisionRadius)
+          });
+          if (result.ok) {
+            interactionState = result.state;
+            player.root.setEnabled(true);
+            player.root.position.set(vehicleState.x - 1.8, 0, vehicleState.z);
+            showNotice("You have exited the vehicle.");
+          } else {
+            showNotice(result.reason === "vehicle_moving" ? "Stop the vehicle before exiting." : "There is no safe space to exit here.");
+          }
+        }
+        window.setTimeout(() => notice?.classList.remove("is-visible"), 3000);
+      }
+
+      if (interactionState.mode === "inside_vehicle") {
+        let steering = touchInput.x;
+        let throttle = touchInput.z;
+        if (pressedKeys.has("a") || pressedKeys.has("arrowleft")) steering -= 1;
+        if (pressedKeys.has("d") || pressedKeys.has("arrowright")) steering += 1;
+        if (pressedKeys.has("w") || pressedKeys.has("arrowup")) throttle += 1;
+        if (pressedKeys.has("s") || pressedKeys.has("arrowdown")) throttle -= 1;
+        steering = Math.max(-1, Math.min(1, steering));
+        throttle = Math.max(-1, Math.min(1, throttle));
+        const next = advanceRoadVehicleDynamics({
+          wheelbaseM: 2.65, maximumForwardSpeedMps: 16, maximumReverseSpeedMps: 4,
+          maximumAccelerationMps2: 3.2, serviceBrakingMps2: 7,
+          maximumSteeringAngleRadians: 0.48, rollingDragMps2: 0.45
+        }, vehicleState, {
+          throttle, brake: vehicleBrake || pressedKeys.has(" ") ? 1 : 0, steering
+        }, Math.min(delta, 0.1));
+        const bounded = clampToWorld(next.x, next.z, {
+          minX: WORLD_CONFIG.bounds.minX + 2.5, maxX: WORLD_CONFIG.bounds.maxX - 2.5,
+          minZ: WORLD_CONFIG.bounds.minZ + 2.5, maxZ: WORLD_CONFIG.bounds.maxZ - 2.5
+        });
+        if (!isBlocked(bounded.x, bounded.z, solidAreas, 1.45)) {
+          vehicleState = { ...next, x: bounded.x, z: bounded.z };
+        } else {
+          vehicleState = { ...vehicleState, speedMps: 0 };
+        }
+        vehicleRig.update(vehicleState);
+        camera.target = Vector3.Lerp(camera.target, new Vector3(vehicleState.x, 1.4, vehicleState.z), Math.min(1, delta * 8));
+        camera.alpha = Math.PI / 2 - vehicleState.headingRadians;
+        camera.radius = 9;
+        if (interactButton) interactButton.textContent = "EXIT";
+        if (jumpButton) jumpButton.classList.add("is-hidden");
+      } else {
+        if (interactButton) interactButton.textContent = "ENTER";
+        if (jumpButton) jumpButton.classList.remove("is-hidden");
+      }
+
+      let inputX = interactionState.mode === "on_foot" ? touchInput.x : 0;
       let inputZ = interactionState.mode === "on_foot" ? touchInput.z : 0;
       if (interactionState.mode === "on_foot" && (pressedKeys.has("a") || pressedKeys.has("arrowleft"))) inputX -= 1;
       if (interactionState.mode === "on_foot" && (pressedKeys.has("d") || pressedKeys.has("arrowright"))) inputX += 1;
@@ -343,9 +415,11 @@ async function start(): Promise<void> {
         onGround = false;
       }
       jumpRequested = false;
-      verticalVelocity -= WORLD_CONFIG.movement.gravity * delta;
-      player.root.position.y += verticalVelocity * delta;
-      if (player.root.position.y <= 0) {
+      if (interactionState.mode === "on_foot") {
+        verticalVelocity -= WORLD_CONFIG.movement.gravity * delta;
+        player.root.position.y += verticalVelocity * delta;
+      }
+      if (interactionState.mode === "on_foot" && player.root.position.y <= 0) {
         player.root.position.y = 0;
         verticalVelocity = 0;
         onGround = true;
@@ -364,6 +438,7 @@ async function start(): Promise<void> {
         player.rightArm.rotation.x *= 0.82;
       }
 
+      if (interactionState.mode === "on_foot") {
       const target = player.root.position.add(new Vector3(0, 1.25, 0));
       camera.target = Vector3.Lerp(camera.target, target, Math.min(1, delta * 8));
       const boundedPosition = clampToWorld(player.root.position.x, player.root.position.z, {
@@ -374,6 +449,7 @@ async function start(): Promise<void> {
       });
       player.root.position.x = boundedPosition.x;
       player.root.position.z = boundedPosition.z;
+      }
     }
 
     scene.render();
