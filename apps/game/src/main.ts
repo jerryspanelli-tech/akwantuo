@@ -554,7 +554,8 @@ async function start(): Promise<void> {
   // Reveal the game shell before starting the continuous render loop. This
   // keeps the boot-to-menu handoff independent of frame scheduling on slower devices.
   bootStatus.textContent = "Your world is ready.";
-  bootScreen.classList.add("is-hidden");
+  bootScreen.hidden = true;
+  gameShell.hidden = false;
   gameShell.classList.remove("is-hidden");
   engine.resize();
 
