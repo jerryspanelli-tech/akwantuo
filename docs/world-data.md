@@ -369,3 +369,12 @@ Source: [FHECOR — Dr. Kwame Nkrumah Interchange, Accra (2016)](https://www.fhe
 These are **consultant-published structural reference dimensions**, not a complete surveyed model or a claim that each listed structure is a separate corridor. They do not supply our game's local coordinates, full horizontal/vertical alignments, exact pier positions, deck levels at every point, collision geometry, current road rules or pedestrian paths. The current simplified primary-road graph and map centrelines still need to be reconciled with the named approaches before connected 3D construction.
 
 No playable ramps, bridge meshes, support columns, barriers, collision surfaces, roundabout island, pedestrian crossings or vehicle navigation are created by this catalogue. The next Circle stage is to map the approach corridors and structure alignments, then build separate ground-level and elevated road surfaces.
+
+
+### Circle ground-level roundabout geometry utility
+
+Added `apps/game/src/world/circleGroundGeometry.ts` with `createCircleGroundGeometry(scene, options)`. It builds a circular asphalt surface, a raised central island, a kerb ring and optional radial approach-road meshes. The approach arms are opt-in and require explicit bearings, widths and lengths from a reviewed local layout; the utility does not guess their positions.
+
+This is the first Circle-specific ground-level mesh builder, but it is not yet integrated into the playable world. No real-world dimensions have been inferred from the historical reports, and no Circle approach arms are currently supplied. The ground-level roundabout is reported in the project descriptions, while the exact island dimensions, approach angles and current traffic controls still need map/reference review. The utility also does not create lane markings, pedestrian crossings, signs, traffic signals, collision meshes or vehicle navigation.
+
+Reference for the existence of the ground-level roundabout and its relationship to the elevated links: [Graphic Online — Work on Nkrumah Circle interchange begins](https://www.graphic.com.gh/news/general-news/work-on-nkrumah-circle-interchange-begins.html).
