@@ -91,7 +91,7 @@ export const DISTRICT_BUSINESSES: readonly DistrictBusiness[] = DISTRICT_BUILDIN
 export function isDistrictBusinessCatalogueValid(): boolean {
   const ids = new Set(DISTRICT_BUSINESSES.map((business) => business.id));
   const buildingIds = new Set(DISTRICT_BUILDINGS.map((building) => building.id));
-  const hasValidClock = (value: string): boolean => /^([01]\\d|2[0-3]):[0-5]\\d$/.test(value);
+  const hasValidClock = (value: string): boolean => /^([01][0-9]|2[0-3]):[0-5][0-9]$/.test(value);
   return ids.size === DISTRICT_BUSINESSES.length &&
     DISTRICT_BUSINESSES.length > 0 &&
     DISTRICT_BUSINESSES.every((business) =>
