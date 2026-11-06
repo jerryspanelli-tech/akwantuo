@@ -18,6 +18,13 @@ export function runStage6SmokeChecks(): void {
   if (!isPrivateIslandCatalogueValid()) throw new Error("Luxury private-island catalogue failed structural validation.");
   if (AKWANTUO_RETAIL_PRODUCTS.length < 15 || !AKWANTUO_RETAIL_PRODUCTS.some((item) => item.category === "soft_drink") || !AKWANTUO_RETAIL_PRODUCTS.some((item) => item.category === "snack")) throw new Error("Convenience store is missing core drink or snack stock.");
   if (AKWANTUO_PRIVATE_ISLAND.purchasePricePesewas < 10_000_000_000 || !PRIVATE_ISLAND_WATERCRAFT.some((item) => item.kind === "jet_ski") || !PRIVATE_ISLAND_WATERCRAFT.some((item) => item.kind === "yacht")) throw new Error("Private island must remain premium and include boats and jet skis.");
+  const convenienceStore = INTERIOR_BLUEPRINTS.find((blueprint) => blueprint.id === "convenience-store");
+  if (!convenienceStore || convenienceStore.fixtures.filter((fixture) => fixture.type === "refrigerator").length < 3 ||
+      convenienceStore.fixtures.filter((fixture) => fixture.type === "snack_rack").length < 2 ||
+      !convenienceStore.fixtures.some((fixture) => fixture.type === "shopkeeper") ||
+      !convenienceStore.fixtures.some((fixture) => fixture.type === "counter")) {
+    throw new Error("Convenience-store interior must include drink refrigerators, snack racks, checkout and shopkeeper.");
+  }
 
   const blueprintIds = new Set(INTERIOR_BLUEPRINTS.map((blueprint) => blueprint.id));
   const buildingIds = new Set(DISTRICT_BUILDINGS.map((building) => building.id));
