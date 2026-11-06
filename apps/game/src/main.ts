@@ -272,7 +272,12 @@ async function start(): Promise<void> {
   });
   const scene = new Scene(engine);
   const solidAreas = createPreviewWorld(scene, { includeGround: false });
-  createGreaterAccraPlayableWorld(scene);
+  const greaterAccraTransportReport = createGreaterAccraPlayableWorld(scene);
+  document.documentElement.dataset.playableRoadSurfaceMeshes = String(greaterAccraTransportReport.roadSurfaceMeshCount);
+  document.documentElement.dataset.playableRoadMarkingMeshes = String(greaterAccraTransportReport.roadMarkingMeshCount);
+  document.documentElement.dataset.playableRailRoutes = String(greaterAccraTransportReport.railRouteCount);
+  document.documentElement.dataset.playableRailStations = String(greaterAccraTransportReport.plannedStationAnchorCount);
+  document.documentElement.dataset.playableCircleStructures = String(greaterAccraTransportReport.circleElevatedStructureCount);
   const playableRailDemo = createPlayableRailDemo(scene);
   let currentAppearance = loadAppearance(window.localStorage);
   const player = createPlayer(scene, currentAppearance);
