@@ -1,6 +1,7 @@
 import {
   ArcRotateCamera,
   Color3,
+  Color4,
   DirectionalLight,
   Engine,
   HemisphericLight,
@@ -25,7 +26,7 @@ try {
     true
   );
   const scene = new Scene(engine);
-  scene.clearColor = new Color3(0.58, 0.68, 0.72);
+  scene.clearColor = new Color4(0.58, 0.68, 0.72, 1);
 
   const target = new Vector3(-450, 0, 450);
   const camera = new ArcRotateCamera(
