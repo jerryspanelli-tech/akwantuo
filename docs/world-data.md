@@ -599,3 +599,6 @@ Added `apps/game/src/vehicles/roadVehicles.ts` to define the first road-vehicle 
 Each profile records a gameplay passenger-capacity target, driver/conductor roles, traffic role and shared model requirements for lights, wheel contact, collision alignment, cabin entry points and mobile-friendly detail. Passenger capacities are provisional gameplay targets, not certified seating capacities or legal vehicle specifications.
 
 This is a content catalogue only. It does not contain 3D vehicle assets, driving physics, AI traffic, vehicle ownership, damage, fuel, licences, emergency dispatch or multiplayer synchronisation. Those systems must be implemented and tested separately.
+
+
+The `.github/workflows/transport-preview.yml` workflow now builds this preview on relevant transport-preview changes, opens the production Vite preview in Chromium, captures a 1440 × 1000 screenshot and uploads the image together with a short scope/limitations report as the `akwantuo-transport-preview` workflow artifact. This provides a repeatable visual build check without deploying the game publicly.
