@@ -28,11 +28,12 @@ try {
       roadMarkings: Number(document.documentElement.dataset.playableRoadMarkingMeshes ?? 0),
       railRoutes: Number(document.documentElement.dataset.playableRailRoutes ?? 0),
       plannedStations: Number(document.documentElement.dataset.playableRailStations ?? 0),
-      circleStructures: Number(document.documentElement.dataset.playableCircleStructures ?? 0)
+      circleStructures: Number(document.documentElement.dataset.playableCircleStructures ?? 0),
+      mappedRailService: document.documentElement.dataset.playableMappedRailService === "true"
     }));
     if (playableTransport.roadSurfaces < 1 || playableTransport.roadMarkings < 1 ||
         playableTransport.railRoutes < 2 || playableTransport.plannedStations < 3 ||
-        playableTransport.circleStructures < 1) {
+        playableTransport.circleStructures < 1 || !playableTransport.mappedRailService) {
       failures.push(target.name + ": Greater Accra transport was not integrated into the playable scene: " +
         JSON.stringify(playableTransport));
     }
