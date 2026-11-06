@@ -460,3 +460,24 @@ Added `apps/game/src/world/circleRiverRailGeometry.ts` and connected it to the s
 The river and railway are represented as separate corridor reservations so the Circle scene can be reviewed as more than elevated road decks alone. The river path, widths, water level and offset from the railway are **provisional visual placeholders**. The track gauge has been corrected to **1,067 mm Cape gauge**, matching the existing Accra–Tema / Accra–Nsawam Eastern Line described by Ghana's Ministry of Finance PPP Portal and the Greater Accra spatial framework. The preview uses simplified 1.5 m sleeper spacing for visual readability, not a construction specification. They are not surveyed, georeferenced or claims about exact present-day channel or railway alignment. The prototype intentionally does not change viaduct pier stations because the available references do not establish safe, exact pier coordinates.
 
 The geometry is visual-only: it has no water simulation, railway vehicles, track collision, train schedules, maintenance access logic or vehicle navigation. Before treating the corridors as map truth, align them with current reliable site imagery/survey data and review every elevated-road support against the actual river and railway reservations. The 1,067 mm gauge reference does not establish the track's exact alignment or current operational condition.
+
+
+## Greater Accra rail network — first topology pass
+
+Added `apps/game/src/world/railNetwork.ts` to represent the Greater Accra portion of the Eastern Railway Line separately from the road graph.
+
+The route structure follows the documented branch relationship:
+
+- **Accra Central → Odaw / Circle → Achimota:** the provisional urban trunk through the Circle area.
+- **Achimota → Tema:** the eastern branch toward Tema.
+- **Achimota → Nsawam:** the northbound Eastern Line corridor, marked as a future expansion gateway beyond the first-release playable area.
+
+The important geography correction is that the Tema branch is associated with **Achimota**, not a fork at Odaw/Circle. Ghana's Ministry of Finance PPP project description identifies the Eastern Railway Line as Accra–Kumasi with a branch from Achimota to Tema, and records the Accra–Nsawam and Accra–Tema sections as the commuter corridors. The same source records the existing line gauge as 1,067 mm.
+
+The route catalogue includes stable node and route IDs, schematic map-space centre-lines, first-release flags and a validator. The Odaw/Circle point is deliberately a provisional rail-corridor marker, not confirmation of a current station, platform, service or exact track location. The Tema station anchor and all intermediate bends are also game-layout approximations. The Nsawam corridor remains outside the first playable map.
+
+This is a **topology and map-data foundation only**. It does not create physical rails across the Greater Accra map, station buildings, platforms, signals, train vehicles, timetables, collision, passenger boarding or train movement. Detailed track placement must be reviewed against current reliable mapping before being rendered as final geography.
+
+References:
+- [Ministry of Finance PPP Portal — Eastern Railway Line Project](https://ppp.mofep.gov.gh/project/69/eastern-railway-line-project)
+- [Ghana Railway Company Limited — network history](https://grcl.gov.gh/about.php)
