@@ -107,7 +107,12 @@ try {
         lastActionAt: document.documentElement.dataset.transportLastActionAt,
         lastKey: document.documentElement.dataset.transportLastKey,
         hasEnteredWorld: document.documentElement.dataset.transportHasEnteredWorld,
-        actionRequest: document.documentElement.dataset.transportActionRequest
+        actionRequest: document.documentElement.dataset.transportActionRequest,
+        actionConsumedAt: document.documentElement.dataset.transportActionConsumedAt,
+        actionPassengerModeBefore: document.documentElement.dataset.transportActionPassengerModeBefore,
+        trotroBranch: document.documentElement.dataset.transportTrotroBranch,
+        trotroDistance: document.documentElement.dataset.transportTrotroDistance,
+        trotroBoardResult: document.documentElement.dataset.transportTrotroBoardResult
       }));
       console.error(target.name + ": trotro boarding diagnostic " + JSON.stringify(boardingDiagnostic));
       throw error;
