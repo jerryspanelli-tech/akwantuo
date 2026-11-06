@@ -288,6 +288,37 @@ try {
           (!activeBusiness.notice.includes("modelling auditions") || !activeBusiness.notice.includes("fashion runway night"))) {
         throw new Error(target.name + ": creative arts centre weekly programme was not displayed: " + activeBusiness.notice);
       }
+      if (interiorCase.business) {
+        await page.locator("#stage6-service-action").click({ timeout: 5000 });
+        const serviceInteraction = await page.evaluate(() => ({
+          count: Number(document.documentElement.dataset.stage6ServiceSelections ?? 0),
+          notice: document.querySelector("#notice")?.textContent ?? ""
+        }));
+        if (serviceInteraction.count !== 1 || !serviceInteraction.notice.includes("Selected service") ||
+            !serviceInteraction.notice.includes("no payment or transaction")) {
+          throw new Error(target.name + ": service interaction failed for " + interiorCase.buildingId + ": " + JSON.stringify(serviceInteraction));
+        }
+      }
+      await page.locator("#stage6-property-action").click({ timeout: 5000 });
+      const propertyInteraction = await page.evaluate(() => ({
+        count: Number(document.documentElement.dataset.stage6PropertyInspections ?? 0),
+        notice: document.querySelector("#notice")?.textContent ?? ""
+      }));
+      if (propertyInteraction.count < 1 || !propertyInteraction.notice.includes("Property information:") ||
+          !propertyInteraction.notice.includes("purchase or rental is not enabled")) {
+        throw new Error(target.name + ": property inspection interaction failed for " + interiorCase.buildingId + ": " + JSON.stringify(propertyInteraction));
+      }
+      if (interiorCase.buildingId === "akwaaba-creative-arts-centre") {
+        await page.locator("#stage6-venue-action").click({ timeout: 5000 });
+        const venueInteraction = await page.evaluate(() => ({
+          count: Number(document.documentElement.dataset.stage6VenueInterestCount ?? 0),
+          notice: document.querySelector("#notice")?.textContent ?? ""
+        }));
+        if (venueInteraction.count !== 1 || !venueInteraction.notice.includes("Interest noted for") ||
+            !venueInteraction.notice.includes("not a saved booking")) {
+          throw new Error(target.name + ": creative event interest interaction failed: " + JSON.stringify(venueInteraction));
+        }
+      }
       const interiorActionLabel = await page.locator("#interact-button").textContent();
       if (interiorActionLabel?.trim() !== "EXIT") {
         throw new Error(target.name + ": " + interiorCase.buildingId + " did not switch interaction to EXIT: " + interiorActionLabel);
