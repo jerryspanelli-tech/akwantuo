@@ -451,3 +451,12 @@ Added a separate local-access geometry layer matching the three named topology r
 The 3D preview now draws two provisional asphalt access roads and one pedestrian-paved access path. The road and path widths, waypoint positions, bends and exact relationships to the interchange are game-layout assumptions, not surveyed centre-lines or verified current traffic directions. The mall connection is pedestrian-only in this prototype. These surfaces have no collision, traffic rules, navigation or vehicle routing yet.
 
 The geometry is deliberately kept in a separate module so its provisional coordinates can be replaced after site-layout review without changing the named route references.
+
+
+### Circle Odaw River and railway corridor visual prototype
+
+Added `apps/game/src/world/circleRiverRailGeometry.ts` and connected it to the standalone Circle developer preview. It creates a distinct shallow channel bed, water surface and banks for a schematic Odaw River corridor, plus a railway ballast bed, two steel rails and regularly spaced sleepers.
+
+The river and railway are represented as separate corridor reservations so the Circle scene can be reviewed as more than elevated road decks alone. Their local paths, widths, water level, rail gauge and offset from one another are **provisional visual placeholders**. They are not surveyed, georeferenced or claims about exact present-day channel or railway alignment. The prototype intentionally does not change viaduct pier stations because the available references do not establish safe, exact pier coordinates.
+
+The geometry is visual-only: it has no water simulation, railway vehicles, track collision, train schedules, maintenance access logic or vehicle navigation. Before treating the corridors as map truth, align them with current reliable site imagery/survey data and review every elevated-road support against the actual river and railway reservations.
