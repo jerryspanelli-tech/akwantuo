@@ -22,7 +22,7 @@ try {
     const status = await page.locator("#boot-status").textContent();
     if (!status?.includes("Your world is ready")) failures.push(target.name + ": startup status was " + status);
     console.log(target.name + ": startup ready");
-    await page.locator("#boot-screen").waitFor({ state: "hidden", timeout: 10000 });
+    await page.waitForFunction(() => document.querySelector("#boot-screen")?.hasAttribute("hidden") === true, { timeout: 10000 });
     await page.locator("#main-menu").waitFor({ state: "visible", timeout: 10000 });
     await page.locator("#play-button").waitFor({ state: "visible", timeout: 10000 });
     await page.locator("#play-button").click({ timeout: 10000 });
