@@ -235,7 +235,6 @@ export function createGhanaianStreetBuildings(scene: Scene): {
         width: 2.15, height: 0.22, depth: building.width * 0.94
       }, scene);
       canopy.position.set(frontX + outward * 1.02, 2.72, building.z);
-      canopy.rotation.y = building.side === "west" ? Math.PI / 2 : -Math.PI / 2;
       canopy.material = trim;
       canopy.isPickable = false;
       const stripeColours = ["#d9483b", "#e8b83e", "#4a9369"];
@@ -244,7 +243,6 @@ export function createGhanaianStreetBuildings(scene: Scene): {
           width: 0.16, height: 0.24, depth: building.width * 0.92 / 3
         }, scene);
         band.position.set(frontX + outward * 0.08, 2.48, building.z + (stripe - 1) * building.width * 0.3);
-        band.rotation.y = building.side === "west" ? Math.PI / 2 : -Math.PI / 2;
         band.material = material(scene, "convenience-store-brand-" + stripe, stripeColours[stripe]);
         band.isPickable = false;
       }
@@ -265,7 +263,6 @@ export function createGhanaianStreetBuildings(scene: Scene): {
         width: 0.12, height: 0.18, depth: 1.5
       }, scene);
       entryMarker.position.set(frontX + outward * 0.16, 2.2, building.z);
-      entryMarker.rotation.y = building.side === "west" ? Math.PI / 2 : -Math.PI / 2;
       entryMarker.material = entranceLight;
       entryMarker.isPickable = false;
     }
