@@ -421,7 +421,7 @@ async function start(): Promise<void> {
             minX: WORLD_CONFIG.bounds.minX + 2.5, maxX: WORLD_CONFIG.bounds.maxX - 2.5,
             minZ: WORLD_CONFIG.bounds.minZ + 2.5, maxZ: WORLD_CONFIG.bounds.maxZ - 2.5
           });
-          if (!isBlocked(bounded.x, bounded.z, solidAreas, 2.35)) {
+          if (!isBlocked(bounded.x, bounded.z, solidAreas, 2.35) && Math.hypot(bounded.x - publicTaxiState.x, bounded.z - publicTaxiState.z) >= 3.6) {
             vehicleState = { ...next, x: bounded.x, z: bounded.z };
           } else {
             vehicleState = { ...vehicleState, speedMps: 0 };
@@ -464,8 +464,8 @@ async function start(): Promise<void> {
         const stepZ = direction.z * WORLD_CONFIG.movement.walkSpeed * delta;
         const nextX = player.root.position.x + stepX;
         const nextZ = player.root.position.z + stepZ;
-        if (!isBlocked(nextX, player.root.position.z, solidAreas, WORLD_CONFIG.movement.collisionRadius)) player.root.position.x = nextX;
-        if (!isBlocked(player.root.position.x, nextZ, solidAreas, WORLD_CONFIG.movement.collisionRadius)) player.root.position.z = nextZ;
+        if (!isBlocked(nextX, player.root.position.z, solidAreas, WORLD_CONFIG.movement.collisionRadius) && Math.hypot(nextX - vehicleState.x, player.root.position.z - vehicleState.z) >= 2.0 && Math.hypot(nextX - publicTaxiState.x, player.root.position.z - publicTaxiState.z) >= 2.0) player.root.position.x = nextX;
+        if (!isBlocked(player.root.position.x, nextZ, solidAreas, WORLD_CONFIG.movement.collisionRadius) && Math.hypot(player.root.position.x - vehicleState.x, nextZ - vehicleState.z) >= 2.0 && Math.hypot(player.root.position.x - publicTaxiState.x, nextZ - publicTaxiState.z) >= 2.0) player.root.position.z = nextZ;
         player.root.rotation.y = Math.atan2(direction.x, direction.z);
         walkClock += delta * 9;
       }
