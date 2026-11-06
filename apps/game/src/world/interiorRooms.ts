@@ -30,7 +30,10 @@ const FIXTURE_COLOURS: Record<InteriorFixtureType, string> = {
   stage: "#202d39",
   runway: "#d9d9d3",
   audience_seating: "#8d3d36",
-  screen: "#172a38",\n  refrigerator: "#d7e1df",\n  snack_rack: "#a47a4f",\n  shopkeeper: "#385e59"
+  screen: "#172a38",
+  refrigerator: "#d7e1df",
+  snack_rack: "#a47a4f",
+  shopkeeper: "#385e59"
 };
 
 function createMaterial(scene: Scene, id: string, colour: string): StandardMaterial {
