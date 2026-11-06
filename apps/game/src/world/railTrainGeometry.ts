@@ -7,6 +7,8 @@ import {
   Vector3
 } from "@babylonjs/core";
 
+const CAPE_GAUGE_METRES = 1.067;
+
 export type RailTrainGeometryOptions = Readonly<{
   id: string;
   centerX: number;
@@ -118,13 +120,13 @@ export function createRailTrainGeometry(
     for (const bogieOffset of [-carLength * 0.31, carLength * 0.31]) {
       const bogieX = carX + bogieOffset;
       bogieMeshes.push(makeBox(scene, `${carId}-bogie-frame-${bogieOffset}`,
-        3.4, 0.48, carWidth * 0.76, bogieX, baseY + 0.55, options.centerZ, lowerMaterial));
+        3.4, 0.48, CAPE_GAUGE_METRES + 0.25, bogieX, baseY + 0.55, options.centerZ, lowerMaterial));
       for (const side of [-1, 1]) {
         const wheel = MeshBuilder.CreateCylinder(`${carId}-wheel-${bogieOffset}-${side}`, {
           diameter: 0.82, height: 0.24, tessellation: 12
         }, scene);
         wheel.rotation.x = Math.PI / 2;
-        wheel.position.set(bogieX, baseY + 0.42, options.centerZ + side * (carWidth * 0.39));
+        wheel.position.set(bogieX, baseY + 0.42, options.centerZ + side * (CAPE_GAUGE_METRES / 2));
         wheel.material = tyreMaterial;
         wheel.isPickable = false;
         wheel.checkCollisions = false;
