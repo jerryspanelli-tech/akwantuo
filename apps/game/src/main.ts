@@ -457,8 +457,8 @@ async function start(): Promise<void> {
       }
 
       let inputX = interactionState.mode === "on_foot" && publicPassengerState.mode !== "riding" && railPassengerState.mode !== "riding" ? touchInput.x : 0;
-      let inputZ = interactionState.mode === "on_foot" && publicPassengerState.mode !== "riding" ? touchInput.z : 0;
-      if (interactionState.mode === "on_foot" && publicPassengerState.mode !== "riding" && (pressedKeys.has("a") || pressedKeys.has("arrowleft"))) inputX -= 1;
+      let inputZ = interactionState.mode === "on_foot" && publicPassengerState.mode !== "riding" && railPassengerState.mode !== "riding" ? touchInput.z : 0;
+      if (interactionState.mode === "on_foot" && publicPassengerState.mode !== "riding" && railPassengerState.mode !== "riding" && (pressedKeys.has("a") || pressedKeys.has("arrowleft"))) inputX -= 1;
       if (interactionState.mode === "on_foot" && publicPassengerState.mode !== "riding" && (pressedKeys.has("d") || pressedKeys.has("arrowright"))) inputX += 1;
       if (interactionState.mode === "on_foot" && publicPassengerState.mode !== "riding" && (pressedKeys.has("w") || pressedKeys.has("arrowup"))) inputZ += 1;
       if (interactionState.mode === "on_foot" && publicPassengerState.mode !== "riding" && (pressedKeys.has("s") || pressedKeys.has("arrowdown"))) inputZ -= 1;
@@ -472,7 +472,7 @@ async function start(): Promise<void> {
       const forward = new Vector3(-Math.sin(camera.alpha), 0, -Math.cos(camera.alpha));
       const right = new Vector3(-forward.z, 0, forward.x);
       const direction = forward.scale(inputZ).add(right.scale(inputX));
-      const moving = interactionState.mode === "on_foot" && publicPassengerState.mode !== "riding" && direction.lengthSquared() > 0.001;
+      const moving = interactionState.mode === "on_foot" && publicPassengerState.mode !== "riding" && railPassengerState.mode !== "riding" && direction.lengthSquared() > 0.001;
 
       if (moving) {
         direction.normalize();
@@ -486,16 +486,16 @@ async function start(): Promise<void> {
         walkClock += delta * 9;
       }
 
-      if (interactionState.mode === "on_foot" && publicPassengerState.mode !== "riding" && jumpRequested && onGround) {
+      if (interactionState.mode === "on_foot" && publicPassengerState.mode !== "riding" && railPassengerState.mode !== "riding" && jumpRequested && onGround) {
         verticalVelocity = WORLD_CONFIG.movement.jumpVelocity;
         onGround = false;
       }
       jumpRequested = false;
-      if (interactionState.mode === "on_foot" && publicPassengerState.mode !== "riding") {
+      if (interactionState.mode === "on_foot" && publicPassengerState.mode !== "riding" && railPassengerState.mode !== "riding") {
         verticalVelocity -= WORLD_CONFIG.movement.gravity * delta;
         player.root.position.y += verticalVelocity * delta;
       }
-      if (interactionState.mode === "on_foot" && publicPassengerState.mode !== "riding" && player.root.position.y <= 0) {
+      if (interactionState.mode === "on_foot" && publicPassengerState.mode !== "riding" && railPassengerState.mode !== "riding" && player.root.position.y <= 0) {
         player.root.position.y = 0;
         verticalVelocity = 0;
         onGround = true;
@@ -514,7 +514,7 @@ async function start(): Promise<void> {
         player.rightArm.rotation.x *= 0.82;
       }
 
-      if (interactionState.mode === "on_foot" && publicPassengerState.mode !== "riding") {
+      if (interactionState.mode === "on_foot" && publicPassengerState.mode !== "riding" && railPassengerState.mode !== "riding") {
       const target = player.root.position.add(new Vector3(0, 1.25, 0));
       camera.target = Vector3.Lerp(camera.target, target, Math.min(1, delta * 8));
       const boundedPosition = clampToWorld(player.root.position.x, player.root.position.z, {
