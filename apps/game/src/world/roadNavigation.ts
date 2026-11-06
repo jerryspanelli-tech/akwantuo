@@ -8,6 +8,7 @@ import { getRoadCrossSectionProfile, getRoadDesignWidth, GREATER_ACCRA_ROAD_DESI
 export type RoadProjectionOptions = Readonly<{
   maxDistanceM?: number;
   includeFutureExpansion?: boolean;
+  roadSegmentId?: string;
 }>;
 
 export type RoadProjection = Readonly<{
@@ -40,10 +41,14 @@ export function findNearestRoadProjection(
     throw new RangeError("Road projection maximum distance must be between 0 and 50000 metres.");
   }
 
+  if (options.roadSegmentId !== undefined && !options.roadSegmentId.trim()) {
+    throw new Error("Road projection segment filter must be a non-empty ID.");
+  }
   let nearest: RoadProjection | null = null;
   let nearestDistance = maxDistance;
 
   for (const road of GREATER_ACCRA_ROAD_PATHS) {
+    if (options.roadSegmentId && road.roadSegmentId !== options.roadSegmentId) continue;
     if (!road.playableInFirstRelease && !options.includeFutureExpansion) continue;
     const path = getMapRoadPath(road.roadSegmentId);
     const roadWidth = getRoadDesignWidth(road.roadSegmentId);
