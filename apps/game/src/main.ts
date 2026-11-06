@@ -19,6 +19,7 @@ import { advanceRoadVehicleDynamics, type RoadVehicleDynamicsState } from "./veh
 import { createRoadVehicleGeometry } from "./vehicles/roadVehicleGeometry";
 import { createRoadVehicleRig } from "./vehicles/roadVehicleRig";
 import { enterVehicle, exitVehicle, type VehicleInteractionState } from "./vehicles/vehicleInteraction";
+import { isVehiclePathClear } from "./vehicles/vehicleCollision";
 import { PassengerCameraRig } from "./vehicles/passengerCamera";
 import { createPublicTransportVehicle } from "./vehicles/publicTransportVehicle";
 import { alightPublicTransport, boardPublicTransport, type PublicTransportPassengerState } from "./world/publicTransportOperations";
@@ -445,7 +446,11 @@ async function start(): Promise<void> {
             minX: WORLD_CONFIG.bounds.minX + 2.5, maxX: WORLD_CONFIG.bounds.maxX - 2.5,
             minZ: WORLD_CONFIG.bounds.minZ + 2.5, maxZ: WORLD_CONFIG.bounds.maxZ - 2.5
           });
-          if (!isBlocked(bounded.x, bounded.z, solidAreas, 2.35) && Math.hypot(bounded.x - publicTaxiState.x, bounded.z - publicTaxiState.z) >= 3.6) {
+          if (!isBlocked(bounded.x, bounded.z, solidAreas, 2.35) && isVehiclePathClear(
+            { x: vehicleState.x, z: vehicleState.z, radiusM: 2.25 },
+            { x: bounded.x, z: bounded.z, radiusM: 2.25 },
+            { x: publicTaxiState.x, z: publicTaxiState.z, radiusM: 2.35 }
+          )) {
             vehicleState = { ...next, x: bounded.x, z: bounded.z };
           } else {
             vehicleState = { ...vehicleState, speedMps: 0 };
