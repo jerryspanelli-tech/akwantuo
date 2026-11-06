@@ -15,6 +15,7 @@ import {
 import { enterVehicle, exitVehicle, type VehicleInteractionState } from "../vehicles/vehicleInteraction";
 import { isVehiclePathClear } from "../vehicles/vehicleCollision";
 import { advanceMotorcycleDynamics, isMotorcycleDynamicsConfigValid, isMotorcycleDynamicsStateValid } from "../vehicles/motorcycleDynamics";
+import { getRoadVehicleAutopilotControl, isRoadVehicleAutopilotConfigValid } from "../vehicles/roadVehicleAutopilot";
 import {
   alightPublicTransport,
   boardPublicTransport,
@@ -272,6 +273,46 @@ export function runTransportSmokeChecks(): void {
   expectThrow(() => advanceMotorcycleDynamics(
     motorcycleConfig, motorcycleStart, { throttle: 0, brake: 0, steering: 2 }, 0.1
   ), "invalid motorcycle steering input is rejected");
+  const autopilotConfig = {
+    wheelbaseM: 2.65,
+    maximumSteeringAngleRadians: 0.48,
+    targetSpeedMps: 8,
+    baseLookaheadM: 6,
+    speedLookaheadFactor: 0.5,
+    throttleGain: 0.3,
+    brakeGain: 0.5
+  };
+  const straightRoute = [{ x: 0, z: 0 }, { x: 0, z: 100 }];
+  assert(isRoadVehicleAutopilotConfigValid(autopilotConfig),
+    "road vehicle pure-pursuit configuration validates");
+  const straightControl = getRoadVehicleAutopilotControl(
+    autopilotConfig, { x: 0, z: 0, headingRadians: 0, speedMps: 0 }, straightRoute
+  );
+  assert(straightControl.throttle === 1 && straightControl.brake === 0 &&
+    Math.abs(straightControl.steering) < 1e-6 && straightControl.crossTrackErrorM < 1e-6,
+    "autopilot accelerates along a straight route without steering drift");
+  const recoveryControl = getRoadVehicleAutopilotControl(
+    autopilotConfig, { x: 5, z: 10, headingRadians: 0, speedMps: 5 }, straightRoute
+  );
+  assert(recoveryControl.steering < 0 && recoveryControl.crossTrackErrorM > 4,
+    "autopilot steers back toward the route centreline when laterally displaced");
+  const curveControl = getRoadVehicleAutopilotControl(
+    autopilotConfig,
+    { x: 0, z: 15, headingRadians: 0, speedMps: 6 },
+    [{ x: 0, z: 0 }, { x: 0, z: 20 }, { x: 20, z: 40 }]
+  );
+  assert(curveControl.steering > 0,
+    "pure-pursuit controller steers into a curved road path");
+  const overspeedControl = getRoadVehicleAutopilotControl(
+    autopilotConfig, { x: 0, z: 10, headingRadians: 0, speedMps: 10 }, straightRoute
+  );
+  assert(overspeedControl.brake > 0 && overspeedControl.throttle === 0,
+    "autopilot brakes when vehicle exceeds its target speed");
+  expectThrow(() => getRoadVehicleAutopilotControl(
+    autopilotConfig,
+    { x: 0, z: 0, headingRadians: 0, speedMps: 0 },
+    [{ x: 0, z: 0 }, { x: 0, z: 0 }]
+  ), "autopilot rejects zero-length route segments");
 
   const crossingLayout = {
     id: "smoke-crossing", centre: { x: 0, z: 0 }, acrossDirection: { x: 1, z: 0 },
