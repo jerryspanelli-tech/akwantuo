@@ -394,6 +394,7 @@ async function start(): Promise<void> {
   const propertyActionButton = makeStage6Button("stage6-property-action", "Property information");
   const retailBrowseButton = makeStage6Button("stage6-retail-browse", "Browse store products");
   const retailBasketButton = makeStage6Button("stage6-retail-basket", "Add to basket preview");
+  const premiumAssetsButton = makeStage6Button("stage6-premium-assets", "Luxury island & boats");
   const venueActionButton = makeStage6Button("stage6-venue-action", "Join event interest list");
   document.body.append(stage6ActionPanel);
   const refreshStage6Actions = (): void => {
@@ -403,6 +404,7 @@ async function start(): Promise<void> {
     const isConvenienceStore = buildingId === "osu-corner-mart" || buildingId === "akwaaba-provisions";
     retailBrowseButton.hidden = !isConvenienceStore;
     retailBasketButton.hidden = !isConvenienceStore;
+    premiumAssetsButton.hidden = buildingId !== "district-office";
     venueActionButton.hidden = buildingId !== "akwaaba-creative-arts-centre";
     propertyActionButton.hidden = !buildingId;
     stage6ActionPanel.hidden = !buildingId;
@@ -436,6 +438,18 @@ async function start(): Promise<void> {
     retailBasketPreviewCount += 1;
     document.documentElement.dataset.stage6RetailBasketPreviewCount = String(retailBasketPreviewCount);
     showNotice(item.name + " added to your session basket preview. No money was charged and no stock was changed.");
+  });
+  premiumAssetsButton.addEventListener("click", () => {
+    if (activeInterior?.buildingId !== "district-office") return;
+    const islandPrice = "GH₵" + (AKWANTUO_PRIVATE_ISLAND.purchasePricePesewas / 100).toLocaleString("en-GH");
+    const craft = PRIVATE_ISLAND_WATERCRAFT.map((item) =>
+      item.name + " — " + item.label
+    ).join("; ");
+    document.documentElement.dataset.stage6PremiumListingViews =
+      String(Number(document.documentElement.dataset.stage6PremiumListingViews ?? 0) + 1);
+    showNotice("Premium property listing: " + AKWANTUO_PRIVATE_ISLAND.name + " — " + islandPrice +
+      ". Private villa, marina and helipad. Watercraft: " + craft +
+      ". Listing preview only; purchase and ownership transfer are not enabled.");
   });
   propertyActionButton.addEventListener("click", () => {
     if (!activeInterior) return;
