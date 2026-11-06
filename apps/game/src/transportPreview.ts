@@ -38,6 +38,7 @@ try {
   const scene = new Scene(engine);
   scene.clearColor = new Color4(0.58, 0.69, 0.75, 1);
   const camera = new ArcRotateCamera("transport-preview-camera", -Math.PI / 2.5, 1.05, 225, new Vector3(0, 3, -18), scene);
+  camera.radius = 190;
   camera.lowerRadiusLimit = 55;
   camera.upperRadiusLimit = 420;
   camera.lowerBetaLimit = 0.16;
@@ -65,13 +66,13 @@ try {
     platformLengthM: 180, platformWidthM: 8, platformCount: 2
   } as const;
   createUltraModernRailStationGeometry(scene, stationOptions);
-  const roadVehicleOrigin = { x: 48, y: 0, z: -122 };
+  const roadVehicleOrigin = { x: -48, y: 0, z: -115 };
   const roadVehicleGeometry = createRoadVehicleGeometry(scene, {
     id: "akwantuo-preview-saloon",
     centerX: roadVehicleOrigin.x,
     centerZ: roadVehicleOrigin.z,
     groundElevationM: roadVehicleOrigin.y,
-    bodyColour: "#d7dce0"
+    bodyColour: "#315a78"
   });
   const roadVehicleRig = createRoadVehicleRig(scene, roadVehicleGeometry, {
     id: "akwantuo-preview-saloon-rig", origin: roadVehicleOrigin
