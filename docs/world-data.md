@@ -507,3 +507,14 @@ Station identities:
 The catalogue intentionally leaves platform counts, platform arrangement, track spacing, station footprints and exact entrances unassigned until verified railway/site information is available. These are design requirements, not completed 3D station buildings. No station meshes, train services, ticketing interactions, passenger AI or operational timetable have been implemented yet.
 
 The station catalogue includes a validator and lookup helpers so later station geometry, passenger navigation and train operations can use stable IDs without inventing site details.
+
+
+## Ultra-modern railway station 3D massing prototype
+
+Added `apps/game/src/world/railStationGeometry.ts`, a reusable Babylon.js geometry builder for the agreed ultra-modern station direction. It can create a large glazed passenger concourse, broad roof, structural façade fins, a prominent warm-metal entrance portal, a deep shaded entrance canopy, raised platforms, tactile platform-edge strips, platform canopies and solar-roof accents.
+
+The builder accepts explicit map position and provisional dimensions, and returns the created mesh groups separately so later work can add lighting, signage, interior fit-out, passenger navigation, track geometry and collision in controlled layers. It does not automatically place stations at the current approximate rail-node coordinates.
+
+Default dimensions are only a **visual massing prototype**. Platform count, platform arrangement, track spacing, heights, roof spans, structural systems, fire exits, evacuation capacity and accessible circulation must be reviewed against a verified site plan and railway engineering requirements before a station is treated as final.
+
+The builder is not yet integrated into the playable game or a standalone station preview. It creates visual meshes only; no trains, tracks, passenger systems, station services, collision or interactive ticketing are included.
