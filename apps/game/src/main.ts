@@ -23,6 +23,7 @@ import { PassengerCameraRig } from "./vehicles/passengerCamera";
 import { createPublicTransportVehicle } from "./vehicles/publicTransportVehicle";
 import { alightPublicTransport, boardPublicTransport, type PublicTransportPassengerState } from "./world/publicTransportOperations";
 import { createPlayableRailDemo } from "./world/playableRailDemo";
+import { runTransportSmokeChecks } from "./world/transportSmokeChecks";
 
 const bootScreen = document.querySelector<HTMLElement>("#boot-screen");
 const gameShell = document.querySelector<HTMLElement>("#game-shell");
@@ -232,6 +233,9 @@ async function start(): Promise<void> {
   if (!canvas || !bootScreen || !gameShell || !bootStatus) {
     throw new Error("The game startup interface could not be found.");
   }
+
+  // Fail early if core fare, boarding, vehicle, or rail-operation contracts regress.
+  runTransportSmokeChecks();
 
   bootStatus.textContent = "Loading the world engine…";
   await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
