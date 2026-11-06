@@ -8,6 +8,8 @@ import { createStationPassengerFitout } from "./world/railStationFitout";
 import { createStationInterchangeGeometry } from "./world/stationInterchangeGeometry";
 import { createStationPlatformAccessGeometry } from "./world/railStationAccessGeometry";
 import { createRailTrainGeometry } from "./world/railTrainGeometry";
+import { createRailTrainRig } from "./world/railTrainRig";
+import { advanceRailTrain, createRailTrainOperationState } from "./world/railTrainOperations";
 
 const canvas = document.querySelector<HTMLCanvasElement>("#station-preview-canvas");
 const errorPanel = document.querySelector<HTMLElement>("#station-preview-error");
@@ -45,10 +47,25 @@ try {
     platformLengthM: 180, platformWidthM: 8, platformCount: 2
   } as const;
   createUltraModernRailStationGeometry(scene, stationOptions);
-  createRailTrainGeometry(scene, {
-    id: "akwantuo-commuter-train", centerX: 0, centerZ: 24,
+  const trainGeometry = createRailTrainGeometry(scene, {
+    id: "akwantuo-commuter-train", centerX: -35, centerZ: 24,
     groundElevationM: 0, carCount: 2
   });
+  const trainRig = createRailTrainRig(scene, trainGeometry, {
+    id: "akwantuo-commuter-train-rig",
+    origin: { x: -35, y: 0, z: 24 }
+  });
+  // A short, clearly preview-only shuttle demonstrates the train rig and
+  // deterministic stop controller without pretending to be a mapped service.
+  const shuttleConfig = {
+    path: [{ x: -35, z: 24 }, { x: 85, z: 24 }],
+    stops: [{ id: "preview-platform-stop", distanceM: 120, dwellSeconds: 8 }],
+    maximumSpeedMps: 8,
+    accelerationMps2: 0.7,
+    serviceBrakingMps2: 1.1
+  } as const;
+  let trainState = createRailTrainOperationState();
+  let previousFrameTime = performance.now();
   createStationPassengerFitout(scene, stationOptions);
   createStationPlatformAccessGeometry(scene, {
     stationId: "akwantuo-transport-hub-station",
@@ -75,7 +92,15 @@ try {
 
   engine.setHardwareScalingLevel(Math.max(1, window.devicePixelRatio / 1.5));
   engine.resize();
-  engine.runRenderLoop(() => scene.render());
+  engine.runRenderLoop(() => {
+    const now = performance.now();
+    const deltaSeconds = Math.min(1, Math.max(0, (now - previousFrameTime) / 1000));
+    previousFrameTime = now;
+    const frame = advanceRailTrain(shuttleConfig, trainState, deltaSeconds);
+    trainState = frame.state;
+    trainRig.update(frame);
+    scene.render();
+  });
   window.addEventListener("resize", () => engine.resize());
 } catch (error) {
   if (errorPanel) {
