@@ -48,12 +48,13 @@ try {
       districts: Number(document.documentElement.dataset.akwantuoBuildingDistrictCount ?? 0),
       properties: Number(document.documentElement.dataset.akwantuoPropertyCount ?? 0),
       businesses: Number(document.documentElement.dataset.akwantuoBusinessCount ?? 0),
+      venueProgramme: Number(document.documentElement.dataset.akwantuoVenueProgrammeCount ?? 0),
       interiorBlueprints: Number(document.documentElement.dataset.akwantuoInteriorBlueprintCount ?? 0),
       renderedInteriorRooms: Number(document.documentElement.dataset.akwantuoInteriorRoomCount ?? 0),
       interiorLinks: Number(document.documentElement.dataset.akwantuoBuildingInteriorLinkCount ?? 0),
       stage6Checks: document.documentElement.dataset.akwantuoStage6Checks === "passed"
     }));
-    if (stageSixCatalogues.buildings !== 23 || stageSixCatalogues.districts !== 12 || stageSixCatalogues.properties !== 23 || stageSixCatalogues.businesses !== 17 ||
+    if (stageSixCatalogues.buildings !== 23 || stageSixCatalogues.districts !== 12 || stageSixCatalogues.properties !== 23 || stageSixCatalogues.businesses !== 17 || stageSixCatalogues.venueProgramme !== 7 ||
         stageSixCatalogues.interiorBlueprints !== 10 || stageSixCatalogues.renderedInteriorRooms !== 10 ||
         stageSixCatalogues.interiorLinks !== 23 || !stageSixCatalogues.stage6Checks) {
       failures.push(target.name + ": Stage 6 building/district/property/interior catalogues are incomplete: " +
@@ -282,6 +283,10 @@ try {
         ? activeBusiness.id !== "business-" + interiorCase.buildingId || activeBusiness.serviceCount < 1 || !activeBusiness.notice.includes("Services:")
         : activeBusiness.id !== "" || activeBusiness.serviceCount !== 0) {
         throw new Error(target.name + ": business service information did not match " + interiorCase.buildingId + ": " + JSON.stringify(activeBusiness));
+      }
+      if (interiorCase.buildingId === "akwaaba-creative-arts-centre" &&
+          (!activeBusiness.notice.includes("modelling auditions") || !activeBusiness.notice.includes("fashion runway night"))) {
+        throw new Error(target.name + ": creative arts centre weekly programme was not displayed: " + activeBusiness.notice);
       }
       const interiorActionLabel = await page.locator("#interact-button").textContent();
       if (interiorActionLabel?.trim() !== "EXIT") {
