@@ -1,5 +1,5 @@
 import { findShortestRoadRoute, isRoadRouteValid } from "./roadRouting";
-import { getRoadNode } from "./roadNetwork";
+import { GREATER_ACCRA_ROAD_NETWORK, getRoadNode } from "./roadNetwork";
 
 export type PublicTransportCorridorMode = "trotro" | "city_bus" | "shared_taxi";
 
@@ -115,26 +115,19 @@ export function isPublicTransportRoutePlanValid(value: unknown): value is Public
   if (!route.waypointNodeIds.every((nodeId) => !!getRoadNode(nodeId))) return false;
   let distanceM = 0;
   for (let index = 0; index < route.roadSegmentIds.length; index += 1) {
-    const leg = findShortestRoadRoute(route.roadNodeIds[index], route.roadNodeIds[index + 1]);
-    if (!leg || !leg.roadSegmentIds.includes(route.roadSegmentIds[index])) return false;
-    const segment = leg.roadSegmentIds.find((id) => id === route.roadSegmentIds[index]);
-    if (!segment) return false;
-    const { GREATER_ACCRA_ROAD_NETWORK } = requireRoadNetwork();
-    const road = GREATER_ACCRA_ROAD_NETWORK.segments.find((item) => item.id === segment);
-    if (!road || road.futureExpansion) return false;
-    const path = findShortestRoadRoute(route.roadNodeIds[index], route.roadNodeIds[index + 1]);
-    if (!path || path.roadSegmentIds.length !== 1) return false;
-    distanceM += path.distanceM;
+    const segmentId = route.roadSegmentIds[index];
+    const segment = GREATER_ACCRA_ROAD_NETWORK.segments.find((item) => item.id === segmentId);
+    if (!segment || segment.futureExpansion) return false;
+    const from = route.roadNodeIds[index];
+    const to = route.roadNodeIds[index + 1];
+    if (!((segment.fromNodeId === from && segment.toNodeId === to) ||
+          (segment.fromNodeId === to && segment.toNodeId === from))) return false;
+    const leg = findShortestRoadRoute(from, to);
+    if (!leg || leg.roadSegmentIds.length !== 1 || leg.roadSegmentIds[0] !== segmentId) return false;
+    distanceM += leg.distanceM;
   }
-  return distanceM > 0 && Math.abs(distanceM - route.distanceM) < 1e-4;
+  return Math.abs(distanceM - route.distanceM) < 1e-4;
 }
-
-function requireRoadNetwork(): typeof import("./roadNetwork") {
-  // Static import-free indirection keeps the validation contract local and pure.
-  return requireRoadNetworkModule;
-}
-
-import * as requireRoadNetworkModule from "./roadNetwork";
 
 export function isGreaterAccraPublicTransportRouteCatalogueValid(): boolean {
   const ids = GREATER_ACCRA_PUBLIC_TRANSPORT_ROUTE_PLANS.map((route) => route.id);
