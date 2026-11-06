@@ -318,6 +318,18 @@ try {
           !propertyInteraction.notice.includes("purchase or rental is not enabled")) {
         throw new Error(target.name + ": property inspection interaction failed for " + interiorCase.buildingId + ": " + JSON.stringify(propertyInteraction));
       }
+      if (interiorCase.buildingId === "district-office") {
+        await page.locator("#stage6-premium-assets").click({ timeout: 5000 });
+        const premiumListing = await page.evaluate(() => ({
+          count: Number(document.documentElement.dataset.stage6PremiumListingViews ?? 0),
+          notice: document.querySelector("#notice")?.textContent ?? ""
+        }));
+        if (premiumListing.count !== 1 || !premiumListing.notice.includes("Akwaaba Cay Private Island") ||
+            !premiumListing.notice.includes("GH₵250,000,000") || !premiumListing.notice.includes("WaveRider Jet Ski") ||
+            !premiumListing.notice.includes("Ocean Crown Yacht") || !premiumListing.notice.includes("purchase and ownership transfer are not enabled")) {
+          throw new Error(target.name + ": premium island/boat property listing failed: " + JSON.stringify(premiumListing));
+        }
+      }
       if (interiorCase.buildingId === "akwaaba-creative-arts-centre") {
         await page.locator("#stage6-venue-action").click({ timeout: 5000 });
         const venueInteraction = await page.evaluate(() => ({
