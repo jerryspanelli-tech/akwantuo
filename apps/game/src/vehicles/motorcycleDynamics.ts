@@ -104,7 +104,8 @@ export function advanceMotorcycleDynamics(
   speed = approachZero(speed, config.rollingDragMps2 * deltaSeconds);
   speed = clamp(speed, -config.maximumReverseSpeedMps, config.maximumForwardSpeedMps);
 
-  const steeringAngle = input.steering * config.maximumSteeringAngleRadians;
+  const speedScaledSteering = config.maximumSteeringAngleRadians / (1 + Math.abs(speed) * 0.5);
+  const steeringAngle = input.steering * speedScaledSteering;
   const yawRate = speed * Math.tan(steeringAngle) / config.wheelbaseM;
   const headingRadians = state.headingRadians + yawRate * deltaSeconds;
   const lateralAcceleration = speed * yawRate;
