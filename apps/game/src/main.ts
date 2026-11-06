@@ -16,6 +16,8 @@ import { WORLD_CONFIG } from "./world/config";
 import { clampToWorld, isBlocked } from "./world/collision";
 import { createPreviewWorld } from "./world/previewWorld";
 import { createGreaterAccraPlayableWorld } from "./world/greaterAccraPlayableWorld";
+import { getMapRoadPath } from "./world/greaterAccraLayout";
+import { getRoadVehicleAutopilotControl } from "./vehicles/roadVehicleAutopilot";
 import { advanceRoadVehicleDynamics, type RoadVehicleDynamicsState } from "./vehicles/roadVehicleDynamics";
 import { createRoadVehicleGeometry } from "./vehicles/roadVehicleGeometry";
 import { createRoadVehicleRig } from "./vehicles/roadVehicleRig";
@@ -288,6 +290,46 @@ async function start(): Promise<void> {
   let currentAppearance = loadAppearance(window.localStorage);
   const player = createPlayer(scene, currentAppearance);
 
+  // First live NPC road vehicle: follows the authored N1 Tema corridor in the
+  // playable world. Speed tapers toward the route end so it stops safely rather
+  // than driving beyond the authored road. This is local prototype traffic;
+  // junction priority and multiplayer authority remain future work.
+  const npcTrafficPath = getMapRoadPath("n1-tema-corridor");
+  if (!npcTrafficPath || !npcTrafficPath.playableInFirstRelease || npcTrafficPath.points.length < 2) {
+    throw new Error("The first-release N1 NPC traffic route is unavailable.");
+  }
+  const npcTrafficRoute = npcTrafficPath.points.map((point) => ({ x: point.x, z: point.z }));
+  const npcTrafficOrigin = {
+    x: npcTrafficRoute[0].x,
+    y: 0,
+    z: npcTrafficRoute[0].z
+  };
+  const npcTrafficGeometry = createRoadVehicleGeometry(scene, {
+    id: "npc-n1-traffic-saloon",
+    centerX: npcTrafficOrigin.x,
+    centerZ: npcTrafficOrigin.z,
+    groundElevationM: 0,
+    bodyColour: "#b47a32"
+  });
+  const npcTrafficRig = createRoadVehicleRig(scene, npcTrafficGeometry, {
+    id: "npc-n1-traffic-saloon-rig",
+    origin: npcTrafficOrigin
+  });
+  let npcTrafficState: RoadVehicleDynamicsState = {
+    ...npcTrafficOrigin,
+    headingRadians: Math.atan2(
+      npcTrafficRoute[1].x - npcTrafficRoute[0].x,
+      npcTrafficRoute[1].z - npcTrafficRoute[0].z
+    ),
+    speedMps: 0
+  };
+  let npcTrafficDistanceM = 0;
+  const npcTrafficRouteLengthM = npcTrafficRoute.slice(1).reduce((total, point, index) =>
+    total + Math.hypot(point.x - npcTrafficRoute[index].x, point.z - npcTrafficRoute[index].z), 0);
+  document.documentElement.dataset.npcRoadTraffic = "1";
+  document.documentElement.dataset.npcRoadTrafficRoute = npcTrafficPath.roadSegmentId;
+
+
   // First real in-world road vehicle: a nearby saloon that can be entered,
   // driven and exited from the playable scene (not only the developer preview).
   const vehicleOrigin = { x: -6, y: 0, z: 5 };
@@ -378,6 +420,33 @@ async function start(): Promise<void> {
     const delta = Math.min(rawDelta, 0.05);
 
     if (hasEnteredWorld) {
+      const npcControl = getRoadVehicleAutopilotControl({
+        wheelbaseM: 2.65,
+        maximumSteeringAngleRadians: 0.48,
+        targetSpeedMps: Math.min(9, Math.sqrt(2 * 1.6 * Math.max(0, npcTrafficRouteLengthM - npcTrafficDistanceM))),
+        baseLookaheadM: 9,
+        speedLookaheadFactor: 0.65,
+        throttleGain: 0.32,
+        brakeGain: 0.55
+      }, npcTrafficState, npcTrafficRoute);
+      npcTrafficState = advanceRoadVehicleElapsed({
+        wheelbaseM: 2.65,
+        maximumForwardSpeedMps: 12,
+        maximumReverseSpeedMps: 0,
+        maximumAccelerationMps2: 2.2,
+        serviceBrakingMps2: 5.5,
+        maximumSteeringAngleRadians: 0.48,
+        rollingDragMps2: 0.28
+      }, npcTrafficState, {
+        throttle: npcControl.throttle,
+        brake: npcControl.brake,
+        steering: npcControl.steering
+      }, rawDelta);
+      npcTrafficRig.update(npcTrafficState);
+      npcTrafficDistanceM = npcControl.routeDistanceM;
+      document.documentElement.dataset.npcRoadTrafficDistanceM = npcTrafficDistanceM.toFixed(2);
+      document.documentElement.dataset.npcRoadTrafficSpeedMps = npcTrafficState.speedMps.toFixed(2);
+
       playableRailDemo.update(Math.min(rawDelta, 0.1));
       const mappedRailFrame = greaterAccraMappedRailService.update(rawDelta);
       const mappedRailState = greaterAccraMappedRailService.getState();
