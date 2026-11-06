@@ -61,7 +61,7 @@ const BUILDING_TEMPLATES: readonly DistrictBuildingTemplate[] = [
   { id: "market-kiosk", name: "Street Market Kiosk", use: "market_stall", side: "west", x: -23, z: 46, width: 8, depth: 8, floors: 1, exteriorStyle: "market", signText: "KIOSK", interiorId: "shop-small" },
   { id: "northside-workshop", name: "Northside Repairs", use: "workshop", side: "east", x: 23, z: 46, width: 10, depth: 10, floors: 1, exteriorStyle: "market", signText: "REPAIRS", interiorId: "workshop" },
   { id: "heritage-house", name: "Heritage Family House", use: "compound_house", side: "west", x: -18, z: 59, width: 12, depth: 10, floors: 1, exteriorStyle: "compound", interiorId: "compound-house" },
-  { id: "city-view-apartments", name: "City View Apartments", use: "apartment", side: "east", x: 18, z: 59, width: 12, depth: 10, floors: 3, exteriorStyle: "modern" }
+  { id: "city-view-apartments", name: "City View Apartments", use: "apartment", side: "east", x: 18, z: 59, width: 12, depth: 10, floors: 3, exteriorStyle: "modern", interiorId: "apartment" }
 ] as const;
 
 /**
