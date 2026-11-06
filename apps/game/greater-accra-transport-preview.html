@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#101a1b" />
+    <title>AKWANTUO — Greater Accra Transport Network Preview</title>
+  </head>
+  <body>
+    <main id="map-preview">
+      <canvas id="map-canvas" aria-label="Greater Accra transport network preview"></canvas>
+      <aside class="map-legend">
+        <strong>AKWANTUO · GREATER ACCRA</strong>
+        <span>TRANSPORT NETWORK PREVIEW</span>
+        <p><i class="road-key"></i> First-release road corridors</p>
+        <p><i class="coast-key"></i> Schematic coastline</p>
+        <p><i class="junction-key"></i> Junction design reservations</p>
+        <small>Planning geometry only · not a surveyed road map</small>
+      </aside>
+      <p class="map-status" id="map-status">Preparing network preview…</p>
+    </main>
+    <script type="module" src="/src/greaterAccraTransportPreview.ts"></script>
+  </body>
+</html>
