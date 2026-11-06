@@ -605,6 +605,8 @@ async function start(): Promise<void> {
           player.root.position.set(activeInterior.exitX, 0, activeInterior.exitZ);
           activeInterior = null;
           document.documentElement.dataset.activeInteriorId = "";
+          document.documentElement.dataset.activeBusinessId = "";
+          document.documentElement.dataset.activeBusinessServiceCount = "0";
           showNotice("You stepped back outside.");
         } else if (interactionState.mode === "on_foot" && passengerState.mode === "not_riding" &&
           DISTRICT_BUILDINGS.some((building) => {
@@ -642,7 +644,13 @@ async function start(): Promise<void> {
                 exitZ: nearbyBuilding.exitZ
               };
               document.documentElement.dataset.activeInteriorId = room.id;
-              showNotice("Entered " + nearbyBuilding.building.name + ". Press E to leave.");
+              const business = DISTRICT_BUSINESSES.find((item) => item.buildingId === nearbyBuilding.building.id);
+              document.documentElement.dataset.activeBusinessId = business?.id ?? "";
+              document.documentElement.dataset.activeBusinessServiceCount = String(business?.services.length ?? 0);
+              const businessSummary = business
+                ? " Services: " + business.services.join(", ") + ". Hours: " + business.opensAt + "–" + business.closesAt + "."
+                : "";
+              showNotice("Entered " + nearbyBuilding.building.name + "." + businessSummary + " Press E to leave.");
             } else {
               showNotice("This building interior is not ready yet.");
             }
