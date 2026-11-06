@@ -491,7 +491,7 @@ async function start(): Promise<void> {
     selectedShopProductIndex = (retailBrowseIndex + AKWANTUO_RETAIL_PRODUCTS.length - 4) % AKWANTUO_RETAIL_PRODUCTS.length;
     const items = visible.map((item) => item.name + " (GH₵" + (item.pricePesewas / 100).toFixed(2) +
       "; stock " + (shopStockById.get(item.id) ?? "sign in") + ")").join(", ");
-    showNotice("Shopkeeper: "Welcome! Take a look at today's goods." Shelves: " + items +
+    showNotice('Shopkeeper: "Welcome! Take a look at today\'s goods." Shelves: " + items +
       ". The first item in this group is selected; use Add selected item to put it in your basket.");
     document.documentElement.dataset.stage6RetailBrowseCount =
       String(Number(document.documentElement.dataset.stage6RetailBrowseCount ?? 0) + 1);
@@ -502,14 +502,14 @@ async function start(): Promise<void> {
     retailBasket.set(item.id, (retailBasket.get(item.id) ?? 0) + 1);
     const count = [...retailBasket.values()].reduce((sum, quantity) => sum + quantity, 0);
     document.documentElement.dataset.stage6RetailBasketCount = String(count);
-    showNotice("Shopkeeper: "One " + item.name + " added. Anything else?" Basket: " + count + " item(s).");
+    showNotice('Shopkeeper: "One " + item.name + " added. Anything else?" Basket: " + count + " item(s).');
   });
   shopkeeperTalkButton.addEventListener("click", () => {
     if (activeInterior?.roomId !== "convenience-store") return;
     const lines = [
-      "Shopkeeper: "Akwaaba! Welcome in. Cold drinks are in the fridges and snacks are on the racks."",
-      "Shopkeeper: "You can browse the shelves, add what you need, then pay at the counter."",
-      "Shopkeeper: "Prices are displayed beside each item. I will let you know if something is out of stock.""
+      'Shopkeeper: "Akwaaba! Welcome in. Cold drinks are in the fridges and snacks are on the racks."',
+      'Shopkeeper: "You can browse the shelves, add what you need, then pay at the counter."',
+      'Shopkeeper: "Prices are displayed beside each item. I will let you know if something is out of stock."'
     ];
     const index = Number(document.documentElement.dataset.stage6ShopkeeperDialogue ?? 0) % lines.length;
     document.documentElement.dataset.stage6ShopkeeperDialogue = String(index + 1);
@@ -1475,7 +1475,8 @@ async function start(): Promise<void> {
     try {
       activeAccountSession = await signInAkwantuo(email, password);
       const profile = await loadPlayerProfile(activeAccountSession);
-      await refreshPlayerEconomy();\n      if (profile?.look) {
+      await refreshPlayerEconomy();
+      if (profile?.look) {
         currentAppearance = resolveAppearance(profile.look);
         player.applyAppearance(currentAppearance);
         if (characterForm) fillAppearanceForm(characterForm, currentAppearance);
@@ -1510,7 +1511,8 @@ async function start(): Promise<void> {
         return;
       }
       activeAccountSession = result.session;
-      await savePlayerProfile(activeAccountSession, currentAppearance, displayName);\n      await refreshPlayerEconomy();
+      await savePlayerProfile(activeAccountSession, currentAppearance, displayName);
+      await refreshPlayerEconomy();
       if (accountStatus) accountStatus.textContent = `Welcome to AKWANTUO, ${displayName}. Your cloud profile is ready. Wallet: GH₵${(walletBalancePesewas / 100).toFixed(2)}.`;
       if (accountSignOut) accountSignOut.classList.remove("is-hidden");
       if (accountButton) accountButton.innerHTML = "ACCOUNT <small>CONNECTED</small>";
