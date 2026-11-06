@@ -117,7 +117,8 @@ try {
         renderFrameAt: document.documentElement.dataset.transportRenderFrameAt,
         actionRequestAt: document.documentElement.dataset.transportActionRequestAt,
         visibilityAtInput: document.documentElement.dataset.transportVisibilityAtInput,
-        visibilityNow: document.visibilityState
+        visibilityNow: document.visibilityState,
+        runtimeErrors: failures.slice(-12)
       }));
       console.error(target.name + ": trotro boarding diagnostic " + JSON.stringify(boardingDiagnostic));
       throw error;
