@@ -202,22 +202,25 @@ export function createCircleGroundGeometry(
     const perpendicularZ = -Math.sin(bearing);
     const startDistance = options.outerRadiusM + 9;
     const endDistance = options.outerRadiusM + approach.roadLengthM - 5;
-    const centreLine = MeshBuilder.CreateLines(
+    const approachDashes: Vector3[][] = [];
+    for (let distance = startDistance; distance < endDistance; distance += 10) {
+      const dashEnd = Math.min(distance + 4, endDistance);
+      approachDashes.push([
+        new Vector3(
+          options.centerX + directionX * distance,
+          markingY,
+          options.centerZ + directionZ * distance
+        ),
+        new Vector3(
+          options.centerX + directionX * dashEnd,
+          markingY,
+          options.centerZ + directionZ * dashEnd
+        )
+      ]);
+    }
+    const centreLine = MeshBuilder.CreateLineSystem(
       `${options.id}-approach-centreline-${approach.id}`,
-      {
-        points: [
-          new Vector3(
-            options.centerX + directionX * startDistance,
-            markingY,
-            options.centerZ + directionZ * startDistance
-          ),
-          new Vector3(
-            options.centerX + directionX * endDistance,
-            markingY,
-            options.centerZ + directionZ * endDistance
-          )
-        ]
-      },
+      { lines: approachDashes, updatable: false },
       scene
     );
     centreLine.color = LINE_WHITE;
