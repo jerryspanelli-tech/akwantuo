@@ -335,10 +335,16 @@ async function start(): Promise<void> {
     window.location.hostname === "localhost";
   const transportRailTestMode = isLocalTransportTestHost &&
     new URLSearchParams(window.location.search).get("akwantuoTransportTest") === "rail";
+  const interiorTestMode = isLocalTransportTestHost &&
+    new URLSearchParams(window.location.search).get("akwantuoInteriorTest") === "shop";
   if (transportRailTestMode) {
     // Local-only browser-test spawn; never active on a deployed game host.
     player.root.position.set(-250, 0, 150);
     document.documentElement.dataset.transportTestMode = "rail";
+  } else if (interiorTestMode) {
+    // Local-only spawn directly outside Osu Corner Mart for entry/exit verification.
+    player.root.position.set(-12.1, 0, -72);
+    document.documentElement.dataset.interiorTestMode = "shop";
   }
 
   // First live NPC road vehicle: follows the authored N1 Tema corridor in the
@@ -584,6 +590,7 @@ async function start(): Promise<void> {
           room?.root.setEnabled(false);
           player.root.position.set(activeInterior.exitX, 0, activeInterior.exitZ);
           activeInterior = null;
+          document.documentElement.dataset.activeInteriorId = "";
           showNotice("You stepped back outside.");
         } else if (interactionState.mode === "on_foot" && passengerState.mode === "not_riding") {
           const nearbyBuilding = DISTRICT_BUILDINGS
@@ -612,6 +619,7 @@ async function start(): Promise<void> {
                 exitX: nearbyBuilding.exitX,
                 exitZ: nearbyBuilding.exitZ
               };
+              document.documentElement.dataset.activeInteriorId = room.id;
               showNotice("Entered " + nearbyBuilding.building.name + ". Press E to leave.");
             } else {
               showNotice("This building interior is not ready yet.");
