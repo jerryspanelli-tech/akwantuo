@@ -20,6 +20,8 @@ import { createRoadVehicleGeometry } from "./vehicles/roadVehicleGeometry";
 import { createRoadVehicleRig } from "./vehicles/roadVehicleRig";
 import { enterVehicle, exitVehicle, type VehicleInteractionState } from "./vehicles/vehicleInteraction";
 import { PassengerCameraRig } from "./vehicles/passengerCamera";
+import { createPublicTransportVehicle } from "./vehicles/publicTransportVehicle";
+import { alightPublicTransport, boardPublicTransport, type PublicTransportPassengerState } from "./world/publicTransportOperations";
 
 const bootScreen = document.querySelector<HTMLElement>("#boot-screen");
 const gameShell = document.querySelector<HTMLElement>("#game-shell");
@@ -258,6 +260,12 @@ async function start(): Promise<void> {
     id: "playable-starter-saloon-rig",
     origin: vehicleOrigin
   });
+  const publicTaxiOrigin = { x: 2.8, y: 0, z: 5 };
+  const publicTaxi = createPublicTransportVehicle(scene, "playable-shared-trotro", publicTaxiOrigin);
+  let publicTaxiState: RoadVehicleDynamicsState = { x: publicTaxiOrigin.x, z: publicTaxiOrigin.z, headingRadians: Math.PI, speedMps: 0 };
+  let publicPassengerState: PublicTransportPassengerState = { mode: "not_riding", balancePesewas: 10000 };
+  let publicRideArrived = false;
+  const publicRideEndZ = -45;
   let vehicleState: RoadVehicleDynamicsState = {
     x: vehicleOrigin.x, z: vehicleOrigin.z, headingRadians: 0, speedMps: 0
   };
@@ -324,9 +332,23 @@ async function start(): Promise<void> {
     const delta = Math.min(engine.getDeltaTime() / 1000, 0.05);
 
     if (hasEnteredWorld) {
+      if (publicPassengerState.mode === "riding") {
+        const taxiStep = advanceRoadVehicleDynamics({ wheelbaseM: 2.8, maximumForwardSpeedMps: 7, maximumReverseSpeedMps: 2, maximumAccelerationMps2: 1.8, serviceBrakingMps2: 4, maximumSteeringAngleRadians: 0.35, rollingDragMps2: 0.3 }, publicTaxiState, { throttle: publicRideArrived ? 0 : 1, brake: 0, steering: 0 }, Math.min(delta, 0.1));
+        if (taxiStep.z <= publicRideEndZ) { publicTaxiState = { ...taxiStep, z: publicRideEndZ, speedMps: 0 }; publicRideArrived = true; showNotice("You have reached the final stop. Press ALIGHT to leave the trotro."); }
+        else publicTaxiState = taxiStep;
+        publicTaxi.update(publicTaxiState);
+      }
       if (vehicleActionRequested) {
         vehicleActionRequested = false;
-        if (interactionState.mode === "on_foot") {
+        if (publicPassengerState.mode === "riding") {
+          const result = alightPublicTransport(publicPassengerState, { id: "preview-terminal", vehicleStopped: publicRideArrived, boardingOpen: false, alightingOpen: publicRideArrived, remainingSeats: 0 }, "preview-shared-trotro");
+          if (result.ok) { publicPassengerState = result.state; passengerCameraRig?.dispose(); passengerCameraRig = null; player.root.setEnabled(true); player.root.position.set(publicTaxiState.x - 1.7, 0, publicTaxiState.z); showNotice("You alighted. Balance: GH₵" + (publicPassengerState.balancePesewas / 100).toFixed(2)); }
+          else showNotice("The trotro is still travelling. Wait for the terminal stop.");
+        } else if (interactionState.mode === "on_foot" && Math.hypot(player.root.position.x - (publicTaxiState.x - 1.15), player.root.position.z - publicTaxiState.z) <= 3) {
+          const result = boardPublicTransport(publicPassengerState, { id: "preview-origin", vehicleStopped: publicTaxiState.speedMps === 0, boardingOpen: !publicRideArrived, alightingOpen: false, remainingSeats: 8 }, "preview-shared-trotro", "preview-route", 0.5, { baseFarePesewas: 200, perKilometrePesewas: 100 });
+          if (result.ok) { publicPassengerState = result.state; passengerCameraRig = new PassengerCameraRig(scene, { interiorWindow: publicTaxi.interiorWindow, exteriorFollow: publicTaxi.exteriorFollow }); vehicleCameraModeIndex = 0; player.root.setEnabled(false); showNotice("Boarded shared trotro. Fare: GH₵" + (result.state.farePaidPesewas / 100).toFixed(2)); }
+          else showNotice("Unable to board: " + result.reason.replaceAll("_", " ") + ".");
+        } else if (interactionState.mode === "on_foot") {
           const entryX = vehicleState.x - Math.cos(vehicleState.headingRadians) * 1.15;
           const entryZ = vehicleState.z + Math.sin(vehicleState.headingRadians) * 1.15;
           const distanceToEntryM = Math.hypot(player.root.position.x - entryX, player.root.position.z - entryZ);
@@ -400,7 +422,7 @@ async function start(): Promise<void> {
         camera.target = Vector3.Lerp(camera.target, new Vector3(vehicleState.x, 1.4, vehicleState.z), Math.min(1, delta * 8));
         camera.alpha = -Math.PI / 2 - vehicleState.headingRadians;
         camera.radius = 9;
-        if (interactButton) interactButton.textContent = "EXIT";
+        if (interactButton) interactButton.textContent = publicPassengerState.mode === "riding" ? "ALIGHT" : "EXIT";
         if (jumpButton) jumpButton.classList.add("is-hidden");
         if (vehicleViewButton) vehicleViewButton.classList.remove("is-hidden");
       } else {
@@ -409,9 +431,9 @@ async function start(): Promise<void> {
         if (vehicleViewButton) vehicleViewButton.classList.add("is-hidden");
       }
 
-      let inputX = interactionState.mode === "on_foot" ? touchInput.x : 0;
-      let inputZ = interactionState.mode === "on_foot" ? touchInput.z : 0;
-      if (interactionState.mode === "on_foot" && (pressedKeys.has("a") || pressedKeys.has("arrowleft"))) inputX -= 1;
+      let inputX = interactionState.mode === "on_foot" && publicPassengerState.mode !== "riding" ? touchInput.x : 0;
+      let inputZ = interactionState.mode === "on_foot" && publicPassengerState.mode !== "riding" ? touchInput.z : 0;
+      if (interactionState.mode === "on_foot" && publicPassengerState.mode !== "riding" && (pressedKeys.has("a") || pressedKeys.has("arrowleft"))) inputX -= 1;
       if (interactionState.mode === "on_foot" && (pressedKeys.has("d") || pressedKeys.has("arrowright"))) inputX += 1;
       if (interactionState.mode === "on_foot" && (pressedKeys.has("w") || pressedKeys.has("arrowup"))) inputZ += 1;
       if (interactionState.mode === "on_foot" && (pressedKeys.has("s") || pressedKeys.has("arrowdown"))) inputZ -= 1;
@@ -425,7 +447,7 @@ async function start(): Promise<void> {
       const forward = new Vector3(-Math.sin(camera.alpha), 0, -Math.cos(camera.alpha));
       const right = new Vector3(-forward.z, 0, forward.x);
       const direction = forward.scale(inputZ).add(right.scale(inputX));
-      const moving = interactionState.mode === "on_foot" && direction.lengthSquared() > 0.001;
+      const moving = interactionState.mode === "on_foot" && publicPassengerState.mode !== "riding" && direction.lengthSquared() > 0.001;
 
       if (moving) {
         direction.normalize();
@@ -439,7 +461,7 @@ async function start(): Promise<void> {
         walkClock += delta * 9;
       }
 
-      if (interactionState.mode === "on_foot" && jumpRequested && onGround) {
+      if (interactionState.mode === "on_foot" && publicPassengerState.mode !== "riding" && jumpRequested && onGround) {
         verticalVelocity = WORLD_CONFIG.movement.jumpVelocity;
         onGround = false;
       }
@@ -448,7 +470,7 @@ async function start(): Promise<void> {
         verticalVelocity -= WORLD_CONFIG.movement.gravity * delta;
         player.root.position.y += verticalVelocity * delta;
       }
-      if (interactionState.mode === "on_foot" && player.root.position.y <= 0) {
+      if (interactionState.mode === "on_foot" && publicPassengerState.mode !== "riding" && player.root.position.y <= 0) {
         player.root.position.y = 0;
         verticalVelocity = 0;
         onGround = true;
