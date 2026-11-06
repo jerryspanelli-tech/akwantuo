@@ -16,6 +16,7 @@ import { createCircleInterchangeGeometry } from "./circleInterchangeGeometry";
 import { createGreaterAccraRailTrackGeometry } from "./railTrackGeometry";
 import { GREATER_ACCRA_RAIL_NODES } from "./railNetwork";
 import { GREATER_ACCRA_RAIL_STATIONS } from "./railStations";
+import { deriveRailRoadCrossingCandidates } from "./railRoadCrossings";
 
 export type GreaterAccraPlayableWorldReport = Readonly<{
   roadSurfaceMeshCount: number;
@@ -23,6 +24,7 @@ export type GreaterAccraPlayableWorldReport = Readonly<{
   railRouteCount: number;
   plannedStationAnchorCount: number;
   circleElevatedStructureCount: number;
+  railRoadCrossingCandidateCount: number;
 }>;
 
 /**
@@ -81,6 +83,20 @@ export function createGreaterAccraPlayableWorld(
   const roadMarkingMeshes = createGreaterAccraRoadMarkings(scene, { sampleSpacingM: 35 });
   const circle = createCircleInterchangeGeometry(scene);
   const railTracks = createGreaterAccraRailTrackGeometry(scene, { sleeperSpacingM: 1.2 });
+  const railCrossingCandidates = deriveRailRoadCrossingCandidates();
+  const crossingReviewMaterial = new StandardMaterial("greater-accra-rail-crossing-review-material", scene);
+  crossingReviewMaterial.diffuseColor = new Color3(0.92, 0.61, 0.16);
+  for (const crossing of railCrossingCandidates) {
+    const marker = MeshBuilder.CreateCylinder(
+      "rail-road-crossing-review-" + crossing.id,
+      { height: 9, diameter: 22, tessellation: 12 },
+      scene
+    );
+    marker.position.set(crossing.position.x, 4.5, crossing.position.z);
+    marker.material = crossingReviewMaterial;
+    marker.isPickable = false;
+    marker.checkCollisions = false;
+  }
 
   const stationMarkerMaterial = new StandardMaterial("greater-accra-planned-station-marker-material", scene);
   stationMarkerMaterial.diffuseColor = new Color3(0.88, 0.67, 0.29);
@@ -103,6 +119,7 @@ export function createGreaterAccraPlayableWorld(
     roadMarkingMeshCount: roadMarkingMeshes.length,
     railRouteCount: railTracks.length,
     plannedStationAnchorCount: GREATER_ACCRA_RAIL_STATIONS.filter((item) => item.status === "planned").length,
-    circleElevatedStructureCount: Object.keys(circle.elevatedStructures).length
+    circleElevatedStructureCount: Object.keys(circle.elevatedStructures).length,
+    railRoadCrossingCandidateCount: railCrossingCandidates.length
   };
 }
