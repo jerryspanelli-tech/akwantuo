@@ -593,7 +593,15 @@ async function start(): Promise<void> {
           activeInterior = null;
           document.documentElement.dataset.activeInteriorId = "";
           showNotice("You stepped back outside.");
-        } else if (interactionState.mode === "on_foot" && passengerState.mode === "not_riding") {
+        } else if (interactionState.mode === "on_foot" && passengerState.mode === "not_riding" &&
+          DISTRICT_BUILDINGS.some((building) => {
+            if (!building.interiorId) return false;
+            const frontX = building.side === "west"
+              ? building.x + building.width / 2
+              : building.x - building.width / 2;
+            const exitX = frontX + (building.side === "west" ? 1.4 : -1.4);
+            return Math.hypot(player.root.position.x - exitX, player.root.position.z - building.z) <= 3.5;
+          })) {
           const nearbyBuilding = DISTRICT_BUILDINGS
             .filter((building) => building.interiorId)
             .map((building) => {
@@ -625,8 +633,6 @@ async function start(): Promise<void> {
             } else {
               showNotice("This building interior is not ready yet.");
             }
-          } else {
-            showNotice("Move closer to a building entrance to enter.");
           }
         } else if (passengerState.mode === "riding" && passengerState.vehicleId === "greater-accra-mapped-rail-train") {
           const atTemaTerminal = mappedRailState.completed ||
