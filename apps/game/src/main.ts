@@ -352,7 +352,7 @@ async function start(): Promise<void> {
   Object.assign(stage6ActionPanel.style, {
     position: "fixed", left: "50%", bottom: "104px", transform: "translateX(-50%)",
     zIndex: "30", display: "flex", flexWrap: "wrap", justifyContent: "center",
-    gap: "8px", width: "min(94vw, 620px)", padding: "10px",
+    gap: "8px", width: "min(94vw, 620px)", padding: "10px", display: "none",
     borderRadius: "14px", background: "rgba(10, 18, 24, 0.92)",
     border: "1px solid rgba(255,255,255,0.22)", boxSizing: "border-box"
   });
