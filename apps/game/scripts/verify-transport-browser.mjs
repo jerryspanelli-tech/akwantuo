@@ -45,13 +45,14 @@ try {
     console.log(target.name + ": Greater Accra playable transport " + JSON.stringify(playableTransport));
     const stageSixCatalogues = await page.evaluate(() => ({
       buildings: Number(document.documentElement.dataset.akwantuoBuildingCount ?? 0),
+      districts: Number(document.documentElement.dataset.akwantuoBuildingDistrictCount ?? 0),
       properties: Number(document.documentElement.dataset.akwantuoPropertyCount ?? 0),
       interiorBlueprints: Number(document.documentElement.dataset.akwantuoInteriorBlueprintCount ?? 0),
       renderedInteriorRooms: Number(document.documentElement.dataset.akwantuoInteriorRoomCount ?? 0)
     }));
-    if (stageSixCatalogues.buildings !== 22 || stageSixCatalogues.properties !== 22 ||
+    if (stageSixCatalogues.buildings !== 22 || stageSixCatalogues.districts !== 12 || stageSixCatalogues.properties !== 22 ||
         stageSixCatalogues.interiorBlueprints !== 8 || stageSixCatalogues.renderedInteriorRooms !== 8) {
-      failures.push(target.name + ": Stage 6 building/property/interior catalogues are incomplete: " +
+      failures.push(target.name + ": Stage 6 building/district/property/interior catalogues are incomplete: " +
         JSON.stringify(stageSixCatalogues));
     }
     console.log(target.name + ": Stage 6 catalogues " + JSON.stringify(stageSixCatalogues));
