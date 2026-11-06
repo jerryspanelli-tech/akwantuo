@@ -23,7 +23,20 @@ try {
     if (!status?.includes("Your world is ready")) failures.push(target.name + ": startup status was " + status);
     await page.locator("#play-button").click();
     await page.waitForFunction(() => !document.querySelector("#game-hud")?.classList.contains("is-hidden"), { timeout: 10000 });
-    await page.waitForTimeout(1800);
+    await page.waitForTimeout(1200);
+
+    // Exercise a complete trotro journey, including the passenger camera control.
+    if (target.isMobile) await page.locator("#interact-button").click();
+    else await page.keyboard.press("e");
+    await page.waitForFunction(() => (document.querySelector("#notice")?.textContent ?? "").includes("Boarded shared trotro"), { timeout: 5000 });
+    if (target.isMobile) await page.locator("#vehicle-view-button").click();
+    else await page.keyboard.press("c");
+    await page.waitForFunction(() => (document.querySelector("#notice")?.textContent ?? "").includes("Vehicle view"), { timeout: 5000 });
+    await page.waitForTimeout(15000);
+    if (target.isMobile) await page.locator("#interact-button").click();
+    else await page.keyboard.press("e");
+    await page.waitForFunction(() => (document.querySelector("#notice")?.textContent ?? "").includes("You alighted"), { timeout: 5000 });
+
     if (failures.length) throw new Error(failures.join("\n"));
     await page.screenshot({ path: "artifacts/akwantuo-" + target.name + "-transport-game.png", fullPage: true });
     await context.close();
