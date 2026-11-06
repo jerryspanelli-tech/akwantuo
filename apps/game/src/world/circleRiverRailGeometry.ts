@@ -29,11 +29,11 @@ export const CIRCLE_RIVER_RAIL_DESIGN = {
   },
   railway: {
     centreline: [{ x: -330, z: 235 }, { x: -165, z: 145 }, { x: 0, z: 55 }, { x: 165, z: -35 }, { x: 330, z: -125 }],
-    trackGaugeM: 1.435,
+    trackGaugeM: 1.067,
     ballastWidthM: 8,
-    sleeperSpacingM: 6
+    sleeperSpacingM: 1.5
   },
-  designNote: "River and railway paths are schematic local placeholders arranged to demonstrate two distinct protected corridors beneath/near the elevated Ring Road. Confirm actual alignments, channel levels, railway gauge and clearances against reliable survey/site data before treating them as map truth."
+  designNote: "River and railway paths are schematic local placeholders arranged to demonstrate two distinct protected corridors beneath/near the elevated Ring Road. The 1,067 mm gauge represents Ghana's existing Cape-gauge Eastern Line; local alignment, channel levels and clearances still require site verification. Sleeper spacing is a simplified preview detail, not a construction specification."
 } as const;
 
 type Point2 = Readonly<{ x: number; z: number }>;
