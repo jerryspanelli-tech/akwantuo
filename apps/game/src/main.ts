@@ -33,6 +33,7 @@ const canvas = document.querySelector<HTMLCanvasElement>("#world-canvas");
 const playButton = document.querySelector<HTMLButtonElement>("#play-button");
 const mainMenu = document.querySelector<HTMLElement>("#main-menu");
 const footerBar = document.querySelector<HTMLElement>(".footer-bar");
+let startupHandoffStage = "module_loaded";
 const gameHud = document.querySelector<HTMLElement>("#game-hud");
 const joystick = document.querySelector<HTMLElement>("#joystick");
 const joystickStick = document.querySelector<HTMLElement>("#joystick-stick");
@@ -553,13 +554,19 @@ async function start(): Promise<void> {
 
   // Reveal the game shell before starting the continuous render loop. This
   // keeps the boot-to-menu handoff independent of frame scheduling on slower devices.
+  startupHandoffStage = "show_ready_status";
   bootStatus.textContent = "Your world is ready.";
+  startupHandoffStage = "hide_boot_screen";
   bootScreen.hidden = true;
+  startupHandoffStage = "reveal_game_shell";
   gameShell.hidden = false;
   gameShell.classList.remove("is-hidden");
+  startupHandoffStage = "resize_game_engine";
   engine.resize();
 
+  startupHandoffStage = "start_render_loop";
   engine.runRenderLoop(render);
+  startupHandoffStage = "startup_complete";
   window.addEventListener("resize", () => engine.resize());
 
   const openCharacterCreator = (): void => {
@@ -614,7 +621,9 @@ async function start(): Promise<void> {
 }
 
 start().catch((error: unknown) => {
-  console.error("AKWANTUO startup failed:", error);
+  console.error("AKWANTUO startup failed at " + startupHandoffStage + ":", error);
+  document.documentElement.dataset.startupHandoffStage = startupHandoffStage;
+  document.documentElement.dataset.startupHandoffError = error instanceof Error ? error.message : String(error);
   if (bootStatus) {
     bootStatus.textContent = "Unable to start the 3D preview. Please refresh and try again.";
   }
