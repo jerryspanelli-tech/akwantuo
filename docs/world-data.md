@@ -602,3 +602,10 @@ This is a content catalogue only. It does not contain 3D vehicle assets, driving
 
 
 The `.github/workflows/transport-preview.yml` workflow now builds this preview on relevant transport-preview changes, opens the production Vite preview in Chromium, captures a 1440 × 1000 screenshot and uploads the image together with a short scope/limitations report as the `akwantuo-transport-preview` workflow artifact. This provides a repeatable visual build check without deploying the game publicly.
+
+
+## Greater Accra road-traffic gameplay baseline
+
+Added `apps/game/src/world/trafficRules.ts` to define the initial road-traffic conventions for the Greater Accra simulation: right-hand driving, left-side overtaking where safe and permitted, counterclockwise roundabout circulation, giving way to traffic already circulating, keeping junctions clear, stopping at red signals, respecting marked pedestrian crossings, yielding to emergency vehicles and using designated public-transport stopping areas.
+
+The rules deliberately do not assign numerical speed limits or assume that a road class automatically determines a posted limit. Posted signs, local restrictions, signal phases, lane controls and junction priority must be supplied by reviewed road-control data. This is a gameplay baseline, not a complete legal code or a live traffic simulation. No AI drivers, vehicle physics, traffic lights, collision rules or multiplayer traffic authority are implemented by this catalogue.
