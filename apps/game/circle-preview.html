@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#11191a" />
+    <meta name="description" content="AKWANTUO developer preview of the Kwame Nkrumah Circle interchange." />
+    <title>AKWANTUO — Circle Interchange Preview</title>
+  </head>
+  <body>
+    <main class="preview-shell">
+      <canvas id="preview-canvas" aria-label="Interactive 3D Circle interchange preview"></canvas>
+      <header class="preview-header">
+        <a href="./" class="preview-brand">AKWANTUO<span>.</span></a>
+        <div>
+          <p class="preview-eyebrow">WORLD DEVELOPMENT · GREATER ACCRA</p>
+          <h1>Kwame Nkrumah Circle</h1>
+          <p class="preview-subtitle">Ground roundabout and elevated viaduct layout</p>
+        </div>
+      </header>
+      <aside class="preview-info">
+        <span class="preview-status">DEVELOPER PREVIEW</span>
+        <p>4 elevated structures · 41 support stations · 6 ground approaches</p>
+        <small>Game-layout prototype. Not a surveyed reconstruction. Drag to orbit · pinch or scroll to zoom.</small>
+      </aside>
+      <div class="preview-error" id="preview-error" role="alert" hidden></div>
+    </main>
+    <script type="module" src="/src/circlePreview.ts"></script>
+  </body>
+</html>
