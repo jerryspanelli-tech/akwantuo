@@ -93,7 +93,22 @@ try {
     // Exercise a complete trotro journey, including the passenger camera control.
     if (target.isMobile) await page.locator("#interact-button").click({ timeout: 5000 });
     else await page.keyboard.press("e");
-    await page.waitForFunction(() => (document.querySelector("#notice")?.textContent ?? "").includes("Boarded shared trotro"), { timeout: 5000 });
+    try {
+      await page.waitForFunction(() => (document.querySelector("#notice")?.textContent ?? "").includes("Boarded shared trotro"), { timeout: 5000 });
+    } catch (error) {
+      const boardingDiagnostic = await page.evaluate(() => ({
+        notice: document.querySelector("#notice")?.textContent ?? "",
+        playerX: document.documentElement.dataset.transportPlayerX,
+        playerZ: document.documentElement.dataset.transportPlayerZ,
+        trotroX: document.documentElement.dataset.transportTrotroX,
+        trotroZ: document.documentElement.dataset.transportTrotroZ,
+        passengerMode: document.documentElement.dataset.transportPassengerMode,
+        lastActionNotice: document.documentElement.dataset.transportLastNotice,
+        lastActionAt: document.documentElement.dataset.transportLastActionAt
+      }));
+      console.error(target.name + ": trotro boarding diagnostic " + JSON.stringify(boardingDiagnostic));
+      throw error;
+    }
     if (target.isMobile) {
       await page.locator("#vehicle-view-button").waitFor({ state: "visible", timeout: 5000 });
       await page.locator("#vehicle-view-button").click({ timeout: 5000 });
