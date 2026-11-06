@@ -48,7 +48,7 @@ export function createInteriorRooms(scene: Scene): readonly InteriorRoomInstance
   return INTERIOR_BLUEPRINTS.map((blueprint, index) => {
     const root = new TransformNode("interior-room-" + blueprint.id, scene);
     // Interiors are streamed as dormant room modules and enabled only on entry.
-    root.position.set(10400 + index * 26, 0, 7800);
+    root.position.set(10400 + index * 40, 0, 7800);
     root.setEnabled(false);
 
     const wallMaterial = createMaterial(scene, blueprint.id + "-walls", "#d5c7aa");
