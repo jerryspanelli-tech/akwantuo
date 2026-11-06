@@ -22,6 +22,7 @@
 - Added a swept circular-footprint collision helper for local vehicle-to-vehicle checks. The starter saloon uses it against the playable trotro so a low frame rate cannot skip through the minibus; deterministic smoke checks cover clear paths, crossing paths and invalid footprints.
 - The starter saloon is now spawned in the main playable scene. The player can enter with E / the on-screen action control, drive with WASD or the touch joystick, brake, and exit only after stopping in a safe space.
 - The playable saloon now has an in-cabin window view, interior free-look and exterior follow camera modes, cycled with C / the on-screen VIEW control. Camera anchors follow the vehicle rig.
+- Road-vehicle simulation now preserves elapsed time through slow render frames by subdividing up to one second of catch-up into stable 100 ms dynamics steps. This avoids making the trotro journey crawl when browser rendering is temporarily slow; long tab-resume pauses remain bounded.
 - This first playable vehicle slice is local-only and uses the prototype kinematic model; it is not yet a complete vehicle fleet or network-authoritative system.
 
 
