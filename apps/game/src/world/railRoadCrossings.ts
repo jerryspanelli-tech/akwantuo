@@ -14,6 +14,7 @@ export type RailRoadCrossingCandidate = Readonly<{
   roadHeadingRadians: number;
   railHeadingRadians: number;
   crossingAngleDegrees: number;
+  geometryReview: "standard_angle" | "shallow_angle";
   railDistanceM: number;
   status: "review_required";
 }>;
@@ -100,7 +101,7 @@ function routeIntersections(
         angle % Math.PI,
         Math.PI - (angle % Math.PI)
       ) * 180 / Math.PI;
-      if (crossingAngleDegrees < 15) continue;
+      if (crossingAngleDegrees < 1) continue;
       found.push({
         position: hit.position,
         roadHeadingRadians,
@@ -143,6 +144,7 @@ export function deriveRailRoadCrossingCandidates(): readonly RailRoadCrossingCan
           roadHeadingRadians: intersection.roadHeadingRadians,
           railHeadingRadians: intersection.railHeadingRadians,
           crossingAngleDegrees: intersection.crossingAngleDegrees,
+          geometryReview: intersection.crossingAngleDegrees < 15 ? "shallow_angle" : "standard_angle",
           railDistanceM: intersection.railDistanceM,
           status: "review_required"
         });
@@ -170,7 +172,8 @@ export function isRailRoadCrossingCandidateValid(value: unknown): value is RailR
     Number.isFinite(candidate.roadHeadingRadians) &&
     Number.isFinite(candidate.railHeadingRadians) &&
     Number.isFinite(candidate.crossingAngleDegrees) &&
-    candidate.crossingAngleDegrees! >= 15 && candidate.crossingAngleDegrees! <= 90 &&
+    candidate.crossingAngleDegrees! >= 1 && candidate.crossingAngleDegrees! <= 90 &&
+    candidate.geometryReview === (candidate.crossingAngleDegrees! < 15 ? "shallow_angle" : "standard_angle") &&
     Number.isFinite(candidate.railDistanceM) && candidate.railDistanceM! >= 0 &&
     candidate.status === "review_required";
 }
