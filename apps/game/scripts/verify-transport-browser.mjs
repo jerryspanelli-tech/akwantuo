@@ -104,7 +104,10 @@ try {
         trotroZ: document.documentElement.dataset.transportTrotroZ,
         passengerMode: document.documentElement.dataset.transportPassengerMode,
         lastActionNotice: document.documentElement.dataset.transportLastNotice,
-        lastActionAt: document.documentElement.dataset.transportLastActionAt
+        lastActionAt: document.documentElement.dataset.transportLastActionAt,
+        lastKey: document.documentElement.dataset.transportLastKey,
+        hasEnteredWorld: document.documentElement.dataset.transportHasEnteredWorld,
+        actionRequest: document.documentElement.dataset.transportActionRequest
       }));
       console.error(target.name + ": trotro boarding diagnostic " + JSON.stringify(boardingDiagnostic));
       throw error;
