@@ -68,6 +68,7 @@ const PALETTES = {
 } as const;
 
 function material(scene: Scene, name: string, hex: string): StandardMaterial {
+  void name;
   const sharedName = "building-shared-material-" + hex;
   const existing = scene.getMaterialByName(sharedName);
   if (existing instanceof StandardMaterial) return existing;
