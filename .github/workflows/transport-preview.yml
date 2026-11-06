@@ -10,6 +10,7 @@ on:
       - "apps/game/src/world/railTrainOperations.ts"
       - "apps/game/src/world/railTrainRig.ts"
       - "apps/game/src/world/railService.ts"
+      - "apps/game/src/world/railStations.ts"
       - "apps/game/src/world/railStationFitout.ts"
       - "apps/game/src/world/railStationAccessGeometry.ts"
       - "apps/game/src/world/railStationInterchange.ts"
@@ -74,9 +75,9 @@ jobs:
             echo "Page: /transport-preview.html"
             echo "Viewport: 1440 x 1000"
             echo "Screenshot: artifacts/akwantuo-transport-preview.png"
-            echo "Scope: ultra-modern railway station concept, passenger concourse fit-out, sheltered step-free forecourt walkway, illustrative trotro, city-bus, taxi and ride-hailing forecourt, and a preview-only moving two-car shuttle demonstrating the train rig and station-stop controller."
+            echo "Scope: ultra-modern railway station concept, passenger concourse fit-out, sheltered step-free forecourt walkway, illustrative trotro, city-bus, taxi and ride-hailing forecourt, and a preview-only moving two-car shuttle demonstrating the train rig and station-stop controller. Preview startup also smoke-checks that candidate Circle/Odaw is excluded from operational stops and that invalid train states are rejected."
             echo "Validation: npm typecheck and production Vite build must pass before capture."
-            echo "Limitations: developer preview only; not integrated into the playable game; the moving shuttle is a short preview-only path and is not the Greater Accra mapped rail service; no live network trains, traffic simulation, road-vehicle physics, collision or real station-site coordinates."
+            echo "Limitations: developer preview only; not integrated into the playable game; the moving shuttle is a short preview-only path and is not the Greater Accra mapped rail service; startup smoke checks cover prototype data rules only, not railway safety; no live network trains, traffic simulation, road-vehicle physics, collision or real station-site coordinates."
           } > artifacts/transport-preview-report.txt
       - name: Upload screenshot and report
         uses: actions/upload-artifact@v4
