@@ -453,7 +453,9 @@ async function start(): Promise<void> {
       npcTrafficState = advanceRoadVehicleElapsed({
         wheelbaseM: 2.65,
         maximumForwardSpeedMps: 12,
-        maximumReverseSpeedMps: 0,
+        // The shared dynamics validator requires a strictly positive reverse
+        // limit; the autopilot never commands reverse, so keep it near zero.
+        maximumReverseSpeedMps: 0.1,
         maximumAccelerationMps2: 2.2,
         serviceBrakingMps2: 5.5,
         maximumSteeringAngleRadians: 0.48,
