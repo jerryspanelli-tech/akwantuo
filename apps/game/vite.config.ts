@@ -13,7 +13,8 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: "index.html",
-        circlePreview: "circle-preview.html"
+        circlePreview: "circle-preview.html",
+        stationPreview: "station-preview.html"
       }
     }
   }
