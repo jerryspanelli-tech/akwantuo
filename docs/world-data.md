@@ -640,3 +640,9 @@ Added `apps/game/src/vehicles/roadVehicleDynamics.ts` with a lightweight kinemat
 The model validates tuning values and input ranges, clamps forward/reverse speed and uses short bounded time steps. It is a reusable handling foundation that can later be adapted per vehicle class and connected to a real vehicle root, wheels, camera and collision representation.
 
 This is **not yet a drivable vehicle in the game**. It does not simulate tyre grip, suspension, wheel spin, differential behaviour, collisions, damage, fuel, road-surface friction, traffic AI or server-authoritative multiplayer. Motorcycle handling requires a separate lean-aware model, and articulated trucks require a separate trailer model. The values must be tuned through playtesting rather than treated as real vehicle specifications.
+
+## Rail route-to-service adapter
+
+Added `apps/game/src/world/railService.ts` to turn the approved first-release schematic rail route IDs into train-operation configurations. The adapter copies the route centreline into the operation model and derives passenger stops only from first-release station nodes that exactly match points on that route. Junctions and future gateways are not automatically treated as stations. Prototype speed, acceleration, braking and dwell tuning can be overridden by the caller.
+
+This connects the rail network catalogue to the train-operation controller without embedding route coordinates twice. The routes remain schematic game-layout guides; derived stop distances inherit that limitation. This adapter does not verify real railway operations, station readiness, track clearance, signalling, timetables or safety. It is not yet connected to the preview train mesh or the playable game.
