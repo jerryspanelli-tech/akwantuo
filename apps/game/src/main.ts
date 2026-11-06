@@ -556,7 +556,9 @@ async function start(): Promise<void> {
     document.documentElement.dataset.stage6PremiumListingViews =
       String(Number(document.documentElement.dataset.stage6PremiumListingViews ?? 0) + 1);
     const owned = ownedGameAssetIds.has(asset.id);
-    showNotice("AKWANTUO private marina listing: " + asset.name + " — " + asset.label +
+    const fullListing = [AKWANTUO_PRIVATE_ISLAND.name + " — " + AKWANTUO_PRIVATE_ISLAND.purchasePriceLabel,
+      ...PRIVATE_ISLAND_WATERCRAFT.map((item) => item.name + " — " + item.label)].join("; ");
+    showNotice("Premium listings: " + fullListing + ". Selected: " + asset.name + " — " + asset.label +
       ". " + (owned ? "You already own this asset." : "Selected for purchase. ") +
       "Wallet: GH₵" + (walletBalancePesewas / 100).toFixed(2) + ". Use Purchase selected asset to complete a secure transaction.");
     document.documentElement.dataset.akwantuoSelectedAssetId = asset.id;
@@ -863,7 +865,7 @@ async function start(): Promise<void> {
       document.documentElement.dataset.transportActionRequestAt = String(performance.now());
       document.documentElement.dataset.transportVisibilityAtInput = document.visibilityState;
     }
-    if (key === "c" && hasEnteredWorld && (interactionState.mode === "inside_vehicle" || passengerState.mode === "riding")) vehicleViewRequested = true;
+    if (key === "c" && hasEnteredWorld && (interactionState.mode === "inside_vehicle" || passengerState.mode === "riding" || watercraftMode)) vehicleViewRequested = true;
   });
   window.addEventListener("keyup", (event: KeyboardEvent) => {
     pressedKeys.delete(event.key.toLowerCase());
@@ -1449,7 +1451,7 @@ async function start(): Promise<void> {
     accountPanel.classList.remove("is-hidden");
     accountPanel.setAttribute("aria-hidden", "false");
     if (activeAccountSession && accountStatus) {
-      accountStatus.textContent = `Signed in as ${activeAccountSession.user.email || "AKWANTUO player"}. Character cloud saves are enabled.`;
+      accountStatus.textContent = `Signed in as ${activeAccountSession.user.email || "AKWANTUO player"}. Character cloud saves are enabled. Wallet: GH₵${(walletBalancePesewas / 100).toFixed(2)}.`;
     }
   };
   const closeAccountPanel = (): void => {
@@ -1480,7 +1482,7 @@ async function start(): Promise<void> {
       } else {
         await savePlayerProfile(activeAccountSession, currentAppearance);
       }
-      if (accountStatus) accountStatus.textContent = `Signed in as ${email}. Your character profile is synced to AKWANTUO cloud saves.`;
+      if (accountStatus) accountStatus.textContent = `Signed in as ${email}. Your character profile is synced to AKWANTUO cloud saves. Wallet: GH₵${(walletBalancePesewas / 100).toFixed(2)}.`;
       if (accountSignOut) accountSignOut.classList.remove("is-hidden");
       if (accountButton) accountButton.innerHTML = "ACCOUNT <small>CONNECTED</small>";
       if (accountPassword) accountPassword.value = "";
@@ -1509,7 +1511,7 @@ async function start(): Promise<void> {
       }
       activeAccountSession = result.session;
       await savePlayerProfile(activeAccountSession, currentAppearance, displayName);\n      await refreshPlayerEconomy();
-      if (accountStatus) accountStatus.textContent = `Welcome to AKWANTUO, ${displayName}. Your cloud profile is ready.`;
+      if (accountStatus) accountStatus.textContent = `Welcome to AKWANTUO, ${displayName}. Your cloud profile is ready. Wallet: GH₵${(walletBalancePesewas / 100).toFixed(2)}.`;
       if (accountSignOut) accountSignOut.classList.remove("is-hidden");
       if (accountButton) accountButton.innerHTML = "ACCOUNT <small>CONNECTED</small>";
       if (accountPassword) accountPassword.value = "";
