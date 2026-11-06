@@ -48,14 +48,21 @@ try {
       districts: Number(document.documentElement.dataset.akwantuoBuildingDistrictCount ?? 0),
       properties: Number(document.documentElement.dataset.akwantuoPropertyCount ?? 0),
       businesses: Number(document.documentElement.dataset.akwantuoBusinessCount ?? 0),
-      venueProgramme: Number(document.documentElement.dataset.akwantuoVenueProgrammeCount ?? 0),\n      retailProducts: Number(document.documentElement.dataset.akwantuoRetailProductCount ?? 0),\n      privateIsland: document.documentElement.dataset.akwantuoPrivateIslandName ?? "",\n      privateIslandPrice: Number(document.documentElement.dataset.akwantuoPrivateIslandPrice ?? 0),\n      privateIslandWatercraft: Number(document.documentElement.dataset.akwantuoPrivateIslandWatercraftCount ?? 0),\n      privateIslandMeshes: Number(document.documentElement.dataset.akwantuoPrivateIslandMeshCount ?? 0),
+      venueProgramme: Number(document.documentElement.dataset.akwantuoVenueProgrammeCount ?? 0),
+      retailProducts: Number(document.documentElement.dataset.akwantuoRetailProductCount ?? 0),
+      privateIsland: document.documentElement.dataset.akwantuoPrivateIslandName ?? "",
+      privateIslandPrice: Number(document.documentElement.dataset.akwantuoPrivateIslandPrice ?? 0),
+      privateIslandWatercraft: Number(document.documentElement.dataset.akwantuoPrivateIslandWatercraftCount ?? 0),
+      privateIslandMeshes: Number(document.documentElement.dataset.akwantuoPrivateIslandMeshCount ?? 0),
       interiorBlueprints: Number(document.documentElement.dataset.akwantuoInteriorBlueprintCount ?? 0),
       renderedInteriorRooms: Number(document.documentElement.dataset.akwantuoInteriorRoomCount ?? 0),
       interiorLinks: Number(document.documentElement.dataset.akwantuoBuildingInteriorLinkCount ?? 0),
       stage6Checks: document.documentElement.dataset.akwantuoStage6Checks === "passed"
     }));
     if (stageSixCatalogues.buildings !== 23 || stageSixCatalogues.districts !== 12 || stageSixCatalogues.properties !== 23 || stageSixCatalogues.businesses !== 17 || stageSixCatalogues.venueProgramme !== 7 ||
-        stageSixCatalogues.interiorBlueprints !== 11 || stageSixCatalogues.renderedInteriorRooms !== 11 ||\n        stageSixCatalogues.retailProducts < 15 || stageSixCatalogues.privateIsland !== "Akwaaba Cay Private Island" ||\n        stageSixCatalogues.privateIslandPrice < 10_000_000_000 || stageSixCatalogues.privateIslandWatercraft < 4 || stageSixCatalogues.privateIslandMeshes !== 1 ||
+        stageSixCatalogues.interiorBlueprints !== 11 || stageSixCatalogues.renderedInteriorRooms !== 11 ||
+        stageSixCatalogues.retailProducts < 15 || stageSixCatalogues.privateIsland !== "Akwaaba Cay Private Island" ||
+        stageSixCatalogues.privateIslandPrice < 10_000_000_000 || stageSixCatalogues.privateIslandWatercraft < 4 || stageSixCatalogues.privateIslandMeshes !== 1 ||
         stageSixCatalogues.interiorLinks !== 23 || !stageSixCatalogues.stage6Checks) {
       failures.push(target.name + ": Stage 6 building/district/property/interior catalogues are incomplete: " +
         JSON.stringify(stageSixCatalogues));
@@ -168,7 +175,8 @@ try {
     else await page.keyboard.press("e");
     await page.waitForFunction(() => (document.querySelector("#notice")?.textContent ?? "").includes("You alighted"), { timeout: 5000 });
 
-    if (failures.length) throw new Error(failures.join("\n"));
+    if (failures.length) throw new Error(failures.join("
+"));
     await page.screenshot({ path: "artifacts/akwantuo-" + target.name + "-transport-game.png", fullPage: false, timeout: 30000 });
     console.log(target.name + ": trotro journey passed and screenshot captured");
 
@@ -236,7 +244,8 @@ try {
     // Walk into and back out of one representative building for every
     // distinct interior blueprint on both desktop and mobile-sized viewports.
     const interiorCases = [
-      { buildingId: "osu-corner-mart", roomId: "convenience-store", business: true, retail: true, screenshot: true },\n      { buildingId: "akwaaba-provisions", roomId: "convenience-store", business: true, retail: true },
+      { buildingId: "osu-corner-mart", roomId: "convenience-store", business: true, retail: true, screenshot: true },
+      { buildingId: "akwaaba-provisions", roomId: "convenience-store", business: true, retail: true },
       { buildingId: "ama-salon", business: true, roomId: "salon" },
       { buildingId: "chop-bar", business: true, roomId: "restaurant" },
       { buildingId: "adom-compound", roomId: "compound-house", business: false },
@@ -274,7 +283,9 @@ try {
         interiorCase.roomId,
         { timeout: 5000 }
       );
-      const retailCatalogCount = Number(document.documentElement.dataset.akwantuoRetailProductCount ?? 0);\n      if (interiorCase.retail && retailCatalogCount < 15) throw new Error(target.name + ": fictional convenience-store product catalogue is missing.");\n      const activeBusiness = await page.evaluate(() => ({
+      const retailCatalogCount = Number(document.documentElement.dataset.akwantuoRetailProductCount ?? 0);
+      if (interiorCase.retail && retailCatalogCount < 15) throw new Error(target.name + ": fictional convenience-store product catalogue is missing.");
+      const activeBusiness = await page.evaluate(() => ({
         id: document.documentElement.dataset.activeBusinessId ?? "",
         serviceCount: Number(document.documentElement.dataset.activeBusinessServiceCount ?? 0),
         notice: document.querySelector("#notice")?.textContent ?? ""
@@ -344,7 +355,8 @@ try {
   await browser.close();
 }
 if (failures.length) {
-  console.error(failures.join("\n"));
+  console.error(failures.join("
+"));
   process.exit(1);
 }
 console.log("Transport browser smoke checks passed on desktop and mobile viewports.");
