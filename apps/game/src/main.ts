@@ -444,8 +444,12 @@ async function start(): Promise<void> {
   const serviceActionButton = makeStage6Button("stage6-service-action", "Use a service");
   const propertyActionButton = makeStage6Button("stage6-property-action", "Property information");
   const retailBrowseButton = makeStage6Button("stage6-retail-browse", "Browse store products");
-  const retailBasketButton = makeStage6Button("stage6-retail-basket", "Add selected item");\n  const retailCheckoutButton = makeStage6Button("stage6-retail-checkout", "Checkout basket");\n  const shopkeeperTalkButton = makeStage6Button("stage6-shopkeeper-talk", "Talk to shopkeeper");
-  const premiumAssetsButton = makeStage6Button("stage6-premium-assets", "Browse island & boats");\n  const premiumPurchaseButton = makeStage6Button("stage6-premium-purchase", "Purchase selected asset");\n  let premiumAssetIndex = 0;
+  const retailBasketButton = makeStage6Button("stage6-retail-basket", "Add selected item");
+  const retailCheckoutButton = makeStage6Button("stage6-retail-checkout", "Checkout basket");
+  const shopkeeperTalkButton = makeStage6Button("stage6-shopkeeper-talk", "Talk to shopkeeper");
+  const premiumAssetsButton = makeStage6Button("stage6-premium-assets", "Browse island & boats");
+  const premiumPurchaseButton = makeStage6Button("stage6-premium-purchase", "Purchase selected asset");
+  let premiumAssetIndex = 0;
   const venueActionButton = makeStage6Button("stage6-venue-action", "Join event interest list");
   document.body.append(stage6ActionPanel);
   const refreshStage6Actions = (): void => {
@@ -454,8 +458,11 @@ async function start(): Promise<void> {
     serviceActionButton.hidden = !business;
     const isConvenienceStore = buildingId === "osu-corner-mart" || buildingId === "akwaaba-provisions";
     retailBrowseButton.hidden = !isConvenienceStore;
-    retailBasketButton.hidden = !isConvenienceStore;\n    retailCheckoutButton.hidden = !isConvenienceStore;\n    shopkeeperTalkButton.hidden = !isConvenienceStore;
-    premiumAssetsButton.hidden = buildingId !== "district-office";\n    premiumPurchaseButton.hidden = buildingId !== "district-office";
+    retailBasketButton.hidden = !isConvenienceStore;
+    retailCheckoutButton.hidden = !isConvenienceStore;
+    shopkeeperTalkButton.hidden = !isConvenienceStore;
+    premiumAssetsButton.hidden = buildingId !== "district-office";
+    premiumPurchaseButton.hidden = buildingId !== "district-office";
     venueActionButton.hidden = buildingId !== "akwaaba-creative-arts-centre";
     propertyActionButton.hidden = !buildingId;
     stage6ActionPanel.hidden = !buildingId;
