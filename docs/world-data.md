@@ -590,3 +590,12 @@ The catalogue requires clear separation between pedestrians and moving vehicles,
 Added `apps/game/src/world/stationInterchangeGeometry.ts`, a configurable Babylon.js forecourt builder. It can create a marked vehicle forecourt, protected pedestrian island, shelter structures, pickup-bay markings, pedestrian crossing and representative parked-vehicle placeholders from explicitly supplied bay coordinates. These are visual meshes only; there is no vehicle routing, queue simulation, boarding logic, collision or traffic control.
 
 A generic interactive 3D preview is available at `/transport-preview.html` in the Vite game workspace. It combines the ultra-modern station concept with a sample trotro, city-bus, taxi and ride-hailing forecourt. The sample coordinates and dimensions are illustrative only and are not assigned to Accra Central, Achimota or Tema. This developer preview is separate from the main playable game and is not deployed.
+
+
+## Ghana road-vehicle content catalogue
+
+Added `apps/game/src/vehicles/roadVehicles.ts` to define the first road-vehicle families and their gameplay roles. The catalogue covers private cars, shared/private taxis, trotros, city buses, motorcycles, delivery vans, rigid goods trucks, ambulances and police patrol vehicles. Intercity coaches and articulated freight trucks are reserved for later expansion.
+
+Each profile records a gameplay passenger-capacity target, driver/conductor roles, traffic role and shared model requirements for lights, wheel contact, collision alignment, cabin entry points and mobile-friendly detail. Passenger capacities are provisional gameplay targets, not certified seating capacities or legal vehicle specifications.
+
+This is a content catalogue only. It does not contain 3D vehicle assets, driving physics, AI traffic, vehicle ownership, damage, fuel, licences, emergency dispatch or multiplayer synchronisation. Those systems must be implemented and tested separately.
