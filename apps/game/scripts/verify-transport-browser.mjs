@@ -21,24 +21,30 @@ try {
     }, { timeout: 30000 });
     const status = await page.locator("#boot-status").textContent();
     if (!status?.includes("Your world is ready")) failures.push(target.name + ": startup status was " + status);
-    await page.locator("#play-button").click();
+    console.log(target.name + ": startup ready");
+    await page.locator("#play-button").click({ timeout: 5000 });
     await page.waitForFunction(() => !document.querySelector("#game-hud")?.classList.contains("is-hidden"), { timeout: 10000 });
     await page.waitForTimeout(1200);
 
     // Exercise a complete trotro journey, including the passenger camera control.
-    if (target.isMobile) await page.locator("#interact-button").click();
+    if (target.isMobile) await page.locator("#interact-button").click({ timeout: 5000 });
     else await page.keyboard.press("e");
     await page.waitForFunction(() => (document.querySelector("#notice")?.textContent ?? "").includes("Boarded shared trotro"), { timeout: 5000 });
-    if (target.isMobile) await page.locator("#vehicle-view-button").click();
+    if (target.isMobile) {
+      await page.locator("#vehicle-view-button").waitFor({ state: "visible", timeout: 5000 });
+      await page.locator("#vehicle-view-button").click({ timeout: 5000 });
+    }
     else await page.keyboard.press("c");
     await page.waitForFunction(() => (document.querySelector("#notice")?.textContent ?? "").includes("Vehicle view"), { timeout: 5000 });
+    console.log(target.name + ": trotro boarded and passenger camera switched");
     await page.waitForTimeout(15000);
-    if (target.isMobile) await page.locator("#interact-button").click();
+    if (target.isMobile) await page.locator("#interact-button").click({ timeout: 5000 });
     else await page.keyboard.press("e");
     await page.waitForFunction(() => (document.querySelector("#notice")?.textContent ?? "").includes("You alighted"), { timeout: 5000 });
 
     if (failures.length) throw new Error(failures.join("\n"));
-    await page.screenshot({ path: "artifacts/akwantuo-" + target.name + "-transport-game.png", fullPage: true });
+    await page.screenshot({ path: "artifacts/akwantuo-" + target.name + "-transport-game.png", fullPage: false, timeout: 10000 });
+    console.log(target.name + ": trotro journey passed and screenshot captured");
     await context.close();
   }
 } finally {
