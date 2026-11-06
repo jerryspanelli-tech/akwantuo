@@ -303,6 +303,19 @@ export function createInteriorRooms(scene: Scene): readonly InteriorRoomInstance
       { x: centreX - (halfW / 2 + 0.525), z: centreZ + halfD, halfWidth: halfW / 2 - 0.525, halfDepth: 0.35 },
       { x: centreX + (halfW / 2 + 0.525), z: centreZ + halfD, halfWidth: halfW / 2 - 0.525, halfDepth: 0.35 }
     ];
+    if (blueprint.id === "convenience-store") {
+      for (const fixture of blueprint.fixtures) {
+        if (!["counter", "shelf", "refrigerator", "snack_rack", "display"].includes(fixture.type)) continue;
+        const fixtureWidth = fixture.type === "counter" ? 2.1 : fixture.type === "refrigerator" ? 2.25 : fixture.type === "snack_rack" ? 1.25 : 1.2;
+        const fixtureDepth = fixture.type === "refrigerator" ? 0.9 : fixture.type === "snack_rack" ? 0.62 : fixture.type === "shelf" ? 0.85 : 0.85;
+        solidAreas.push({
+          x: centreX + fixture.x,
+          z: centreZ + fixture.z,
+          halfWidth: fixtureWidth * fixture.scale / 2 + 0.12,
+          halfDepth: fixtureDepth * fixture.scale / 2 + 0.12
+        });
+      }
+    }
     return {
       id: blueprint.id,
       root,
