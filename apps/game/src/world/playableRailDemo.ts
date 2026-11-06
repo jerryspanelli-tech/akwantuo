@@ -30,9 +30,9 @@ export function createPlayableRailDemo(scene: Scene): PlayableRailDemo {
   sleeperMaterial.diffuseColor = new Color3(0.22, 0.19, 0.15);
 
   const ballast = MeshBuilder.CreateGround("playable-rail-ballast", {
-    width: 3.2, height: ROUTE.endZ - ROUTE.startZ + 8
+    width: 3.2, height: ROUTE.endZ - ROUTE.startZ + 34
   }, scene);
-  ballast.position.set(ROUTE.x, 0.06, (ROUTE.startZ + ROUTE.endZ) / 2);
+  ballast.position.set(ROUTE.x, 0.06, (ROUTE.startZ - 30 + ROUTE.endZ + 4) / 2);
   ballast.material = ballastMaterial;
   ballast.isPickable = false;
 
@@ -40,7 +40,7 @@ export function createPlayableRailDemo(scene: Scene): PlayableRailDemo {
   for (const offset of [-0.5335, 0.5335]) {
     const rail = MeshBuilder.CreateTube("playable-rail-" + offset, {
       path: [
-        new Vector3(ROUTE.x + offset, 0.2, ROUTE.startZ - 4),
+        new Vector3(ROUTE.x + offset, 0.2, ROUTE.startZ - 30),
         new Vector3(ROUTE.x + offset, 0.2, ROUTE.endZ + 4)
       ],
       radius: 0.075,
@@ -57,7 +57,7 @@ export function createPlayableRailDemo(scene: Scene): PlayableRailDemo {
     const tie = MeshBuilder.CreateBox("playable-rail-sleeper-" + index, {
       width: 2.35, height: 0.18, depth: 0.24
     }, scene);
-    tie.position.set(ROUTE.x, 0.14, ROUTE.startZ - 4 + index * 0.72);
+    tie.position.set(ROUTE.x, 0.14, ROUTE.startZ - 30 + index * 0.72);
     tie.material = sleeperMaterial;
     tie.isPickable = false;
     sleeperMeshes.push(tie);
