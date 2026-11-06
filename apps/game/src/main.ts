@@ -33,6 +33,7 @@ import { runTransportSmokeChecks } from "./world/transportSmokeChecks";
 import { DISTRICT_BUILDINGS } from "./world/ghanaianStreetBuildings";
 import { DISTRICT_PROPERTIES } from "./world/districtProperties";
 import { INTERIOR_BLUEPRINTS } from "./world/interiorBlueprints";
+import { createInteriorRooms } from "./world/interiorRooms";
 
 const bootScreen = document.querySelector<HTMLElement>("#boot-screen");
 const gameShell = document.querySelector<HTMLElement>("#game-shell");
@@ -313,6 +314,8 @@ async function start(): Promise<void> {
   });
   const scene = new Scene(engine);
   const solidAreas = createPreviewWorld(scene, { includeGround: false });
+  const interiorRooms = createInteriorRooms(scene);
+  for (const room of interiorRooms) solidAreas.push(...room.solidAreas);
   const greaterAccraTransportReport = createGreaterAccraPlayableWorld(scene);
   document.documentElement.dataset.playableRoadSurfaceMeshes = String(greaterAccraTransportReport.roadSurfaceMeshCount);
   document.documentElement.dataset.playableRoadMarkingMeshes = String(greaterAccraTransportReport.roadMarkingMeshCount);
@@ -327,6 +330,7 @@ async function start(): Promise<void> {
   document.documentElement.dataset.playableMappedRailBoardingOpen = String(greaterAccraMappedRailService.isBoardingOpen());
   let currentAppearance = loadAppearance(window.localStorage);
   const player = createPlayer(scene, currentAppearance);
+  let activeInterior: { buildingId: string; roomId: string; exitX: number; exitZ: number } | null = null;
   const isLocalTransportTestHost = window.location.hostname === "127.0.0.1" ||
     window.location.hostname === "localhost";
   const transportRailTestMode = isLocalTransportTestHost &&
@@ -575,7 +579,47 @@ async function start(): Promise<void> {
         document.documentElement.dataset.transportActionConsumedAt = String(performance.now());
         document.documentElement.dataset.transportActionPassengerModeBefore = passengerState.mode;
         vehicleActionRequested = false;
-        if (passengerState.mode === "riding" && passengerState.vehicleId === "greater-accra-mapped-rail-train") {
+        if (activeInterior) {
+          const room = interiorRooms.find((item) => item.id === activeInterior?.roomId);
+          room?.root.setEnabled(false);
+          player.root.position.set(activeInterior.exitX, 0, activeInterior.exitZ);
+          activeInterior = null;
+          showNotice("You stepped back outside.");
+        } else if (interactionState.mode === "on_foot" && passengerState.mode === "not_riding") {
+          const nearbyBuilding = DISTRICT_BUILDINGS
+            .filter((building) => building.interiorId)
+            .map((building) => {
+              const frontX = building.side === "west"
+                ? building.x + building.width / 2
+                : building.x - building.width / 2;
+              const exitX = frontX + (building.side === "west" ? 1.4 : -1.4);
+              return {
+                building,
+                exitX,
+                exitZ: building.z,
+                distanceM: Math.hypot(player.root.position.x - exitX, player.root.position.z - building.z)
+              };
+            })
+            .sort((a, b) => a.distanceM - b.distanceM)[0];
+          if (nearbyBuilding && nearbyBuilding.distanceM <= 3.5 && nearbyBuilding.building.interiorId) {
+            const room = interiorRooms.find((item) => item.id === nearbyBuilding.building.interiorId);
+            if (room) {
+              room.root.setEnabled(true);
+              player.root.position.set(room.spawn.x, 0, room.spawn.z);
+              activeInterior = {
+                buildingId: nearbyBuilding.building.id,
+                roomId: room.id,
+                exitX: nearbyBuilding.exitX,
+                exitZ: nearbyBuilding.exitZ
+              };
+              showNotice("Entered " + nearbyBuilding.building.name + ". Press E to leave.");
+            } else {
+              showNotice("This building interior is not ready yet.");
+            }
+          } else {
+            showNotice("Move closer to a building entrance to enter.");
+          }
+        } else if (passengerState.mode === "riding" && passengerState.vehicleId === "greater-accra-mapped-rail-train") {
           const atTemaTerminal = mappedRailState.completed ||
             mappedRailState.currentStopId === "tema-rail-station" ||
             mappedRailState.dwellRemainingSeconds > 0;
