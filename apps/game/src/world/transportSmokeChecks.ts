@@ -4,6 +4,7 @@ import {
   type RoadVehicleDynamicsState
 } from "../vehicles/roadVehicleDynamics";
 import { enterVehicle, exitVehicle, type VehicleInteractionState } from "../vehicles/vehicleInteraction";
+import { isVehiclePathClear } from "../vehicles/vehicleCollision";
 import {
   alightPublicTransport,
   boardPublicTransport,
@@ -81,6 +82,22 @@ export function runTransportSmokeChecks(): void {
   const exited = exitVehicle(interaction, vehicle);
   assert(exited.ok && exited.state.mode === "on_foot", "player can exit a stopped car safely");
   expectFailure(enterVehicle({ mode: "on_foot" }, { ...vehicle, distanceToEntryM: 20 }, "driver"), "too_far", "vehicle entry distance is enforced");
+
+  assert(isVehiclePathClear(
+    { x: 0, z: 0, radiusM: 2 },
+    { x: 0, z: 2, radiusM: 2 },
+    { x: 10, z: 0, radiusM: 2 }
+  ), "separated vehicles retain a clear path");
+  assert(!isVehiclePathClear(
+    { x: -10, z: 0, radiusM: 2 },
+    { x: 10, z: 0, radiusM: 2 },
+    { x: 0, z: 0, radiusM: 2 }
+  ), "swept vehicle collision catches a crossing even when endpoints are clear");
+  expectThrow(() => isVehiclePathClear(
+    { x: 0, z: 0, radiusM: 0 },
+    { x: 0, z: 1, radiusM: 2 },
+    { x: 5, z: 0, radiusM: 2 }
+  ), "invalid vehicle collision footprints are rejected");
 
   const dynamicsConfig: RoadVehicleDynamicsConfig = {
     wheelbaseM: 2.8, maximumForwardSpeedMps: 7, maximumReverseSpeedMps: 2,
