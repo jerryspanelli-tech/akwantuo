@@ -17,6 +17,7 @@ import { clampToWorld, isBlocked } from "./world/collision";
 import { createPreviewWorld } from "./world/previewWorld";
 import { createGreaterAccraPlayableWorld } from "./world/greaterAccraPlayableWorld";
 import { getMapRoadPath } from "./world/greaterAccraLayout";
+import { findNearestRoadProjection, getRoadLaneCenterPoint } from "./world/roadNavigation";
 import { getRoadVehicleAutopilotControl } from "./vehicles/roadVehicleAutopilot";
 import { advanceRoadVehicleDynamics, type RoadVehicleDynamicsState } from "./vehicles/roadVehicleDynamics";
 import { createRoadVehicleGeometry } from "./vehicles/roadVehicleGeometry";
@@ -329,7 +330,18 @@ async function start(): Promise<void> {
   if (!npcTrafficPath || !npcTrafficPath.playableInFirstRelease || npcTrafficPath.points.length < 2) {
     throw new Error("The first-release N1 NPC traffic route is unavailable.");
   }
-  const npcTrafficRoute = npcTrafficPath.points.map((point) => ({ x: point.x, z: point.z }));
+  // NPC vehicles follow the authored first lane centre, not the road
+  // centreline. Restrict projection to this corridor so junction overlaps
+  // cannot silently snap the traffic onto a neighbouring road.
+  const npcTrafficRoute = npcTrafficPath.points.map((point) => {
+    const projection = findNearestRoadProjection(point.x, point.z, {
+      maxDistanceM: 1,
+      roadSegmentId: npcTrafficPath.roadSegmentId
+    });
+    if (!projection) throw new Error("N1 NPC route could not project onto its authored road segment.");
+    return getRoadLaneCenterPoint(projection, "forward", 0);
+  });
+  document.documentElement.dataset.npcRoadTrafficLaneCenter = "true";
   const npcTrafficRouteLengthM = npcTrafficRoute.slice(1).reduce((total, point, index) =>
     total + Math.hypot(point.x - npcTrafficRoute[index].x, point.z - npcTrafficRoute[index].z), 0);
   const npcTraffic = [0, 32, 64].map((startDistanceM, index) => {
