@@ -9,7 +9,7 @@ export type PlayableRailDemo = Readonly<{
   exteriorFollow: TransformNode;
   update: (deltaSeconds: number) => void;
   startService: () => void;
-  getStatus: () => Readonly<{ boardingOpen: boolean; completed: boolean; position: Readonly<{ x: number; z: number }> }>;
+  getStatus: () => Readonly<{ boardingOpen: boolean; alightingOpen: boolean; completed: boolean; position: Readonly<{ x: number; z: number }> }>;
   dispose: () => void;
 }>;
 
@@ -107,7 +107,7 @@ export function createPlayableRailDemo(scene: Scene): PlayableRailDemo {
 
   const config: RailTrainOperationConfig = {
     path: [{ x: ROUTE.x, z: ROUTE.startZ }, { x: ROUTE.x, z: ROUTE.endZ }],
-    stops: [],
+    stops: [{ id: "preview-rail-terminal-stop", distanceM: ROUTE.startZ - ROUTE.endZ, dwellSeconds: 8 }],
     maximumSpeedMps: 8,
     accelerationMps2: 1.2,
     serviceBrakingMps2: 1.6
@@ -128,6 +128,7 @@ export function createPlayableRailDemo(scene: Scene): PlayableRailDemo {
   };
   const getStatus = () => ({
     boardingOpen: !serviceStarted,
+    alightingOpen: state.completed || state.currentStopId === "preview-rail-terminal-stop",
     completed: state.completed,
     position: currentPosition
   });
