@@ -1,4 +1,8 @@
 import { findShortestRoadRoute, isRoadRouteValid } from "./roadRouting";
+import { isGreaterAccraMapLayoutValid } from "./greaterAccraLayout";
+import { isGreaterAccraRailNetworkValid } from "./railNetwork";
+import { isGreaterAccraTrackDesignValid } from "./railTrackDesign";
+import { isGreaterAccraRoadDesignCatalogueValid } from "./roadDesign";
 import { isPedestrianCrossingLayoutValid } from "./pedestrianCrossingGeometry";
 import { getTrafficSignalState, isTrafficSignalPlanValid, mayProceedOnTrafficSignal } from "./trafficSignals";
 import {
@@ -41,6 +45,11 @@ function expectThrow(action: () => unknown, message: string): void {
  * railway certification, or authoritative multiplayer validation.
  */
 export function runTransportSmokeChecks(): void {
+  assert(isGreaterAccraMapLayoutValid(), "Greater Accra map nodes, roads and coastline validate");
+  assert(isGreaterAccraRailNetworkValid(), "Greater Accra Cape-gauge rail routes and station nodes validate");
+  assert(isGreaterAccraTrackDesignValid(), "Greater Accra rail track design assignments validate");
+  assert(isGreaterAccraRoadDesignCatalogueValid(), "Greater Accra road cross-section assignments validate");
+
   const mallamToTema = findShortestRoadRoute("mallam-junction", "tema-motorway-junction");
   assert(!!mallamToTema && isRoadRouteValid(mallamToTema) &&
     mallamToTema.roadSegmentIds.length > 0 && !mallamToTema.includesFutureExpansion,
