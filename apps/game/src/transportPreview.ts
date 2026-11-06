@@ -11,6 +11,9 @@ import { createRailTrainGeometry } from "./world/railTrainGeometry";
 import { createRailTrainRig } from "./world/railTrainRig";
 import { advanceRailTrain, createRailTrainOperationState, isRailTrainOperationStateValid } from "./world/railTrainOperations";
 import { createRailServiceConfig } from "./world/railService";
+import { advanceRoadVehicleDynamics, type RoadVehicleDynamicsState } from "./vehicles/roadVehicleDynamics";
+import { createRoadVehicleGeometry } from "./vehicles/roadVehicleGeometry";
+import { createRoadVehicleRig } from "./vehicles/roadVehicleRig";
 
 const canvas = document.querySelector<HTMLCanvasElement>("#station-preview-canvas");
 const errorPanel = document.querySelector<HTMLElement>("#station-preview-error");
@@ -62,6 +65,42 @@ try {
     platformLengthM: 180, platformWidthM: 8, platformCount: 2
   } as const;
   createUltraModernRailStationGeometry(scene, stationOptions);
+  const roadVehicleOrigin = { x: 48, y: 0, z: -122 };
+  const roadVehicleGeometry = createRoadVehicleGeometry(scene, {
+    id: "akwantuo-preview-saloon",
+    centerX: roadVehicleOrigin.x,
+    centerZ: roadVehicleOrigin.z,
+    groundElevationM: roadVehicleOrigin.y,
+    bodyColour: "#d7dce0"
+  });
+  const roadVehicleRig = createRoadVehicleRig(scene, roadVehicleGeometry, {
+    id: "akwantuo-preview-saloon-rig", origin: roadVehicleOrigin
+  });
+  const roadVehicleConfig = {
+    wheelbaseM: 2.65,
+    maximumForwardSpeedMps: 18,
+    maximumReverseSpeedMps: 5,
+    maximumAccelerationMps2: 2.8,
+    serviceBrakingMps2: 7,
+    maximumSteeringAngleRadians: 0.55,
+    rollingDragMps2: 0.35
+  } as const;
+  let roadVehicleState: RoadVehicleDynamicsState = {
+    x: roadVehicleOrigin.x, z: roadVehicleOrigin.z, headingRadians: 0, speedMps: 0
+  };
+  const driveKeys = new Set<string>();
+  const driveKeyDown = (event: KeyboardEvent): void => {
+    const key = event.key.toLowerCase();
+    if (["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(key)) {
+      driveKeys.add(key);
+      event.preventDefault();
+    }
+  };
+  const driveKeyUp = (event: KeyboardEvent): void => {
+    driveKeys.delete(event.key.toLowerCase());
+  };
+  window.addEventListener("keydown", driveKeyDown);
+  window.addEventListener("keyup", driveKeyUp);
   const trainGeometry = createRailTrainGeometry(scene, {
     id: "akwantuo-commuter-train", centerX: -35, centerZ: 24,
     groundElevationM: 0, carCount: 2
@@ -114,6 +153,17 @@ try {
     const frame = advanceRailTrain(shuttleConfig, trainState, deltaSeconds);
     trainState = frame.state;
     trainRig.update(frame);
+    const driveDelta = Math.min(0.1, deltaSeconds);
+    const forward = driveKeys.has("w") || driveKeys.has("arrowup");
+    const reverse = driveKeys.has("s") || driveKeys.has("arrowdown");
+    const left = driveKeys.has("a") || driveKeys.has("arrowleft");
+    const right = driveKeys.has("d") || driveKeys.has("arrowright");
+    roadVehicleState = advanceRoadVehicleDynamics(roadVehicleConfig, roadVehicleState, {
+      throttle: forward === reverse ? 0 : forward ? 1 : -1,
+      brake: driveKeys.has(" ") ? 1 : 0,
+      steering: left === right ? 0 : left ? -1 : 1
+    }, driveDelta);
+    roadVehicleRig.update(roadVehicleState);
     scene.render();
   });
   window.addEventListener("resize", () => engine.resize());
