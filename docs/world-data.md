@@ -525,3 +525,16 @@ The builder is not yet integrated into the playable game or a standalone station
 Added `apps/game/station-preview.html` and `apps/game/src/stationPreview.ts`, with matching preview styling and a Vite build entry. This developer page renders the reusable station massing prototype with an orbit camera, zoom and touch controls. Open `/station-preview.html` while running the game workspace to inspect the concept.
 
 The preview shows one generic flagship-scale station concept to review the visual direction. It is not yet an Accra Central, Achimota or Tema site-specific reconstruction, and it is not part of the playable game menu or deployed game.
+
+
+## Railway passenger concourse fit-out prototype
+
+Added `apps/game/src/world/railStationFitout.ts` and integrated it into the standalone station preview. The passenger-facing concept now includes:
+- a large live-departure information board with row/status indicators;
+- self-service ticket kiosks with screen and payment-reader details;
+- tall wayfinding pylons and a platform-direction sign;
+- modular waiting benches;
+- visual fare-gate lanes and a staffed passenger-help desk;
+- interior planters to soften the concourse while retaining a central circulation area.
+
+These are static Babylon.js visual meshes. The displays do not yet show live train data, kiosks do not sell tickets, fare gates do not validate passes, and no passenger AI or station security logic is connected. The current arrangement is a visual composition for the generic preview, not a final circulation or evacuation plan. All positions must be reviewed against an approved station layout before site-specific use.
