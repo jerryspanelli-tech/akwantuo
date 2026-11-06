@@ -302,6 +302,24 @@ try {
           (!activeBusiness.notice.includes("modelling auditions") || !activeBusiness.notice.includes("fashion runway night"))) {
         throw new Error(target.name + ": creative arts centre weekly programme was not displayed: " + activeBusiness.notice);
       }
+      if (interiorCase.retail) {
+        await page.locator("#stage6-shopkeeper-talk").click({ timeout: 5000 });
+        const greeting = await page.locator("#notice").textContent();
+        if (!greeting?.includes("Akwaaba! Welcome in")) throw new Error(target.name + ": shopkeeper greeting did not appear.");
+        await page.locator("#stage6-retail-browse").click({ timeout: 5000 });
+        const shelves = await page.locator("#notice").textContent();
+        if (!shelves?.includes("KolaPop Classic") || !shelves.includes("ClearSpring Water")) {
+          throw new Error(target.name + ": live shop catalogue browsing failed: " + shelves);
+        }
+        await page.locator("#stage6-retail-basket").click({ timeout: 5000 });
+        const basket = await page.evaluate(() => Number(document.documentElement.dataset.stage6RetailBasketCount ?? 0));
+        if (basket !== 1) throw new Error(target.name + ": shop basket did not accept the selected product.");
+        await page.locator("#stage6-retail-checkout").click({ timeout: 5000 });
+        const checkoutPrompt = await page.locator("#notice").textContent();
+        if (!checkoutPrompt?.includes("sign in to your AKWANTUO account")) {
+          throw new Error(target.name + ": checkout did not require an authenticated player account.");
+        }
+      }
       if (interiorCase.business) {
         await page.locator("#stage6-service-action").click({ timeout: 5000 });
         const serviceInteraction = await page.evaluate(() => ({
@@ -330,7 +348,7 @@ try {
         }));
         if (premiumListing.count !== 1 || !premiumListing.notice.includes("Akwaaba Cay Private Island") ||
             !premiumListing.notice.includes("GH₵250,000,000") || !premiumListing.notice.includes("WaveRider Jet Ski") ||
-            !premiumListing.notice.includes("Ocean Crown Yacht") || !premiumListing.notice.includes("purchase and ownership transfer are not enabled")) {
+            !premiumListing.notice.includes("Ocean Crown Yacht") || !premiumListing.notice.includes("Coastline 28 Speedboat") || !premiumListing.notice.includes("Selected: Akwaaba Cay Private Island")) {
           throw new Error(target.name + ": premium island/boat property listing failed: " + JSON.stringify(premiumListing));
         }
       }
@@ -383,6 +401,41 @@ try {
     await page.waitForTimeout(700);
     await page.screenshot({ path: "artifacts/akwantuo-" + target.name + "-private-island.png", fullPage: false, timeout: 30000 });
     console.log(target.name + ": private island preview screenshot captured");
+    for (const craftKind of ["speedboat", "jet_ski"]) {
+      await page.goto("http://127.0.0.1:4173/?akwantuoWatercraftTest=" + craftKind, { waitUntil: "networkidle", timeout: 30000 });
+      await page.waitForFunction(() => (document.querySelector("#boot-status")?.textContent ?? "").includes("Your world is ready"), { timeout: 30000 });
+      await page.waitForFunction(() => document.querySelector("#boot-screen")?.hasAttribute("hidden") === true, { timeout: 10000 });
+      const spawnKind = await page.evaluate(() => document.documentElement.dataset.watercraftTestMode ?? "");
+      if (spawnKind !== craftKind) throw new Error(target.name + ": watercraft test spawn was not set for " + craftKind);
+      await page.locator("#play-button").click({ timeout: 10000 });
+      await page.waitForFunction(() => !document.querySelector("#game-hud")?.classList.contains("is-hidden"), { timeout: 10000 });
+      await page.keyboard.press("e");
+      await page.waitForFunction((kind) => document.documentElement.dataset.akwantuoActiveWatercraft === kind, craftKind, { timeout: 5000 });
+      const startPosition = await page.evaluate(() => ({
+        x: Number(document.documentElement.dataset.akwantuoWatercraftX ?? 0),
+        z: Number(document.documentElement.dataset.akwantuoWatercraftZ ?? 0)
+      }));
+      await page.keyboard.down("w");
+      await page.waitForTimeout(1200);
+      await page.keyboard.up("w");
+      await page.keyboard.down("d");
+      await page.waitForTimeout(600);
+      await page.keyboard.up("d");
+      const movingCraft = await page.evaluate(() => ({
+        x: Number(document.documentElement.dataset.akwantuoWatercraftX ?? 0),
+        z: Number(document.documentElement.dataset.akwantuoWatercraftZ ?? 0),
+        speed: Number(document.documentElement.dataset.akwantuoWatercraftSpeed ?? 0),
+        active: document.documentElement.dataset.akwantuoActiveWatercraft ?? ""
+      }));
+      if (movingCraft.active !== craftKind || movingCraft.speed <= 0 ||
+          Math.hypot(movingCraft.x - startPosition.x, movingCraft.z - startPosition.z) < 1 ||
+          movingCraft.z > -3310) {
+        throw new Error(target.name + ": " + craftKind + " did not drive and steer inside the Gulf navigation area: " + JSON.stringify(movingCraft));
+      }
+      await page.keyboard.press("e");
+      await page.waitForFunction(() => (document.querySelector("#notice")?.textContent ?? "").includes("offshore"), { timeout: 5000 });
+      console.log(target.name + ": " + craftKind + " propulsion, steering and offshore docking safety passed");
+    }
     await context.close();
   }
 } finally {
