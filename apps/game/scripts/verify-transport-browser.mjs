@@ -37,7 +37,18 @@ try {
     else await page.keyboard.press("c");
     await page.waitForFunction(() => (document.querySelector("#notice")?.textContent ?? "").includes("Vehicle view"), { timeout: 5000 });
     console.log(target.name + ": trotro boarded and passenger camera switched");
-    await page.waitForFunction(() => (document.querySelector("#notice")?.textContent ?? "").includes("You have reached the final stop"), { timeout: 30000 });
+    try {
+      await page.waitForFunction(() => (document.querySelector("#notice")?.textContent ?? "").includes("You have reached the final stop"), { timeout: 30000 });
+    } catch (error) {
+      const diagnostic = await page.evaluate(() => ({
+        notice: document.querySelector("#notice")?.textContent,
+        trotroZ: document.documentElement.dataset.trotroZ,
+        trotroSpeed: document.documentElement.dataset.trotroSpeed,
+        trotroArrived: document.documentElement.dataset.trotroArrived
+      }));
+      console.error(target.name + ": trotro terminal diagnostic " + JSON.stringify(diagnostic));
+      throw error;
+    }
     console.log(target.name + ": trotro reached terminal");
     if (target.isMobile) await page.locator("#interact-button").click({ timeout: 5000 });
     else await page.keyboard.press("e");
