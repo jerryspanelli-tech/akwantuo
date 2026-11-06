@@ -654,7 +654,7 @@ async function start(): Promise<void> {
                 ? " Services: " + business.services.join(", ") + ". Hours: " + business.opensAt + "–" + business.closesAt + "."
                 : "";
               const venueProgramme = nearbyBuilding.building.id === "akwaaba-creative-arts-centre"
-                ? " Weekly programme: " + AKWAABA_VENUE_PROGRAMME.map((item) => item.day + " " + item.start + " " + item.title).join("; ") + "."
+                ? " Weekly programme: " + AKWAABA_VENUE_PROGRAMME.filter((item) => ["monday", "tuesday", "friday", "saturday"].includes(item.day)).map((item) => item.day + " " + item.start + " " + item.title).join("; ") + "."
                 : "";
               showNotice("Entered " + nearbyBuilding.building.name + "." + businessSummary + venueProgramme + " Press E to leave.");
             } else {
