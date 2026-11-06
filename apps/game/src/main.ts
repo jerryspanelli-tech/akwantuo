@@ -266,6 +266,8 @@ async function start(): Promise<void> {
   const publicTaxi = createPublicTransportVehicle(scene, "playable-shared-trotro", publicTaxiOrigin);
   let publicTaxiState: RoadVehicleDynamicsState = { x: publicTaxiOrigin.x, z: publicTaxiOrigin.z, headingRadians: Math.PI, speedMps: 0 };
   let publicPassengerState: PublicTransportPassengerState = { mode: "not_riding", balancePesewas: 10000 };
+  let railPassengerState: PublicTransportPassengerState = { mode: "not_riding", balancePesewas: 10000 };
+  let railPassengerCameraRig: PassengerCameraRig | null = null;
   let publicRideArrived = false;
   const publicRideEndZ = -45;
   let vehicleState: RoadVehicleDynamicsState = {
@@ -335,6 +337,7 @@ async function start(): Promise<void> {
 
     if (hasEnteredWorld) {
       playableRailDemo.update(delta);
+      const railStatus = playableRailDemo.getStatus();
       if (publicPassengerState.mode === "riding") {
         const taxiStep = advanceRoadVehicleDynamics({ wheelbaseM: 2.8, maximumForwardSpeedMps: 7, maximumReverseSpeedMps: 2, maximumAccelerationMps2: 1.8, serviceBrakingMps2: 4, maximumSteeringAngleRadians: 0.35, rollingDragMps2: 0.3 }, publicTaxiState, { throttle: publicRideArrived ? 0 : 1, brake: 0, steering: 0 }, Math.min(delta, 0.1));
         if (taxiStep.z <= publicRideEndZ) { publicTaxiState = { ...taxiStep, z: publicRideEndZ, speedMps: 0 }; publicRideArrived = true; showNotice("You have reached the final stop. Press ALIGHT to leave the trotro."); }
@@ -343,7 +346,15 @@ async function start(): Promise<void> {
       }
       if (vehicleActionRequested) {
         vehicleActionRequested = false;
-        if (publicPassengerState.mode === "riding") {
+        if (railPassengerState.mode === "riding") {
+          const result = alightPublicTransport(railPassengerState, { id: "preview-rail-terminal", vehicleStopped: railStatus.completed, boardingOpen: false, alightingOpen: railStatus.completed, remainingSeats: 0 }, "preview-commuter-train");
+          if (result.ok) { railPassengerState = result.state; railPassengerCameraRig?.dispose(); railPassengerCameraRig = null; player.root.setEnabled(true); player.root.position.set(-36, 0, railStatus.position.z); showNotice("You alighted from the train. Balance: GH₵" + (railPassengerState.balancePesewas / 100).toFixed(2)); }
+          else showNotice("The train is still travelling. Wait for the terminal.");
+        } else if (interactionState.mode === "on_foot" && railStatus.boardingOpen && Math.hypot(player.root.position.x + 41, player.root.position.z + 20) <= 9) {
+          const result = boardPublicTransport(railPassengerState, { id: "preview-rail-station", vehicleStopped: true, boardingOpen: true, alightingOpen: false, remainingSeats: 40 }, "preview-commuter-train", "preview-rail-route", 0.075, { baseFarePesewas: 300, perKilometrePesewas: 100 });
+          if (result.ok && result.state.mode === "riding") { railPassengerState = result.state; railPassengerCameraRig = new PassengerCameraRig(scene, { interiorWindow: playableRailDemo.interiorWindow, exteriorFollow: playableRailDemo.exteriorFollow }); vehicleCameraModeIndex = 0; player.root.setEnabled(false); playableRailDemo.startService(); showNotice("Boarded the commuter train. Fare: GH₵" + (result.state.farePaidPesewas / 100).toFixed(2) + ". The train is departing."); }
+          else if (!result.ok) showNotice("Unable to board train: " + result.reason.replaceAll("_", " ") + ".");
+        } else if (publicPassengerState.mode === "riding") {
           const result = alightPublicTransport(publicPassengerState, { id: "preview-terminal", vehicleStopped: publicRideArrived, boardingOpen: false, alightingOpen: publicRideArrived, remainingSeats: 0 }, "preview-shared-trotro");
           if (result.ok) { publicPassengerState = result.state; passengerCameraRig?.dispose(); passengerCameraRig = null; player.root.setEnabled(true); player.root.position.set(publicTaxiState.x - 1.7, 0, publicTaxiState.z); showNotice("You alighted. Balance: GH₵" + (publicPassengerState.balancePesewas / 100).toFixed(2)); }
           else showNotice("The trotro is still travelling. Wait for the terminal stop.");
@@ -389,7 +400,7 @@ async function start(): Promise<void> {
         window.setTimeout(() => notice?.classList.remove("is-visible"), 3000);
       }
 
-      if (interactionState.mode === "inside_vehicle" || publicPassengerState.mode === "riding") {
+      if (interactionState.mode === "inside_vehicle" || publicPassengerState.mode === "riding" || railPassengerState.mode === "riding") {
         if (vehicleViewRequested && passengerCameraRig) {
           vehicleViewRequested = false;
           vehicleCameraModeIndex = (vehicleCameraModeIndex + 1) % vehicleCameraModes.length;
@@ -431,7 +442,7 @@ async function start(): Promise<void> {
           camera.alpha = -Math.PI / 2 - vehicleState.headingRadians;
           camera.radius = 9;
         }
-        if (interactButton) interactButton.textContent = publicPassengerState.mode === "riding" ? "ALIGHT" : "EXIT";
+        if (interactButton) interactButton.textContent = publicPassengerState.mode === "riding" || railPassengerState.mode === "riding" ? "ALIGHT" : "EXIT";
         if (jumpButton) jumpButton.classList.add("is-hidden");
         if (vehicleViewButton) vehicleViewButton.classList.remove("is-hidden");
       } else {
@@ -440,7 +451,7 @@ async function start(): Promise<void> {
         if (vehicleViewButton) vehicleViewButton.classList.add("is-hidden");
       }
 
-      let inputX = interactionState.mode === "on_foot" && publicPassengerState.mode !== "riding" ? touchInput.x : 0;
+      let inputX = interactionState.mode === "on_foot" && publicPassengerState.mode !== "riding" && railPassengerState.mode !== "riding" ? touchInput.x : 0;
       let inputZ = interactionState.mode === "on_foot" && publicPassengerState.mode !== "riding" ? touchInput.z : 0;
       if (interactionState.mode === "on_foot" && publicPassengerState.mode !== "riding" && (pressedKeys.has("a") || pressedKeys.has("arrowleft"))) inputX -= 1;
       if (interactionState.mode === "on_foot" && publicPassengerState.mode !== "riding" && (pressedKeys.has("d") || pressedKeys.has("arrowright"))) inputX += 1;
