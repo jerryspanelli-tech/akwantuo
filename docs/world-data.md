@@ -481,3 +481,29 @@ This is a **topology and map-data foundation only**. It does not create physical
 References:
 - [Ministry of Finance PPP Portal — Eastern Railway Line Project](https://ppp.mofep.gov.gh/project/69/eastern-railway-line-project)
 - [Ghana Railway Company Limited — network history](https://grcl.gov.gh/about.php)
+
+
+## Ultra-modern Greater Accra railway station design standard
+
+Added `apps/game/src/world/railStations.ts` as the first station-design catalogue. AKWANTUO railway stations are intended to be **ultra-modern Ghanaian public buildings**, with a recognisable contemporary identity rather than generic old-fashioned sheds.
+
+The shared architectural brief includes:
+- contemporary façades combining glass, durable materials and shaded public edges;
+- a spacious, naturally lit passenger concourse with clear sightlines;
+- deep weather-protective platform canopies and rainwater management;
+- step-free circulation, lifts or ramps, tactile guidance and accessible facilities;
+- efficient lighting, CCTV-monitored public areas and staffed assistance;
+- digital departure/arrival boards and audio announcements;
+- ticket offices, self-service kiosks and future-ready fare-gate provision;
+- toilets, first aid, seating, drinking water and retail/food concessions;
+- organised taxi, ride-hailing, bus/trotro and pedestrian access.
+
+Station identities:
+- **Accra Central:** flagship city terminal, with a civic-scale entrance, generous concourse and intercity-ready passenger facilities.
+- **Achimota:** major interchange station, designed around clear transfers between the Tema branch and the northbound Eastern Line corridor.
+- **Tema:** modern regional station with a protected forecourt and local transport connections.
+- **Circle / Odaw:** candidate urban stop only. Its exact station status and location are not verified, so it must not be presented as a confirmed operating station.
+
+The catalogue intentionally leaves platform counts, platform arrangement, track spacing, station footprints and exact entrances unassigned until verified railway/site information is available. These are design requirements, not completed 3D station buildings. No station meshes, train services, ticketing interactions, passenger AI or operational timetable have been implemented yet.
+
+The station catalogue includes a validator and lookup helpers so later station geometry, passenger navigation and train operations can use stable IDs without inventing site details.
