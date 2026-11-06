@@ -17,6 +17,7 @@ import { createGreaterAccraRailTrackGeometry } from "./railTrackGeometry";
 import { GREATER_ACCRA_RAIL_NODES } from "./railNetwork";
 import { GREATER_ACCRA_RAIL_STATIONS } from "./railStations";
 import { deriveRailRoadCrossingCandidates } from "./railRoadCrossings";
+import { GREATER_ACCRA_PUBLIC_TRANSPORT_ROUTE_PLANS } from "./publicTransportRoutes";
 
 export type GreaterAccraPlayableWorldReport = Readonly<{
   roadSurfaceMeshCount: number;
@@ -25,6 +26,7 @@ export type GreaterAccraPlayableWorldReport = Readonly<{
   plannedStationAnchorCount: number;
   circleElevatedStructureCount: number;
   railRoadCrossingCandidateCount: number;
+  publicTransportCorridorCount: number;
 }>;
 
 /**
@@ -120,6 +122,7 @@ export function createGreaterAccraPlayableWorld(
     railRouteCount: railTracks.length,
     plannedStationAnchorCount: GREATER_ACCRA_RAIL_STATIONS.filter((item) => item.status === "planned").length,
     circleElevatedStructureCount: Object.keys(circle.elevatedStructures).length,
-    railRoadCrossingCandidateCount: railCrossingCandidates.length
+    railRoadCrossingCandidateCount: railCrossingCandidates.length,
+    publicTransportCorridorCount: GREATER_ACCRA_PUBLIC_TRANSPORT_ROUTE_PLANS.length
   };
 }
