@@ -1,3 +1,4 @@
+import { getTrafficSignalState, isTrafficSignalPlanValid, mayProceedOnTrafficSignal } from "./trafficSignals";
 import {
   advanceRoadVehicleDynamics,
   type RoadVehicleDynamicsConfig,
