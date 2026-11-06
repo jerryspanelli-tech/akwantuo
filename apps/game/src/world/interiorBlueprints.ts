@@ -96,6 +96,18 @@ export const INTERIOR_BLUEPRINTS: readonly InteriorBlueprint[] = [
     { type: "chair", x: 3.2, z: -1.2, rotationY: 0, scale: 0.9 },
     { type: "counter", x: 0, z: -4.3, rotationY: 0, scale: 0.8 }
   ] },
+  { id: "convenience-store", displayName: "Akwantuo Convenience Store", width: 13, depth: 15, wallHeight: 3.6, floorStyle: "tile", fixtures: [
+    { type: "counter", x: 4.25, z: 4.7, rotationY: 0, scale: 1.25 },
+    { type: "shopkeeper", x: 4.2, z: 3.45, rotationY: Math.PI, scale: 1 },
+    { type: "shelf", x: -5.1, z: 1.9, rotationY: 0, scale: 1.1 },
+    { type: "shelf", x: -5.1, z: -1.5, rotationY: 0, scale: 1.1 },
+    { type: "snack_rack", x: -1.9, z: 1.7, rotationY: 0, scale: 1 },
+    { type: "snack_rack", x: 1.0, z: 1.7, rotationY: 0, scale: 1 },
+    { type: "refrigerator", x: -4.7, z: -5.7, rotationY: 0, scale: 1 },
+    { type: "refrigerator", x: -1.9, z: -5.7, rotationY: 0, scale: 1 },
+    { type: "refrigerator", x: 0.9, z: -5.7, rotationY: 0, scale: 1 },
+    { type: "display", x: 3.7, z: -2.9, rotationY: 0, scale: 1 }
+  ] },
   { id: "creative-arts-centre", displayName: "Akwaaba Creative Arts & Events Hall", width: 32, depth: 28, wallHeight: 12, floorStyle: "concrete", fixtures: [
     { type: "stage", x: 0, z: -10, rotationY: 0, scale: 1 },
     { type: "runway", x: 0, z: -1, rotationY: 0, scale: 1 },
