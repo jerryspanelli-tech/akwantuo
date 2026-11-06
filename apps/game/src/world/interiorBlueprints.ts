@@ -97,8 +97,6 @@ export const INTERIOR_BLUEPRINTS: readonly InteriorBlueprint[] = [
     { type: "stage", x: 0, z: -10, rotationY: 0, scale: 1 },
     { type: "runway", x: 0, z: -1, rotationY: 0, scale: 1 },
     { type: "screen", x: 0, z: -13, rotationY: 0, scale: 1 },
-    { type: "audience_seating", x: -10, z: 2, rotationY: 0, scale: 1 },
-    { type: "audience_seating", x: 10, z: 2, rotationY: 0, scale: 1 }
   ] }
 ] as const;
 
