@@ -83,7 +83,7 @@ jobs:
       - name: Install Playwright for browser verification
         run: npm install --no-save --package-lock=false playwright
       - name: Install Chromium for screenshot capture
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps --only-shell chromium
       - name: Start production preview server
         run: |
           npm exec --workspace @akwantuo/game -- vite preview --host 127.0.0.1 --port 4173 > /tmp/akwantuo-preview.log 2>&1 &
