@@ -545,3 +545,18 @@ These are static Babylon.js visual meshes. The displays do not yet show live tra
 Added `apps/game/src/world/railStationCirculation.ts` to define passenger movement through station forecourts, entrances, ticketing, concourses, accessible circulation, platforms, boarding areas and interchange spaces. The catalogue creates stable station-specific zone IDs, planned connections, access-control classifications and step-free route requirements. It also records a planned accessible egress connection from each public passenger zone back to a designated safe-area zone.
 
 This is a route-planning foundation for later wayfinding, passenger NPC navigation, ticket checks and emergency systems. It does **not** certify fire egress, evacuation capacity, accessibility compliance or building-code compliance. It contains no final corridor widths, stair dimensions, lift locations, gradients, exit doors or crowd simulation; those must be designed from verified station plans and applicable standards.
+
+
+## Greater Accra railway track geometry prototype
+
+Added `apps/game/src/world/railTrackDesign.ts` and `apps/game/src/world/railTrackGeometry.ts`. The design catalogue assigns the documented **1,067 mm Cape gauge** to the schematic Accra–Odaw–Achimota trunk and Achimota–Tema branch, while keeping the Achimota–Nsawam corridor excluded from first-release geometry.
+
+The Babylon.js builder creates:
+- a ballast bed following each route centreline;
+- two steel rail tubes offset to the 1,067 mm gauge;
+- timber-coloured sleeper visuals distributed along the track;
+- thin-instanced sleepers so long routes do not create a separate Babylon mesh for every sleeper.
+
+The current track dimensions, sleeper spacing, rail profile, elevations and intermediate route bends are simplified visual-design targets, **not railway construction specifications or surveyed track alignments**. The route catalogue itself remains schematic. The builder is reusable but is not yet integrated into the main playable world or a dedicated railway preview.
+
+This stage does not implement points/switches at Achimota, signals, level crossings, overhead electrification, train vehicles, train movement, collision, track maintenance, timetables or station-specific platform-track layouts. Those must be designed as separate layers after reliable alignment and station-site review. The Circle Odaw railway corridor preview remains its own schematic local visual and is not automatically joined to this wider track builder.
