@@ -27,6 +27,7 @@ import {
   type RailTrainOperationConfig
 } from "./railTrainOperations";
 import { createRailServiceConfig, createRailServiceConfigForRouteChain } from "./railService";
+import { deriveRailRoadCrossingCandidates, evaluateRailCrossingSafety, isRailRoadCrossingCatalogueValid } from "./railRoadCrossings";
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error("Transport smoke check failed: " + message);
@@ -52,6 +53,50 @@ export function runTransportSmokeChecks(): void {
   assert(isGreaterAccraRailNetworkValid(), "Greater Accra Cape-gauge rail routes and station nodes validate");
   assert(isGreaterAccraTrackDesignValid(), "Greater Accra rail track design assignments validate");
   assert(isGreaterAccraRoadDesignCatalogueValid(), "Greater Accra road cross-section assignments validate");
+  const railCrossings = deriveRailRoadCrossingCandidates();
+  assert(isRailRoadCrossingCatalogueValid() && railCrossings.length === 4,
+    "four schematic at-grade road/rail crossing candidates are derived outside Circle and Achimota grade-separated junctions");
+  assert(railCrossings.some((crossing) => crossing.roadSegmentId === "n1-tema-corridor") &&
+    railCrossings.some((crossing) => crossing.roadSegmentId === "liberation-road") &&
+    railCrossings.some((crossing) => crossing.roadSegmentId === "spintex-road") &&
+    railCrossings.some((crossing) => crossing.roadSegmentId === "spintex-tema-connection"),
+    "crossing candidates identify the authored road corridors that intersect first-release rail alignments");
+  const crossingClear = evaluateRailCrossingSafety({
+    trainFrontDistanceM: null, trainLengthM: 120, clearanceM: 15,
+    warningDistanceM: 500, systemHealthy: true
+  });
+  const crossingWarning = evaluateRailCrossingSafety({
+    trainFrontDistanceM: 400, trainLengthM: 120, clearanceM: 15,
+    warningDistanceM: 500, systemHealthy: true
+  });
+  const crossingOccupied = evaluateRailCrossingSafety({
+    trainFrontDistanceM: -60, trainLengthM: 120, clearanceM: 15,
+    warningDistanceM: 500, systemHealthy: true
+  });
+  const crossingClearOfRear = evaluateRailCrossingSafety({
+    trainFrontDistanceM: -136, trainLengthM: 120, clearanceM: 15,
+    warningDistanceM: 500, systemHealthy: true
+  });
+  const crossingFault = evaluateRailCrossingSafety({
+    trainFrontDistanceM: null, trainLengthM: 120, clearanceM: 15,
+    warningDistanceM: 500, systemHealthy: false
+  });
+  assert(crossingClear.phase === "open" && crossingClear.roadTrafficMayProceed,
+    "clear rail crossing permits road traffic");
+  assert(crossingWarning.phase === "warning" && !crossingWarning.roadTrafficMayProceed,
+    "approaching train warns and blocks road entry before the crossing");
+  assert(crossingOccupied.phase === "closed" && crossingOccupied.barriersDown &&
+    !crossingOccupied.roadTrafficMayProceed,
+    "crossing remains closed while the train occupies it");
+  assert(crossingClearOfRear.phase === "open" && crossingClearOfRear.roadTrafficMayProceed,
+    "crossing reopens only after the train rear and clearance distance pass");
+  assert(crossingFault.phase === "closed" && crossingFault.barriersDown &&
+    !crossingFault.roadTrafficMayProceed,
+    "crossing interlock fails safe to closed on a system fault");
+  expectThrow(() => evaluateRailCrossingSafety({
+    trainFrontDistanceM: 100, trainLengthM: 120, clearanceM: 15,
+    warningDistanceM: 100, systemHealthy: true
+  }), "invalid rail crossing warning distance is rejected");
 
   const mallamToTema = findShortestRoadRoute("mallam-junction", "tema-motorway-junction");
   assert(!!mallamToTema && isRoadRouteValid(mallamToTema) &&
