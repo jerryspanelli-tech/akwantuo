@@ -19,6 +19,7 @@
 - Reusable saloon-car prototype geometry, transform rig and bounded kinematic bicycle handling model.
 - Keyboard driving plus mobile touch buttons for accelerate, reverse, brake and steering in the standalone transport preview.
 - New vehicle interaction state machine validates proximity, seat availability, vehicle availability, stopped speed and safe exit.
+- Added a swept circular-footprint collision helper for local vehicle-to-vehicle checks. The starter saloon uses it against the playable trotro so a low frame rate cannot skip through the minibus; deterministic smoke checks cover clear paths, crossing paths and invalid footprints.
 - The starter saloon is now spawned in the main playable scene. The player can enter with E / the on-screen action control, drive with WASD or the touch joystick, brake, and exit only after stopping in a safe space.
 - The playable saloon now has an in-cabin window view, interior free-look and exterior follow camera modes, cycled with C / the on-screen VIEW control. Camera anchors follow the vehicle rig.
 - This first playable vehicle slice is local-only and uses the prototype kinematic model; it is not yet a complete vehicle fleet or network-authoritative system.
@@ -41,7 +42,7 @@
 
 These are not being represented as finished systems:
 - Realistic final 3D assets for every Ghanaian vehicle class, interiors, articulated trailers and motorcycles.
-- Complete physical collision and vehicle damage simulation; only basic local checks between the player, starter saloon and preview trotro are currently present. Suspension, tyre grip, wheel steering/rotation, fuel, ownership, insurance, licences and garages are also outstanding.
+- Complete physical collision and vehicle damage simulation; the new swept circular-footprint test is a conservative prototype check between the starter saloon and preview trotro, not full oriented-body physics or general traffic collision handling. Suspension, tyre grip, wheel steering/rotation, fuel, ownership, insurance, licences and garages are also outstanding.
 - AI traffic, traffic-light phases, lane-level navigation, parking enforcement, emergency dispatch and road safety simulation.
 - Driver entry/exit is connected for the starter saloon, but seat animations and visible driver placement are not yet implemented. The three camera modes are connected to the starter saloon and the preview trotro passenger ride; full passenger seat placement and animations remain unimplemented.
 - Approved Greater Accra public-transport route/stop placements, timetables, multiple live vehicles, conductor/mate interaction, stop announcements, full fare UI and real destination boards. The current two temporary preview stops are deliberately not presented as real Accra stops.
