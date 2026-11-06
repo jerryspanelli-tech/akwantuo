@@ -14,6 +14,7 @@ try {
     });
     const page = await context.newPage();
     page.on("pageerror", (error) => failures.push(target.name + ": " + error.message));
+    page.on("console", (message) => { if (message.type() === "error") failures.push(target.name + " console: " + message.text()); });
     await page.goto("http://127.0.0.1:4173/", { waitUntil: "networkidle", timeout: 30000 });
     await page.waitForFunction(() => {
       const status = document.querySelector("#boot-status")?.textContent ?? "";
@@ -31,6 +32,8 @@ try {
         const menu = document.querySelector("#main-menu");
         return {
           status: document.querySelector("#boot-status")?.textContent,
+          startupStage: document.documentElement.dataset.startupHandoffStage,
+          startupError: document.documentElement.dataset.startupHandoffError,
           bootExists: !!boot,
           bootHiddenProperty: boot instanceof HTMLElement ? boot.hidden : null,
           bootHasHiddenAttribute: boot?.hasAttribute("hidden") ?? false,
