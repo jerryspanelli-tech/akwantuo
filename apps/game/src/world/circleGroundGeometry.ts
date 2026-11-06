@@ -132,7 +132,8 @@ export function createCircleGroundGeometry(
       scene
     );
     road.rotation.y = bearing;
-    const roadCentreDistance = options.outerRadiusM + approach.roadLengthM / 2;
+    const perimeterOverlapM = Math.min(8, options.outerRadiusM * 0.15);
+    const roadCentreDistance = options.outerRadiusM + approach.roadLengthM / 2 - perimeterOverlapM;
     road.position.set(
       options.centerX + directionX * roadCentreDistance,
       options.groundElevationM + 0.015,
