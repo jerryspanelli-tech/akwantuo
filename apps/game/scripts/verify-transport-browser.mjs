@@ -75,6 +75,21 @@ try {
     await page.waitForFunction(() => !document.querySelector("#game-hud")?.classList.contains("is-hidden"), { timeout: 10000 });
     await page.waitForTimeout(1200);
 
+    const npcTraffic = await page.evaluate(() => ({
+      count: Number(document.documentElement.dataset.npcRoadTraffic ?? 0),
+      route: document.documentElement.dataset.npcRoadTrafficRoute ?? "",
+      distanceM: Number(document.documentElement.dataset.npcRoadTrafficDistanceM ?? 0),
+      speedMps: Number(document.documentElement.dataset.npcRoadTrafficSpeedMps ?? 0)
+    }));
+    if (npcTraffic.count !== 1 || npcTraffic.route !== "n1-tema-corridor" ||
+        !Number.isFinite(npcTraffic.distanceM) || npcTraffic.distanceM <= 0 ||
+        !Number.isFinite(npcTraffic.speedMps) || npcTraffic.speedM < 0) {
+      failures.push(target.name + ": live NPC road traffic did not spawn and advance on the N1 corridor: " +
+        JSON.stringify(npcTraffic));
+    } else {
+      console.log(target.name + ": live NPC road traffic advanced " + JSON.stringify(npcTraffic));
+    }
+
     // Exercise a complete trotro journey, including the passenger camera control.
     if (target.isMobile) await page.locator("#interact-button").click({ timeout: 5000 });
     else await page.keyboard.press("e");
