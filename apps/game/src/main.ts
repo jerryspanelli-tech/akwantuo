@@ -314,7 +314,7 @@ async function start(): Promise<void> {
     pressedKeys.add(key);
     if (key === " " && hasEnteredWorld && interactionState.mode === "on_foot") jumpRequested = true;
     if (key === "e" && hasEnteredWorld) vehicleActionRequested = true;
-    if (key === "c" && hasEnteredWorld && interactionState.mode === "inside_vehicle") vehicleViewRequested = true;
+    if (key === "c" && hasEnteredWorld && (interactionState.mode === "inside_vehicle" || passengerState.mode === "riding")) vehicleViewRequested = true;
   });
   window.addEventListener("keyup", (event: KeyboardEvent) => {
     pressedKeys.delete(event.key.toLowerCase());
