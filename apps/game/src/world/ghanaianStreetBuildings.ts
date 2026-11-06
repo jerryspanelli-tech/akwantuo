@@ -147,22 +147,52 @@ export function createGhanaianStreetBuildings(scene: Scene): {
     const windowMaterial = material(scene, "building-glass-" + building.id, "#527b82");
     windowMaterial.alpha = 0.78;
     const windowCount = Math.max(1, Math.min(4, Math.floor(building.width / 2.8)));
-    for (let index = 0; index < windowCount; index += 1) {
-      const window = MeshBuilder.CreateBox("building-window-" + building.id + "-" + index, {
-        width: 1.35, height: 1.1, depth: 0.1
-      }, scene);
-      const offsetZ = (index - (windowCount - 1) / 2) * (building.width / (windowCount + 0.5));
-      window.position.set(frontX, building.floors > 1 ? 2.55 : 2.35, building.z + offsetZ);
-      window.rotation.y = building.side === "west" ? Math.PI / 2 : -Math.PI / 2;
-      window.material = windowMaterial;
-      window.isPickable = false;
-      const lintel = MeshBuilder.CreateBox("building-window-trim-" + building.id + "-" + index, {
-        width: 1.52, height: 0.1, depth: 0.2
-      }, scene);
-      lintel.position.set(frontX + (building.side === "west" ? -0.07 : 0.07), building.floors > 1 ? 3.15 : 2.95, window.position.z);
-      lintel.rotation.y = window.rotation.y;
-      lintel.material = trim;
-      lintel.isPickable = false;
+    for (let floorIndex = 0; floorIndex < building.floors; floorIndex += 1) {
+      const floorBase = floorIndex * 3.35;
+      for (let index = 0; index < windowCount; index += 1) {
+        const window = MeshBuilder.CreateBox("building-window-" + building.id + "-" + floorIndex + "-" + index, {
+          width: 1.35, height: 1.1, depth: 0.1
+        }, scene);
+        const offsetZ = (index - (windowCount - 1) / 2) * (building.width / (windowCount + 0.5));
+        window.position.set(frontX, floorBase + 2.35, building.z + offsetZ);
+        window.rotation.y = building.side === "west" ? Math.PI / 2 : -Math.PI / 2;
+        window.material = windowMaterial;
+        window.isPickable = false;
+        const lintel = MeshBuilder.CreateBox("building-window-trim-" + building.id + "-" + floorIndex + "-" + index, {
+          width: 1.52, height: 0.1, depth: 0.2
+        }, scene);
+        lintel.position.set(frontX + (building.side === "west" ? -0.07 : 0.07), floorBase + 2.95, window.position.z);
+        lintel.rotation.y = window.rotation.y;
+        lintel.material = trim;
+        lintel.isPickable = false;
+      }
+
+      // Upper-floor balconies make apartments, guest houses and offices read
+      // as occupied multi-storey buildings instead of single-storey boxes.
+      if (floorIndex > 0 && (building.exteriorStyle === "modern" || building.exteriorStyle === "coastal")) {
+        const outward = building.side === "west" ? 1 : -1;
+        const balconyX = frontX + outward * 0.62;
+        const balcony = MeshBuilder.CreateBox("building-balcony-floor-" + building.id + "-" + floorIndex, {
+          width: 1.15, height: 0.14, depth: building.width * 0.68
+        }, scene);
+        balcony.position.set(balconyX, floorBase + 0.36, building.z);
+        balcony.material = trim;
+        balcony.isPickable = false;
+        const rail = MeshBuilder.CreateBox("building-balcony-rail-" + building.id + "-" + floorIndex, {
+          width: 0.09, height: 0.82, depth: building.width * 0.68
+        }, scene);
+        rail.position.set(balconyX + outward * 0.52, floorBase + 0.82, building.z);
+        rail.material = accent;
+        rail.isPickable = false;
+        for (const postSide of [-1, 1]) {
+          const post = MeshBuilder.CreateBox("building-balcony-post-" + building.id + "-" + floorIndex + "-" + postSide, {
+            width: 0.12, height: 0.9, depth: 0.12
+          }, scene);
+          post.position.set(balconyX + outward * 0.52, floorBase + 0.82, building.z + postSide * building.width * 0.34);
+          post.material = trim;
+          post.isPickable = false;
+        }
+      }
     }
 
     if (building.exteriorStyle === "market" || building.exteriorStyle === "coastal") {
