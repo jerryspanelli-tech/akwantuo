@@ -319,6 +319,7 @@ try {
         if (!checkoutPrompt?.includes("sign in to your AKWANTUO account")) {
           throw new Error(target.name + ": checkout did not require an authenticated player account.");
         }
+        await page.locator("#account-close").click({ timeout: 5000 });
       }
       if (interiorCase.business) {
         await page.locator("#stage6-service-action").click({ timeout: 5000 });
