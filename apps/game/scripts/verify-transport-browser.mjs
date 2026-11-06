@@ -235,15 +235,15 @@ try {
     // Walk into and back out of one representative building for every
     // distinct interior blueprint on both desktop and mobile-sized viewports.
     const interiorCases = [
-      { buildingId: "osu-corner-mart", roomId: "shop-small", screenshot: true },
-      { buildingId: "ama-salon", roomId: "salon" },
-      { buildingId: "chop-bar", roomId: "restaurant" },
-      { buildingId: "adom-compound", roomId: "compound-house" },
-      { buildingId: "coastal-guest-house", roomId: "guest-house" },
-      { buildingId: "district-office", roomId: "office" },
-      { buildingId: "ridge-clinic", roomId: "clinic" },
-      { buildingId: "kwame-auto-works", roomId: "workshop" },
-      { buildingId: "east-legon-apartments", roomId: "apartment" }
+      { buildingId: "osu-corner-mart", roomId: "shop-small", business: true, screenshot: true },
+      { buildingId: "ama-salon", business: true, roomId: "salon" },
+      { buildingId: "chop-bar", business: true, roomId: "restaurant" },
+      { buildingId: "adom-compound", business: true, roomId: "compound-house" },
+      { buildingId: "coastal-guest-house", business: true, roomId: "guest-house" },
+      { buildingId: "district-office", business: true, roomId: "office" },
+      { buildingId: "ridge-clinic", business: true, roomId: "clinic" },
+      { buildingId: "kwame-auto-works", business: true, roomId: "workshop" },
+      { buildingId: "east-legon-apartments", roomId: "apartment", business: false }
     ];
     for (const interiorCase of interiorCases) {
       await page.goto("http://127.0.0.1:4173/?akwantuoInteriorTest=" + interiorCase.buildingId, {
@@ -272,6 +272,16 @@ try {
         interiorCase.roomId,
         { timeout: 5000 }
       );
+      const activeBusiness = await page.evaluate(() => ({
+        id: document.documentElement.dataset.activeBusinessId ?? "",
+        serviceCount: Number(document.documentElement.dataset.activeBusinessServiceCount ?? 0),
+        notice: document.querySelector("#notice")?.textContent ?? ""
+      }));
+      if (interiorCase.business
+        ? activeBusiness.id !== "business-" + interiorCase.buildingId || activeBusiness.serviceCount < 1 || !activeBusiness.notice.includes("Services:")
+        : activeBusiness.id !== "" || activeBusiness.serviceCount !== 0) {
+        throw new Error(target.name + ": business service information did not match " + interiorCase.buildingId + ": " + JSON.stringify(activeBusiness));
+      }
       const interiorActionLabel = await page.locator("#interact-button").textContent();
       if (interiorActionLabel?.trim() !== "EXIT") {
         throw new Error(target.name + ": " + interiorCase.buildingId + " did not switch interaction to EXIT: " + interiorActionLabel);
