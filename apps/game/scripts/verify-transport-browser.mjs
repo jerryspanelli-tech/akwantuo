@@ -53,7 +53,7 @@ try {
       interiorLinks: Number(document.documentElement.dataset.akwantuoBuildingInteriorLinkCount ?? 0),
       stage6Checks: document.documentElement.dataset.akwantuoStage6Checks === "passed"
     }));
-    if (stageSixCatalogues.buildings !== 22 || stageSixCatalogues.districts !== 12 || stageSixCatalogues.properties !== 22 ||
+    if (stageSixCatalogues.buildings !== 22 || stageSixCatalogues.districts !== 12 || stageSixCatalogues.properties !== 22 || stageSixCatalogues.businesses !== 16 ||
         stageSixCatalogues.interiorBlueprints !== 9 || stageSixCatalogues.renderedInteriorRooms !== 9 ||
         stageSixCatalogues.interiorLinks !== 22 || !stageSixCatalogues.stage6Checks) {
       failures.push(target.name + ": Stage 6 building/district/property/interior catalogues are incomplete: " +
