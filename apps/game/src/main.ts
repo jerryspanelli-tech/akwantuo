@@ -341,7 +341,7 @@ async function start(): Promise<void> {
     const delta = Math.min(rawDelta, 0.05);
 
     if (hasEnteredWorld) {
-      playableRailDemo.update(delta);
+      playableRailDemo.update(Math.min(rawDelta, 0.1));
       const railStatus = playableRailDemo.getStatus();
       if (passengerState.mode === "riding" && passengerState.vehicleId === "preview-shared-trotro") {
         const taxiStep = advanceRoadVehicleDynamics({ wheelbaseM: 2.8, maximumForwardSpeedMps: 7, maximumReverseSpeedMps: 2, maximumAccelerationMps2: 1.8, serviceBrakingMps2: 4, maximumSteeringAngleRadians: 0.35, rollingDragMps2: 0.3 }, publicTaxiState, { throttle: publicRideArrived ? 0 : 1, brake: 0, steering: 0 }, Math.min(rawDelta, 0.1));
@@ -440,7 +440,7 @@ async function start(): Promise<void> {
             maximumSteeringAngleRadians: 0.48, rollingDragMps2: 0.45
           }, vehicleState, {
             throttle, brake: vehicleBrake || pressedKeys.has(" ") ? 1 : 0, steering
-          }, Math.min(delta, 0.1));
+          }, Math.min(rawDelta, 0.1));
           const bounded = clampToWorld(next.x, next.z, {
             minX: WORLD_CONFIG.bounds.minX + 2.5, maxX: WORLD_CONFIG.bounds.maxX - 2.5,
             minZ: WORLD_CONFIG.bounds.minZ + 2.5, maxZ: WORLD_CONFIG.bounds.maxZ - 2.5
