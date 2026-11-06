@@ -514,10 +514,19 @@ async function start(): Promise<void> {
   });
   shopkeeperTalkButton.addEventListener("click", () => {
     if (activeInterior?.roomId !== "convenience-store") return;
+    const selectedItem = AKWANTUO_RETAIL_PRODUCTS[selectedShopProductIndex];
+    const basketCount = [...retailBasket.values()].reduce((sum, quantity) => sum + quantity, 0);
+    const basketTotal = [...retailBasket.entries()].reduce((sum, [id, quantity]) => {
+      const product = AKWANTUO_RETAIL_PRODUCTS.find((item) => item.id === id);
+      return sum + (product?.pricePesewas ?? 0) * quantity;
+    }, 0);
     const lines = [
       'Shopkeeper: "Akwaaba! Welcome in. Cold drinks are in the fridges and snacks are on the racks."',
       'Shopkeeper: "You can browse the shelves, add what you need, then pay at the counter."',
-      'Shopkeeper: "Prices are displayed beside each item. I will let you know if something is out of stock."'
+      'Shopkeeper: "The selected item is ' + selectedItem.name + '. Check the price and stock before adding it."',
+      'Shopkeeper: "Your basket has ' + basketCount + ' item(s), worth GH₵' + (basketTotal / 100).toFixed(2) + '."',
+      'Shopkeeper: "Your AKWANTUO wallet balance is GH₵' + (walletBalancePesewas / 100).toFixed(2) + '. I will not take payment until you check out."',
+      'Shopkeeper: "When you are ready, use Checkout basket. You will receive a receipt and your items will go into your inventory."'
     ];
     const index = Number(document.documentElement.dataset.stage6ShopkeeperDialogue ?? 0) % lines.length;
     document.documentElement.dataset.stage6ShopkeeperDialogue = String(index + 1);
@@ -544,7 +553,7 @@ async function start(): Promise<void> {
       await refreshPlayerEconomy();
       document.documentElement.dataset.stage6RetailCheckoutCount =
         String(Number(document.documentElement.dataset.stage6RetailCheckoutCount ?? 0) + 1);
-      showNotice("Payment successful. Receipt #" + receipt.transaction_id + ". Total GH₵" +
+      showNotice('Shopkeeper: "Medaase! Payment complete. Receipt #' + receipt.transaction_id + ". Total GH₵" +
         (receipt.total_pesewas / 100).toFixed(2) + ". Wallet balance GH₵" +
         (receipt.balance_pesewas / 100).toFixed(2) + ". Stock and inventory have been updated in AKWANTUO.");
     } catch (error) {
