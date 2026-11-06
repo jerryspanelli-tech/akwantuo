@@ -543,10 +543,10 @@ async function start(): Promise<void> {
       playableRailDemo.update(Math.min(rawDelta, 0.1));
       let mappedRailFrame = greaterAccraMappedRailService.update(rawDelta);
       if (transportRailTestMode) {
-        // Accelerate only the local browser-test session. The live game keeps
-        // normal simulation time and the service's bounded catch-up behaviour.
-        for (let testStep = 0; testStep < 9; testStep += 1) {
-          mappedRailFrame = greaterAccraMappedRailService.update(rawDelta);
+        // Advance four bounded one-second simulation slices per rendered frame
+        // so the long mapped route can be verified quickly in local CI only.
+        for (let testStep = 0; testStep < 4; testStep += 1) {
+          mappedRailFrame = greaterAccraMappedRailService.update(1);
         }
       }
       const mappedRailState = greaterAccraMappedRailService.getState();
