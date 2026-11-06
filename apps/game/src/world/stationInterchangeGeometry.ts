@@ -138,11 +138,17 @@ export function createStationInterchangeGeometry(
     vehicleMeshes.push(body);
 
     // Low-poly window band and windscreen make each transport placeholder readable.
-    const windowBand = finish(MeshBuilder.CreateBox(`interchange-vehicle-windows-${bay.id}`, {
-      width: vehicleWidth * 0.91, height: vehicleHeight * 0.25, depth: vehicleLength * 0.72
-    }, scene), glassMat);
-    windowBand.position.set(bay.centerX, vehicleY + vehicleHeight * 0.2, vehicleZ);
-    vehicleMeshes.push(windowBand);
+    for (const side of [-1, 1]) {
+      const sideWindows = finish(MeshBuilder.CreateBox(`interchange-vehicle-windows-${bay.id}-${side}`, {
+        width: 0.08, height: vehicleHeight * 0.25, depth: vehicleLength * 0.72
+      }, scene), glassMat);
+      sideWindows.position.set(
+        bay.centerX + side * (vehicleWidth / 2 + 0.025),
+        vehicleY + vehicleHeight * 0.2,
+        vehicleZ
+      );
+      vehicleMeshes.push(sideWindows);
+    }
     const windscreen = finish(MeshBuilder.CreateBox(`interchange-vehicle-windscreen-${bay.id}`, {
       width: vehicleWidth * 0.82, height: vehicleHeight * 0.3, depth: 0.12
     }, scene), glassMat);
