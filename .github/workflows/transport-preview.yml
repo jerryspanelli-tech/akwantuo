@@ -22,6 +22,9 @@ on:
       - "apps/game/src/vehicles/roadVehicleGeometry.ts"
       - "apps/game/src/vehicles/roadVehicleRig.ts"
       - "apps/game/src/vehicles/roadVehicleDynamics.ts"
+      - "apps/game/src/vehicles/vehicleInteraction.ts"
+      - "apps/game/src/world/publicTransportOperations.ts"
+      - "apps/game/station-preview.css"
       - "apps/game/src/transportPreview.ts"
       - "apps/game/transport-preview.html"
       - "apps/game/vite.config.ts"
@@ -77,9 +80,9 @@ jobs:
             echo "Page: /transport-preview.html"
             echo "Viewport: 1440 x 1000"
             echo "Screenshot: artifacts/akwantuo-transport-preview.png"
-            echo "Scope: ultra-modern railway station concept, passenger concourse fit-out, sheltered step-free forecourt walkway, illustrative trotro, city-bus, taxi and ride-hailing forecourt, and a preview-only moving two-car shuttle demonstrating the train rig and station-stop controller, plus a controllable saloon-car visual using the road-vehicle dynamics model. Preview startup also smoke-checks that candidate Circle/Odaw is excluded from operational stops and that invalid train states are rejected."
+            echo "Scope: ultra-modern railway station concept, passenger concourse fit-out, sheltered step-free forecourt walkway, illustrative trotro, city-bus, taxi and ride-hailing forecourt, and a preview-only moving two-car shuttle demonstrating the train rig and station-stop controller, plus a controllable saloon-car visual using the road-vehicle dynamics model and keyboard/touch controls. Startup smoke checks also cover vehicle entry/exit and public-transport boarding, fare deduction and alighting. Preview startup also smoke-checks that candidate Circle/Odaw is excluded from operational stops and that invalid train states are rejected."
             echo "Validation: npm typecheck and production Vite build must pass before capture."
-            echo "Limitations: developer preview only; not integrated into the playable game; the moving shuttle is a short preview-only path and is not the Greater Accra mapped rail service; startup smoke checks cover prototype data rules only, not railway safety; no live network trains or traffic AI; the saloon uses prototype kinematics without road collision, tyre/suspension simulation or server authority; station-site coordinates remain illustrative."
+            echo "Limitations: developer preview only; not integrated into the playable game; the moving shuttle is a short preview-only path and is not the Greater Accra mapped rail service; startup smoke checks cover prototype data rules only, not railway safety; no live network trains or traffic AI; the saloon uses prototype kinematics without road collision, tyre/suspension simulation or server authority; vehicle interaction and public-transport fare logic are local prototype rules and are not connected to a server wallet, seat reservations or live route timetable; station-site coordinates remain illustrative."
           } > artifacts/transport-preview-report.txt
       - name: Upload screenshot and report
         uses: actions/upload-artifact@v4
