@@ -14,6 +14,7 @@ import {
 } from "../vehicles/roadVehicleDynamics";
 import { enterVehicle, exitVehicle, type VehicleInteractionState } from "../vehicles/vehicleInteraction";
 import { isVehiclePathClear } from "../vehicles/vehicleCollision";
+import { advanceWatercraftDynamics, WATERCRAFT_CONFIG, AKWAABA_CAY_WATER_ROUTE, isWatercraftInNavigableSea } from "../vehicles/watercraftDynamics";
 import { advanceMotorcycleDynamics, isMotorcycleDynamicsConfigValid, isMotorcycleDynamicsStateValid } from "../vehicles/motorcycleDynamics";
 import { getRoadVehicleAutopilotControl, isRoadVehicleAutopilotConfigValid } from "../vehicles/roadVehicleAutopilot";
 import {
@@ -252,6 +253,25 @@ export function runTransportSmokeChecks(): void {
   assert(stoppedVehicle.speedMps === 0, "service brake can bring a low-speed vehicle to a stop");
   expectThrow(() => advanceRoadVehicleDynamics(dynamicsConfig, initialVehicle,
     { throttle: 2, brake: 0, steering: 0 }, 0.1), "invalid road vehicle input is rejected");
+  const speedboatStart = { x: 2700, z: -3380, headingRadians: Math.PI / 2, speedMps: 0 };
+  assert(isWatercraftInNavigableSea(speedboatStart) && AKWAABA_CAY_WATER_ROUTE.length >= 4 &&
+    AKWAABA_CAY_WATER_ROUTE.every((point) => isWatercraftInNavigableSea({ ...point, headingRadians: 0, speedMps: 0 })),
+    "Labadi marina to Akwaaba Cay route stays inside the navigable Gulf of Guinea water area");
+  const speedboatMoving = advanceWatercraftDynamics(WATERCRAFT_CONFIG.speedboat, speedboatStart,
+    { throttle: 1, steering: 0, brake: 0 }, 0.1);
+  assert(speedboatMoving.speedMps > 0 && speedboatMoving.x > speedboatStart.x,
+    "speedboat accelerates along its forward heading");
+  const jetSkiTurning = advanceWatercraftDynamics(WATERCRAFT_CONFIG.jet_ski,
+    { ...speedboatStart, headingRadians: 0, speedMps: 8 },
+    { throttle: 0.5, steering: 1, brake: 0 }, 0.1);
+  assert(jetSkiTurning.headingRadians > 0 && jetSkiTurning.speedMps > 8,
+    "jet ski accelerates and steers through a turn");
+  const watercraftStopped = advanceWatercraftDynamics(WATERCRAFT_CONFIG.speedboat,
+    { ...speedboatMoving, speedMps: 0.4 },
+    { throttle: 0, steering: 0, brake: 1 }, 0.1);
+  assert(watercraftStopped.speedMps === 0, "watercraft brake stops a slow-moving craft");
+  expectThrow(() => advanceWatercraftDynamics(WATERCRAFT_CONFIG.speedboat, speedboatStart,
+    { throttle: 2, steering: 0, brake: 0 }, 0.1), "invalid watercraft throttle is rejected");
   const motorcycleConfig = {
     wheelbaseM: 1.4,
     maximumForwardSpeedMps: 32,
