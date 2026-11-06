@@ -109,6 +109,13 @@ button { font: inherit; }
 .character-heading h2 { margin: 8px 0 0; font-size: clamp(24px, 6vw, 32px); font-weight: 550; }
 .character-close { width: 38px; height: 38px; border: 1px solid rgba(255,255,255,.22); background: transparent; color: white; font-size: 25px; cursor: pointer; }
 #character-form { display: grid; grid-template-columns: 1fr 1fr; gap: 15px 12px; }
+#account-form { display: grid; gap: 14px; }
+#account-form label { display: grid; gap: 7px; color: rgba(255,255,255,.78); font-size: 10px; letter-spacing: .08em; }
+#account-form input { width: 100%; min-height: 43px; padding: 0 11px; border: 1px solid rgba(255,255,255,.19); background: #101a19; color: #f5f1e8; font: inherit; font-size: 13px; box-sizing: border-box; }
+#account-form input:focus { outline: 1px solid var(--gold); border-color: var(--gold); }
+#account-form .menu-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+#account-form #account-signout { grid-column: 1 / -1; }
+#account-form button:disabled { opacity: .55; cursor: wait; }
 #character-form label { display: grid; gap: 7px; color: rgba(255,255,255,.78); font-size: 10px; letter-spacing: .08em; }
 #character-form input, #character-form select { width: 100%; min-height: 43px; padding: 0 11px; border: 1px solid rgba(255,255,255,.19); border-radius: 0; background: #101a19; color: #f5f1e8; font: inherit; font-size: 13px; }
 #character-form input:focus, #character-form select:focus { outline: 1px solid var(--gold); border-color: var(--gold); }
