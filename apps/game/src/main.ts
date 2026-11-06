@@ -19,6 +19,7 @@ import { advanceRoadVehicleDynamics, type RoadVehicleDynamicsState } from "./veh
 import { createRoadVehicleGeometry } from "./vehicles/roadVehicleGeometry";
 import { createRoadVehicleRig } from "./vehicles/roadVehicleRig";
 import { enterVehicle, exitVehicle, type VehicleInteractionState } from "./vehicles/vehicleInteraction";
+import { PassengerCameraRig } from "./vehicles/passengerCamera";
 
 const bootScreen = document.querySelector<HTMLElement>("#boot-screen");
 const gameShell = document.querySelector<HTMLElement>("#game-shell");
@@ -32,6 +33,7 @@ const joystick = document.querySelector<HTMLElement>("#joystick");
 const joystickStick = document.querySelector<HTMLElement>("#joystick-stick");
 const jumpButton = document.querySelector<HTMLButtonElement>("#jump-button");
 const interactButton = document.querySelector<HTMLButtonElement>("#interact-button");
+const vehicleViewButton = document.querySelector<HTMLButtonElement>("#vehicle-view-button");
 const notice = document.querySelector<HTMLElement>("#notice");
 const characterButton = document.querySelector<HTMLButtonElement>("#character-button");
 const characterPanel = document.querySelector<HTMLElement>("#character-panel");
@@ -45,6 +47,7 @@ let jumpRequested = false;
 let hasEnteredWorld = false;
 let vehicleActionRequested = false;
 let vehicleBrake = false;
+let vehicleViewRequested = false;
 
 function readAppearanceForm(form: HTMLFormElement): CharacterAppearance {
   const data = new FormData(form);
@@ -259,6 +262,15 @@ async function start(): Promise<void> {
     x: vehicleOrigin.x, z: vehicleOrigin.z, headingRadians: 0, speedMps: 0
   };
   let interactionState: VehicleInteractionState = { mode: "on_foot" };
+  const interiorWindowAnchor = new TransformNode("starter-saloon-interior-camera-anchor", scene);
+  interiorWindowAnchor.position.set(0, 1.48, 0.22);
+  interiorWindowAnchor.parent = vehicleRig.root;
+  const exteriorFollowAnchor = new TransformNode("starter-saloon-exterior-camera-anchor", scene);
+  exteriorFollowAnchor.position.set(0, 3.7, -7.5);
+  exteriorFollowAnchor.parent = vehicleRig.root;
+  let passengerCameraRig: PassengerCameraRig | null = null;
+  const vehicleCameraModes = ["interior_window", "interior_free_look", "exterior_follow"] as const;
+  let vehicleCameraModeIndex = 0;
 
   const camera = new ArcRotateCamera(
     "third-person-camera",
@@ -280,12 +292,13 @@ async function start(): Promise<void> {
   installTouchControls();
   window.addEventListener("keydown", (event: KeyboardEvent) => {
     const key = event.key.toLowerCase();
-    if (["w", "a", "s", "d", "e", "arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(key)) {
+    if (["w", "a", "s", "d", "e", "c", "arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(key)) {
       event.preventDefault();
     }
     pressedKeys.add(key);
     if (key === " " && hasEnteredWorld && interactionState.mode === "on_foot") jumpRequested = true;
     if (key === "e" && hasEnteredWorld) vehicleActionRequested = true;
+    if (key === "c" && hasEnteredWorld && interactionState.mode === "inside_vehicle") vehicleViewRequested = true;
   });
   window.addEventListener("keyup", (event: KeyboardEvent) => {
     pressedKeys.delete(event.key.toLowerCase());
@@ -294,6 +307,9 @@ async function start(): Promise<void> {
   interactButton?.addEventListener("pointerdown", (event: PointerEvent) => {
     event.preventDefault();
     vehicleActionRequested = true;
+  });
+  vehicleViewButton?.addEventListener("pointerdown", (event: PointerEvent) => {
+    event.preventDefault(); vehicleViewRequested = true;
   });
   jumpButton?.addEventListener("pointerdown", (event: PointerEvent) => {
     event.preventDefault();
@@ -322,6 +338,8 @@ async function start(): Promise<void> {
           if (result.ok) {
             interactionState = result.state;
             player.root.setEnabled(false);
+            passengerCameraRig = new PassengerCameraRig(scene, { interiorWindow: interiorWindowAnchor, exteriorFollow: exteriorFollowAnchor });
+            vehicleCameraModeIndex = 0;
             showNotice("Driving: WASD or the touch joystick controls the car. Press E to exit when stopped.");
           } else {
             showNotice(result.reason === "too_far" ? "Move closer to the driver's door to enter." : "You cannot enter this vehicle right now.");
@@ -334,6 +352,8 @@ async function start(): Promise<void> {
           });
           if (result.ok) {
             interactionState = result.state;
+            passengerCameraRig?.dispose();
+            passengerCameraRig = null;
             player.root.setEnabled(true);
             player.root.position.set(vehicleState.x - 1.8, 0, vehicleState.z);
             showNotice("You have exited the vehicle.");
@@ -345,6 +365,13 @@ async function start(): Promise<void> {
       }
 
       if (interactionState.mode === "inside_vehicle") {
+        if (vehicleViewRequested && passengerCameraRig) {
+          vehicleViewRequested = false;
+          vehicleCameraModeIndex = (vehicleCameraModeIndex + 1) % vehicleCameraModes.length;
+          passengerCameraRig.setMode(vehicleCameraModes[vehicleCameraModeIndex], canvas ?? undefined);
+          showNotice(`Vehicle view: ${vehicleCameraModes[vehicleCameraModeIndex].replaceAll("_", " ")}.`);
+          window.setTimeout(() => notice?.classList.remove("is-visible"), 1800);
+        }
         let steering = touchInput.x;
         let throttle = touchInput.z;
         if (pressedKeys.has("a") || pressedKeys.has("arrowleft")) steering -= 1;
@@ -375,9 +402,11 @@ async function start(): Promise<void> {
         camera.radius = 9;
         if (interactButton) interactButton.textContent = "EXIT";
         if (jumpButton) jumpButton.classList.add("is-hidden");
+        if (vehicleViewButton) vehicleViewButton.classList.remove("is-hidden");
       } else {
         if (interactButton) interactButton.textContent = "ENTER";
         if (jumpButton) jumpButton.classList.remove("is-hidden");
+        if (vehicleViewButton) vehicleViewButton.classList.add("is-hidden");
       }
 
       let inputX = interactionState.mode === "on_foot" ? touchInput.x : 0;
