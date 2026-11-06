@@ -139,11 +139,11 @@ export function createRailTrainGeometry(
     // A simple cab face and paired headlights on the leading end only.
     if (car === 0) {
       detailMeshes.push(makeBox(scene, `${carId}-front-windscreen`,
-        4.4, 1.45, 0.08, carX + carLength / 2 + 0.05, baseY + 2.8,
+        0.08, 1.45, carWidth * 0.82, carX + carLength / 2 + 0.05, baseY + 2.8,
         options.centerZ, glassMaterial));
       for (const side of [-1, 1]) {
         detailMeshes.push(makeBox(scene, `${carId}-headlamp-${side}`,
-          0.55, 0.32, 0.12, carX + carLength / 2 + 0.1, baseY + 1.65,
+          0.12, 0.32, 0.55, carX + carLength / 2 + 0.1, baseY + 1.65,
           options.centerZ + side * 1.05, lampMaterial));
       }
     }
