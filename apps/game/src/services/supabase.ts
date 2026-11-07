@@ -76,9 +76,6 @@ async function request<T>(path: string, init: RequestInit = {}, accessToken?: st
     throw new Error("AKWANTUO online services are not configured yet. Connect a dedicated AKWANTUO Supabase project first.");
   }
 
-  // Refresh an expiring session before any authenticated request. The stored
-  // session is the source of truth so callers holding an older session object
-  // still use the rotated access token after refresh.
   let bearerToken = accessToken;
   if (accessToken && readStoredSession()) {
     const currentSession = await getAkwantuoSession();
@@ -130,8 +127,6 @@ export async function getAkwantuoSession(): Promise<AkwantuoSession | null> {
     return null;
   }
 
-  // Supabase refresh-token rotation makes concurrent refresh attempts unsafe.
-  // Share one refresh operation when multiple game services wake at once.
   if (refreshInFlight) return refreshInFlight;
   refreshInFlight = (async () => {
     try {
@@ -215,8 +210,9 @@ export async function savePlayerProfile(
     display_name: displayName?.trim() || String(session.user.user_metadata?.display_name || session.user.email?.split("@")[0] || "Citizen"),
     gender: appearance.presentation === "feminine" ? "female" : "male",
     age: appearance.age,
-    look: appearance,
-    game_save: { schema_version: 1, last_saved_at: new Date().toISOString() }
+    look: appearance
+    // Deliberately do not write game_save here. Character-editor saves must
+    // never overwrite persistent world progress with placeholder metadata.
   };
   await request<unknown>(
     "/rest/v1/player_profiles?on_conflict=id",
