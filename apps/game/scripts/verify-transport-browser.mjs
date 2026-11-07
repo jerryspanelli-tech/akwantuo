@@ -101,9 +101,75 @@ try {
     }
     await page.locator("#main-menu").waitFor({ state: "visible", timeout: 10000 });
     await page.locator("#play-button").waitFor({ state: "visible", timeout: 10000 });
+
+    // Phase 1: exercise the character creator and device-local save before play.
+    await page.locator("#character-button").click({ timeout: 5000 });
+    await page.locator("#character-form").waitFor({ state: "visible", timeout: 5000 });
+    await page.locator('#character-form select[name="presentation"]').selectOption("feminine");
+    await page.locator('#character-form input[name="age"]').fill("29");
+    await page.locator('#character-form select[name="complexion"]').selectOption("golden");
+    await page.locator('#character-form select[name="build"]').selectOption("broad");
+    await page.locator('#character-form select[name="hairstyle"]').selectOption("afro");
+    await page.locator('#character-form select[name="outfit"]').selectOption("kente");
+    await page.locator("#character-save").click({ timeout: 5000 });
+    await page.waitForFunction(() => (document.querySelector("#notice")?.textContent ?? "").includes("Appearance saved on this device"), { timeout: 5000 });
+    const savedAppearance = await page.evaluate(() => {
+      const raw = localStorage.getItem("akwantuo.character-appearance.v1");
+      return raw ? JSON.parse(raw) : null;
+    });
+    if (!savedAppearance || savedAppearance.presentation !== "feminine" || savedAppearance.age !== 29 ||
+        savedAppearance.complexionId !== "golden" || savedAppearance.bodyBuild !== "broad" ||
+        savedAppearance.hairstyleId !== "afro" || savedAppearance.outfitId !== "kente") {
+      throw new Error(target.name + ": character creator did not persist the selected appearance: " + JSON.stringify(savedAppearance));
+    }
+    console.log(target.name + ": character creator validated and local appearance save passed");
+
     await page.locator("#play-button").click({ timeout: 10000 });
     await page.waitForFunction(() => !document.querySelector("#game-hud")?.classList.contains("is-hidden"), { timeout: 10000 });
-    await page.waitForTimeout(1200);
+    await page.waitForTimeout(700);
+
+    // Verify real player displacement through keyboard (desktop) and joystick (mobile).
+    const playerStart = await page.evaluate(() => ({
+      x: Number(document.documentElement.dataset.playerWorldX ?? NaN),
+      z: Number(document.documentElement.dataset.playerWorldZ ?? NaN)
+    }));
+    if (!Number.isFinite(playerStart.x) || !Number.isFinite(playerStart.z)) {
+      throw new Error(target.name + ": player movement diagnostics were not initialised.");
+    }
+    if (target.isMobile) {
+      const joystickBounds = await page.locator("#joystick").boundingBox();
+      if (!joystickBounds) throw new Error("mobile: movement joystick is not visible.");
+      const centreX = joystickBounds.x + joystickBounds.width / 2;
+      const centreY = joystickBounds.y + joystickBounds.height / 2;
+      await page.mouse.move(centreX, centreY);
+      await page.mouse.down();
+      await page.mouse.move(centreX, centreY - joystickBounds.width * 0.22, { steps: 5 });
+      await page.waitForTimeout(900);
+      await page.mouse.up();
+    } else {
+      await page.keyboard.down("w");
+      await page.waitForTimeout(900);
+      await page.keyboard.up("w");
+    }
+    const playerAfterMove = await page.evaluate(() => ({
+      x: Number(document.documentElement.dataset.playerWorldX ?? NaN),
+      z: Number(document.documentElement.dataset.playerWorldZ ?? NaN)
+    }));
+    if (!Number.isFinite(playerAfterMove.x) || !Number.isFinite(playerAfterMove.z) ||
+        Math.hypot(playerAfterMove.x - playerStart.x, playerAfterMove.z - playerStart.z) < 0.4) {
+      throw new Error(target.name + ": player did not move using " + (target.isMobile ? "the touch joystick" : "keyboard input") +
+        ": " + JSON.stringify({ playerStart, playerAfterMove }));
+    }
+    if (target.isMobile) await page.locator("#jump-button").click({ timeout: 5000 });
+    else await page.keyboard.press("Space");
+    await page.waitForTimeout(220);
+    const jumpHeight = await page.evaluate(() => Number(document.documentElement.dataset.playerWorldY ?? 0));
+    if (!Number.isFinite(jumpHeight) || jumpHeight < 0.15) {
+      throw new Error(target.name + ": jump action did not lift the player: " + jumpHeight);
+    }
+    await page.waitForTimeout(900);
+    console.log(target.name + ": player movement and jump controls passed");
+    await page.waitForTimeout(300);
 
     const npcTraffic = await page.evaluate(() => ({
       count: Number(document.documentElement.dataset.npcRoadTraffic ?? 0),
