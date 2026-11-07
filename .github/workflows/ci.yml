@@ -21,7 +21,7 @@ jobs:
         with:
           node-version: 22
       - name: Install dependencies
-        run: npm install
+        run: npm ci
       - name: Verify live AKWANTUO Supabase connection (when configured)
         env:
           VITE_SUPABASE_URL: ${{ secrets.AKWANTUO_SUPABASE_URL }}
