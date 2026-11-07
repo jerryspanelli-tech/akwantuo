@@ -122,9 +122,9 @@
           <div class="character-card">
             <div class="character-heading"><div><p class="eyebrow">YOUR AKWANTUO ID</p><h2 id="account-title">Player account</h2></div><button class="character-close" id="account-close" type="button" aria-label="Close account panel">×</button></div>
             <form id="account-form">
-              <label>Email address<input id="account-email" name="email" type="email" autocomplete="email" required /></label>
+              <label>Email address<input id="account-email" name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="none" spellcheck="false" enterkeyhint="next" required /></label>
               <label>Password<input id="account-password" name="password" type="password" minlength="8" autocomplete="current-password" required /></label>
-              <label>Player name <span class="field-note">Used when creating a new account</span><input id="account-display-name" name="displayName" type="text" maxlength="32" autocomplete="nickname" /></label>
+              <label>Player name <span class="field-note">Used when creating a new account · Ghanaian names supported</span><input id="account-display-name" name="displayName" type="text" inputmode="text" maxlength="48" autocomplete="name" autocapitalize="words" spellcheck="false" enterkeyhint="done" /></label>
               <p class="character-footnote" id="account-status" role="status">Sign in to sync your character profile to AKWANTUO cloud saves.</p>
               <div class="menu-actions">
                 <button class="primary-action" id="account-signin" type="submit">SIGN IN <span>↗</span></button>
