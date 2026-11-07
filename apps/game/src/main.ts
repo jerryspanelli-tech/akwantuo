@@ -1434,22 +1434,66 @@ async function start(): Promise<void> {
     if (!hasEnteredWorld && !document.hidden) scene.render();
   });
 
+  let characterCreatorCameraState: { alpha: number; beta: number; radius: number; target: Vector3 } | null = null;
+  const previewStage = document.querySelector<HTMLElement>("#character-preview-stage");
   const openCharacterCreator = (): void => {
     if (!characterPanel || !characterForm) return;
     fillAppearanceForm(characterForm, currentAppearance);
+    characterCreatorCameraState = { alpha: camera.alpha, beta: camera.beta, radius: camera.radius, target: camera.target.clone() };
+    camera.detachControl();
+    camera.alpha = 0;
+    camera.beta = 1.18;
+    camera.radius = 5.4;
+    camera.target = player.root.position.add(new Vector3(0, 1.12, 0));
     characterPanel.classList.remove("is-hidden");
     characterPanel.setAttribute("aria-hidden", "false");
+    scene.render();
   };
   const closeCharacterCreator = (): void => {
     characterPanel?.classList.add("is-hidden");
     characterPanel?.setAttribute("aria-hidden", "true");
+    if (characterCreatorCameraState) {
+      camera.alpha = characterCreatorCameraState.alpha;
+      camera.beta = characterCreatorCameraState.beta;
+      camera.radius = characterCreatorCameraState.radius;
+      camera.target = characterCreatorCameraState.target.clone();
+      characterCreatorCameraState = null;
+    }
+    camera.attachControl(canvas, true);
+    scene.render();
   };
+  let previewPointerX: number | null = null;
+  previewStage?.addEventListener("pointerdown", (event) => {
+    previewPointerX = event.clientX;
+    previewStage.setPointerCapture(event.pointerId);
+  });
+  previewStage?.addEventListener("pointermove", (event) => {
+    if (previewPointerX === null) return;
+    const delta = event.clientX - previewPointerX;
+    previewPointerX = event.clientX;
+    player.root.rotation.y += delta * 0.012;
+    scene.render();
+  });
+  const stopPreviewDrag = (): void => { previewPointerX = null; };
+  previewStage?.addEventListener("pointerup", stopPreviewDrag);
+  previewStage?.addEventListener("pointercancel", stopPreviewDrag);
+  document.querySelector<HTMLButtonElement>("#character-rotate-left")?.addEventListener("click", () => {
+    player.root.rotation.y -= 0.35;
+    scene.render();
+  });
+  document.querySelector<HTMLButtonElement>("#character-rotate-right")?.addEventListener("click", () => {
+    player.root.rotation.y += 0.35;
+    scene.render();
+  });
   characterButton?.addEventListener("click", openCharacterCreator);
   characterClose?.addEventListener("click", closeCharacterCreator);
   const updateCharacterPreview = (): void => {
     if (!characterForm) return;
     currentAppearance = readAppearanceForm(characterForm);
     player.applyAppearance(currentAppearance);
+    // The menu render loop is intentionally paused for mobile performance;
+    // render a single fresh frame so every appearance edit is visible immediately.
+    if (!characterPanel?.classList.contains("is-hidden")) scene.render();
   };
   characterForm?.addEventListener("input", updateCharacterPreview);
   characterForm?.addEventListener("change", updateCharacterPreview);
