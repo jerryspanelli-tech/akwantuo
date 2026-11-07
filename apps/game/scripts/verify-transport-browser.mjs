@@ -5,10 +5,11 @@ const failures = [];
 try {
   for (const target of [
     { name: "desktop", viewport: { width: 1440, height: 1000 } },
-    { name: "mobile", viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }
+    { name: "mobile", viewport: { width: 414, height: 896 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }
   ]) {
     const context = await browser.newContext({
       viewport: target.viewport,
+      deviceScaleFactor: target.deviceScaleFactor ?? 1,
       isMobile: target.isMobile ?? false,
       hasTouch: target.hasTouch ?? false
     });
@@ -503,6 +504,10 @@ try {
     await trotroPage.screenshot({ path: "artifacts/akwantuo-" + target.name + "-transport-game.png", fullPage: false, timeout: 30000 });
     console.log(target.name + ": trotro journey passed and screenshot captured");
     await trotroPage.close();
+    // Closing a foreground tab does not reliably restore the previous page as
+    // the active mobile tab. The game correctly suspends rendering while hidden.
+    await page.bringToFront();
+    await page.waitForFunction(() => document.visibilityState === "visible", { timeout: 5000 });
 
     // Re-open the playable world in a local-only test spawn at Accra Central,
     // then complete the mapped Accra–Tema train journey and terminal alighting.
