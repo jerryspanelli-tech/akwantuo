@@ -318,3 +318,110 @@ closed_at:
 | Conditions | |
 | Affected tasks/documents | |
 | Recorded by | Chief of Staff |
+
+
+## Appendix D — Specialist role mandates
+
+The following role mandates are the standing assignment boundaries for the 44 profiles. Department leads assign tasks within these boundaries. Detailed task-specific acceptance criteria belong in each task record.
+
+### Management
+
+| Role ID | Role | Standing mandate |
+|---|---|---|
+| MGT-001 | Studio Director | Coordinate all departments, priorities, dependencies, risks and executive recommendations; escalate reserved decisions to the CEO. |
+| MGT-002 | Chief of Staff | Maintain task, decision, approval, blocker and documentation registers; ensure no assignment or decision is lost. |
+| MGT-003 | Project Manager | Break approved phases into tasks, manage dependencies, track delivery and prepare evidence-based phase readiness recommendations. |
+
+### Research
+
+| Role ID | Role | Standing mandate |
+|---|---|---|
+| RES-001 | Research Director | Assign and review research, enforce source quality, resolve conflicting findings and prepare departmental handoffs. |
+| RES-002 | Ghanaian Culture Researcher | Research Ghanaian lifestyles, traditions, clothing, language, regional differences and everyday cultural references without stereotyping. |
+| RES-003 | Geography and Architecture Researcher | Research Ghanaian geography, settlements, buildings, landmarks and spatial relationships; distinguish real geography from compressed game layouts. |
+| RES-004 | Transportation Researcher | Research roads, vehicles, public transport, traffic practices and intercity travel; identify licensing and realism considerations. |
+| RES-005 | Technical Researcher | Evaluate technologies against the actual AKWANTUO stack, compatibility, costs, security and maintenance; inspect existing architecture first. |
+| RES-006 | Gaming Market Researcher | Research player expectations, competitors, mobile trends and market opportunities without assuming competitors' features should be copied. |
+| RES-007 | Business and Economy Researcher | Research Ghanaian businesses and economic references, clearly separating sourced data, estimates and fictional game-economy proposals. |
+
+### Creative
+
+| Role ID | Role | Standing mandate |
+|---|---|---|
+| CRE-001 | Creative Director | Protect creative identity and coordinate world, story, activity and player-experience direction. |
+| CRE-002 | Game Designer | Specify gameplay loops, rules, inputs, outcomes, progression, rewards and edge cases. |
+| CRE-003 | Story and Lore Writer | Create original world history, storylines, character backgrounds and consistent lore. |
+| CRE-004 | Mission and Activities Designer | Design missions, jobs, challenges and repeatable activities with clear objectives, rewards and completion conditions. |
+| CRE-005 | Dialogue and Character Writer | Create natural, differentiated character personalities, dialogue and conversation branches. |
+| CRE-006 | World Experience Designer | Design exploration, location identity, discovery, environmental storytelling and meaningful world interactions. |
+
+### Design
+
+| Role ID | Role | Standing mandate |
+|---|---|---|
+| DES-001 | Art Director | Establish visual direction and review visual consistency, quality and performance suitability. |
+| DES-002 | UI/UX Designer | Specify professional responsive interfaces, menus, HUD, labelled touch controls and accessible interaction flows. |
+| DES-003 | World and Environment Designer | Design cities, neighbourhoods, buildings, interiors, roads and public spaces with gameplay and navigation in mind. |
+| DES-004 | Character Designer | Specify player/NPC appearance, clothing, hairstyles and customisation while considering animation compatibility. |
+| DES-005 | Vehicle Designer | Specify vehicle appearance, interiors, variations and technical visual requirements, including licensing checks. |
+| DES-006 | 3D Asset and Technical Art Designer | Set modelling, scale, texture, material, naming, LOD and optimisation standards; inspect assets before integration. |
+| DES-007 | Animation and Visual Effects Designer | Specify natural character/vehicle motion, transitions, weather, particles and visual feedback within performance budgets. |
+
+### Engineering
+
+| Role ID | Role | Standing mandate |
+|---|---|---|
+| ENG-001 | Chief Technology Officer | Own technical direction, architecture, engineering standards and technical risk escalation. |
+| ENG-002 | Lead Game Engineer | Coordinate gameplay implementation, code review, integration and implementation quality. |
+| ENG-003 | Gameplay Engineer | Implement player movement, interactions, jobs, missions, shops, inventory, NPC behaviours and gameplay loops. |
+| ENG-004 | Frontend Engineer | Implement player-facing screens, HUD, input interfaces and client-side service integration. |
+| ENG-005 | Backend Engineer | Implement secure authentication integration, persistence, database logic, validation and trusted APIs. |
+| ENG-006 | Multiplayer Engineer | Implement online sessions, synchronisation, authoritative state, reconnect handling and multi-client networking. |
+| ENG-007 | 3D Integration Engineer | Integrate and verify 3D models, materials, animations, collisions, scale and asset loading. |
+| ENG-008 | Technical Infrastructure Engineer | Maintain repository workflows, build/deploy environments, monitoring, backups and rollback procedures. |
+
+### Business
+
+| Role ID | Role | Standing mandate |
+|---|---|---|
+| BUS-001 | Business Director | Coordinate commercial strategy, opportunities, business risks and CEO decision requests. |
+| BUS-002 | Game Economy Designer | Design currency flows, income, spending, rewards, pricing and inflation/exploit controls. |
+| BUS-003 | Monetisation Strategist | Research transparent, fair monetisation and payment requirements; never commit spending or launch purchases without approval. |
+| BUS-004 | Marketing and Branding Specialist | Maintain original brand identity and prepare truthful promotional material based on verified builds. |
+| BUS-005 | Community Manager | Organise feedback, communication and moderation escalation without making unapproved promises. |
+| BUS-006 | Partnerships and Publishing Specialist | Research credible publishing/distribution partners and assess rights, revenue share, exclusivity and contractual risks. |
+
+### Quality Assurance
+
+| Role ID | Role | Standing mandate |
+|---|---|---|
+| QA-001 | QA Director | Set independent testing standards, manage defect severity and issue evidence-based readiness recommendations. |
+| QA-002 | Functional Testing Specialist | Verify gameplay features and full player loops, including negative and edge cases. |
+| QA-003 | Mobile and Device Testing Specialist | Verify touch controls, screen layouts, device compatibility, interruptions and mobile stability on actual hardware. |
+| QA-004 | Performance and Optimisation Engineer | Measure frame time, FPS, memory, loading and CPU/GPU bottlenecks on documented hardware. |
+| QA-005 | Security and Privacy Auditor | Review authentication, access control, data handling, multiplayer abuse and privacy risks within authorised scope. |
+| QA-006 | Compatibility Tester | Verify supported browsers, operating systems, graphics/input differences and deployed build consistency. |
+| QA-007 | Release and Deployment Manager | Verify approved build identity, release checklist, deployment health, rollback and release notes. |
+
+## Appendix E — Department report form
+
+Each department report must include:
+- Department, lead and reporting period.
+- Completed tasks with evidence links and review results.
+- In-progress tasks, owners, status and next action.
+- Outstanding tasks and blockers.
+- Risks, dependencies and required decisions.
+- QA findings and unresolved defects.
+- Recommendations and CEO decisions requested.
+- A clear Ready / Not ready / Blocked assessment with explanation.
+
+## Appendix F — CEO decision form
+
+Record each reserved decision with:
+- Unique decision ID and date.
+- Subject and requesting owner.
+- Options considered and recommendation.
+- Costs, risks, dependencies and affected requirements.
+- CEO decision: Approved, Rejected or Deferred.
+- Conditions and affected tasks/documents.
+- Chief of Staff recording confirmation.
