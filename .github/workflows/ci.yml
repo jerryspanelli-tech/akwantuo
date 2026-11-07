@@ -21,7 +21,13 @@ jobs:
         with:
           node-version: 22
       - name: Install dependencies
-        run: npm ci
+        run: npm install
+      - name: Upload generated npm lockfile for Phase 1 clean-install setup
+        uses: actions/upload-artifact@v4
+        with:
+          name: akwantuo-generated-package-lock
+          path: package-lock.json
+          if-no-files-found: error
       - name: Verify live AKWANTUO Supabase connection (when configured)
         env:
           VITE_SUPABASE_URL: ${{ secrets.AKWANTUO_SUPABASE_URL }}
