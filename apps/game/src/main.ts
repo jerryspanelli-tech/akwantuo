@@ -1242,6 +1242,10 @@ async function start(): Promise<void> {
       }
     }
 
+    // Stable browser-test diagnostics for the Phase 1 player-control smoke test.
+    document.documentElement.dataset.playerWorldX = player.root.position.x.toFixed(3);
+    document.documentElement.dataset.playerWorldY = player.root.position.y.toFixed(3);
+    document.documentElement.dataset.playerWorldZ = player.root.position.z.toFixed(3);
     scene.render();
   };
 
