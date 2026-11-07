@@ -10,6 +10,7 @@ import {
 } from "@babylonjs/core";
 import "./style.css";
 import { installTouchControls } from "./input/touchControls";
+import { fillAppearanceForm, readAppearanceForm } from "./character/appearanceForm";
 import { COMPLEXIONS, DEFAULT_APPEARANCE, OUTFITS, resolveAppearance, type CharacterAppearance } from "./character/appearance";
 import { loadAppearance, saveAppearance } from "./character/appearanceStore";
 import { createPlayer } from "./character/playerAvatar";
@@ -81,27 +82,6 @@ let hasEnteredWorld = false;
 let vehicleActionRequested = false;
 let vehicleBrake = false;
 let vehicleViewRequested = false;
-
-function readAppearanceForm(form: HTMLFormElement): CharacterAppearance {
-  const data = new FormData(form);
-  return resolveAppearance({
-    presentation: data.get("presentation"), age: Number(data.get("age")),
-    complexionId: data.get("complexion"), bodyBuild: data.get("build"),
-    hairstyleId: data.get("hairstyle"), outfitId: data.get("outfit")
-  });
-}
-
-function fillAppearanceForm(form: HTMLFormElement, appearance: CharacterAppearance): void {
-  const values: Record<string, string> = {
-    presentation: appearance.presentation, age: String(appearance.age),
-    complexion: appearance.complexionId, build: appearance.bodyBuild,
-    hairstyle: appearance.hairstyleId, outfit: appearance.outfitId
-  };
-  for (const [name, value] of Object.entries(values)) {
-    const field = form.elements.namedItem(name);
-    if (field instanceof HTMLInputElement || field instanceof HTMLSelectElement) field.value = value;
-  }
-}
 
 function showNotice(message: string): void {
   if (!notice) return;
