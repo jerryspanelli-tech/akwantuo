@@ -42,7 +42,7 @@ import { runStage6SmokeChecks } from "./world/stage6SmokeChecks";
 import { AKWAABA_VENUE_PROGRAMME, isVenueProgrammeValid } from "./world/venueProgramme";
 import { AKWANTUO_RETAIL_PRODUCTS, isAkwantuoRetailCatalogueValid } from "./world/retailCatalogue";
 import { AKWANTUO_PRIVATE_ISLAND, PRIVATE_ISLAND_WATERCRAFT, createAkwantuoPrivateIsland, isPrivateIslandCatalogueValid } from "./world/privateIsland";
-import { getAkwantuoSession, loadPlayerProfile, savePlayerProfile, signInAkwantuo, signOutAkwantuo, signUpAkwantuo, loadEconomyState, loadShopProducts, purchaseShopItems, purchaseGameAsset, type AkwantuoSession } from "./services/supabase";
+import { getAkwantuoSession, isSupabaseConfigured, loadPlayerProfile, savePlayerProfile, signInAkwantuo, signOutAkwantuo, signUpAkwantuo, loadEconomyState, loadShopProducts, purchaseShopItems, purchaseGameAsset, type AkwantuoSession } from "./services/supabase";
 
 const bootScreen = document.querySelector<HTMLElement>("#boot-screen");
 const gameShell = document.querySelector<HTMLElement>("#game-shell");
@@ -221,6 +221,14 @@ async function start(): Promise<void> {
   document.documentElement.dataset.playableMappedRailService = "true";
   document.documentElement.dataset.playableMappedRailBoardingOpen = String(greaterAccraMappedRailService.isBoardingOpen());
   let activeAccountSession: AkwantuoSession | null = await getAkwantuoSession();
+  const onlineServicesConfigured = isSupabaseConfigured();
+  // A locally cached session must never make offline play depend on a backend
+  // that has not yet been provisioned specifically for AKWANTUO.
+  if (!onlineServicesConfigured) activeAccountSession = null;
+  if (!onlineServicesConfigured && accountStatus) {
+    accountStatus.textContent = "Local play is available. AKWANTUO accounts and cloud saves will activate after its dedicated online services are configured.";
+  }
+  document.documentElement.dataset.akwantuoOnlineServicesConfigured = String(onlineServicesConfigured);
   let currentAppearance = loadAppearance(window.localStorage);
   let walletBalancePesewas = 0;
   let ownedGameAssetIds = new Set<string>();
