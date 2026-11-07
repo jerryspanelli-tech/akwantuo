@@ -790,6 +790,10 @@ async function start(): Promise<void> {
     scene.fogMode = settings.fog ? Scene.FOGMODE_EXP2 : Scene.FOGMODE_NONE;
     scene.fogDensity = settings.fog ? 0.000012 : 0;
     scene.fogColor = new Color3(0.48, 0.62, 0.66);
+    document.documentElement.dataset.akwantuoGraphicsQuality = settings.graphicsQuality;
+    document.documentElement.dataset.akwantuoBrightness = String(settings.brightness);
+    document.documentElement.dataset.akwantuoCameraSensitivity = String(settings.cameraSensitivity);
+    document.documentElement.dataset.akwantuoFogEnabled = String(settings.fog);
   };
   const populateSettingsForm = (): void => {
     if (!settingsForm) return;
