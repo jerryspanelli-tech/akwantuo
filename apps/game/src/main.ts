@@ -472,6 +472,8 @@ async function start(): Promise<void> {
   });
   const isLocalTransportTestHost = window.location.hostname === "127.0.0.1" ||
     window.location.hostname === "localhost";
+  const vehicleTestMode = isLocalTransportTestHost &&
+    new URLSearchParams(window.location.search).get("akwantuoVehicleTest") === "1";
   const transportRailTestMode = isLocalTransportTestHost &&
     new URLSearchParams(window.location.search).get("akwantuoTransportTest") === "rail";
   const interiorTestBuildingId = new URLSearchParams(window.location.search).get("akwantuoInteriorTest") ?? "";
@@ -480,7 +482,11 @@ async function start(): Promise<void> {
   const watercraftTestKind = new URLSearchParams(window.location.search).get("akwantuoWatercraftTest");
   const watercraftTestMode = isLocalTransportTestHost &&
     (watercraftTestKind === "speedboat" || watercraftTestKind === "jet_ski");
-  if (transportRailTestMode) {
+  if (vehicleTestMode) {
+    // Local-only browser-test spawn beside the starter saloon driver's door.
+    player.root.position.set(WORLD_CONFIG.spawn.x - 7.15, 0, WORLD_CONFIG.spawn.z);
+    document.documentElement.dataset.vehicleTestMode = "true";
+  } else if (transportRailTestMode) {
     // Local-only browser-test spawn; never active on a deployed game host.
     player.root.position.set(-250, 0, 150);
     document.documentElement.dataset.transportTestMode = "rail";
@@ -1246,6 +1252,10 @@ async function start(): Promise<void> {
     document.documentElement.dataset.playerWorldX = player.root.position.x.toFixed(3);
     document.documentElement.dataset.playerWorldY = player.root.position.y.toFixed(3);
     document.documentElement.dataset.playerWorldZ = player.root.position.z.toFixed(3);
+    document.documentElement.dataset.akwantuoStarterSaloonMode = interactionState.mode;
+    document.documentElement.dataset.akwantuoStarterSaloonX = vehicleState.x.toFixed(3);
+    document.documentElement.dataset.akwantuoStarterSaloonZ = vehicleState.z.toFixed(3);
+    document.documentElement.dataset.akwantuoStarterSaloonSpeed = vehicleState.speedMps.toFixed(3);
     scene.render();
   };
 
