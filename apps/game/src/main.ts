@@ -474,6 +474,8 @@ async function start(): Promise<void> {
     window.location.hostname === "localhost";
   const vehicleTestMode = isLocalTransportTestHost &&
     new URLSearchParams(window.location.search).get("akwantuoVehicleTest") === "1";
+  const trotroTestMode = isLocalTransportTestHost &&
+    new URLSearchParams(window.location.search).get("akwantuoTrotroTest") === "1";
   const transportRailTestMode = isLocalTransportTestHost &&
     new URLSearchParams(window.location.search).get("akwantuoTransportTest") === "rail";
   const interiorTestBuildingId = new URLSearchParams(window.location.search).get("akwantuoInteriorTest") ?? "";
@@ -485,6 +487,10 @@ async function start(): Promise<void> {
   if (vehicleTestMode) {
     // Local-only browser-test mode; the isolated spawn is set beside the car below.
     document.documentElement.dataset.vehicleTestMode = "true";
+  } else if (trotroTestMode) {
+    // Local-only deterministic passenger test spawn at the trotro driver's door.
+    player.root.position.set(WORLD_CONFIG.spawn.x + 1.65, 0, WORLD_CONFIG.spawn.z);
+    document.documentElement.dataset.trotroTestMode = "true";
   } else if (transportRailTestMode) {
     // Local-only browser-test spawn; never active on a deployed game host.
     player.root.position.set(-250, 0, 150);
@@ -881,7 +887,7 @@ async function start(): Promise<void> {
           document.documentElement.dataset.activeBusinessId = "";
           document.documentElement.dataset.activeBusinessServiceCount = "0";
           showNotice("You stepped back outside.");
-        } else if (interactionState.mode === "on_foot" && passengerState.mode === "not_riding" &&
+        } else if (!trotroTestMode && interactionState.mode === "on_foot" && passengerState.mode === "not_riding" &&
           DISTRICT_BUILDINGS.some((building) => {
             if (!building.interiorId) return false;
             const frontX = building.side === "west"
