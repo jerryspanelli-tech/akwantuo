@@ -434,9 +434,24 @@ try {
         throw new Error(target.name + ": " + craftKind + " did not drive and steer inside the Gulf navigation area: " + JSON.stringify(movingCraft));
       }
       await page.screenshot({ path: "artifacts/akwantuo-" + target.name + "-" + craftKind + ".png", fullPage: false, timeout: 30000 });
+      // Disembarking at speed is intentionally blocked by the game. Brake to a
+      // complete stop offshore before asserting the safe-disembark warning.
+      await page.keyboard.down(" ");
+      await page.waitForTimeout(3500);
+      await page.keyboard.up(" ");
+      const stoppedCraft = await page.evaluate(() => ({
+        x: Number(document.documentElement.dataset.akwantuoWatercraftX ?? 0),
+        z: Number(document.documentElement.dataset.akwantuoWatercraftZ ?? 0),
+        speed: Number(document.documentElement.dataset.akwantuoWatercraftSpeed ?? 0),
+        active: document.documentElement.dataset.akwantuoActiveWatercraft ?? ""
+      }));
+      if (stoppedCraft.active !== craftKind || stoppedCraft.speed > 0.5 ||
+          stoppedCraft.z > -3310) {
+        throw new Error(target.name + ": " + craftKind + " did not stop safely offshore before disembark test: " + JSON.stringify(stoppedCraft));
+      }
       await page.keyboard.press("e");
       await page.waitForFunction(() => (document.querySelector("#notice")?.textContent ?? "").includes("offshore"), { timeout: 5000 });
-      console.log(target.name + ": " + craftKind + " propulsion, steering and offshore docking safety passed");
+      console.log(target.name + ": " + craftKind + " propulsion, steering, braking and offshore docking safety passed");
     }
     await context.close();
   }
