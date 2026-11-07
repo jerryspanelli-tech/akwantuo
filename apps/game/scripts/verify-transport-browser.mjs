@@ -116,6 +116,10 @@ try {
       throw error;
     }
     await page.locator("#main-menu").waitFor({ state: "visible", timeout: 10000 });
+    await page.waitForFunction(() =>
+      document.querySelector("#studio-intro")?.classList.contains("is-hidden") === true,
+      { timeout: 5000 }
+    );
     await page.locator("#play-button").waitFor({ state: "visible", timeout: 10000 });
     const continueInitiallyHidden = await page.locator("#continue-button").evaluate((element) => element.classList.contains("is-hidden"));
     if (!continueInitiallyHidden) throw new Error(target.name + ": Continue should be hidden before a local character save.");
