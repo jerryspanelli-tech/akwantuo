@@ -112,6 +112,8 @@ export function isSupabaseConfigured(): boolean {
   return Boolean(SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY);
 }
 
+let refreshInFlight: Promise<AkwantuoSession | null> | null = null;
+
 export async function getAkwantuoSession(): Promise<AkwantuoSession | null> {
   const session = readStoredSession();
   if (!session) return null;
@@ -120,17 +122,29 @@ export async function getAkwantuoSession(): Promise<AkwantuoSession | null> {
     storeSession(null);
     return null;
   }
+
+  // Supabase refresh-token rotation makes concurrent refresh attempts unsafe.
+  // Share one refresh operation when multiple game services wake at once.
+  if (refreshInFlight) return refreshInFlight;
+  refreshInFlight = (async () => {
+    try {
+      const refreshed = await request<AuthTokenResponse>(
+        "/auth/v1/token?grant_type=refresh_token",
+        { method: "POST", body: JSON.stringify({ refresh_token: session.refresh_token }) }
+      );
+      const nextSession = normalizeSession(refreshed, session.user);
+      storeSession(nextSession);
+      return nextSession;
+    } catch {
+      storeSession(null);
+      return null;
+    }
+  })();
+
   try {
-    const refreshed = await request<AuthTokenResponse>(
-      "/auth/v1/token?grant_type=refresh_token",
-      { method: "POST", body: JSON.stringify({ refresh_token: session.refresh_token }) }
-    );
-    const nextSession = normalizeSession(refreshed, session.user);
-    storeSession(nextSession);
-    return nextSession;
-  } catch {
-    storeSession(null);
-    return null;
+    return await refreshInFlight;
+  } finally {
+    refreshInFlight = null;
   }
 }
 
