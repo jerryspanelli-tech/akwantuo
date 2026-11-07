@@ -12,7 +12,7 @@ import "./style.css";
 import { installTouchControls } from "./input/touchControls";
 import { fillAppearanceForm, readAppearanceForm } from "./character/appearanceForm";
 import { COMPLEXIONS, DEFAULT_APPEARANCE, OUTFITS, resolveAppearance, type CharacterAppearance } from "./character/appearance";
-import { loadAppearance, saveAppearance } from "./character/appearanceStore";
+import { APPEARANCE_STORAGE_KEY, loadAppearance, saveAppearance } from "./character/appearanceStore";
 import { createPlayer } from "./character/playerAvatar";
 import { WORLD_CONFIG } from "./world/config";
 import { clampToWorld, isBlocked } from "./world/collision";
@@ -49,6 +49,18 @@ const gameShell = document.querySelector<HTMLElement>("#game-shell");
 const bootStatus = document.querySelector<HTMLElement>("#boot-status");
 const canvas = document.querySelector<HTMLCanvasElement>("#world-canvas");
 const playButton = document.querySelector<HTMLButtonElement>("#play-button");
+const continueButton = document.querySelector<HTMLButtonElement>("#continue-button");
+const settingsButton = document.querySelector<HTMLButtonElement>("#settings-button");
+const settingsPanel = document.querySelector<HTMLElement>("#settings-panel");
+const settingsClose = document.querySelector<HTMLButtonElement>("#settings-close");
+const settingsForm = document.querySelector<HTMLFormElement>("#settings-form");
+const newsButton = document.querySelector<HTMLButtonElement>("#news-button");
+const newsPanel = document.querySelector<HTMLElement>("#news-panel");
+const newsClose = document.querySelector<HTMLButtonElement>("#news-close");
+const studioIntro = document.querySelector<HTMLElement>("#studio-intro");
+const introSkip = document.querySelector<HTMLButtonElement>("#intro-skip");
+const bootProgressBar = document.querySelector<HTMLElement>("#boot-progress-bar");
+const bootTip = document.querySelector<HTMLElement>("#boot-tip");
 const mainMenu = document.querySelector<HTMLElement>("#main-menu");
 const footerBar = document.querySelector<HTMLElement>(".footer-bar");
 let startupHandoffStage = "module_loaded";
@@ -75,6 +87,34 @@ const accountEmail = document.querySelector<HTMLInputElement>("#account-email");
 const accountPassword = document.querySelector<HTMLInputElement>("#account-password");
 const accountDisplayName = document.querySelector<HTMLInputElement>("#account-display-name");
 
+const GAME_SETTINGS_STORAGE_KEY = "akwantuo.game-settings.v1";
+type GameSettings = {
+  graphicsQuality: "performance" | "balanced" | "high";
+  brightness: number;
+  cameraSensitivity: number;
+  fog: boolean;
+};
+const DEFAULT_GAME_SETTINGS: GameSettings = {
+  graphicsQuality: "balanced", brightness: 100, cameraSensitivity: 100, fog: true
+};
+function loadGameSettings(storage: Pick<Storage, "getItem">): GameSettings {
+  try {
+    const parsed = JSON.parse(storage.getItem(GAME_SETTINGS_STORAGE_KEY) ?? "null") as Partial<GameSettings> | null;
+    return {
+      graphicsQuality: parsed?.graphicsQuality === "performance" || parsed?.graphicsQuality === "high"
+        ? parsed.graphicsQuality : "balanced",
+      brightness: Number.isFinite(parsed?.brightness) ? Math.max(80, Math.min(125, Number(parsed?.brightness))) : 100,
+      cameraSensitivity: Number.isFinite(parsed?.cameraSensitivity) ? Math.max(60, Math.min(160, Number(parsed?.cameraSensitivity))) : 100,
+      fog: typeof parsed?.fog === "boolean" ? parsed.fog : true
+    };
+  } catch {
+    return { ...DEFAULT_GAME_SETTINGS };
+  }
+}
+function hasSavedAppearance(storage: Pick<Storage, "getItem">): boolean {
+  try { return storage.getItem(APPEARANCE_STORAGE_KEY) !== null; } catch { return false; }
+}
+
 const pressedKeys = new Set<string>();
 const touchInput = { x: 0, z: 0 };
 let jumpRequested = false;
@@ -88,6 +128,20 @@ function showNotice(message: string): void {
   notice.textContent = message;
   notice.classList.add("is-visible");
 }
+
+function setBootProgress(percent: number, status: string, tip: string): void {
+  const progress = Math.max(0, Math.min(100, Math.round(percent)));
+  if (bootProgressBar) bootProgressBar.style.width = progress + "%";
+  bootProgressBar?.parentElement?.setAttribute("aria-valuenow", String(progress));
+  if (bootStatus) bootStatus.textContent = status;
+  if (bootTip) bootTip.textContent = tip;
+}
+
+function dismissStudioIntro(): void {
+  studioIntro?.classList.add("is-hidden");
+}
+introSkip?.addEventListener("click", dismissStudioIntro);
+window.setTimeout(dismissStudioIntro, 2600);
 
 /**
  * Advance the prototype road-vehicle model in stable <=100ms slices while
@@ -163,12 +217,14 @@ async function start(): Promise<void> {
     throw new Error("The game startup interface could not be found.");
   }
 
+  setBootProgress(5, "Checking game systems…", "Tip: Your character appearance is saved on this device.");
   // Fail early if core fare, boarding, vehicle, or rail-operation contracts regress.
   runTransportSmokeChecks();
   runStage6SmokeChecks();
   if (!isVenueProgrammeValid()) throw new Error("Akwaaba Creative Arts Centre weekly programme failed validation.");
   if (!isAkwantuoRetailCatalogueValid()) throw new Error("Akwantuo convenience-store product catalogue failed validation.");
   if (!isPrivateIslandCatalogueValid()) throw new Error("Akwaaba Cay private-island catalogue failed validation.");
+  setBootProgress(18, "Preparing Ghanaian world data…", "Tip: Explore the streets and use ENTER near places and vehicles.");
   document.documentElement.dataset.akwantuoBuildingCount = String(DISTRICT_BUILDINGS.length);
   document.documentElement.dataset.akwantuoBuildingDistrictCount = String(new Set(DISTRICT_BUILDINGS.map((building) => building.districtId)).size);
   document.documentElement.dataset.akwantuoPropertyCount = String(DISTRICT_PROPERTIES.length);
@@ -192,6 +248,7 @@ async function start(): Promise<void> {
     powerPreference: "high-performance"
   });
   const scene = new Scene(engine);
+  setBootProgress(35, "Building the world…", "Tip: The left joystick moves your character; the right-side buttons handle actions.");
   const solidAreas = createPreviewWorld(scene, { includeGround: false });
   const interiorRooms = createInteriorRooms(scene);
   document.documentElement.dataset.akwantuoInteriorRoomCount = String(interiorRooms.length);
@@ -209,6 +266,7 @@ async function start(): Promise<void> {
   const privateIslandMeshCount = createAkwantuoPrivateIsland(scene);
   document.documentElement.dataset.akwantuoPrivateIslandMeshCount = String(privateIslandMeshCount);
   const greaterAccraTransportReport = createGreaterAccraPlayableWorld(scene);
+  setBootProgress(68, "Loading Greater Accra…", "Tip: Stop a vehicle before exiting. Use VIEW to change the passenger camera.");
   document.documentElement.dataset.playableRoadSurfaceMeshes = String(greaterAccraTransportReport.roadSurfaceMeshCount);
   document.documentElement.dataset.playableRoadMarkingMeshes = String(greaterAccraTransportReport.roadMarkingMeshCount);
   document.documentElement.dataset.playableRailRoutes = String(greaterAccraTransportReport.railRouteCount);
@@ -252,6 +310,7 @@ async function start(): Promise<void> {
     }
   }
   const player = createPlayer(scene, currentAppearance);
+  setBootProgress(82, "Preparing your character…", "Tip: You can change appearance later from the Character menu.");
   const mainlandMarina = { x: 2700, z: -3380 };
   let activeInterior: { buildingId: string; roomId: string; exitX: number; exitZ: number } | null = null;
   // Shop checkout and premium asset ownership are committed server-side.
@@ -719,6 +778,72 @@ async function start(): Promise<void> {
   camera.panningSensibility = 0;
   camera.inertia = 0.78;
   camera.attachControl(canvas, true);
+
+  let gameSettings = loadGameSettings(window.localStorage);
+  const applyGameSettings = (settings: GameSettings): void => {
+    const scaling = settings.graphicsQuality === "performance" ? 1.5
+      : settings.graphicsQuality === "high" ? 0.85 : 1;
+    engine.setHardwareScalingLevel(scaling);
+    camera.angularSensibilityX = 1000 * 100 / settings.cameraSensitivity;
+    camera.angularSensibilityY = 1000 * 100 / settings.cameraSensitivity;
+    canvas.style.filter = "brightness(" + (settings.brightness / 100).toFixed(2) + ")";
+    scene.fogMode = settings.fog ? Scene.FOGMODE_EXP2 : Scene.FOGMODE_NONE;
+    scene.fogDensity = settings.fog ? 0.000012 : 0;
+    scene.fogColor = new Color3(0.48, 0.62, 0.66);
+  };
+  const populateSettingsForm = (): void => {
+    if (!settingsForm) return;
+    const quality = settingsForm.querySelector<HTMLSelectElement>("#graphics-quality");
+    const brightness = settingsForm.querySelector<HTMLInputElement>("#brightness-setting");
+    const sensitivity = settingsForm.querySelector<HTMLInputElement>("#camera-sensitivity-setting");
+    const fog = settingsForm.querySelector<HTMLInputElement>("#fog-setting");
+    if (quality) quality.value = gameSettings.graphicsQuality;
+    if (brightness) brightness.value = String(gameSettings.brightness);
+    if (sensitivity) sensitivity.value = String(gameSettings.cameraSensitivity);
+    if (fog) fog.checked = gameSettings.fog;
+  };
+  applyGameSettings(gameSettings);
+  settingsButton?.addEventListener("click", () => {
+    populateSettingsForm();
+    settingsPanel?.classList.remove("is-hidden");
+    settingsPanel?.setAttribute("aria-hidden", "false");
+  });
+  settingsClose?.addEventListener("click", () => {
+    settingsPanel?.classList.add("is-hidden");
+    settingsPanel?.setAttribute("aria-hidden", "true");
+  });
+  settingsForm?.addEventListener("submit", (event: SubmitEvent) => {
+    event.preventDefault();
+    const quality = settingsForm.querySelector<HTMLSelectElement>("#graphics-quality")?.value;
+    const brightness = Number(settingsForm.querySelector<HTMLInputElement>("#brightness-setting")?.value ?? 100);
+    const sensitivity = Number(settingsForm.querySelector<HTMLInputElement>("#camera-sensitivity-setting")?.value ?? 100);
+    const fog = settingsForm.querySelector<HTMLInputElement>("#fog-setting")?.checked ?? true;
+    gameSettings = {
+      graphicsQuality: quality === "performance" || quality === "high" ? quality : "balanced",
+      brightness: Math.max(80, Math.min(125, Number.isFinite(brightness) ? brightness : 100)),
+      cameraSensitivity: Math.max(60, Math.min(160, Number.isFinite(sensitivity) ? sensitivity : 100)),
+      fog
+    };
+    try {
+      window.localStorage.setItem(GAME_SETTINGS_STORAGE_KEY, JSON.stringify(gameSettings));
+      applyGameSettings(gameSettings);
+      settingsPanel?.classList.add("is-hidden");
+      settingsPanel?.setAttribute("aria-hidden", "true");
+      showNotice("Game settings saved on this device.");
+    } catch {
+      applyGameSettings(gameSettings);
+      showNotice("Settings applied for this session, but this browser could not save them.");
+    }
+  });
+  newsButton?.addEventListener("click", () => {
+    newsPanel?.classList.remove("is-hidden");
+    newsPanel?.setAttribute("aria-hidden", "false");
+  });
+  newsClose?.addEventListener("click", () => {
+    newsPanel?.classList.add("is-hidden");
+    newsPanel?.setAttribute("aria-hidden", "true");
+  });
+  continueButton?.classList.toggle("is-hidden", !hasSavedAppearance(window.localStorage));
 
   installTouchControls(joystick, joystickStick, touchInput);
   window.addEventListener("keydown", (event: KeyboardEvent) => {
@@ -1283,7 +1408,7 @@ async function start(): Promise<void> {
   // Reveal the game shell before starting the continuous render loop. This
   // keeps the boot-to-menu handoff independent of frame scheduling on slower devices.
   startupHandoffStage = "show_ready_status";
-  bootStatus.textContent = "Your world is ready.";
+  setBootProgress(100, "Your world is ready.", "Tip: Use the settings menu to adjust graphics, brightness, camera sensitivity and fog.");
   startupHandoffStage = "hide_boot_screen";
   bootScreen.hidden = true;
   startupHandoffStage = "reveal_game_shell";
@@ -1320,6 +1445,7 @@ async function start(): Promise<void> {
     event.preventDefault();
     updateCharacterPreview();
     const savedLocally = saveAppearance(currentAppearance, window.localStorage);
+    continueButton?.classList.toggle("is-hidden", !savedLocally);
     let cloudSaved = false;
     if (activeAccountSession) {
       try {
@@ -1434,8 +1560,11 @@ async function start(): Promise<void> {
     }
   });
 
-  playButton?.addEventListener("click", () => {
+  const enterWorld = (): void => {
+    dismissStudioIntro();
     closeCharacterCreator();
+    settingsPanel?.classList.add("is-hidden");
+    newsPanel?.classList.add("is-hidden");
     hasEnteredWorld = true;
     mainMenu?.classList.add("is-hidden");
     footerBar?.classList.add("is-hidden");
@@ -1444,7 +1573,9 @@ async function start(): Promise<void> {
     camera.target = new Vector3(0, 1.25, 5);
     showNotice("Welcome to AKWANTUO. Explore the streets with WASD or the touch joystick.");
     window.setTimeout(() => notice?.classList.remove("is-visible"), 4200);
-  });
+  };
+  playButton?.addEventListener("click", enterWorld);
+  continueButton?.addEventListener("click", enterWorld);
 
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) {
