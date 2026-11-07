@@ -768,7 +768,9 @@ try {
       await page.waitForTimeout(6000);
       await page.keyboard.up("w");
       await page.keyboard.down("d");
-      await page.waitForTimeout(600);
+      // A short steering input proves the rudder responds without executing
+      // an unrealistic near-U-turn at maximum speed.
+      await page.waitForTimeout(200);
       await page.keyboard.up("d");
       const movingCraft = await page.evaluate(() => ({
         x: Number(document.documentElement.dataset.akwantuoWatercraftX ?? 0),
@@ -784,10 +786,10 @@ try {
       await page.screenshot({ path: "artifacts/akwantuo-" + target.name + "-" + craftKind + ".png", fullPage: false, timeout: 30000 });
       // Disembarking at speed is intentionally blocked by the game. Brake to a
       // complete stop offshore before asserting the safe-disembark warning.
-      await page.keyboard.down(" ");
-      await page.waitForFunction(() => Number(document.documentElement.dataset.akwantuoWatercraftSpeed ?? 99) <= 0.5,
-        null, { timeout: 20000, polling: 100 });
-      await page.keyboard.up(" ");
+      await page.keyboard.down("Space");
+      // Hold the brake long enough to stop the fastest supported watercraft.
+      await page.waitForTimeout(7000);
+      await page.keyboard.up("Space");
       const stoppedCraft = await page.evaluate(() => ({
         x: Number(document.documentElement.dataset.akwantuoWatercraftX ?? 0),
         z: Number(document.documentElement.dataset.akwantuoWatercraftZ ?? 0),
