@@ -1545,66 +1545,79 @@ async function start(): Promise<void> {
   accountButton?.addEventListener("click", openAccountPanel);
   accountClose?.addEventListener("click", closeAccountPanel);
 
+  let accountMode: "signin" | "signup" = "signin";
+  const accountNameField = document.querySelector<HTMLElement>("#account-name-field");
+  const accountSubmit = document.querySelector<HTMLButtonElement>("#account-signin");
+  const setAccountMode = (mode: "signin" | "signup"): void => {
+    accountMode = mode;
+    const creating = mode === "signup";
+    if (accountNameField) accountNameField.classList.toggle("is-hidden", !creating);
+    if (accountDisplayName) accountDisplayName.required = creating;
+    if (accountPassword) accountPassword.autocomplete = creating ? "new-password" : "current-password";
+    if (accountSubmit) accountSubmit.innerHTML = creating ? "CREATE ACCOUNT <span>↗</span>" : "SIGN IN <span>↗</span>";
+    if (accountSignUp) accountSignUp.textContent = creating ? "BACK TO SIGN IN" : "CREATE ACCOUNT";
+    const title = document.querySelector<HTMLElement>("#account-title");
+    if (title) title.textContent = creating ? "Create your account" : "Player account";
+    if (accountStatus) accountStatus.textContent = creating
+      ? "Create your AKWANTUO ID. Your Ghanaian player name will appear in your profile."
+      : "Sign in to sync your character profile to AKWANTUO cloud saves.";
+  };
+  accountSignUp?.addEventListener("click", () => {
+    setAccountMode(accountMode === "signin" ? "signup" : "signin");
+  });
+
   accountForm?.addEventListener("submit", async (event: SubmitEvent) => {
     event.preventDefault();
     const email = accountEmail?.value.trim() || "";
     const password = accountPassword?.value || "";
-    if (!email || password.length < 8) {
-      if (accountStatus) accountStatus.textContent = "Enter a valid email and a password of at least 8 characters.";
-      return;
-    }
-    const submit = document.querySelector<HTMLButtonElement>("#account-signin");
-    if (submit) submit.disabled = true;
-    if (accountStatus) accountStatus.textContent = "Signing in to AKWANTUO…";
-    try {
-      activeAccountSession = await signInAkwantuo(email, password);
-      const profile = await loadPlayerProfile(activeAccountSession);
-      await refreshPlayerEconomy();
-      if (profile?.look) {
-        currentAppearance = resolveAppearance(profile.look);
-        player.applyAppearance(currentAppearance);
-        if (characterForm) fillAppearanceForm(characterForm, currentAppearance);
-      } else {
-        await savePlayerProfile(activeAccountSession, currentAppearance);
-      }
-      if (accountStatus) accountStatus.textContent = `Signed in as ${email}. Your character profile is synced to AKWANTUO cloud saves. Wallet: GH₵${(walletBalancePesewas / 100).toFixed(2)}.`;
-      if (accountSignOut) accountSignOut.classList.remove("is-hidden");
-      if (accountButton) accountButton.innerHTML = "ACCOUNT <small>CONNECTED</small>";
-      if (accountPassword) accountPassword.value = "";
-    } catch (error) {
-      if (accountStatus) accountStatus.textContent = error instanceof Error ? error.message : "Sign-in failed. Please try again.";
-    } finally {
-      if (submit) submit.disabled = false;
-    }
-  });
-
-  accountSignUp?.addEventListener("click", async () => {
-    const email = accountEmail?.value.trim() || "";
-    const password = accountPassword?.value || "";
     const displayName = accountDisplayName?.value.trim() || "";
-    if (!email || password.length < 8 || !displayName) {
-      if (accountStatus) accountStatus.textContent = "Enter your email, a player name and a password of at least 8 characters.";
+    const creating = accountMode === "signup";
+    if (!email || password.length < 8 || (creating && !displayName)) {
+      if (accountStatus) accountStatus.textContent = creating
+        ? "Enter your email, your player name and a password of at least 8 characters."
+        : "Enter a valid email and a password of at least 8 characters.";
       return;
     }
-    accountSignUp.disabled = true;
-    if (accountStatus) accountStatus.textContent = "Creating your AKWANTUO account…";
+    if (accountSubmit) accountSubmit.disabled = true;
+    if (accountSignUp) accountSignUp.disabled = true;
+    if (accountStatus) accountStatus.textContent = creating
+      ? "Creating your AKWANTUO account…"
+      : "Signing in to AKWANTUO…";
     try {
-      const result = await signUpAkwantuo(email, password, displayName);
-      if (!result.session) {
-        if (accountStatus) accountStatus.textContent = "Account created. Check your email to confirm it, then return here to sign in.";
-        return;
+      if (creating) {
+        const result = await signUpAkwantuo(email, password, displayName);
+        if (!result.session) {
+          if (accountStatus) accountStatus.textContent = "Account created successfully. Check your email (including spam) to confirm it. Then tap BACK TO SIGN IN.";
+          setAccountMode("signup");
+          return;
+        }
+        activeAccountSession = result.session;
+        await savePlayerProfile(activeAccountSession, currentAppearance, displayName);
+        await refreshPlayerEconomy();
+        if (accountStatus) accountStatus.textContent = `Welcome to AKWANTUO, ${displayName}. Your cloud profile is ready. Wallet: GH₵${(walletBalancePesewas / 100).toFixed(2)}.`;
+      } else {
+        activeAccountSession = await signInAkwantuo(email, password);
+        const profile = await loadPlayerProfile(activeAccountSession);
+        await refreshPlayerEconomy();
+        if (profile?.look) {
+          currentAppearance = resolveAppearance(profile.look);
+          player.applyAppearance(currentAppearance);
+          if (characterForm) fillAppearanceForm(characterForm, currentAppearance);
+        } else {
+          await savePlayerProfile(activeAccountSession, currentAppearance);
+        }
+        if (accountStatus) accountStatus.textContent = `Signed in as ${email}. Your character profile is synced to AKWANTUO cloud saves. Wallet: GH₵${(walletBalancePesewas / 100).toFixed(2)}.`;
       }
-      activeAccountSession = result.session;
-      await savePlayerProfile(activeAccountSession, currentAppearance, displayName);
-      await refreshPlayerEconomy();
-      if (accountStatus) accountStatus.textContent = `Welcome to AKWANTUO, ${displayName}. Your cloud profile is ready. Wallet: GH₵${(walletBalancePesewas / 100).toFixed(2)}.`;
       if (accountSignOut) accountSignOut.classList.remove("is-hidden");
       if (accountButton) accountButton.innerHTML = "ACCOUNT <small>CONNECTED</small>";
       if (accountPassword) accountPassword.value = "";
     } catch (error) {
-      if (accountStatus) accountStatus.textContent = error instanceof Error ? error.message : "Account creation failed. Please try again.";
+      if (accountStatus) accountStatus.textContent = error instanceof Error
+        ? error.message
+        : (creating ? "Account creation failed. Please try again." : "Sign-in failed. Please try again.");
     } finally {
-      accountSignUp.disabled = false;
+      if (accountSubmit) accountSubmit.disabled = false;
+      if (accountSignUp) accountSignUp.disabled = false;
     }
   });
 
