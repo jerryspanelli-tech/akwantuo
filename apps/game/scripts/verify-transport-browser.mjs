@@ -16,6 +16,10 @@ try {
     page.on("pageerror", (error) => failures.push(target.name + ": " + error.message));
     page.on("console", (message) => { if (message.type() === "error") failures.push(target.name + " console: " + message.text()); });
     await page.goto("http://127.0.0.1:4173/", { waitUntil: "networkidle", timeout: 30000 });
+    await page.waitForFunction(() =>
+      document.querySelector("#studio-intro")?.classList.contains("is-hidden") === true,
+      { timeout: 5000 }
+    );
     await page.waitForFunction(() => {
       const status = document.querySelector("#boot-status")?.textContent ?? "";
       return status.includes("Your world is ready") || status.includes("Unable to start");
@@ -101,6 +105,49 @@ try {
     }
     await page.locator("#main-menu").waitFor({ state: "visible", timeout: 10000 });
     await page.locator("#play-button").waitFor({ state: "visible", timeout: 10000 });
+    const continueInitiallyHidden = await page.locator("#continue-button").evaluate((element) => element.classList.contains("is-hidden"));
+    if (!continueInitiallyHidden) throw new Error(target.name + ": Continue should be hidden before a local character save.");
+
+    // Verify the opening menu's settings and news panels are functional.
+    await page.locator("#settings-button").click({ timeout: 5000 });
+    await page.locator("#settings-panel").waitFor({ state: "visible", timeout: 5000 });
+    await page.locator("#graphics-quality").selectOption("performance");
+    await page.locator("#brightness-setting").evaluate((element) => {
+      const input = element as HTMLInputElement;
+      input.value = "110";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    await page.locator("#camera-sensitivity-setting").evaluate((element) => {
+      const input = element as HTMLInputElement;
+      input.value = "120";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    await page.locator("#fog-setting").uncheck();
+    await page.locator("#settings-save").click({ timeout: 5000 });
+    await page.waitForFunction(() => (document.querySelector("#notice")?.textContent ?? "").includes("Game settings saved"), { timeout: 5000 });
+    const savedSettings = await page.evaluate(() => ({
+      saved: JSON.parse(localStorage.getItem("akwantuo.game-settings.v1") ?? "null"),
+      quality: document.documentElement.dataset.akwantuoGraphicsQuality ?? "",
+      brightness: document.documentElement.dataset.akwantuoBrightness ?? "",
+      sensitivity: document.documentElement.dataset.akwantuoCameraSensitivity ?? "",
+      fog: document.documentElement.dataset.akwantuoFogEnabled ?? ""
+    }));
+    if (savedSettings.saved?.graphicsQuality !== "performance" || savedSettings.saved?.brightness !== 110 ||
+        savedSettings.saved?.cameraSensitivity !== 120 || savedSettings.saved?.fog !== false ||
+        savedSettings.quality !== "performance" || savedSettings.brightness !== "110" ||
+        savedSettings.sensitivity !== "120" || savedSettings.fog !== "false") {
+      throw new Error(target.name + ": settings did not apply and persist correctly: " + JSON.stringify(savedSettings));
+    }
+    await page.locator("#news-button").click({ timeout: 5000 });
+    await page.locator("#news-panel").waitFor({ state: "visible", timeout: 5000 });
+    const newsText = await page.locator("#news-panel").innerText();
+    if (!newsText.includes("Welcome to AKWANTUO") || !newsText.includes("What is coming next")) {
+      throw new Error(target.name + ": News / Updates panel content is incomplete.");
+    }
+    await page.locator("#news-close").click({ timeout: 5000 });
+    console.log(target.name + ": settings apply/save/reload inputs and news panel passed");
 
     // A missing dedicated backend must fail clearly without blocking local play.
     await page.locator("#account-button").click({ timeout: 5000 });
@@ -133,7 +180,18 @@ try {
     }
     await page.reload({ waitUntil: "networkidle", timeout: 30000 });
     await page.waitForFunction(() => (document.querySelector("#boot-status")?.textContent ?? "").includes("Your world is ready"), { timeout: 30000 });
+    await page.waitForFunction(() => document.querySelector("#studio-intro")?.classList.contains("is-hidden") === true, { timeout: 5000 });
     await page.waitForFunction(() => document.querySelector("#boot-screen")?.hasAttribute("hidden") === true, { timeout: 10000 });
+    const persistedSettings = await page.evaluate(() => ({
+      quality: document.documentElement.dataset.akwantuoGraphicsQuality ?? "",
+      brightness: document.documentElement.dataset.akwantuoBrightness ?? "",
+      sensitivity: document.documentElement.dataset.akwantuoCameraSensitivity ?? "",
+      fog: document.documentElement.dataset.akwantuoFogEnabled ?? ""
+    }));
+    if (persistedSettings.quality !== "performance" || persistedSettings.brightness !== "110" ||
+        persistedSettings.sensitivity !== "120" || persistedSettings.fog !== "false") {
+      throw new Error(target.name + ": settings were not reapplied after reload: " + JSON.stringify(persistedSettings));
+    }
     await page.locator("#character-button").click({ timeout: 5000 });
     const reloadedAppearance = await page.locator("#character-form").evaluate((form) => {
       const values = new FormData(form);
@@ -151,9 +209,11 @@ try {
         JSON.stringify({ savedAppearance, reloadedAppearance }));
     }
     await page.locator("#character-close").click({ timeout: 5000 });
-    console.log(target.name + ": character creation, local save and reload passed");
+    const continueAfterSave = await page.locator("#continue-button").isVisible();
+    if (!continueAfterSave) throw new Error(target.name + ": Continue did not appear after saving a character locally.");
+    console.log(target.name + ": character creation, local save/reload and Continue visibility passed");
 
-    await page.locator("#play-button").click({ timeout: 10000 });
+    await page.locator("#continue-button").click({ timeout: 10000 });
     await page.waitForFunction(() => !document.querySelector("#game-hud")?.classList.contains("is-hidden"), { timeout: 10000 });
     await page.waitForTimeout(700);
 
