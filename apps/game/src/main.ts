@@ -1445,6 +1445,7 @@ async function start(): Promise<void> {
   });
 
   let characterCreatorCameraState: { alpha: number; beta: number; radius: number; target: Vector3 } | null = null;
+  let firstSpawnAfterCharacterSave = false;
   const previewStage = document.querySelector<HTMLElement>("#character-preview-stage");
   const openCharacterCreator = (): void => {
     if (!characterPanel || !characterForm) return;
@@ -1515,7 +1516,7 @@ async function start(): Promise<void> {
     let cloudSaved = false;
     if (activeAccountSession) {
       try {
-        await savePlayerProfile(activeAccountSession, currentAppearance);
+        await savePlayerProfile(activeAccountSession, currentAppearance, accountDisplayName?.value.trim() || undefined);
         cloudSaved = true;
       } catch (error) {
         console.error("AKWANTUO cloud character save failed:", error);
@@ -1528,6 +1529,10 @@ async function start(): Promise<void> {
         ? "Appearance saved on this device. Sign in to enable cloud saves."
         : "Appearance updated for this session, but this browser could not save it.");
     window.setTimeout(() => notice?.classList.remove("is-visible"), 4200);
+    if (firstSpawnAfterCharacterSave) {
+      firstSpawnAfterCharacterSave = false;
+      enterWorld();
+    }
   });
 
   const openAccountPanel = (): void => {
@@ -1592,9 +1597,9 @@ async function start(): Promise<void> {
           return;
         }
         activeAccountSession = result.session;
-        await savePlayerProfile(activeAccountSession, currentAppearance, displayName);
         await refreshPlayerEconomy();
-        if (accountStatus) accountStatus.textContent = `Welcome to AKWANTUO, ${displayName}. Your cloud profile is ready. Wallet: GH₵${(walletBalancePesewas / 100).toFixed(2)}.`;
+        firstSpawnAfterCharacterSave = true;
+        if (accountStatus) accountStatus.textContent = `Welcome to AKWANTUO, ${displayName}. Now create and save your character.`;
       } else {
         activeAccountSession = await signInAkwantuo(email, password);
         const profile = await loadPlayerProfile(activeAccountSession);
@@ -1603,14 +1608,21 @@ async function start(): Promise<void> {
           currentAppearance = resolveAppearance(profile.look);
           player.applyAppearance(currentAppearance);
           if (characterForm) fillAppearanceForm(characterForm, currentAppearance);
+          if (accountStatus) accountStatus.textContent = `Welcome back, ${email}. Your saved character is ready. Loading your world…`;
         } else {
-          await savePlayerProfile(activeAccountSession, currentAppearance);
+          firstSpawnAfterCharacterSave = true;
+          if (accountStatus) accountStatus.textContent = `Welcome to AKWANTUO, ${email}. Create your character to begin.`;
         }
-        if (accountStatus) accountStatus.textContent = `Signed in as ${email}. Your character profile is synced to AKWANTUO cloud saves. Wallet: GH₵${(walletBalancePesewas / 100).toFixed(2)}.`;
       }
       if (accountSignOut) accountSignOut.classList.remove("is-hidden");
       if (accountButton) accountButton.innerHTML = "ACCOUNT <small>CONNECTED</small>";
       if (accountPassword) accountPassword.value = "";
+      closeAccountPanel();
+      if (creating || firstSpawnAfterCharacterSave) {
+        openCharacterCreator();
+      } else {
+        enterWorld();
+      }
     } catch (error) {
       if (accountStatus) accountStatus.textContent = error instanceof Error
         ? error.message
