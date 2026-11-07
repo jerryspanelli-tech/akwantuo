@@ -1245,13 +1245,16 @@ async function start(): Promise<void> {
     scene.render();
   };
 
-  document.querySelector<HTMLButtonElement>("#vehicle-brake-button")?.addEventListener("pointerdown", (event) => {
-    event.preventDefault();
-    event.currentTarget.setPointerCapture(event.pointerId);
-    vehicleBrake = true;
-  });
-  for (const eventName of ["pointerup", "pointercancel", "lostpointercapture"] as const) {
-    document.querySelector<HTMLButtonElement>("#vehicle-brake-button")?.addEventListener(eventName, () => { vehicleBrake = false; });
+  const vehicleBrakeButton = document.querySelector<HTMLButtonElement>("#vehicle-brake-button");
+  if (vehicleBrakeButton) {
+    vehicleBrakeButton.addEventListener("pointerdown", (event: PointerEvent) => {
+      event.preventDefault();
+      vehicleBrakeButton.setPointerCapture(event.pointerId);
+      vehicleBrake = true;
+    });
+    for (const eventName of ["pointerup", "pointercancel", "lostpointercapture"] as const) {
+      vehicleBrakeButton.addEventListener(eventName, () => { vehicleBrake = false; });
+    }
   }
 
   // Reveal the game shell before starting the continuous render loop. This
