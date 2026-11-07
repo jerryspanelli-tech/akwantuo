@@ -25,7 +25,18 @@ if (!settings || typeof settings !== "object" || settings.disable_signup === tru
   throw new Error("AKWANTUO Auth is unreachable or account registration is disabled.");
 }
 
-for (const table of ["player_wallets", "player_inventory", "game_transactions"]) {
+// Every application table is private to authenticated users. Public catalogue
+// access is also intentionally authenticated-only; anonymous clients must not
+// be able to enumerate player or economy data.
+for (const table of [
+  "player_profiles",
+  "player_wallets",
+  "shop_products",
+  "player_inventory",
+  "game_transactions",
+  "game_assets",
+  "player_owned_assets"
+]) {
   const response = await fetch(`${projectUrl}/rest/v1/${table}?select=*&limit=1`, {
     headers: { apikey: publishableKey }
   });
@@ -38,4 +49,4 @@ for (const table of ["player_wallets", "player_inventory", "game_transactions"])
   }
 }
 
-console.log("AKWANTUO Supabase Auth endpoint is reachable; sign-up is enabled; anonymous reads are denied on protected economy tables.");
+console.log("AKWANTUO Supabase Auth endpoint is reachable; sign-up is enabled; anonymous reads are denied on all seven application tables.");
