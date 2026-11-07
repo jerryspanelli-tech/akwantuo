@@ -1246,7 +1246,9 @@ async function start(): Promise<void> {
   };
 
   document.querySelector<HTMLButtonElement>("#vehicle-brake-button")?.addEventListener("pointerdown", (event) => {
-    event.preventDefault(); vehicleBrake = true;
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    vehicleBrake = true;
   });
   for (const eventName of ["pointerup", "pointercancel", "lostpointercapture"] as const) {
     document.querySelector<HTMLButtonElement>("#vehicle-brake-button")?.addEventListener(eventName, () => { vehicleBrake = false; });
