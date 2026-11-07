@@ -122,7 +122,27 @@ try {
         savedAppearance.hairstyleId !== "afro" || savedAppearance.outfitId !== "kente") {
       throw new Error(target.name + ": character creator did not persist the selected appearance: " + JSON.stringify(savedAppearance));
     }
-    console.log(target.name + ": character creator validated and local appearance save passed");
+    await page.reload({ waitUntil: "networkidle", timeout: 30000 });
+    await page.waitForFunction(() => (document.querySelector("#boot-status")?.textContent ?? "").includes("Your world is ready"), { timeout: 30000 });
+    await page.waitForFunction(() => document.querySelector("#boot-screen")?.hasAttribute("hidden") === true, { timeout: 10000 });
+    await page.locator("#character-button").click({ timeout: 5000 });
+    const reloadedAppearance = await page.locator("#character-form").evaluate((form) => {
+      const values = new FormData(form);
+      return {
+        presentation: values.get("presentation"),
+        age: Number(values.get("age")),
+        complexionId: values.get("complexion"),
+        bodyBuild: values.get("build"),
+        hairstyleId: values.get("hairstyle"),
+        outfitId: values.get("outfit")
+      };
+    });
+    if (JSON.stringify(reloadedAppearance) !== JSON.stringify(savedAppearance)) {
+      throw new Error(target.name + ": character appearance did not reload from device storage: " +
+        JSON.stringify({ savedAppearance, reloadedAppearance }));
+    }
+    await page.locator("#character-close").click({ timeout: 5000 });
+    console.log(target.name + ": character creation, local save and reload passed");
 
     await page.locator("#play-button").click({ timeout: 10000 });
     await page.waitForFunction(() => !document.querySelector("#game-hud")?.classList.contains("is-hidden"), { timeout: 10000 });
