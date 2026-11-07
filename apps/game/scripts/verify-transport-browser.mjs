@@ -113,13 +113,13 @@ try {
     await page.locator("#settings-panel").waitFor({ state: "visible", timeout: 5000 });
     await page.locator("#graphics-quality").selectOption("performance");
     await page.locator("#brightness-setting").evaluate((element) => {
-      const input = element as HTMLInputElement;
+      const input = element;
       input.value = "110";
       input.dispatchEvent(new Event("input", { bubbles: true }));
       input.dispatchEvent(new Event("change", { bubbles: true }));
     });
     await page.locator("#camera-sensitivity-setting").evaluate((element) => {
-      const input = element as HTMLInputElement;
+      const input = element;
       input.value = "120";
       input.dispatchEvent(new Event("input", { bubbles: true }));
       input.dispatchEvent(new Event("change", { bubbles: true }));
