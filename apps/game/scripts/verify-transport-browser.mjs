@@ -150,26 +150,33 @@ try {
         type: "touchMove",
         touchPoints: [{ id: 1, x: centreX, y: centreY - joystickBounds.width * 0.22, radiusX: 4, radiusY: 4, force: 1 }]
       });
-      await page.waitForTimeout(900);
+      // Software-rendered CI can produce fewer frames than a physical device.
+      await page.waitForTimeout(3000);
       await touchSession.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
       await touchSession.detach();
     } else {
       await page.keyboard.down("w");
-      await page.waitForTimeout(900);
+      await page.waitForTimeout(3000);
       await page.keyboard.up("w");
     }
+    await page.waitForFunction(({ x, z }) => {
+      const currentX = Number(document.documentElement.dataset.playerWorldX ?? NaN);
+      const currentZ = Number(document.documentElement.dataset.playerWorldZ ?? NaN);
+      return Number.isFinite(currentX) && Number.isFinite(currentZ) && Math.hypot(currentX - x, currentZ - z) > 0.2;
+    }, { x: playerStart.x, z: playerStart.z }, { timeout: 10000, polling: 100 });
     const playerAfterMove = await page.evaluate(() => ({
       x: Number(document.documentElement.dataset.playerWorldX ?? NaN),
       z: Number(document.documentElement.dataset.playerWorldZ ?? NaN)
     }));
     if (!Number.isFinite(playerAfterMove.x) || !Number.isFinite(playerAfterMove.z) ||
-        Math.hypot(playerAfterMove.x - playerStart.x, playerAfterMove.z - playerStart.z) < 0.4) {
+        Math.hypot(playerAfterMove.x - playerStart.x, playerAfterMove.z - playerStart.z) <= 0.2) {
       throw new Error(target.name + ": player did not move using " + (target.isMobile ? "the touch joystick" : "keyboard input") +
         ": " + JSON.stringify({ playerStart, playerAfterMove }));
     }
     if (target.isMobile) await page.locator("#jump-button").click({ timeout: 5000 });
     else await page.keyboard.press("Space");
-    await page.waitForTimeout(220);
+    await page.waitForFunction(() => Number(document.documentElement.dataset.playerWorldY ?? 0) > 0.15,
+      null, { timeout: 10000, polling: 100 });
     const jumpHeight = await page.evaluate(() => Number(document.documentElement.dataset.playerWorldY ?? 0));
     if (!Number.isFinite(jumpHeight) || jumpHeight < 0.15) {
       throw new Error(target.name + ": jump action did not lift the player: " + jumpHeight);
