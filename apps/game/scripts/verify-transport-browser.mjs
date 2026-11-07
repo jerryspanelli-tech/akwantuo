@@ -16,10 +16,21 @@ try {
     page.on("pageerror", (error) => failures.push(target.name + ": " + error.message));
     page.on("console", (message) => { if (message.type() === "error") failures.push(target.name + " console: " + message.text()); });
     await page.goto("http://127.0.0.1:4173/", { waitUntil: "networkidle", timeout: 30000 });
-    await page.waitForFunction(() =>
-      document.querySelector("#studio-intro")?.classList.contains("is-hidden") === true,
-      { timeout: 5000 }
-    );
+    const introSkipControl = page.locator("#intro-skip");
+    if (await introSkipControl.isVisible()) {
+      await introSkipControl.click({ timeout: 3000 });
+      await page.waitForFunction(() =>
+        document.querySelector("#studio-intro")?.classList.contains("is-hidden") === true,
+        { timeout: 3000 }
+      );
+      console.log(target.name + ": studio intro skip control passed");
+    } else {
+      await page.waitForFunction(() =>
+        document.querySelector("#studio-intro")?.classList.contains("is-hidden") === true,
+        { timeout: 5000 }
+      );
+      console.log(target.name + ": studio intro auto-dismiss passed");
+    }
     await page.waitForFunction(() => {
       const status = document.querySelector("#boot-status")?.textContent ?? "";
       return status.includes("Your world is ready") || status.includes("Unable to start");
