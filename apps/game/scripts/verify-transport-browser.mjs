@@ -281,16 +281,16 @@ try {
         type: "touchStart",
         touchPoints: [{ id: 3, x: brakeBounds.x + brakeBounds.width / 2, y: brakeBounds.y + brakeBounds.height / 2, radiusX: 4, radiusY: 4, force: 1 }]
       });
-      await vehiclePage.waitForTimeout(3000);
+      await vehiclePage.waitForFunction(() => Number(document.documentElement.dataset.akwantuoStarterSaloonSpeed ?? 99) <= 0.5,
+        null, { timeout: 20000, polling: 100 });
       await touchSession.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
       await touchSession.detach();
     } else {
       await vehiclePage.keyboard.down(" ");
-      await vehiclePage.waitForTimeout(3000);
+      await vehiclePage.waitForFunction(() => Number(document.documentElement.dataset.akwantuoStarterSaloonSpeed ?? 99) <= 0.5,
+        null, { timeout: 20000, polling: 100 });
       await vehiclePage.keyboard.up(" ");
     }
-    await vehiclePage.waitForFunction(() => Number(document.documentElement.dataset.akwantuoStarterSaloonSpeed ?? 99) <= 0.5,
-      null, { timeout: 10000, polling: 100 });
     if (target.isMobile) await vehiclePage.locator("#interact-button").click({ timeout: 5000 });
     else await vehiclePage.keyboard.press("e");
     await vehiclePage.waitForFunction(() => document.documentElement.dataset.akwantuoStarterSaloonMode === "on_foot", { timeout: 5000 });
@@ -631,7 +631,8 @@ try {
       // Disembarking at speed is intentionally blocked by the game. Brake to a
       // complete stop offshore before asserting the safe-disembark warning.
       await page.keyboard.down(" ");
-      await page.waitForTimeout(3500);
+      await page.waitForFunction(() => Number(document.documentElement.dataset.akwantuoWatercraftSpeed ?? 99) <= 0.5,
+        null, { timeout: 20000, polling: 100 });
       await page.keyboard.up(" ");
       const stoppedCraft = await page.evaluate(() => ({
         x: Number(document.documentElement.dataset.akwantuoWatercraftX ?? 0),
