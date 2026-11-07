@@ -4,7 +4,7 @@ Use this file as the controlled task-register starting point. The Chief of Staff
 
 | Task ID | Title | Department | Accountable owner | Priority | Status | Dependencies | Acceptance criteria | Evidence | Reviewer | Next action |
 |---|---|---|---|---|---|---|---|---|---|---|
-| AKW-MGT-001 | Establish and maintain the studio handbook | Management | Chief of Staff | High | In progress | CEO project authority | Handbook and templates are versioned and reviewed | Handbook commit | Studio Director | Review handbook |
+| AKW-MGT-001 | Establish and maintain the studio handbook | Management | Chief of Staff | High | Under review | CEO project authority | Handbook and templates are versioned and reviewed | Handbook commit | Studio Director | Review handbook |
 | AKW-MGT-002 | Create the initial task register | Management | Chief of Staff | High | Not started | Handbook review | All approved active tasks have unique IDs, owners and criteria | Register commit | Studio Director | Populate from approved development priorities |
 | AKW-MGT-003 | Establish department reporting cycle | Management | Project Manager | Normal | Not started | Task register | Every department has a reporting owner and report format | Report records | Studio Director | Set first reporting period |
 
