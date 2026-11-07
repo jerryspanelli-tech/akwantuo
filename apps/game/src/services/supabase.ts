@@ -17,6 +17,14 @@ export interface AkwantuoSession {
   user: AkwantuoUser;
 }
 
+type AuthTokenResponse = {
+  access_token?: string;
+  refresh_token?: string;
+  expires_at?: number;
+  expires_in?: number;
+  user?: AkwantuoUser;
+};
+
 export interface PlayerProfile {
   id: string;
   display_name: string;
@@ -44,16 +52,47 @@ function storeSession(session: AkwantuoSession | null): void {
   }
 }
 
+function normalizeSession(result: AuthTokenResponse, fallbackUser?: AkwantuoUser): AkwantuoSession {
+  const user = result.user ?? fallbackUser;
+  if (!result.access_token || !result.refresh_token || !user) {
+    throw new Error("AKWANTUO Auth returned an incomplete session. Please sign in again.");
+  }
+  const expiresAt = typeof result.expires_at === "number"
+    ? result.expires_at
+    : typeof result.expires_in === "number"
+      ? Math.floor(Date.now() / 1000) + result.expires_in
+      : undefined;
+  return {
+    access_token: result.access_token,
+    refresh_token: result.refresh_token,
+    expires_at: expiresAt,
+    user
+  };
+}
+
 async function request<T>(path: string, init: RequestInit = {}, accessToken?: string): Promise<T> {
   if (!isSupabaseConfigured()) {
     throw new Error("AKWANTUO online services are not configured yet. Connect a dedicated AKWANTUO Supabase project first.");
   }
+
+  // Refresh an expiring session before any authenticated request. The stored
+  // session is the source of truth so callers holding an older session object
+  // still use the rotated access token after refresh.
+  let bearerToken = accessToken;
+  if (accessToken && readStoredSession()) {
+    const currentSession = await getAkwantuoSession();
+    if (!currentSession) {
+      throw new Error("Your AKWANTUO session has expired. Please sign in again.");
+    }
+    bearerToken = currentSession.access_token;
+  }
+
   const response = await fetch(`${SUPABASE_URL}${path}`, {
     ...init,
     headers: {
       apikey: SUPABASE_PUBLISHABLE_KEY,
       "Content-Type": "application/json",
-      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      ...(bearerToken ? { Authorization: `Bearer ${bearerToken}` } : {}),
       ...init.headers
     }
   });
@@ -82,11 +121,11 @@ export async function getAkwantuoSession(): Promise<AkwantuoSession | null> {
     return null;
   }
   try {
-    const refreshed = await request<Omit<AkwantuoSession, "user"> & { user?: AkwantuoUser }>(
+    const refreshed = await request<AuthTokenResponse>(
       "/auth/v1/token?grant_type=refresh_token",
       { method: "POST", body: JSON.stringify({ refresh_token: session.refresh_token }) }
     );
-    const nextSession = { ...refreshed, user: refreshed.user ?? session.user };
+    const nextSession = normalizeSession(refreshed, session.user);
     storeSession(nextSession);
     return nextSession;
   } catch {
@@ -96,32 +135,31 @@ export async function getAkwantuoSession(): Promise<AkwantuoSession | null> {
 }
 
 export async function signInAkwantuo(email: string, password: string): Promise<AkwantuoSession> {
-  const session = await request<AkwantuoSession>(
+  const result = await request<AuthTokenResponse>(
     "/auth/v1/token?grant_type=password",
     { method: "POST", body: JSON.stringify({ email: email.trim(), password }) }
   );
+  const session = normalizeSession(result);
   storeSession(session);
   return session;
 }
 
 export async function signUpAkwantuo(email: string, password: string, displayName: string): Promise<{ session: AkwantuoSession | null; confirmationRequired: boolean }> {
-  const result = await request<{ access_token?: string; refresh_token?: string; expires_at?: number; user: AkwantuoUser }>(
-    "/auth/v1/signup",
+  const redirectTo = encodeURIComponent(window.location.origin);
+  const result = await request<AuthTokenResponse>(
+    `/auth/v1/signup?redirect_to=${redirectTo}`,
     {
       method: "POST",
-      headers: { "X-Redirect-To": window.location.origin },
       body: JSON.stringify({ email: email.trim(), password, data: { display_name: displayName.trim() } })
     }
   );
   if (!result.access_token || !result.refresh_token) {
+    if (!result.user?.id) {
+      throw new Error("AKWANTUO Auth did not return a user record for the new account.");
+    }
     return { session: null, confirmationRequired: true };
   }
-  const session: AkwantuoSession = {
-    access_token: result.access_token,
-    refresh_token: result.refresh_token,
-    expires_at: result.expires_at,
-    user: result.user
-  };
+  const session = normalizeSession(result);
   storeSession(session);
   return { session, confirmationRequired: false };
 }
