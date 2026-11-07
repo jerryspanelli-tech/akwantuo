@@ -1150,6 +1150,7 @@ async function start(): Promise<void> {
         if (interactButton) interactButton.textContent = passengerState.mode === "riding" ? "ALIGHT" : "EXIT";
         if (jumpButton) jumpButton.classList.add("is-hidden");
         if (vehicleViewButton) vehicleViewButton.classList.remove("is-hidden");
+        document.querySelector<HTMLButtonElement>("#vehicle-brake-button")?.classList.remove("is-hidden");
       } else {
         const nearMappedRailBoarding = interactionState.mode === "on_foot" &&
           passengerState.mode === "not_riding" &&
@@ -1158,6 +1159,7 @@ async function start(): Promise<void> {
         if (interactButton) interactButton.textContent = activeInterior ? "EXIT" : nearMappedRailBoarding ? "BOARD" : "ENTER";
         if (jumpButton) jumpButton.classList.remove("is-hidden");
         if (vehicleViewButton) vehicleViewButton.classList.add("is-hidden");
+        document.querySelector<HTMLButtonElement>("#vehicle-brake-button")?.classList.add("is-hidden");
       }
 
       let inputX = interactionState.mode === "on_foot" && passengerState.mode !== "riding" && !watercraftMode ? touchInput.x : 0;
