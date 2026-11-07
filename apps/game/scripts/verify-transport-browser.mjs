@@ -212,7 +212,18 @@ try {
     }
     await page.waitForTimeout(900);
     console.log(target.name + ": player movement and jump controls passed");
-    await page.waitForTimeout(300);
+
+    // Restore the standard street spawn so the following boarding tests start
+    // from the intended trotro stop rather than the player's movement-test spot.
+    await page.reload({ waitUntil: "networkidle", timeout: 30000 });
+    await page.waitForFunction(() => (document.querySelector("#boot-status")?.textContent ?? "").includes("Your world is ready"),
+      null, { timeout: 30000, polling: 100 });
+    await page.waitForFunction(() => document.querySelector("#boot-screen")?.hasAttribute("hidden") === true,
+      null, { timeout: 10000, polling: 100 });
+    await page.locator("#play-button").click({ timeout: 10000 });
+    await page.waitForFunction(() => !document.querySelector("#game-hud")?.classList.contains("is-hidden"),
+      null, { timeout: 10000, polling: 100 });
+    await page.waitForTimeout(500);
 
     // Exercise the playable starter saloon separately from passenger transport.
     const vehiclePage = await context.newPage();
