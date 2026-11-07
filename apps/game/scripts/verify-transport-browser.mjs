@@ -549,6 +549,15 @@ try {
     );
     await page.locator("#play-button").click({ timeout: 10000 });
     await page.waitForFunction(() => !document.querySelector("#game-hud")?.classList.contains("is-hidden"), { timeout: 10000 });
+    // The mapped-rail state is published by the render loop. On mobile
+    // emulation the first frame can arrive after the HUD becomes visible.
+    // Wait for the actual simulation state rather than sampling one frame early.
+    await page.waitForFunction(() =>
+      document.documentElement.dataset.transportTestMode === "rail" &&
+      document.documentElement.dataset.mappedRailBoardingOpen === "true",
+      null,
+      { timeout: 10000 }
+    );
     const railTestSpawn = await page.evaluate(() => ({
       mode: document.documentElement.dataset.transportTestMode ?? "",
       boardingOpen: document.documentElement.dataset.mappedRailBoardingOpen === "true"
