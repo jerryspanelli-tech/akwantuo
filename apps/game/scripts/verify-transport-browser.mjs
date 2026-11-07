@@ -298,6 +298,8 @@ try {
     await vehiclePage.screenshot({ path: "artifacts/akwantuo-" + target.name + "-starter-saloon.png", fullPage: false, timeout: 30000 });
     console.log(target.name + ": starter saloon entry, driving, steering, braking and safe exit passed");
     await vehiclePage.close();
+    await page.bringToFront();
+    await page.waitForTimeout(500);
 
     const npcTraffic = await page.evaluate(() => ({
       count: Number(document.documentElement.dataset.npcRoadTraffic ?? 0),
