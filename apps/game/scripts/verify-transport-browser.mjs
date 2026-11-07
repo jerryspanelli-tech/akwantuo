@@ -158,6 +158,25 @@ try {
     if (!newsText.includes("Welcome to AKWANTUO") || !newsText.includes("What is coming next")) {
       throw new Error(target.name + ": News / Updates panel content is incomplete.");
     }
+    const newsCloseState = await page.locator("#news-close").evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      const style = getComputedStyle(element);
+      const panel = document.querySelector("#news-panel");
+      const card = panel?.querySelector(".character-card");
+      const cardRect = card?.getBoundingClientRect();
+      return {
+        rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
+        display: style.display,
+        visibility: style.visibility,
+        opacity: style.opacity,
+        pointerEvents: style.pointerEvents,
+        panelHidden: panel?.classList.contains("is-hidden") ?? true,
+        cardRect: cardRect ? { x: cardRect.x, y: cardRect.y, width: cardRect.width, height: cardRect.height } : null
+      };
+    });
+    console.log(target.name + ": news close control layout " + JSON.stringify(newsCloseState));
+    await page.locator("#news-close").scrollIntoViewIfNeeded({ timeout: 3000 });
+    await page.waitForTimeout(250);
     await page.locator("#news-close").click({ timeout: 5000 });
     console.log(target.name + ": settings apply/save/reload inputs and news panel passed");
 
