@@ -125,19 +125,59 @@ button { font: inherit; }
 @media (max-width: 480px) { .character-panel { padding: 12px; align-items: start; } .character-card { margin: auto 0; max-height: 94dvh; padding: 19px; } #character-form { grid-template-columns: 1fr; gap: 12px; } #character-form label { gap: 5px; } #character-form input, #character-form select { min-height: 42px; } }
 
 
-/* Playable vehicle interaction controls */
-.hud-actions { display: flex; align-items: end; gap: 9px; pointer-events: none; }
-.interact-button, .vehicle-view-button, .vehicle-brake-button {
-  min-width: 62px; height: 48px; padding: 0 12px; border: 1px solid rgba(255,255,255,.5);
-  background: rgba(17,29,29,.88); color: #f5f1e8; font-size: 9px; font-weight: 800;
-  letter-spacing: .08em; pointer-events: auto; touch-action: none;
+/* Mobile roleplay HUD: restrained, labelled controls with dedicated movement/action zones. */
+.touch-controls {
+  display: none; position: absolute; inset: auto 0 max(18px, env(safe-area-inset-bottom));
+  align-items: end; justify-content: space-between; padding: 0 clamp(18px, 5vw, 42px);
+  pointer-events: none; gap: 16px;
 }
-.vehicle-brake-button { background: rgba(133,45,35,.88); }
-.interact-button:active, .vehicle-view-button:active, .vehicle-brake-button:active { transform: scale(.95); }
+.movement-control, .action-control { display: flex; flex-direction: column; gap: 9px; pointer-events: none; }
+.control-caption {
+  padding-left: 4px; color: rgba(255,255,255,.66); font-size: 8px; font-weight: 800;
+  letter-spacing: .2em; text-shadow: 0 2px 8px #000;
+}
+.joystick {
+  position: relative; width: clamp(108px, 22vw, 132px); height: clamp(108px, 22vw, 132px);
+  border: 1px solid rgba(255,255,255,.27); border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,.08), rgba(10,18,20,.68) 72%);
+  box-shadow: inset 0 0 24px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.2);
+  display: grid; place-items: center; pointer-events: auto; touch-action: none;
+}
+.joystick-ring { position: absolute; inset: 17%; border: 1px solid rgba(213,180,119,.22); border-radius: 50%; }
+.joystick-stick {
+  position: relative; z-index: 1; width: 43%; height: 43%; border: 1px solid rgba(255,255,255,.48);
+  border-radius: 50%; background: linear-gradient(145deg, rgba(213,180,119,.96), rgba(139,103,54,.96));
+  box-shadow: 0 4px 13px rgba(0,0,0,.48), inset 0 1px 2px rgba(255,255,255,.38);
+}
+.hud-actions {
+  display: grid; grid-template-columns: repeat(2, minmax(62px, 76px)); grid-template-rows: auto auto;
+  align-items: end; justify-items: stretch; gap: 9px; pointer-events: none;
+}
+.interact-button, .vehicle-view-button, .vehicle-brake-button, .jump-button {
+  min-width: 62px; min-height: 48px; padding: 0 10px; border: 1px solid rgba(255,255,255,.34);
+  border-radius: 14px; background: linear-gradient(145deg, rgba(30,47,48,.96), rgba(11,20,22,.96));
+  color: #f5f1e8; font-size: 9px; font-weight: 850; letter-spacing: .12em;
+  box-shadow: 0 5px 14px rgba(0,0,0,.3); pointer-events: auto; touch-action: none;
+}
+.interact-button { grid-column: 1 / -1; min-height: 54px; border-color: rgba(213,180,119,.72); background: linear-gradient(145deg, #e1c38b, #b58c4f); color: #17201d; }
+.jump-button { width: 66px; min-width: 66px; height: 66px; justify-self: end; border-radius: 50%; border-color: rgba(213,180,119,.7); background: linear-gradient(145deg, #e0c18a, #a77c42); color: #17201d; }
+.vehicle-view-button { min-height: 48px; }
+.vehicle-brake-button { min-height: 48px; border-color: rgba(219,112,96,.65); background: linear-gradient(145deg, #8c3e35, #54251f); }
+.interact-button:active, .vehicle-view-button:active, .vehicle-brake-button:active, .jump-button:active { transform: scale(.95); filter: brightness(1.15); }
 @media (max-width: 700px), (pointer: coarse) {
-  .touch-controls { align-items: end; }
-  .hud-actions { gap: 7px; }
-  .interact-button, .vehicle-view-button, .vehicle-brake-button { min-width: 55px; height: 45px; font-size: 8px; }
+  .hud-top { top: max(65px, env(safe-area-inset-top)); left: 22px; right: 22px; font-size: 7px; }
+  .touch-controls { display: flex; }
+  .control-hint { display: none; }
+  .hud-actions { gap: 8px; }
+  .interact-button, .vehicle-view-button, .vehicle-brake-button { font-size: 8px; }
+  .topbar { pointer-events: none; }
+  .online-label { opacity: .7; }
+}
+@media (max-width: 380px) {
+  .touch-controls { padding-inline: 12px; gap: 8px; }
+  .hud-actions { grid-template-columns: repeat(2, minmax(56px, 66px)); gap: 7px; }
+  .interact-button { min-height: 48px; }
+  .jump-button { width: 58px; min-width: 58px; height: 58px; }
 }
 
 /* Keep the boot overlay dismissible: its base display rule must not override the hidden state. */
