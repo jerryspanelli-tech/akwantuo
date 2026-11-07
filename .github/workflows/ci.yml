@@ -13,6 +13,10 @@ jobs:
   game-client:
     name: Typecheck and build game client
     runs-on: ubuntu-latest
+    # Public browser credentials only; never expose a service-role key.
+    env:
+      VITE_SUPABASE_URL: https://ugiysogfkclbcryhtkyn.supabase.co
+      VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable__WFhhKIwP7yxOqaMNsy9pA_ZHY9xE3m
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -22,10 +26,7 @@ jobs:
           node-version: 22
       - name: Install dependencies
         run: npm install
-      - name: Verify live AKWANTUO Supabase connection (when configured)
-        env:
-          VITE_SUPABASE_URL: ${{ secrets.AKWANTUO_SUPABASE_URL }}
-          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.AKWANTUO_SUPABASE_PUBLISHABLE_KEY }}
+      - name: Verify live AKWANTUO Supabase connection
         run: node apps/game/scripts/verify-supabase-connection.mjs
       - name: Typecheck
         run: npm run typecheck
