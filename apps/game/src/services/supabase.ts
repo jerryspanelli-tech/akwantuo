@@ -107,7 +107,11 @@ export async function signInAkwantuo(email: string, password: string): Promise<A
 export async function signUpAkwantuo(email: string, password: string, displayName: string): Promise<{ session: AkwantuoSession | null; confirmationRequired: boolean }> {
   const result = await request<{ access_token?: string; refresh_token?: string; expires_at?: number; user: AkwantuoUser }>(
     "/auth/v1/signup",
-    { method: "POST", body: JSON.stringify({ email: email.trim(), password, data: { display_name: displayName.trim() } }) }
+    {
+      method: "POST",
+      headers: { "X-Redirect-To": window.location.origin },
+      body: JSON.stringify({ email: email.trim(), password, data: { display_name: displayName.trim() } })
+    }
   );
   if (!result.access_token || !result.refresh_token) {
     return { session: null, confirmationRequired: true };
