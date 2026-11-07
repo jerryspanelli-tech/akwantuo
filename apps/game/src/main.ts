@@ -483,8 +483,7 @@ async function start(): Promise<void> {
   const watercraftTestMode = isLocalTransportTestHost &&
     (watercraftTestKind === "speedboat" || watercraftTestKind === "jet_ski");
   if (vehicleTestMode) {
-    // Local-only browser-test spawn beside the starter saloon driver's door.
-    player.root.position.set(WORLD_CONFIG.spawn.x - 7.15, 0, WORLD_CONFIG.spawn.z);
+    // Local-only browser-test mode; the isolated spawn is set beside the car below.
     document.documentElement.dataset.vehicleTestMode = "true";
   } else if (transportRailTestMode) {
     // Local-only browser-test spawn; never active on a deployed game host.
@@ -561,7 +560,10 @@ async function start(): Promise<void> {
 
   // First real in-world road vehicle: a nearby saloon that can be entered,
   // driven and exited from the playable scene (not only the developer preview).
-  const vehicleOrigin = { x: WORLD_CONFIG.spawn.x - 6, y: 0, z: WORLD_CONFIG.spawn.z };
+  const vehicleOrigin = vehicleTestMode
+    ? { x: WORLD_CONFIG.spawn.x + 800, y: 0, z: WORLD_CONFIG.spawn.z + 800 }
+    : { x: WORLD_CONFIG.spawn.x - 6, y: 0, z: WORLD_CONFIG.spawn.z };
+  if (vehicleTestMode) player.root.position.set(vehicleOrigin.x - 1.15, 0, vehicleOrigin.z);
   const vehicleGeometry = createRoadVehicleGeometry(scene, {
     id: "playable-starter-saloon",
     centerX: vehicleOrigin.x,
