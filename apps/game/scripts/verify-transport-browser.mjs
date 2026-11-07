@@ -214,6 +214,91 @@ try {
     console.log(target.name + ": player movement and jump controls passed");
     await page.waitForTimeout(300);
 
+    // Exercise the playable starter saloon separately from passenger transport.
+    const vehiclePage = await context.newPage();
+    vehiclePage.on("pageerror", (error) => failures.push(target.name + " vehicle page: " + error.message));
+    vehiclePage.on("console", (message) => { if (message.type() === "error") failures.push(target.name + " vehicle console: " + message.text()); });
+    await vehiclePage.goto("http://127.0.0.1:4173/?akwantuoVehicleTest=1", { waitUntil: "networkidle", timeout: 30000 });
+    await vehiclePage.waitForFunction(() => (document.querySelector("#boot-status")?.textContent ?? "").includes("Your world is ready"), { timeout: 30000 });
+    await vehiclePage.waitForFunction(() => document.querySelector("#boot-screen")?.hasAttribute("hidden") === true, { timeout: 10000 });
+    if (await vehiclePage.evaluate(() => document.documentElement.dataset.vehicleTestMode) !== "true") {
+      throw new Error(target.name + ": local starter-saloon test spawn did not activate.");
+    }
+    await vehiclePage.locator("#play-button").click({ timeout: 10000 });
+    await vehiclePage.waitForFunction(() => !document.querySelector("#game-hud")?.classList.contains("is-hidden"), { timeout: 10000 });
+    if (target.isMobile) await vehiclePage.locator("#interact-button").click({ timeout: 5000 });
+    else await vehiclePage.keyboard.press("e");
+    await vehiclePage.waitForFunction(() => document.documentElement.dataset.akwantuoStarterSaloonMode === "inside_vehicle", { timeout: 5000 });
+    const carStart = await vehiclePage.evaluate(() => ({
+      x: Number(document.documentElement.dataset.akwantuoStarterSaloonX ?? NaN),
+      z: Number(document.documentElement.dataset.akwantuoStarterSaloonZ ?? NaN),
+      heading: Number(document.documentElement.dataset.akwantuoStarterSaloonHeading ?? NaN)
+    }));
+    if (!Number.isFinite(carStart.x) || !Number.isFinite(carStart.z) || !Number.isFinite(carStart.heading)) {
+      throw new Error(target.name + ": starter saloon diagnostics were not initialised.");
+    }
+    if (target.isMobile) {
+      const joystickBounds = await vehiclePage.locator("#joystick").boundingBox();
+      if (!joystickBounds) throw new Error("mobile: vehicle movement joystick is not visible.");
+      const centreX = joystickBounds.x + joystickBounds.width / 2;
+      const centreY = joystickBounds.y + joystickBounds.height / 2;
+      const touchSession = await vehiclePage.context().newCDPSession(vehiclePage);
+      await touchSession.send("Input.dispatchTouchEvent", {
+        type: "touchStart", touchPoints: [{ id: 2, x: centreX, y: centreY, radiusX: 4, radiusY: 4, force: 1 }]
+      });
+      await touchSession.send("Input.dispatchTouchEvent", {
+        type: "touchMove", touchPoints: [{ id: 2, x: centreX, y: centreY - joystickBounds.width * 0.22, radiusX: 4, radiusY: 4, force: 1 }]
+      });
+      await vehiclePage.waitForTimeout(3000);
+      await touchSession.send("Input.dispatchTouchEvent", {
+        type: "touchMove", touchPoints: [{ id: 2, x: centreX + joystickBounds.width * 0.2, y: centreY - joystickBounds.width * 0.12, radiusX: 4, radiusY: 4, force: 1 }]
+      });
+      await vehiclePage.waitForTimeout(1800);
+      await touchSession.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+      await touchSession.detach();
+    } else {
+      await vehiclePage.keyboard.down("w");
+      await vehiclePage.waitForTimeout(3000);
+      await vehiclePage.keyboard.down("d");
+      await vehiclePage.waitForTimeout(1800);
+      await vehiclePage.keyboard.up("d");
+      await vehiclePage.keyboard.up("w");
+    }
+    await vehiclePage.waitForFunction(({ x, z, heading }) => {
+      const currentX = Number(document.documentElement.dataset.akwantuoStarterSaloonX ?? NaN);
+      const currentZ = Number(document.documentElement.dataset.akwantuoStarterSaloonZ ?? NaN);
+      const currentHeading = Number(document.documentElement.dataset.akwantuoStarterSaloonHeading ?? NaN);
+      const turn = Math.atan2(Math.sin(currentHeading - heading), Math.cos(currentHeading - heading));
+      return Math.hypot(currentX - x, currentZ - z) > 0.2 &&
+        Number(document.documentElement.dataset.akwantuoStarterSaloonSpeed ?? 0) > 0 &&
+        Math.abs(turn) > 0.005;
+    }, carStart, { timeout: 10000, polling: 100 });
+    if (target.isMobile) {
+      const brakeBounds = await vehiclePage.locator("#vehicle-brake-button").boundingBox();
+      if (!brakeBounds) throw new Error("mobile: vehicle brake control is not visible.");
+      const touchSession = await vehiclePage.context().newCDPSession(vehiclePage);
+      await touchSession.send("Input.dispatchTouchEvent", {
+        type: "touchStart",
+        touchPoints: [{ id: 3, x: brakeBounds.x + brakeBounds.width / 2, y: brakeBounds.y + brakeBounds.height / 2, radiusX: 4, radiusY: 4, force: 1 }]
+      });
+      await vehiclePage.waitForTimeout(3000);
+      await touchSession.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+      await touchSession.detach();
+    } else {
+      await vehiclePage.keyboard.down(" ");
+      await vehiclePage.waitForTimeout(3000);
+      await vehiclePage.keyboard.up(" ");
+    }
+    await vehiclePage.waitForFunction(() => Number(document.documentElement.dataset.akwantuoStarterSaloonSpeed ?? 99) <= 0.5,
+      null, { timeout: 10000, polling: 100 });
+    if (target.isMobile) await vehiclePage.locator("#interact-button").click({ timeout: 5000 });
+    else await vehiclePage.keyboard.press("e");
+    await vehiclePage.waitForFunction(() => document.documentElement.dataset.akwantuoStarterSaloonMode === "on_foot", { timeout: 5000 });
+    await vehiclePage.waitForFunction(() => (document.querySelector("#notice")?.textContent ?? "").includes("exited the vehicle"), { timeout: 5000 });
+    await vehiclePage.screenshot({ path: "artifacts/akwantuo-" + target.name + "-starter-saloon.png", fullPage: false, timeout: 30000 });
+    console.log(target.name + ": starter saloon entry, driving, steering, braking and safe exit passed");
+    await vehiclePage.close();
+
     const npcTraffic = await page.evaluate(() => ({
       count: Number(document.documentElement.dataset.npcRoadTraffic ?? 0),
       route: document.documentElement.dataset.npcRoadTrafficRoute ?? "",
