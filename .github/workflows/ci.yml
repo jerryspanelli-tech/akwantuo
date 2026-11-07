@@ -32,3 +32,10 @@ jobs:
         run: npm run typecheck
       - name: Build
         run: npm run build
+      - name: Verify built browser bundle is isolated to AKWANTUO
+        run: |
+          grep -R -q 'https://ugiysogfkclbcryhtkyn.supabase.co' apps/game/dist/assets
+          if grep -R -q 'fktvbxmgseojcvztheqz.supabase.co' apps/game/dist/assets; then
+            echo 'Accra Life Supabase URL leaked into the AKWANTUO browser bundle.'
+            exit 1
+          fi
