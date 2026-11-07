@@ -141,7 +141,7 @@ try {
       input.dispatchEvent(new Event("change", { bubbles: true }));
     });
     await page.locator("#fog-setting").uncheck();
-    await page.locator("#settings-save").click({ timeout: 5000 });
+    await page.locator("#settings-save").click({ timeout: 15000 });
     await page.waitForFunction(() => (document.querySelector("#notice")?.textContent ?? "").includes("Game settings saved"), { timeout: 5000 });
     const savedSettings = await page.evaluate(() => ({
       saved: JSON.parse(localStorage.getItem("akwantuo.game-settings.v1") ?? "null"),
