@@ -141,11 +141,18 @@ try {
       if (!joystickBounds) throw new Error("mobile: movement joystick is not visible.");
       const centreX = joystickBounds.x + joystickBounds.width / 2;
       const centreY = joystickBounds.y + joystickBounds.height / 2;
-      await page.mouse.move(centreX, centreY);
-      await page.mouse.down();
-      await page.mouse.move(centreX, centreY - joystickBounds.width * 0.22, { steps: 5 });
+      const touchSession = await page.context().newCDPSession(page);
+      await touchSession.send("Input.dispatchTouchEvent", {
+        type: "touchStart",
+        touchPoints: [{ id: 1, x: centreX, y: centreY, radiusX: 4, radiusY: 4, force: 1 }]
+      });
+      await touchSession.send("Input.dispatchTouchEvent", {
+        type: "touchMove",
+        touchPoints: [{ id: 1, x: centreX, y: centreY - joystickBounds.width * 0.22, radiusX: 4, radiusY: 4, force: 1 }]
+      });
       await page.waitForTimeout(900);
-      await page.mouse.up();
+      await touchSession.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+      await touchSession.detach();
     } else {
       await page.keyboard.down("w");
       await page.waitForTimeout(900);
