@@ -851,21 +851,31 @@ async function start(): Promise<void> {
 
   installTouchControls(joystick, joystickStick, touchInput);
   window.addEventListener("keydown", (event: KeyboardEvent) => {
+    const target = event.target;
+    const isTextEntryTarget = target instanceof HTMLElement && (
+      target.isContentEditable ||
+      target.matches("input, textarea, select, [contenteditable='true'], [role='textbox']")
+    );
+
+    // Never let game controls intercept characters being entered in account,
+    // character, chat, or other editable fields (especially on mobile Safari).
+    if (isTextEntryTarget || event.isComposing || !hasEnteredWorld) return;
+
     const key = event.key.toLowerCase();
-    if (["w", "a", "s", "d", "e", "c", "arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(key)) {
-      event.preventDefault();
-    }
+    const gameControlKeys = ["w", "a", "s", "d", "e", "c", "arrowup", "arrowdown", "arrowleft", "arrowright", " "];
+    if (gameControlKeys.includes(key)) event.preventDefault();
+
     pressedKeys.add(key);
     document.documentElement.dataset.transportLastKey = key;
     document.documentElement.dataset.transportHasEnteredWorld = String(hasEnteredWorld);
-    if (key === " " && hasEnteredWorld && interactionState.mode === "on_foot") jumpRequested = true;
-    if (key === "e" && hasEnteredWorld) {
+    if (key === " " && interactionState.mode === "on_foot") jumpRequested = true;
+    if (key === "e") {
       vehicleActionRequested = true;
       document.documentElement.dataset.transportActionRequest = "keyboard_e";
       document.documentElement.dataset.transportActionRequestAt = String(performance.now());
       document.documentElement.dataset.transportVisibilityAtInput = document.visibilityState;
     }
-    if (key === "c" && hasEnteredWorld && (interactionState.mode === "inside_vehicle" || passengerState.mode === "riding" || watercraftMode)) vehicleViewRequested = true;
+    if (key === "c" && (interactionState.mode === "inside_vehicle" || passengerState.mode === "riding" || watercraftMode)) vehicleViewRequested = true;
   });
   window.addEventListener("keyup", (event: KeyboardEvent) => {
     pressedKeys.delete(event.key.toLowerCase());
