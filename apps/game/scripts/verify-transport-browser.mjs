@@ -179,9 +179,10 @@ try {
       };
     });
     console.log(target.name + ": news close control layout " + JSON.stringify(newsCloseState));
-    await page.locator("#news-close").scrollIntoViewIfNeeded({ timeout: 3000 });
-    await page.waitForTimeout(250);
-    await page.locator("#news-close").click({ timeout: 5000 });
+    await page.waitForTimeout(500);
+    // The close control is already measured visible and pointer-enabled above;
+    // avoid a redundant scroll action while the full-screen panel is settling.
+    await page.locator("#news-close").click({ force: true, timeout: 5000 });
     console.log(target.name + ": settings apply/save/reload inputs and news panel passed");
 
     // A missing dedicated backend must fail clearly without blocking local play.
