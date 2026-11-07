@@ -1421,10 +1421,18 @@ async function start(): Promise<void> {
   startupHandoffStage = "resize_game_engine";
   engine.resize();
 
-  startupHandoffStage = "start_render_loop";
-  engine.runRenderLoop(render);
+  // Keep the expensive 3D world idle behind the static main menu. The
+  // previous always-on loop rendered the entire Greater Accra scene before
+  // the player had pressed Play, competing with menu input on mobile CPUs.
+  // Render one frame for the menu backdrop, then start continuous rendering
+  // only when the player actually enters the world.
+  startupHandoffStage = "render_menu_frame";
+  scene.render();
   startupHandoffStage = "startup_complete";
-  window.addEventListener("resize", () => engine.resize());
+  window.addEventListener("resize", () => {
+    engine.resize();
+    if (!hasEnteredWorld && !document.hidden) scene.render();
+  });
 
   const openCharacterCreator = (): void => {
     if (!characterPanel || !characterForm) return;
@@ -1570,6 +1578,7 @@ async function start(): Promise<void> {
     settingsPanel?.classList.add("is-hidden");
     newsPanel?.classList.add("is-hidden");
     hasEnteredWorld = true;
+    if (!document.hidden) engine.runRenderLoop(render);
     mainMenu?.classList.add("is-hidden");
     footerBar?.classList.add("is-hidden");
     gameHud?.classList.remove("is-hidden");
@@ -1584,8 +1593,11 @@ async function start(): Promise<void> {
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) {
       engine.stopRenderLoop();
-    } else {
+    } else if (hasEnteredWorld) {
       engine.runRenderLoop(render);
+    } else {
+      // The menu is static: one frame is enough until Play is selected.
+      scene.render();
     }
   });
 }
