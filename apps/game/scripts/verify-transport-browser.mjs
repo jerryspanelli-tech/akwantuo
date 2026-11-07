@@ -437,7 +437,9 @@ try {
       // Disembarking at speed is intentionally blocked by the game. Brake to a
       // complete stop offshore before asserting the safe-disembark warning.
       await page.keyboard.down(" ");
-      await page.waitForTimeout(3500);
+      // The jet ski can reach 24.6 m/s after the six-second acceleration run;
+      // five seconds is not enough to stop it at the configured 5 m/s² brake rate.
+      await page.waitForTimeout(6000);
       await page.keyboard.up(" ");
       const stoppedCraft = await page.evaluate(() => ({
         x: Number(document.documentElement.dataset.akwantuoWatercraftX ?? 0),
