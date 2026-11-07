@@ -9,13 +9,26 @@
   </head>
   <body>
     <main id="app">
+      <section class="studio-intro" id="studio-intro" aria-label="AKWANTUO studio introduction">
+        <div class="studio-intro-content">
+          <p class="studio-intro-kicker">AN ORIGINAL GHANAIAN OPEN-WORLD EXPERIENCE</p>
+          <div class="studio-emblem" aria-hidden="true"><span>A</span></div>
+          <h1>AKWANTUO</h1>
+          <p class="studio-intro-tagline">A WORLD OF YOUR OWN</p>
+          <p class="studio-intro-credit">AKWANTUO STUDIOS</p>
+        </div>
+        <button class="intro-skip" id="intro-skip" type="button">SKIP INTRO <span>→</span></button>
+      </section>
       <section class="boot-screen" id="boot-screen" aria-live="polite">
         <div class="boot-mark">A</div>
         <p class="eyebrow">A GHANAIAN OPEN-WORLD EXPERIENCE</p>
         <h1>AKWANTUO</h1>
         <p class="boot-caption">A World of Your Own</p>
-        <div class="boot-track"><span></span></div>
+        <div class="boot-track" role="progressbar" aria-label="Loading AKWANTUO" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <span id="boot-progress-bar"></span>
+        </div>
         <p class="boot-status" id="boot-status">Preparing your world…</p>
+        <p class="boot-tip" id="boot-tip">Tip: Use the movement joystick on phones or WASD on computers.</p>
       </section>
       <section class="game-shell is-hidden" id="game-shell">
         <canvas id="world-canvas" aria-label="AKWANTUO 3D world"></canvas>
@@ -48,10 +61,12 @@
           <h1>AKWANTUO</h1>
           <p class="menu-subtitle">A World of Your Own.</p>
           <div class="menu-actions">
-            <button class="primary-action" id="play-button" type="button">ENTER WORLD <span>↗</span></button>
+            <button class="primary-action" id="play-button" type="button">PLAY <span>↗</span></button>
+            <button class="secondary-action is-hidden" id="continue-button" type="button">CONTINUE <small>RESUME CHARACTER</small></button>
             <button class="secondary-action" id="character-button" type="button">CHARACTER <small>CREATE / EDIT</small></button>
+            <button class="secondary-action" id="settings-button" type="button">SETTINGS <small>GAME OPTIONS</small></button>
+            <button class="secondary-action" id="news-button" type="button">NEWS / UPDATES <small>BUILD NOTES</small></button>
             <button class="secondary-action" id="account-button" type="button">ACCOUNT <small>ONLINE SAVE</small></button>
-            <button class="secondary-action" type="button" disabled>SETTINGS <small>COMING SOON</small></button>
           </div>
           <p class="build-note">EARLY DEVELOPMENT BUILD <span>•</span> GHANA</p>
         </section>
@@ -68,6 +83,39 @@
               <p class="character-footnote">Your choices update the temporary 3D preview. Detailed gender-specific models, clothing meshes and hairstyles will be added as the character art system develops.</p>
               <button class="primary-action character-save" id="character-save" type="submit">SAVE APPEARANCE <span>✓</span></button>
             </form>
+          </div>
+        </section>
+        <section class="character-panel is-hidden" id="settings-panel" aria-hidden="true" aria-labelledby="settings-title">
+          <div class="character-card">
+            <div class="character-heading"><div><p class="eyebrow">MAKE THE WORLD COMFORTABLE</p><h2 id="settings-title">Game settings</h2></div><button class="character-close" id="settings-close" type="button" aria-label="Close settings">×</button></div>
+            <form id="settings-form">
+              <label>Graphics quality
+                <select id="graphics-quality" name="graphicsQuality">
+                  <option value="performance">Performance</option>
+                  <option value="balanced" selected>Balanced</option>
+                  <option value="high">High quality</option>
+                </select>
+              </label>
+              <label>Brightness <span class="field-note">Adjust the world display</span>
+                <input id="brightness-setting" name="brightness" type="range" min="80" max="125" step="5" value="100" />
+              </label>
+              <label>Camera sensitivity <span class="field-note">Adjust camera movement speed</span>
+                <input id="camera-sensitivity-setting" name="cameraSensitivity" type="range" min="60" max="160" step="10" value="100" />
+              </label>
+              <label class="settings-toggle"><span>Atmospheric fog</span><input id="fog-setting" name="fog" type="checkbox" checked /></label>
+              <p class="character-footnote">Settings are saved on this device. High quality may reduce performance on older phones.</p>
+              <button class="primary-action character-save" id="settings-save" type="submit">APPLY SETTINGS <span>✓</span></button>
+            </form>
+          </div>
+        </section>
+        <section class="character-panel is-hidden" id="news-panel" aria-hidden="true" aria-labelledby="news-title">
+          <div class="character-card">
+            <div class="character-heading"><div><p class="eyebrow">FROM THE DEVELOPMENT STUDIO</p><h2 id="news-title">News & updates</h2></div><button class="character-close" id="news-close" type="button" aria-label="Close news">×</button></div>
+            <div class="news-content">
+              <article><p class="news-date">FOUNDATION BUILD · 0.1.0</p><h3>Welcome to AKWANTUO</h3><p>The first playable foundation brings a Ghana-inspired world preview, character creation, street movement and early transport prototypes together.</p></article>
+              <article><p class="news-date">IN DEVELOPMENT</p><h3>What is coming next</h3><p>More Ghanaian neighbourhoods, realistic characters and vehicles, deeper activities, secure online play and expanded mobile optimisation are being developed in stages.</p></article>
+              <p class="news-footnote">This is an early development build. Online accounts and cloud saves remain unavailable until AKWANTUO's own backend is configured.</p>
+            </div>
           </div>
         </section>
         <section class="character-panel is-hidden" id="account-panel" aria-hidden="true" aria-labelledby="account-title">
