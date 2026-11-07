@@ -9,6 +9,7 @@ import {
   Vector3
 } from "@babylonjs/core";
 import "./style.css";
+import { installTouchControls } from "./input/touchControls";
 import { COMPLEXIONS, DEFAULT_APPEARANCE, OUTFITS, resolveAppearance, type CharacterAppearance } from "./character/appearance";
 import { loadAppearance, saveAppearance } from "./character/appearanceStore";
 import { createPlayer } from "./character/playerAvatar";
@@ -145,44 +146,6 @@ function advanceWatercraftElapsed(
   return next;
 }
 
-
-function installTouchControls(): void {
-  if (!joystick || !joystickStick) return;
-
-  const resetStick = (): void => {
-    touchInput.x = 0;
-    touchInput.z = 0;
-    joystickStick.style.transform = "translate(0, 0)";
-  };
-
-  const updateStick = (event: PointerEvent): void => {
-    const bounds = joystick.getBoundingClientRect();
-    const centreX = bounds.left + bounds.width / 2;
-    const centreY = bounds.top + bounds.height / 2;
-    const max = bounds.width * 0.31;
-    const dx = event.clientX - centreX;
-    const dy = event.clientY - centreY;
-    const distance = Math.hypot(dx, dy);
-    const scale = distance > max ? max / distance : 1;
-    const x = dx * scale;
-    const y = dy * scale;
-    touchInput.x = x / max;
-    touchInput.z = -y / max;
-    joystickStick.style.transform = `translate(${x}px, ${y}px)`;
-  };
-
-  joystick.addEventListener("pointerdown", (event: PointerEvent) => {
-    event.preventDefault();
-    joystick.setPointerCapture(event.pointerId);
-    updateStick(event);
-  });
-  joystick.addEventListener("pointermove", (event: PointerEvent) => {
-    if (joystick.hasPointerCapture(event.pointerId)) updateStick(event);
-  });
-  joystick.addEventListener("pointerup", resetStick);
-  joystick.addEventListener("pointercancel", resetStick);
-  joystick.addEventListener("lostpointercapture", resetStick);
-}
 
 function sampleRouteAtDistance(
   route: readonly { x: number; z: number }[],
@@ -755,7 +718,7 @@ async function start(): Promise<void> {
   camera.inertia = 0.78;
   camera.attachControl(canvas, true);
 
-  installTouchControls();
+  installTouchControls(joystick, joystickStick, touchInput);
   window.addEventListener("keydown", (event: KeyboardEvent) => {
     const key = event.key.toLowerCase();
     if (["w", "a", "s", "d", "e", "c", "arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(key)) {
