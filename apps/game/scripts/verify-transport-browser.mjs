@@ -226,9 +226,36 @@ try {
     }
     await vehiclePage.locator("#play-button").click({ timeout: 10000 });
     await vehiclePage.waitForFunction(() => !document.querySelector("#game-hud")?.classList.contains("is-hidden"), { timeout: 10000 });
+    const carApproach = await vehiclePage.evaluate(() => ({
+      playerX: Number(document.documentElement.dataset.playerWorldX ?? NaN),
+      playerZ: Number(document.documentElement.dataset.playerWorldZ ?? NaN),
+      carX: Number(document.documentElement.dataset.akwantuoStarterSaloonX ?? NaN),
+      carZ: Number(document.documentElement.dataset.akwantuoStarterSaloonZ ?? NaN),
+      mode: document.documentElement.dataset.akwantuoStarterSaloonMode ?? "",
+      spawnMode: document.documentElement.dataset.vehicleTestMode ?? ""
+    }));
+    const entryDistance = Math.hypot(carApproach.playerX - (carApproach.carX - 1.15), carApproach.playerZ - carApproach.carZ);
+    if (!Number.isFinite(entryDistance) || entryDistance > 2.5) {
+      throw new Error(target.name + ": starter saloon test spawn is not at the driver's door: " +
+        JSON.stringify({ carApproach, entryDistance }));
+    }
     if (target.isMobile) await vehiclePage.locator("#interact-button").click({ timeout: 5000 });
     else await vehiclePage.keyboard.press("e");
-    await vehiclePage.waitForFunction(() => document.documentElement.dataset.akwantuoStarterSaloonMode === "inside_vehicle", { timeout: 5000 });
+    try {
+      await vehiclePage.waitForFunction(() => document.documentElement.dataset.akwantuoStarterSaloonMode === "inside_vehicle",
+        null, { timeout: 5000, polling: 100 });
+    } catch {
+      const entryDiagnostic = await vehiclePage.evaluate(() => ({
+        playerX: Number(document.documentElement.dataset.playerWorldX ?? NaN),
+        playerZ: Number(document.documentElement.dataset.playerWorldZ ?? NaN),
+        carX: Number(document.documentElement.dataset.akwantuoStarterSaloonX ?? NaN),
+        carZ: Number(document.documentElement.dataset.akwantuoStarterSaloonZ ?? NaN),
+        mode: document.documentElement.dataset.akwantuoStarterSaloonMode ?? "",
+        request: document.documentElement.dataset.transportActionRequest ?? "",
+        notice: document.querySelector("#notice")?.textContent ?? ""
+      }));
+      throw new Error(target.name + ": starter saloon entry did not activate: " + JSON.stringify(entryDiagnostic));
+    }
     const carStart = await vehiclePage.evaluate(() => ({
       x: Number(document.documentElement.dataset.akwantuoStarterSaloonX ?? NaN),
       z: Number(document.documentElement.dataset.akwantuoStarterSaloonZ ?? NaN),
