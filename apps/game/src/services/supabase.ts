@@ -2,6 +2,7 @@ import type { CharacterAppearance } from "../character/appearance";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL?.trim() ?? "";
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim() ?? "";
+const EXPECTED_SUPABASE_HOST = "ugiysogfkclbcryhtkyn.supabase.co";
 const SESSION_KEY = "akwantuo.auth.session.v1";
 
 export interface AkwantuoUser {
@@ -109,7 +110,13 @@ async function request<T>(path: string, init: RequestInit = {}, accessToken?: st
 }
 
 export function isSupabaseConfigured(): boolean {
-  return Boolean(SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY);
+  if (!SUPABASE_PUBLISHABLE_KEY.startsWith("sb_publishable_")) return false;
+  try {
+    const url = new URL(SUPABASE_URL);
+    return url.protocol === "https:" && url.hostname === EXPECTED_SUPABASE_HOST;
+  } catch {
+    return false;
+  }
 }
 
 let refreshInFlight: Promise<AkwantuoSession | null> | null = null;
