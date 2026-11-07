@@ -21,9 +21,20 @@
         <canvas id="world-canvas" aria-label="AKWANTUO 3D world"></canvas>
         <section class="game-hud is-hidden" id="game-hud" aria-label="Game controls">
           <div class="hud-top"><span class="hud-location">AKWANTUO <i>·</i> ACCRA DISTRICT</span><span class="hud-mode">EXPLORATION</span></div>
-          <div class="touch-controls" id="touch-controls">
-            <div class="joystick" id="joystick" aria-label="Movement joystick"><div class="joystick-stick" id="joystick-stick"></div></div>
-            <div class="hud-actions"><button class="interact-button" id="interact-button" type="button">ENTER</button><button class="vehicle-view-button is-hidden" id="vehicle-view-button" type="button">VIEW</button><button class="jump-button" id="jump-button" type="button">JUMP</button><button class="vehicle-brake-button" id="vehicle-brake-button" type="button">BRAKE</button></div>
+          <div class="touch-controls" id="touch-controls" aria-label="Mobile game controls">
+            <div class="movement-control">
+              <span class="control-caption">MOVE</span>
+              <div class="joystick" id="joystick" role="application" aria-label="Movement joystick"><div class="joystick-ring"></div><div class="joystick-stick" id="joystick-stick"></div></div>
+            </div>
+            <div class="action-control">
+              <span class="control-caption">ACTIONS</span>
+              <div class="hud-actions">
+                <button class="interact-button" id="interact-button" type="button">ENTER</button>
+                <button class="jump-button" id="jump-button" type="button">JUMP</button>
+                <button class="vehicle-view-button is-hidden" id="vehicle-view-button" type="button">VIEW</button>
+                <button class="vehicle-brake-button is-hidden" id="vehicle-brake-button" type="button">BRAKE</button>
+              </div>
+            </div>
           </div>
           <div class="control-hint" id="control-hint">WASD / ARROWS MOVE · E ENTER / EXIT · SPACE BRAKE / JUMP</div>
         </section>
