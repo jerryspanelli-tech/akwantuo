@@ -357,50 +357,66 @@ try {
       console.log(target.name + ": headway-controlled N1 traffic advanced " + JSON.stringify(npcTraffic));
     }
 
-    // Exercise a complete trotro journey, including the passenger camera control.
-    if (target.isMobile) await page.locator("#interact-button").click({ timeout: 5000 });
-    else await page.keyboard.press("e");
+    // Exercise a complete trotro journey in a separate deterministic local test session.
+    // The character-control test above intentionally moves the player; a dedicated
+    // spawn prevents that movement from leaving the passenger interaction out of range.
+    const trotroPage = await context.newPage();
+    trotroPage.on("pageerror", (error) => failures.push(target.name + " trotro page: " + error.message));
+    trotroPage.on("console", (message) => {
+      if (message.type() === "error") failures.push(target.name + " trotro console: " + message.text());
+    });
+    await trotroPage.goto("http://127.0.0.1:4173/?akwantuoTrotroTest=1", {
+      waitUntil: "networkidle",
+      timeout: 30000
+    });
+    await trotroPage.waitForFunction(() =>
+      (document.querySelector("#boot-status")?.textContent ?? "").includes("Your world is ready"),
+      { timeout: 30000 }
+    );
+    await trotroPage.waitForFunction(() =>
+      document.querySelector("#boot-screen")?.hasAttribute("hidden") === true,
+      { timeout: 10000 }
+    );
+    const trotroSpawn = await trotroPage.evaluate(() => ({
+      mode: document.documentElement.dataset.trotroTestMode ?? "",
+      playerX: Number(document.documentElement.dataset.playerWorldX ?? NaN),
+      playerZ: Number(document.documentElement.dataset.playerWorldZ ?? NaN)
+    }));
+    if (trotroSpawn.mode !== "true") {
+      throw new Error(target.name + ": local trotro test spawn did not activate: " + JSON.stringify(trotroSpawn));
+    }
+    await trotroPage.locator("#play-button").click({ timeout: 10000 });
+    await trotroPage.waitForFunction(() => !document.querySelector("#game-hud")?.classList.contains("is-hidden"), { timeout: 10000 });
+    if (target.isMobile) await trotroPage.locator("#interact-button").click({ timeout: 5000 });
+    else await trotroPage.keyboard.press("e");
     try {
-      await page.waitForFunction(() => (document.querySelector("#notice")?.textContent ?? "").includes("Boarded shared trotro"), { timeout: 5000 });
+      await trotroPage.waitForFunction(() => (document.querySelector("#notice")?.textContent ?? "").includes("Boarded shared trotro"), { timeout: 5000 });
     } catch (error) {
-      const boardingDiagnostic = await page.evaluate((runtimeErrors) => ({
+      const boardingDiagnostic = await trotroPage.evaluate((runtimeErrors) => ({
         notice: document.querySelector("#notice")?.textContent ?? "",
         playerX: document.documentElement.dataset.transportPlayerX,
         playerZ: document.documentElement.dataset.transportPlayerZ,
         trotroX: document.documentElement.dataset.transportTrotroX,
         trotroZ: document.documentElement.dataset.transportTrotroZ,
         passengerMode: document.documentElement.dataset.transportPassengerMode,
-        lastActionNotice: document.documentElement.dataset.transportLastNotice,
-        lastActionAt: document.documentElement.dataset.transportLastActionAt,
-        lastKey: document.documentElement.dataset.transportLastKey,
-        hasEnteredWorld: document.documentElement.dataset.transportHasEnteredWorld,
-        actionRequest: document.documentElement.dataset.transportActionRequest,
-        actionConsumedAt: document.documentElement.dataset.transportActionConsumedAt,
-        actionPassengerModeBefore: document.documentElement.dataset.transportActionPassengerModeBefore,
         trotroBranch: document.documentElement.dataset.transportTrotroBranch,
         trotroDistance: document.documentElement.dataset.transportTrotroDistance,
         trotroBoardResult: document.documentElement.dataset.transportTrotroBoardResult,
-        renderFrame: document.documentElement.dataset.transportRenderFrame,
-        renderFrameAt: document.documentElement.dataset.transportRenderFrameAt,
-        actionRequestAt: document.documentElement.dataset.transportActionRequestAt,
-        visibilityAtInput: document.documentElement.dataset.transportVisibilityAtInput,
-        visibilityNow: document.visibilityState,
         runtimeErrors: runtimeErrors.slice(-12)
       }), failures);
       console.error(target.name + ": trotro boarding diagnostic " + JSON.stringify(boardingDiagnostic));
       throw error;
     }
     if (target.isMobile) {
-      await page.locator("#vehicle-view-button").waitFor({ state: "visible", timeout: 5000 });
-      await page.locator("#vehicle-view-button").click({ timeout: 5000 });
-    }
-    else await page.keyboard.press("c");
-    await page.waitForFunction(() => (document.querySelector("#notice")?.textContent ?? "").includes("Vehicle view"), { timeout: 5000 });
+      await trotroPage.locator("#vehicle-view-button").waitFor({ state: "visible", timeout: 5000 });
+      await trotroPage.locator("#vehicle-view-button").click({ timeout: 5000 });
+    } else await trotroPage.keyboard.press("c");
+    await trotroPage.waitForFunction(() => (document.querySelector("#notice")?.textContent ?? "").includes("Vehicle view"), { timeout: 5000 });
     console.log(target.name + ": trotro boarded and passenger camera switched");
     try {
-      await page.waitForFunction(() => (document.querySelector("#notice")?.textContent ?? "").includes("You have reached the final stop"), { timeout: 60000 });
+      await trotroPage.waitForFunction(() => (document.querySelector("#notice")?.textContent ?? "").includes("You have reached the final stop"), { timeout: 60000 });
     } catch (error) {
-      const diagnostic = await page.evaluate(() => ({
+      const diagnostic = await trotroPage.evaluate(() => ({
         notice: document.querySelector("#notice")?.textContent,
         trotroZ: document.documentElement.dataset.trotroZ,
         trotroSpeed: document.documentElement.dataset.trotroSpeed,
@@ -410,13 +426,12 @@ try {
       throw error;
     }
     console.log(target.name + ": trotro reached terminal");
-    if (target.isMobile) await page.locator("#interact-button").click({ timeout: 5000 });
-    else await page.keyboard.press("e");
-    await page.waitForFunction(() => (document.querySelector("#notice")?.textContent ?? "").includes("You alighted"), { timeout: 5000 });
-
-    if (failures.length) throw new Error(failures.join("\n"));
-    await page.screenshot({ path: "artifacts/akwantuo-" + target.name + "-transport-game.png", fullPage: false, timeout: 30000 });
+    if (target.isMobile) await trotroPage.locator("#interact-button").click({ timeout: 5000 });
+    else await trotroPage.keyboard.press("e");
+    await trotroPage.waitForFunction(() => (document.querySelector("#notice")?.textContent ?? "").includes("You alighted"), { timeout: 5000 });
+    await trotroPage.screenshot({ path: "artifacts/akwantuo-" + target.name + "-transport-game.png", fullPage: false, timeout: 30000 });
     console.log(target.name + ": trotro journey passed and screenshot captured");
+    await trotroPage.close();
 
     // Re-open the playable world in a local-only test spawn at Accra Central,
     // then complete the mapped Accra–Tema train journey and terminal alighting.
