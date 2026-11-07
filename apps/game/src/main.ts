@@ -1441,7 +1441,7 @@ async function start(): Promise<void> {
     fillAppearanceForm(characterForm, currentAppearance);
     characterCreatorCameraState = { alpha: camera.alpha, beta: camera.beta, radius: camera.radius, target: camera.target.clone() };
     camera.detachControl();
-    camera.alpha = 0;
+    camera.alpha = Math.PI;
     camera.beta = 1.18;
     camera.radius = 5.4;
     camera.target = player.root.position.add(new Vector3(0, 1.12, 0));
