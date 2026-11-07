@@ -102,6 +102,15 @@ try {
     await page.locator("#main-menu").waitFor({ state: "visible", timeout: 10000 });
     await page.locator("#play-button").waitFor({ state: "visible", timeout: 10000 });
 
+    // A missing dedicated backend must fail clearly without blocking local play.
+    await page.locator("#account-button").click({ timeout: 5000 });
+    await page.locator("#account-email").fill("phase1-test@example.com");
+    await page.locator("#account-password").fill("not-a-real-password");
+    await page.locator("#account-signin").click({ timeout: 5000 });
+    await page.waitForFunction(() => (document.querySelector("#account-status")?.textContent ?? "").includes("not configured yet"), { timeout: 5000 });
+    await page.locator("#account-close").click({ timeout: 5000 });
+    console.log(target.name + ": missing dedicated Supabase configuration fails safely and local play remains available");
+
     // Phase 1: exercise the character creator and device-local save before play.
     await page.locator("#character-button").click({ timeout: 5000 });
     await page.locator("#character-form").waitFor({ state: "visible", timeout: 5000 });
