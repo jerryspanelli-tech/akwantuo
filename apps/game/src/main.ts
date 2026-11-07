@@ -1256,6 +1256,7 @@ async function start(): Promise<void> {
     document.documentElement.dataset.akwantuoStarterSaloonX = vehicleState.x.toFixed(3);
     document.documentElement.dataset.akwantuoStarterSaloonZ = vehicleState.z.toFixed(3);
     document.documentElement.dataset.akwantuoStarterSaloonSpeed = vehicleState.speedMps.toFixed(3);
+    document.documentElement.dataset.akwantuoStarterSaloonHeading = vehicleState.headingRadians.toFixed(3);
     scene.render();
   };
 
