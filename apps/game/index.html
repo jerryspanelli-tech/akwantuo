@@ -9,21 +9,45 @@
   </head>
   <body>
     <main id="app">
+      <section class="studio-intro" id="studio-intro" aria-label="AKWANTUO studio introduction">
+        <div class="studio-intro-content">
+          <p class="studio-intro-kicker">AN ORIGINAL GHANAIAN OPEN-WORLD EXPERIENCE</p>
+          <div class="studio-emblem" aria-hidden="true"><span>A</span></div>
+          <h1>AKWANTUO</h1>
+          <p class="studio-intro-tagline">A WORLD OF YOUR OWN</p>
+          <p class="studio-intro-credit">AKWANTUO STUDIOS</p>
+        </div>
+        <button class="intro-skip" id="intro-skip" type="button">SKIP INTRO <span>→</span></button>
+      </section>
       <section class="boot-screen" id="boot-screen" aria-live="polite">
         <div class="boot-mark">A</div>
         <p class="eyebrow">A GHANAIAN OPEN-WORLD EXPERIENCE</p>
         <h1>AKWANTUO</h1>
         <p class="boot-caption">A World of Your Own</p>
-        <div class="boot-track"><span></span></div>
+        <div class="boot-track" role="progressbar" aria-label="Loading AKWANTUO" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <span id="boot-progress-bar"></span>
+        </div>
         <p class="boot-status" id="boot-status">Preparing your world…</p>
+        <p class="boot-tip" id="boot-tip">Tip: Use the movement joystick on phones or WASD on computers.</p>
       </section>
       <section class="game-shell is-hidden" id="game-shell">
         <canvas id="world-canvas" aria-label="AKWANTUO 3D world"></canvas>
         <section class="game-hud is-hidden" id="game-hud" aria-label="Game controls">
           <div class="hud-top"><span class="hud-location">AKWANTUO <i>·</i> ACCRA DISTRICT</span><span class="hud-mode">EXPLORATION</span></div>
-          <div class="touch-controls" id="touch-controls">
-            <div class="joystick" id="joystick" aria-label="Movement joystick"><div class="joystick-stick" id="joystick-stick"></div></div>
-            <div class="hud-actions"><button class="interact-button" id="interact-button" type="button">ENTER</button><button class="vehicle-view-button is-hidden" id="vehicle-view-button" type="button">VIEW</button><button class="jump-button" id="jump-button" type="button">JUMP</button><button class="vehicle-brake-button" id="vehicle-brake-button" type="button">BRAKE</button></div>
+          <div class="touch-controls" id="touch-controls" aria-label="Mobile game controls">
+            <div class="movement-control">
+              <span class="control-caption">MOVE</span>
+              <div class="joystick" id="joystick" role="application" aria-label="Movement joystick"><div class="joystick-ring"></div><div class="joystick-stick" id="joystick-stick"></div></div>
+            </div>
+            <div class="action-control">
+              <span class="control-caption">ACTIONS</span>
+              <div class="hud-actions">
+                <button class="interact-button" id="interact-button" type="button">ENTER</button>
+                <button class="jump-button" id="jump-button" type="button">JUMP</button>
+                <button class="vehicle-view-button is-hidden" id="vehicle-view-button" type="button">VIEW</button>
+                <button class="vehicle-brake-button is-hidden" id="vehicle-brake-button" type="button">BRAKE</button>
+              </div>
+            </div>
           </div>
           <div class="control-hint" id="control-hint">WASD / ARROWS MOVE · E ENTER / EXIT · SPACE BRAKE / JUMP</div>
         </section>
@@ -37,14 +61,21 @@
           <h1>AKWANTUO</h1>
           <p class="menu-subtitle">A World of Your Own.</p>
           <div class="menu-actions">
-            <button class="primary-action" id="play-button" type="button">ENTER WORLD <span>↗</span></button>
+            <button class="primary-action" id="play-button" type="button">PLAY <span>↗</span></button>
+            <button class="secondary-action is-hidden" id="continue-button" type="button">CONTINUE <small>RESUME CHARACTER</small></button>
             <button class="secondary-action" id="character-button" type="button">CHARACTER <small>CREATE / EDIT</small></button>
+            <button class="secondary-action" id="settings-button" type="button">SETTINGS <small>GAME OPTIONS</small></button>
+            <button class="secondary-action" id="news-button" type="button">NEWS / UPDATES <small>BUILD NOTES</small></button>
             <button class="secondary-action" id="account-button" type="button">ACCOUNT <small>ONLINE SAVE</small></button>
-            <button class="secondary-action" type="button" disabled>SETTINGS <small>COMING SOON</small></button>
           </div>
           <p class="build-note">EARLY DEVELOPMENT BUILD <span>•</span> GHANA</p>
         </section>
         <section class="character-panel is-hidden" id="character-panel" aria-hidden="true" aria-labelledby="character-title">
+          <div class="character-preview-stage" id="character-preview-stage" aria-label="Live 3D character preview">
+            <div class="preview-label"><span class="preview-dot"></span> LIVE CHARACTER PREVIEW</div>
+            <div class="preview-instruction">Drag to rotate · Pinch or use zoom controls to inspect</div>
+            <div class="preview-controls"><button type="button" id="character-rotate-left" aria-label="Rotate character left">↶</button><button type="button" id="character-rotate-right" aria-label="Rotate character right">↷</button></div>
+          </div>
           <div class="character-card">
             <div class="character-heading"><div><p class="eyebrow">MAKE THIS WORLD YOURS</p><h2 id="character-title">Create your character</h2></div><button class="character-close" id="character-close" type="button" aria-label="Close character creator">×</button></div>
             <form id="character-form">
@@ -59,13 +90,46 @@
             </form>
           </div>
         </section>
+        <section class="character-panel is-hidden" id="settings-panel" aria-hidden="true" aria-labelledby="settings-title">
+          <div class="character-card">
+            <div class="character-heading"><div><p class="eyebrow">MAKE THE WORLD COMFORTABLE</p><h2 id="settings-title">Game settings</h2></div><button class="character-close" id="settings-close" type="button" aria-label="Close settings">×</button></div>
+            <form id="settings-form">
+              <label>Graphics quality
+                <select id="graphics-quality" name="graphicsQuality">
+                  <option value="performance">Performance</option>
+                  <option value="balanced" selected>Balanced</option>
+                  <option value="high">High quality</option>
+                </select>
+              </label>
+              <label>Brightness <span class="field-note">Adjust the world display</span>
+                <input id="brightness-setting" name="brightness" type="range" min="80" max="125" step="5" value="100" />
+              </label>
+              <label>Camera sensitivity <span class="field-note">Adjust camera movement speed</span>
+                <input id="camera-sensitivity-setting" name="cameraSensitivity" type="range" min="60" max="160" step="10" value="100" />
+              </label>
+              <label class="settings-toggle"><span>Atmospheric fog</span><input id="fog-setting" name="fog" type="checkbox" checked /></label>
+              <p class="character-footnote">Settings are saved on this device. High quality may reduce performance on older phones.</p>
+              <button class="primary-action character-save" id="settings-save" type="submit">APPLY SETTINGS <span>✓</span></button>
+            </form>
+          </div>
+        </section>
+        <section class="character-panel is-hidden" id="news-panel" aria-hidden="true" aria-labelledby="news-title">
+          <div class="character-card">
+            <div class="character-heading"><div><p class="eyebrow">FROM THE DEVELOPMENT STUDIO</p><h2 id="news-title">News & updates</h2></div><button class="character-close" id="news-close" type="button" aria-label="Close news">×</button></div>
+            <div class="news-content">
+              <article><p class="news-date">FOUNDATION BUILD · 0.1.0</p><h3>Welcome to AKWANTUO</h3><p>The first playable foundation brings a Ghana-inspired world preview, character creation, street movement and early transport prototypes together.</p></article>
+              <article><p class="news-date">IN DEVELOPMENT</p><h3>What is coming next</h3><p>More Ghanaian neighbourhoods, realistic characters and vehicles, deeper activities, secure online play and expanded mobile optimisation are being developed in stages.</p></article>
+              <p class="news-footnote">This is an early development build. Online accounts and cloud saves remain unavailable until AKWANTUO's own backend is configured.</p>
+            </div>
+          </div>
+        </section>
         <section class="character-panel is-hidden" id="account-panel" aria-hidden="true" aria-labelledby="account-title">
           <div class="character-card">
             <div class="character-heading"><div><p class="eyebrow">YOUR AKWANTUO ID</p><h2 id="account-title">Player account</h2></div><button class="character-close" id="account-close" type="button" aria-label="Close account panel">×</button></div>
             <form id="account-form">
-              <label>Email address<input id="account-email" name="email" type="email" autocomplete="email" required /></label>
+              <label>Email address<input id="account-email" name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="none" spellcheck="false" enterkeyhint="next" required /></label>
               <label>Password<input id="account-password" name="password" type="password" minlength="8" autocomplete="current-password" required /></label>
-              <label>Player name <span class="field-note">Used when creating a new account</span><input id="account-display-name" name="displayName" type="text" maxlength="32" autocomplete="nickname" /></label>
+              <label id="account-name-field" class="is-hidden">Player name <span class="field-note">Your Ghanaian name is welcome · this becomes your player identity</span><input id="account-display-name" name="displayName" type="text" inputmode="text" maxlength="48" autocomplete="name" autocapitalize="words" spellcheck="false" enterkeyhint="done" /></label>
               <p class="character-footnote" id="account-status" role="status">Sign in to sync your character profile to AKWANTUO cloud saves.</p>
               <div class="menu-actions">
                 <button class="primary-action" id="account-signin" type="submit">SIGN IN <span>↗</span></button>

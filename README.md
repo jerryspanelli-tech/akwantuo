@@ -3,25 +3,38 @@
 **A World of Your Own.**  
 A realistic Ghanaian open-world life simulation.
 
-AKWANTUO is being built as a browser-first 3D game for phones and computers, with an architecture designed to grow into a persistent online multiplayer world.
+AKWANTUO is a browser-first 3D game for phones and computers. Its long-term direction is a large, persistent Ghanaian open world with authentic cities, characters, transportation, work, businesses, properties and social life.
 
-## Project principles
+## Project rules
 
-- Ghanaian identity comes first: places, architecture, transport, clothing, language, sound and everyday life.
-- Mobile-first performance without abandoning desktop quality.
-- Server-authoritative multiplayer and economy systems.
-- Original or properly licensed art, audio and other assets.
-- Build in tested stages; do not add features at the expense of stability.
-- Keep development costs low until the project genuinely needs paid infrastructure.
+- Improve the existing project; do not replace it with an unrelated demo.
+- Ghanaian identity, believable scale, realistic art and stable gameplay take priority over feature count.
+- Use original or appropriately licensed assets.
+- Mark prototypes and placeholders honestly.
+- Validate important economy and ownership changes on trusted server-side systems.
 
-## Technology
+## Current technical architecture
 
-- **Game client:** Babylon.js, TypeScript and Vite
-- **Online services:** Supabase for authentication and persistent data
-- **Multiplayer:** Colyseus dedicated game server
-- **Repository:** TypeScript monorepo
+- **Game client:** Babylon.js 8, TypeScript and Vite.
+- **Repository:** npm workspaces monorepo.
+- **Shared contracts:** `packages/shared`.
+- **Online data:** dedicated AKWANTUO Supabase project is provisioned and the initial profile/economy migration is applied. Auth/profile/economy client integration exists; real email-confirmed browser account testing is still outstanding.
+- **Multiplayer:** Colyseus is the planned authoritative server architecture, not an implemented or deployed production service.
 
-Supabase credentials and production service URLs must be supplied through environment variables. Never commit secrets.
+## Current prototype status
+
+The existing browser prototype includes a Babylon.js scene, a primitive procedural placeholder player, a third-person camera, basic keyboard/touch movement, a character appearance form, procedural Ghana-inspired building geometry, and developing road, vehicle, rail, shop, interior and watercraft modules.
+
+**Important:** The current player avatar is built from primitive Babylon.js meshes, not a finished rigged 3D character model. Many buildings and environment assets are also procedural prototype geometry, not finished production-quality 3D building assets. The appearance form changes the temporary avatar; it does not mean the final character art pipeline is complete.
+
+The current main entry point is `apps/game/src/main.ts`. It still combines startup, world creation, input, character and gameplay orchestration and should be separated incrementally after stabilisation.
+
+## Workspace
+
+- `apps/game` — browser game client.
+- `apps/server` — planned multiplayer server; not yet implemented.
+- `packages/shared` — shared contracts and validation.
+- `docs` — architecture and development notes.
 
 ## Development
 
@@ -32,45 +45,40 @@ npm install
 npm run dev
 ```
 
-Open the local URL printed by Vite. The current prototype includes the AKWANTUO title experience, a basic character creator with local appearance saving, a third-person placeholder character, a Ghana-inspired street preview, keyboard movement and mobile touch movement. Shared client/server message contracts are being established. It is an early local prototype, not yet an online or production-ready game.
+Build and typecheck:
 
-## Workspace
+```bash
+npm run typecheck
+npm run build
+```
 
-- `apps/game` — browser game client
-- `apps/server` — planned multiplayer server (not implemented yet)
-- `packages/shared` — versioned client/server message contracts and validation
-- `docs` — architecture and development notes
+## Backend configuration
 
-## Current stage
+The dedicated AKWANTUO Supabase project is `ugiysogfkclbcryhtkyn`.
 
-**Phase 1 — foundation and first playable prototype.** The client now has a responsive startup/menu flow, a simple third-person character, follow camera, basic walk/jump controls, and a touch joystick for phones.\n\n### Prototype controls\n\n- Desktop: WASD or arrow keys to move; Space to jump; drag the scene to rotate the camera.\n- Touchscreen: use the left virtual joystick to move and the JUMP button to jump; drag the scene to rotate the camera.\n\nThe character, buildings and street are temporary development geometry. Character appearance is saved only in this browser; there is no cloud profile, authentication, multiplayer server or production art yet.
+- Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` in the local environment or hosting provider.
+- CI uses GitHub Actions secrets `AKWANTUO_SUPABASE_URL` and `AKWANTUO_SUPABASE_PUBLISHABLE_KEY` for the live connection smoke test.
+- Never put a Supabase service-role key or any private server secret in browser-exposed `VITE_*` variables.
+- The applied migration creates profiles, wallets, shop catalogue, inventory, transaction ledger and premium asset ownership with RLS.
+- The Auth URL allow-list must be verified in the Supabase dashboard. Real email-confirmed account and purchase round-trip tests are still required.
+- Retail purchase idempotency, durable world-state saves and a trusted job reward flow remain outstanding.
+
+## Development phases
+
+1. Audit and stabilise the existing game foundation.
+2. Establish world scale, districts and a coherent road network.
+3. Build a realistic East Legon visual benchmark, then expand Greater Accra.
+4. Replace placeholder characters and vehicles with suitable rigged/licensed assets.
+5. Build explorable interiors, shops and properties.
+6. Complete the phone, inventory and life systems.
+7. Implement secure jobs, businesses and economy progression.
+8. Add day/night, weather, audio and activities.
+9. Implement real multiplayer and persistence.
+10. Expand the highway corridor and Kumasi.
+11. Test and optimise on physical mobile devices and desktop.
+
+A phase is not complete until its defined behaviours have been tested. Automated browser tests do not replace physical-device testing.
 
 ## Ownership and safety
 
-The browser client is not trusted to grant currency, property, vehicles, staff privileges or other valuable game state. Those systems must be validated by trusted server-side code.
-
-
-## AKWANTUO cloud accounts
-
-The browser client connects to the dedicated AKWANTUO Supabase project using its project URL and **publishable** key. These are public client credentials; database access is protected by Row Level Security. Never add a Supabase secret or service-role key to the browser bundle.
-
-- Account sign-up and email/password sign-in use Supabase Auth.
-- Player character appearance is stored in `public.player_profiles` and scoped to the authenticated player's own user ID.
-- A signed-in player's character appearance is loaded from and saved to the cloud; local appearance storage remains as an offline fallback.
-- Wallets, shop stock, player inventory, purchase receipts, and private-island/watercraft ownership are stored in Supabase and updated by atomic, authenticated Postgres functions. The browser cannot set its own balance or stock.
-- New players receive GH₵500 starter cash (50,000 pesewas) for the first-release economy.
-- Convenience-store checkout deducts the player's wallet, decrements shared stock, adds items to inventory, and writes a receipt in one database transaction.
-- Akwaaba Cay and its five watercraft have server-checked purchase and ownership records. Akwaaba Cay landing is restricted to the saved owner.
-- Labadi Marina has a playable speedboat and jet ski rental route marked by buoys across the Gulf of Guinea to Akwaaba Cay. Use WASD or the touch joystick; stop at either dock before exiting.
-- Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` to override the AKWANTUO project defaults in local or hosted builds.
-
-
-## First-release economy and watercraft
-
-- Currency is stored as integer pesewas; display amounts are Ghana cedis.
-- Starter wallet is GH₵500 per new account.
-- Shop purchases use `akwantuo_purchase_retail`, which validates the basket, locks product stock and wallet rows, deducts funds, updates inventory, and writes a transaction atomically.
-- Premium property and watercraft purchases use `akwantuo_purchase_asset`; ownership is persisted in `player_owned_assets` and loaded at sign-in.
-- Shop stock and the wallet are never writable directly from the browser.
-- The Labadi Marina rental speedboat and jet ski are playable without purchase to make the island route accessible for navigation practice. Premium asset ownership is separate from marina rentals.
-- Automated Chromium tests cover desktop and mobile-sized layouts. They do not replace testing on a physical iPhone or Android device.
+The browser client is untrusted. It must never be allowed to grant itself currency, inventory, property, vehicles, staff privileges or rewards. Such actions require validated server-side logic and appropriate access controls.

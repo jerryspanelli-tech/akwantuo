@@ -9,9 +9,11 @@ import {
   Vector3
 } from "@babylonjs/core";
 import "./style.css";
+import { installTouchControls } from "./input/touchControls";
+import { fillAppearanceForm, readAppearanceForm } from "./character/appearanceForm";
 import { COMPLEXIONS, DEFAULT_APPEARANCE, OUTFITS, resolveAppearance, type CharacterAppearance } from "./character/appearance";
-import { loadAppearance, saveAppearance } from "./character/appearanceStore";
-import { getHairstyle } from "./character/hairstyles";
+import { APPEARANCE_STORAGE_KEY, loadAppearance, saveAppearance } from "./character/appearanceStore";
+import { createPlayer } from "./character/playerAvatar";
 import { WORLD_CONFIG } from "./world/config";
 import { clampToWorld, isBlocked } from "./world/collision";
 import { createPreviewWorld } from "./world/previewWorld";
@@ -40,13 +42,25 @@ import { runStage6SmokeChecks } from "./world/stage6SmokeChecks";
 import { AKWAABA_VENUE_PROGRAMME, isVenueProgrammeValid } from "./world/venueProgramme";
 import { AKWANTUO_RETAIL_PRODUCTS, isAkwantuoRetailCatalogueValid } from "./world/retailCatalogue";
 import { AKWANTUO_PRIVATE_ISLAND, PRIVATE_ISLAND_WATERCRAFT, createAkwantuoPrivateIsland, isPrivateIslandCatalogueValid } from "./world/privateIsland";
-import { getAkwantuoSession, loadPlayerProfile, savePlayerProfile, signInAkwantuo, signOutAkwantuo, signUpAkwantuo, loadEconomyState, loadShopProducts, purchaseShopItems, purchaseGameAsset, type AkwantuoSession } from "./services/supabase";
+import { getAkwantuoSession, isSupabaseConfigured, loadPlayerProfile, savePlayerProfile, signInAkwantuo, signOutAkwantuo, signUpAkwantuo, loadEconomyState, loadShopProducts, purchaseShopItems, purchaseGameAsset, type AkwantuoSession } from "./services/supabase";
 
 const bootScreen = document.querySelector<HTMLElement>("#boot-screen");
 const gameShell = document.querySelector<HTMLElement>("#game-shell");
 const bootStatus = document.querySelector<HTMLElement>("#boot-status");
 const canvas = document.querySelector<HTMLCanvasElement>("#world-canvas");
 const playButton = document.querySelector<HTMLButtonElement>("#play-button");
+const continueButton = document.querySelector<HTMLButtonElement>("#continue-button");
+const settingsButton = document.querySelector<HTMLButtonElement>("#settings-button");
+const settingsPanel = document.querySelector<HTMLElement>("#settings-panel");
+const settingsClose = document.querySelector<HTMLButtonElement>("#settings-close");
+const settingsForm = document.querySelector<HTMLFormElement>("#settings-form");
+const newsButton = document.querySelector<HTMLButtonElement>("#news-button");
+const newsPanel = document.querySelector<HTMLElement>("#news-panel");
+const newsClose = document.querySelector<HTMLButtonElement>("#news-close");
+const studioIntro = document.querySelector<HTMLElement>("#studio-intro");
+const introSkip = document.querySelector<HTMLButtonElement>("#intro-skip");
+const bootProgressBar = document.querySelector<HTMLElement>("#boot-progress-bar");
+const bootTip = document.querySelector<HTMLElement>("#boot-tip");
 const mainMenu = document.querySelector<HTMLElement>("#main-menu");
 const footerBar = document.querySelector<HTMLElement>(".footer-bar");
 let startupHandoffStage = "module_loaded";
@@ -73,6 +87,34 @@ const accountEmail = document.querySelector<HTMLInputElement>("#account-email");
 const accountPassword = document.querySelector<HTMLInputElement>("#account-password");
 const accountDisplayName = document.querySelector<HTMLInputElement>("#account-display-name");
 
+const GAME_SETTINGS_STORAGE_KEY = "akwantuo.game-settings.v1";
+type GameSettings = {
+  graphicsQuality: "performance" | "balanced" | "high";
+  brightness: number;
+  cameraSensitivity: number;
+  fog: boolean;
+};
+const DEFAULT_GAME_SETTINGS: GameSettings = {
+  graphicsQuality: "balanced", brightness: 100, cameraSensitivity: 100, fog: true
+};
+function loadGameSettings(storage: Pick<Storage, "getItem">): GameSettings {
+  try {
+    const parsed = JSON.parse(storage.getItem(GAME_SETTINGS_STORAGE_KEY) ?? "null") as Partial<GameSettings> | null;
+    return {
+      graphicsQuality: parsed?.graphicsQuality === "performance" || parsed?.graphicsQuality === "high"
+        ? parsed.graphicsQuality : "balanced",
+      brightness: Number.isFinite(parsed?.brightness) ? Math.max(80, Math.min(125, Number(parsed?.brightness))) : 100,
+      cameraSensitivity: Number.isFinite(parsed?.cameraSensitivity) ? Math.max(60, Math.min(160, Number(parsed?.cameraSensitivity))) : 100,
+      fog: typeof parsed?.fog === "boolean" ? parsed.fog : true
+    };
+  } catch {
+    return { ...DEFAULT_GAME_SETTINGS };
+  }
+}
+function hasSavedAppearance(storage: Pick<Storage, "getItem">): boolean {
+  try { return storage.getItem(APPEARANCE_STORAGE_KEY) !== null; } catch { return false; }
+}
+
 const pressedKeys = new Set<string>();
 const touchInput = { x: 0, z: 0 };
 let jumpRequested = false;
@@ -81,32 +123,25 @@ let vehicleActionRequested = false;
 let vehicleBrake = false;
 let vehicleViewRequested = false;
 
-function readAppearanceForm(form: HTMLFormElement): CharacterAppearance {
-  const data = new FormData(form);
-  return resolveAppearance({
-    presentation: data.get("presentation"), age: Number(data.get("age")),
-    complexionId: data.get("complexion"), bodyBuild: data.get("build"),
-    hairstyleId: data.get("hairstyle"), outfitId: data.get("outfit")
-  });
-}
-
-function fillAppearanceForm(form: HTMLFormElement, appearance: CharacterAppearance): void {
-  const values: Record<string, string> = {
-    presentation: appearance.presentation, age: String(appearance.age),
-    complexion: appearance.complexionId, build: appearance.bodyBuild,
-    hairstyle: appearance.hairstyleId, outfit: appearance.outfitId
-  };
-  for (const [name, value] of Object.entries(values)) {
-    const field = form.elements.namedItem(name);
-    if (field instanceof HTMLInputElement || field instanceof HTMLSelectElement) field.value = value;
-  }
-}
-
 function showNotice(message: string): void {
   if (!notice) return;
   notice.textContent = message;
   notice.classList.add("is-visible");
 }
+
+function setBootProgress(percent: number, status: string, tip: string): void {
+  const progress = Math.max(0, Math.min(100, Math.round(percent)));
+  if (bootProgressBar) bootProgressBar.style.width = progress + "%";
+  bootProgressBar?.parentElement?.setAttribute("aria-valuenow", String(progress));
+  if (bootStatus) bootStatus.textContent = status;
+  if (bootTip) bootTip.textContent = tip;
+}
+
+function dismissStudioIntro(): void {
+  studioIntro?.classList.add("is-hidden");
+}
+introSkip?.addEventListener("click", dismissStudioIntro);
+window.setTimeout(dismissStudioIntro, 2600);
 
 /**
  * Advance the prototype road-vehicle model in stable <=100ms slices while
@@ -145,154 +180,6 @@ function advanceWatercraftElapsed(
   return next;
 }
 
-function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
-  root: TransformNode;
-  leftArm: TransformNode;
-  rightArm: TransformNode;
-  leftLeg: TransformNode;
-  rightLeg: TransformNode;
-  applyAppearance: (appearance: CharacterAppearance) => void;
-} {
-  const root = new TransformNode("player-root", scene);
-  root.position.set(WORLD_CONFIG.spawn.x, WORLD_CONFIG.spawn.y, WORLD_CONFIG.spawn.z);
-  root.rotation.y = Math.PI;
-
-  const skin = new StandardMaterial("player-skin", scene);
-  skin.diffuseColor = new Color3(0.38, 0.21, 0.13);
-  const shirt = new StandardMaterial("player-shirt", scene);
-  shirt.diffuseColor = new Color3(0.12, 0.31, 0.25);
-  const trousers = new StandardMaterial("player-trousers", scene);
-  trousers.diffuseColor = new Color3(0.13, 0.15, 0.17);
-  const shoes = new StandardMaterial("player-shoes", scene);
-  shoes.diffuseColor = new Color3(0.08, 0.08, 0.075);
-
-  const torso = MeshBuilder.CreateCapsule("player-torso", {
-    height: 1.05, radius: 0.34, tessellation: 12
-  }, scene);
-  torso.position.y = 1.22;
-  torso.material = shirt;
-  torso.parent = root;
-
-  const head = MeshBuilder.CreateSphere("player-head", { diameter: 0.48, segments: 16 }, scene);
-  head.position.y = 2.02;
-  head.material = skin;
-  head.parent = root;
-
-  const hairMaterial = new StandardMaterial("player-hair", scene);
-  hairMaterial.diffuseColor = new Color3(0.055, 0.045, 0.04);
-  const createHairShape = (name: string, diameter: number, height: number): ReturnType<typeof MeshBuilder.CreateSphere> => {
-    const mesh = MeshBuilder.CreateSphere(name, { diameter, segments: 16 }, scene);
-    mesh.scaling.y = height;
-    mesh.position.y = 2.23;
-    mesh.material = hairMaterial;
-    mesh.parent = root;
-    return mesh;
-  };
-  const shortNaturalHair = createHairShape("hair-short-natural", 0.49, 0.48);
-  const lowCutHair = createHairShape("hair-low-cut", 0.48, 0.27);
-  const fadeHair = createHairShape("hair-classic-fade", 0.49, 0.37);
-  const afroHair = createHairShape("hair-natural-afro", 0.56, 0.78);
-
-  const leftArm = new TransformNode("left-arm-pivot", scene);
-  leftArm.position.set(-0.39, 1.58, 0);
-  leftArm.parent = root;
-  const rightArm = new TransformNode("right-arm-pivot", scene);
-  rightArm.position.set(0.39, 1.58, 0);
-  rightArm.parent = root;
-
-  for (const [name, pivot] of [["left-arm", leftArm], ["right-arm", rightArm]] as const) {
-    const arm = MeshBuilder.CreateCapsule(name, { height: 0.78, radius: 0.13, tessellation: 10 }, scene);
-    arm.position.y = -0.36;
-    arm.material = skin;
-    arm.parent = pivot;
-  }
-
-  const leftLeg = new TransformNode("left-leg-pivot", scene);
-  leftLeg.position.set(-0.19, 0.76, 0);
-  leftLeg.parent = root;
-  const rightLeg = new TransformNode("right-leg-pivot", scene);
-  rightLeg.position.set(0.19, 0.76, 0);
-  rightLeg.parent = root;
-
-  for (const [name, pivot] of [["left-leg", leftLeg], ["right-leg", rightLeg]] as const) {
-    const leg = MeshBuilder.CreateCapsule(name, { height: 0.83, radius: 0.16, tessellation: 10 }, scene);
-    leg.position.y = -0.39;
-    leg.material = trousers;
-    leg.parent = pivot;
-
-    const shoe = MeshBuilder.CreateBox(`${name}-shoe`, { width: 0.28, height: 0.13, depth: 0.43 }, scene);
-    shoe.position.set(0, -0.76, 0.09);
-    shoe.material = shoes;
-    shoe.parent = pivot;
-  }
-
-  const applyAppearance = (appearance: CharacterAppearance): void => {
-    const complexion = COMPLEXIONS.find((preset) => preset.id === appearance.complexionId) ?? COMPLEXIONS[1];
-    const outfit = OUTFITS.find((preset) => preset.id === appearance.outfitId) ?? OUTFITS[0];
-    skin.diffuseColor = Color3.FromHexString(complexion.color);
-    shirt.diffuseColor = Color3.FromHexString(outfit.topColor);
-    trousers.diffuseColor = Color3.FromHexString(outfit.trouserColor);
-    const buildScale = appearance.bodyBuild === "slim" ? 0.92 : appearance.bodyBuild === "broad" ? 1.1 : 1;
-    const masculine = appearance.presentation === "masculine";
-    const broadness = masculine ? 1.08 : 0.96;
-    const hipWidth = masculine ? 0.96 : 1.08;
-
-    // These are deliberately modest silhouette adjustments on the temporary
-    // primitive avatar; final character art and rigging will replace this mesh.
-    root.scaling.set(buildScale, 1, 1);
-    torso.scaling.set(broadness * (appearance.bodyBuild === "broad" ? 1.06 : 1), 1, 1);
-    leftArm.position.x = -0.39 * broadness;
-    rightArm.position.x = 0.39 * broadness;
-    leftLeg.position.x = -0.19 * hipWidth * buildScale;
-    rightLeg.position.x = 0.19 * hipWidth * buildScale;
-    const selectedStyle = getHairstyle(appearance.hairstyleId);
-    const styleId = selectedStyle?.id ?? "short-natural";
-    shortNaturalHair.isVisible = !["low-cut", "fade", "afro", "covered"].includes(styleId);
-    lowCutHair.isVisible = styleId === "low-cut";
-    fadeHair.isVisible = ["fade", "high-fade", "low-fade", "mid-fade", "skin-fade", "taper-fade", "waves", "line-up"].includes(styleId);
-    afroHair.isVisible = ["afro", "twists", "starter-locs", "locs", "cornrows", "box-braids", "knotless-braids", "ghana-braids", "feed-in-cornrows", "fulani-braids", "faux-locs", "passion-twists", "wig-install", "natural-bun"].includes(styleId);
-  };
-  applyAppearance(initialAppearance);
-  return { root, leftArm, rightArm, leftLeg, rightLeg, applyAppearance };
-}
-
-function installTouchControls(): void {
-  if (!joystick || !joystickStick) return;
-
-  const resetStick = (): void => {
-    touchInput.x = 0;
-    touchInput.z = 0;
-    joystickStick.style.transform = "translate(0, 0)";
-  };
-
-  const updateStick = (event: PointerEvent): void => {
-    const bounds = joystick.getBoundingClientRect();
-    const centreX = bounds.left + bounds.width / 2;
-    const centreY = bounds.top + bounds.height / 2;
-    const max = bounds.width * 0.31;
-    const dx = event.clientX - centreX;
-    const dy = event.clientY - centreY;
-    const distance = Math.hypot(dx, dy);
-    const scale = distance > max ? max / distance : 1;
-    const x = dx * scale;
-    const y = dy * scale;
-    touchInput.x = x / max;
-    touchInput.z = -y / max;
-    joystickStick.style.transform = `translate(${x}px, ${y}px)`;
-  };
-
-  joystick.addEventListener("pointerdown", (event: PointerEvent) => {
-    event.preventDefault();
-    joystick.setPointerCapture(event.pointerId);
-    updateStick(event);
-  });
-  joystick.addEventListener("pointermove", (event: PointerEvent) => {
-    if (joystick.hasPointerCapture(event.pointerId)) updateStick(event);
-  });
-  joystick.addEventListener("pointerup", resetStick);
-  joystick.addEventListener("pointercancel", resetStick);
-  joystick.addEventListener("lostpointercapture", resetStick);
-}
 
 function sampleRouteAtDistance(
   route: readonly { x: number; z: number }[],
@@ -330,12 +217,14 @@ async function start(): Promise<void> {
     throw new Error("The game startup interface could not be found.");
   }
 
+  setBootProgress(5, "Checking game systems…", "Tip: Your character appearance is saved on this device.");
   // Fail early if core fare, boarding, vehicle, or rail-operation contracts regress.
   runTransportSmokeChecks();
   runStage6SmokeChecks();
   if (!isVenueProgrammeValid()) throw new Error("Akwaaba Creative Arts Centre weekly programme failed validation.");
   if (!isAkwantuoRetailCatalogueValid()) throw new Error("Akwantuo convenience-store product catalogue failed validation.");
   if (!isPrivateIslandCatalogueValid()) throw new Error("Akwaaba Cay private-island catalogue failed validation.");
+  setBootProgress(18, "Preparing Ghanaian world data…", "Tip: Explore the streets and use ENTER near places and vehicles.");
   document.documentElement.dataset.akwantuoBuildingCount = String(DISTRICT_BUILDINGS.length);
   document.documentElement.dataset.akwantuoBuildingDistrictCount = String(new Set(DISTRICT_BUILDINGS.map((building) => building.districtId)).size);
   document.documentElement.dataset.akwantuoPropertyCount = String(DISTRICT_PROPERTIES.length);
@@ -359,6 +248,7 @@ async function start(): Promise<void> {
     powerPreference: "high-performance"
   });
   const scene = new Scene(engine);
+  setBootProgress(35, "Building the world…", "Tip: The left joystick moves your character; the right-side buttons handle actions.");
   const solidAreas = createPreviewWorld(scene, { includeGround: false });
   const interiorRooms = createInteriorRooms(scene);
   document.documentElement.dataset.akwantuoInteriorRoomCount = String(interiorRooms.length);
@@ -376,6 +266,7 @@ async function start(): Promise<void> {
   const privateIslandMeshCount = createAkwantuoPrivateIsland(scene);
   document.documentElement.dataset.akwantuoPrivateIslandMeshCount = String(privateIslandMeshCount);
   const greaterAccraTransportReport = createGreaterAccraPlayableWorld(scene);
+  setBootProgress(68, "Loading Greater Accra…", "Tip: Stop a vehicle before exiting. Use VIEW to change the passenger camera.");
   document.documentElement.dataset.playableRoadSurfaceMeshes = String(greaterAccraTransportReport.roadSurfaceMeshCount);
   document.documentElement.dataset.playableRoadMarkingMeshes = String(greaterAccraTransportReport.roadMarkingMeshCount);
   document.documentElement.dataset.playableRailRoutes = String(greaterAccraTransportReport.railRouteCount);
@@ -388,6 +279,14 @@ async function start(): Promise<void> {
   document.documentElement.dataset.playableMappedRailService = "true";
   document.documentElement.dataset.playableMappedRailBoardingOpen = String(greaterAccraMappedRailService.isBoardingOpen());
   let activeAccountSession: AkwantuoSession | null = await getAkwantuoSession();
+  const onlineServicesConfigured = isSupabaseConfigured();
+  // A locally cached session must never make offline play depend on a backend
+  // that has not yet been provisioned specifically for AKWANTUO.
+  if (!onlineServicesConfigured) activeAccountSession = null;
+  if (!onlineServicesConfigured && accountStatus) {
+    accountStatus.textContent = "Local play is available. AKWANTUO accounts and cloud saves will activate after its dedicated online services are configured.";
+  }
+  document.documentElement.dataset.akwantuoOnlineServicesConfigured = String(onlineServicesConfigured);
   let currentAppearance = loadAppearance(window.localStorage);
   let walletBalancePesewas = 0;
   let ownedGameAssetIds = new Set<string>();
@@ -411,6 +310,7 @@ async function start(): Promise<void> {
     }
   }
   const player = createPlayer(scene, currentAppearance);
+  setBootProgress(82, "Preparing your character…", "Tip: You can change appearance later from the Character menu.");
   const mainlandMarina = { x: 2700, z: -3380 };
   let activeInterior: { buildingId: string; roomId: string; exitX: number; exitZ: number } | null = null;
   // Shop checkout and premium asset ownership are committed server-side.
@@ -631,6 +531,10 @@ async function start(): Promise<void> {
   });
   const isLocalTransportTestHost = window.location.hostname === "127.0.0.1" ||
     window.location.hostname === "localhost";
+  const vehicleTestMode = isLocalTransportTestHost &&
+    new URLSearchParams(window.location.search).get("akwantuoVehicleTest") === "1";
+  const trotroTestMode = isLocalTransportTestHost &&
+    new URLSearchParams(window.location.search).get("akwantuoTrotroTest") === "1";
   const transportRailTestMode = isLocalTransportTestHost &&
     new URLSearchParams(window.location.search).get("akwantuoTransportTest") === "rail";
   const interiorTestBuildingId = new URLSearchParams(window.location.search).get("akwantuoInteriorTest") ?? "";
@@ -639,7 +543,14 @@ async function start(): Promise<void> {
   const watercraftTestKind = new URLSearchParams(window.location.search).get("akwantuoWatercraftTest");
   const watercraftTestMode = isLocalTransportTestHost &&
     (watercraftTestKind === "speedboat" || watercraftTestKind === "jet_ski");
-  if (transportRailTestMode) {
+  if (vehicleTestMode) {
+    // Local-only browser-test mode; the isolated spawn is set beside the car below.
+    document.documentElement.dataset.vehicleTestMode = "true";
+  } else if (trotroTestMode) {
+    // Local-only deterministic passenger test spawn at the trotro driver's door.
+    player.root.position.set(WORLD_CONFIG.spawn.x + 1.65, 0, WORLD_CONFIG.spawn.z);
+    document.documentElement.dataset.trotroTestMode = "true";
+  } else if (transportRailTestMode) {
     // Local-only browser-test spawn; never active on a deployed game host.
     player.root.position.set(-250, 0, 150);
     document.documentElement.dataset.transportTestMode = "rail";
@@ -714,7 +625,10 @@ async function start(): Promise<void> {
 
   // First real in-world road vehicle: a nearby saloon that can be entered,
   // driven and exited from the playable scene (not only the developer preview).
-  const vehicleOrigin = { x: WORLD_CONFIG.spawn.x - 6, y: 0, z: WORLD_CONFIG.spawn.z };
+  const vehicleOrigin = vehicleTestMode
+    ? { x: WORLD_CONFIG.spawn.x + 800, y: 0, z: WORLD_CONFIG.spawn.z + 800 }
+    : { x: WORLD_CONFIG.spawn.x - 6, y: 0, z: WORLD_CONFIG.spawn.z };
+  if (vehicleTestMode) player.root.position.set(vehicleOrigin.x - 1.15, 0, vehicleOrigin.z);
   const vehicleGeometry = createRoadVehicleGeometry(scene, {
     id: "playable-starter-saloon",
     centerX: vehicleOrigin.x,
@@ -865,23 +779,103 @@ async function start(): Promise<void> {
   camera.inertia = 0.78;
   camera.attachControl(canvas, true);
 
-  installTouchControls();
-  window.addEventListener("keydown", (event: KeyboardEvent) => {
-    const key = event.key.toLowerCase();
-    if (["w", "a", "s", "d", "e", "c", "arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(key)) {
-      event.preventDefault();
+  let gameSettings = loadGameSettings(window.localStorage);
+  const applyGameSettings = (settings: GameSettings): void => {
+    const scaling = settings.graphicsQuality === "performance" ? 1.5
+      : settings.graphicsQuality === "high" ? 0.85 : 1;
+    engine.setHardwareScalingLevel(scaling);
+    camera.angularSensibilityX = 1000 * 100 / settings.cameraSensitivity;
+    camera.angularSensibilityY = 1000 * 100 / settings.cameraSensitivity;
+    canvas.style.filter = "brightness(" + (settings.brightness / 100).toFixed(2) + ")";
+    scene.fogMode = settings.fog ? Scene.FOGMODE_EXP2 : Scene.FOGMODE_NONE;
+    scene.fogDensity = settings.fog ? 0.000012 : 0;
+    scene.fogColor = new Color3(0.48, 0.62, 0.66);
+    document.documentElement.dataset.akwantuoGraphicsQuality = settings.graphicsQuality;
+    document.documentElement.dataset.akwantuoBrightness = String(settings.brightness);
+    document.documentElement.dataset.akwantuoCameraSensitivity = String(settings.cameraSensitivity);
+    document.documentElement.dataset.akwantuoFogEnabled = String(settings.fog);
+  };
+  const populateSettingsForm = (): void => {
+    if (!settingsForm) return;
+    const quality = settingsForm.querySelector<HTMLSelectElement>("#graphics-quality");
+    const brightness = settingsForm.querySelector<HTMLInputElement>("#brightness-setting");
+    const sensitivity = settingsForm.querySelector<HTMLInputElement>("#camera-sensitivity-setting");
+    const fog = settingsForm.querySelector<HTMLInputElement>("#fog-setting");
+    if (quality) quality.value = gameSettings.graphicsQuality;
+    if (brightness) brightness.value = String(gameSettings.brightness);
+    if (sensitivity) sensitivity.value = String(gameSettings.cameraSensitivity);
+    if (fog) fog.checked = gameSettings.fog;
+  };
+  applyGameSettings(gameSettings);
+  settingsButton?.addEventListener("click", () => {
+    populateSettingsForm();
+    settingsPanel?.classList.remove("is-hidden");
+    settingsPanel?.setAttribute("aria-hidden", "false");
+  });
+  settingsClose?.addEventListener("click", () => {
+    settingsPanel?.classList.add("is-hidden");
+    settingsPanel?.setAttribute("aria-hidden", "true");
+  });
+  settingsForm?.addEventListener("submit", (event: SubmitEvent) => {
+    event.preventDefault();
+    const quality = settingsForm.querySelector<HTMLSelectElement>("#graphics-quality")?.value;
+    const brightness = Number(settingsForm.querySelector<HTMLInputElement>("#brightness-setting")?.value ?? 100);
+    const sensitivity = Number(settingsForm.querySelector<HTMLInputElement>("#camera-sensitivity-setting")?.value ?? 100);
+    const fog = settingsForm.querySelector<HTMLInputElement>("#fog-setting")?.checked ?? true;
+    gameSettings = {
+      graphicsQuality: quality === "performance" || quality === "high" ? quality : "balanced",
+      brightness: Math.max(80, Math.min(125, Number.isFinite(brightness) ? brightness : 100)),
+      cameraSensitivity: Math.max(60, Math.min(160, Number.isFinite(sensitivity) ? sensitivity : 100)),
+      fog
+    };
+    try {
+      window.localStorage.setItem(GAME_SETTINGS_STORAGE_KEY, JSON.stringify(gameSettings));
+      applyGameSettings(gameSettings);
+      settingsPanel?.classList.add("is-hidden");
+      settingsPanel?.setAttribute("aria-hidden", "true");
+      showNotice("Game settings saved on this device.");
+    } catch {
+      applyGameSettings(gameSettings);
+      showNotice("Settings applied for this session, but this browser could not save them.");
     }
+  });
+  newsButton?.addEventListener("click", () => {
+    newsPanel?.classList.remove("is-hidden");
+    newsPanel?.setAttribute("aria-hidden", "false");
+  });
+  newsClose?.addEventListener("click", () => {
+    newsPanel?.classList.add("is-hidden");
+    newsPanel?.setAttribute("aria-hidden", "true");
+  });
+  continueButton?.classList.toggle("is-hidden", !hasSavedAppearance(window.localStorage));
+
+  installTouchControls(joystick, joystickStick, touchInput);
+  window.addEventListener("keydown", (event: KeyboardEvent) => {
+    const target = event.target;
+    const isTextEntryTarget = target instanceof HTMLElement && (
+      target.isContentEditable ||
+      target.matches("input, textarea, select, [contenteditable='true'], [role='textbox']")
+    );
+
+    // Never let game controls intercept characters being entered in account,
+    // character, chat, or other editable fields (especially on mobile Safari).
+    if (isTextEntryTarget || event.isComposing || !hasEnteredWorld) return;
+
+    const key = event.key.toLowerCase();
+    const gameControlKeys = ["w", "a", "s", "d", "e", "c", "arrowup", "arrowdown", "arrowleft", "arrowright", " "];
+    if (gameControlKeys.includes(key)) event.preventDefault();
+
     pressedKeys.add(key);
     document.documentElement.dataset.transportLastKey = key;
     document.documentElement.dataset.transportHasEnteredWorld = String(hasEnteredWorld);
-    if (key === " " && hasEnteredWorld && interactionState.mode === "on_foot") jumpRequested = true;
-    if (key === "e" && hasEnteredWorld) {
+    if (key === " " && interactionState.mode === "on_foot") jumpRequested = true;
+    if (key === "e") {
       vehicleActionRequested = true;
       document.documentElement.dataset.transportActionRequest = "keyboard_e";
       document.documentElement.dataset.transportActionRequestAt = String(performance.now());
       document.documentElement.dataset.transportVisibilityAtInput = document.visibilityState;
     }
-    if (key === "c" && hasEnteredWorld && (interactionState.mode === "inside_vehicle" || passengerState.mode === "riding" || watercraftMode)) vehicleViewRequested = true;
+    if (key === "c" && (interactionState.mode === "inside_vehicle" || passengerState.mode === "riding" || watercraftMode)) vehicleViewRequested = true;
   });
   window.addEventListener("keyup", (event: KeyboardEvent) => {
     pressedKeys.delete(event.key.toLowerCase());
@@ -1032,7 +1026,7 @@ async function start(): Promise<void> {
           document.documentElement.dataset.activeBusinessId = "";
           document.documentElement.dataset.activeBusinessServiceCount = "0";
           showNotice("You stepped back outside.");
-        } else if (interactionState.mode === "on_foot" && passengerState.mode === "not_riding" &&
+        } else if (!trotroTestMode && interactionState.mode === "on_foot" && passengerState.mode === "not_riding" &&
           DISTRICT_BUILDINGS.some((building) => {
             if (!building.interiorId) return false;
             const frontX = building.side === "west"
@@ -1309,6 +1303,7 @@ async function start(): Promise<void> {
         if (interactButton) interactButton.textContent = passengerState.mode === "riding" ? "ALIGHT" : "EXIT";
         if (jumpButton) jumpButton.classList.add("is-hidden");
         if (vehicleViewButton) vehicleViewButton.classList.remove("is-hidden");
+        document.querySelector<HTMLButtonElement>("#vehicle-brake-button")?.classList.remove("is-hidden");
       } else {
         const nearMappedRailBoarding = interactionState.mode === "on_foot" &&
           passengerState.mode === "not_riding" &&
@@ -1317,6 +1312,7 @@ async function start(): Promise<void> {
         if (interactButton) interactButton.textContent = activeInterior ? "EXIT" : nearMappedRailBoarding ? "BOARD" : "ENTER";
         if (jumpButton) jumpButton.classList.remove("is-hidden");
         if (vehicleViewButton) vehicleViewButton.classList.add("is-hidden");
+        document.querySelector<HTMLButtonElement>("#vehicle-brake-button")?.classList.add("is-hidden");
       }
 
       let inputX = interactionState.mode === "on_foot" && passengerState.mode !== "riding" && !watercraftMode ? touchInput.x : 0;
@@ -1399,20 +1395,34 @@ async function start(): Promise<void> {
       }
     }
 
+    // Stable browser-test diagnostics for the Phase 1 player-control smoke test.
+    document.documentElement.dataset.playerWorldX = player.root.position.x.toFixed(3);
+    document.documentElement.dataset.playerWorldY = player.root.position.y.toFixed(3);
+    document.documentElement.dataset.playerWorldZ = player.root.position.z.toFixed(3);
+    document.documentElement.dataset.akwantuoStarterSaloonMode = interactionState.mode;
+    document.documentElement.dataset.akwantuoStarterSaloonX = vehicleState.x.toFixed(3);
+    document.documentElement.dataset.akwantuoStarterSaloonZ = vehicleState.z.toFixed(3);
+    document.documentElement.dataset.akwantuoStarterSaloonSpeed = vehicleState.speedMps.toFixed(3);
+    document.documentElement.dataset.akwantuoStarterSaloonHeading = vehicleState.headingRadians.toFixed(3);
     scene.render();
   };
 
-  document.querySelector<HTMLButtonElement>("#vehicle-brake-button")?.addEventListener("pointerdown", (event) => {
-    event.preventDefault(); vehicleBrake = true;
-  });
-  for (const eventName of ["pointerup", "pointercancel", "lostpointercapture"] as const) {
-    document.querySelector<HTMLButtonElement>("#vehicle-brake-button")?.addEventListener(eventName, () => { vehicleBrake = false; });
+  const vehicleBrakeButton = document.querySelector<HTMLButtonElement>("#vehicle-brake-button");
+  if (vehicleBrakeButton) {
+    vehicleBrakeButton.addEventListener("pointerdown", (event: PointerEvent) => {
+      event.preventDefault();
+      vehicleBrakeButton.setPointerCapture(event.pointerId);
+      vehicleBrake = true;
+    });
+    for (const eventName of ["pointerup", "pointercancel", "lostpointercapture"] as const) {
+      vehicleBrakeButton.addEventListener(eventName, () => { vehicleBrake = false; });
+    }
   }
 
   // Reveal the game shell before starting the continuous render loop. This
   // keeps the boot-to-menu handoff independent of frame scheduling on slower devices.
   startupHandoffStage = "show_ready_status";
-  bootStatus.textContent = "Your world is ready.";
+  setBootProgress(100, "Your world is ready.", "Tip: Use the settings menu to adjust graphics, brightness, camera sensitivity and fog.");
   startupHandoffStage = "hide_boot_screen";
   bootScreen.hidden = true;
   startupHandoffStage = "reveal_game_shell";
@@ -1421,27 +1431,80 @@ async function start(): Promise<void> {
   startupHandoffStage = "resize_game_engine";
   engine.resize();
 
-  startupHandoffStage = "start_render_loop";
-  engine.runRenderLoop(render);
+  // Keep the expensive 3D world idle behind the static main menu. The
+  // previous always-on loop rendered the entire Greater Accra scene before
+  // the player had pressed Play, competing with menu input on mobile CPUs.
+  // Render one frame for the menu backdrop, then start continuous rendering
+  // only when the player actually enters the world.
+  startupHandoffStage = "render_menu_frame";
+  scene.render();
   startupHandoffStage = "startup_complete";
-  window.addEventListener("resize", () => engine.resize());
+  window.addEventListener("resize", () => {
+    engine.resize();
+    if (!hasEnteredWorld && !document.hidden) scene.render();
+  });
 
+  let characterCreatorCameraState: { alpha: number; beta: number; radius: number; target: Vector3 } | null = null;
+  let firstSpawnAfterCharacterSave = false;
+  const previewStage = document.querySelector<HTMLElement>("#character-preview-stage");
   const openCharacterCreator = (): void => {
     if (!characterPanel || !characterForm) return;
     fillAppearanceForm(characterForm, currentAppearance);
+    characterCreatorCameraState = { alpha: camera.alpha, beta: camera.beta, radius: camera.radius, target: camera.target.clone() };
+    camera.detachControl();
+    camera.alpha = Math.PI;
+    camera.beta = 1.18;
+    camera.radius = 5.4;
+    camera.target = player.root.position.add(new Vector3(0, 1.12, 0));
     characterPanel.classList.remove("is-hidden");
     characterPanel.setAttribute("aria-hidden", "false");
+    scene.render();
   };
   const closeCharacterCreator = (): void => {
     characterPanel?.classList.add("is-hidden");
     characterPanel?.setAttribute("aria-hidden", "true");
+    if (characterCreatorCameraState) {
+      camera.alpha = characterCreatorCameraState.alpha;
+      camera.beta = characterCreatorCameraState.beta;
+      camera.radius = characterCreatorCameraState.radius;
+      camera.target = characterCreatorCameraState.target.clone();
+      characterCreatorCameraState = null;
+    }
+    camera.attachControl(canvas, true);
+    scene.render();
   };
+  let previewPointerX: number | null = null;
+  previewStage?.addEventListener("pointerdown", (event) => {
+    previewPointerX = event.clientX;
+    previewStage.setPointerCapture(event.pointerId);
+  });
+  previewStage?.addEventListener("pointermove", (event) => {
+    if (previewPointerX === null) return;
+    const delta = event.clientX - previewPointerX;
+    previewPointerX = event.clientX;
+    player.root.rotation.y += delta * 0.012;
+    scene.render();
+  });
+  const stopPreviewDrag = (): void => { previewPointerX = null; };
+  previewStage?.addEventListener("pointerup", stopPreviewDrag);
+  previewStage?.addEventListener("pointercancel", stopPreviewDrag);
+  document.querySelector<HTMLButtonElement>("#character-rotate-left")?.addEventListener("click", () => {
+    player.root.rotation.y -= 0.35;
+    scene.render();
+  });
+  document.querySelector<HTMLButtonElement>("#character-rotate-right")?.addEventListener("click", () => {
+    player.root.rotation.y += 0.35;
+    scene.render();
+  });
   characterButton?.addEventListener("click", openCharacterCreator);
   characterClose?.addEventListener("click", closeCharacterCreator);
   const updateCharacterPreview = (): void => {
     if (!characterForm) return;
     currentAppearance = readAppearanceForm(characterForm);
     player.applyAppearance(currentAppearance);
+    // The menu render loop is intentionally paused for mobile performance;
+    // render a single fresh frame so every appearance edit is visible immediately.
+    if (!characterPanel?.classList.contains("is-hidden")) scene.render();
   };
   characterForm?.addEventListener("input", updateCharacterPreview);
   characterForm?.addEventListener("change", updateCharacterPreview);
@@ -1449,10 +1512,11 @@ async function start(): Promise<void> {
     event.preventDefault();
     updateCharacterPreview();
     const savedLocally = saveAppearance(currentAppearance, window.localStorage);
+    continueButton?.classList.toggle("is-hidden", !savedLocally);
     let cloudSaved = false;
     if (activeAccountSession) {
       try {
-        await savePlayerProfile(activeAccountSession, currentAppearance);
+        await savePlayerProfile(activeAccountSession, currentAppearance, accountDisplayName?.value.trim() || undefined);
         cloudSaved = true;
       } catch (error) {
         console.error("AKWANTUO cloud character save failed:", error);
@@ -1465,6 +1529,10 @@ async function start(): Promise<void> {
         ? "Appearance saved on this device. Sign in to enable cloud saves."
         : "Appearance updated for this session, but this browser could not save it.");
     window.setTimeout(() => notice?.classList.remove("is-visible"), 4200);
+    if (firstSpawnAfterCharacterSave) {
+      firstSpawnAfterCharacterSave = false;
+      enterWorld();
+    }
   });
 
   const openAccountPanel = (): void => {
@@ -1482,66 +1550,86 @@ async function start(): Promise<void> {
   accountButton?.addEventListener("click", openAccountPanel);
   accountClose?.addEventListener("click", closeAccountPanel);
 
+  let accountMode: "signin" | "signup" = "signin";
+  const accountNameField = document.querySelector<HTMLElement>("#account-name-field");
+  const accountSubmit = document.querySelector<HTMLButtonElement>("#account-signin");
+  const setAccountMode = (mode: "signin" | "signup"): void => {
+    accountMode = mode;
+    const creating = mode === "signup";
+    if (accountNameField) accountNameField.classList.toggle("is-hidden", !creating);
+    if (accountDisplayName) accountDisplayName.required = creating;
+    if (accountPassword) accountPassword.autocomplete = creating ? "new-password" : "current-password";
+    if (accountSubmit) accountSubmit.innerHTML = creating ? "CREATE ACCOUNT <span>↗</span>" : "SIGN IN <span>↗</span>";
+    if (accountSignUp) accountSignUp.textContent = creating ? "BACK TO SIGN IN" : "CREATE ACCOUNT";
+    const title = document.querySelector<HTMLElement>("#account-title");
+    if (title) title.textContent = creating ? "Create your account" : "Player account";
+    if (accountStatus) accountStatus.textContent = creating
+      ? "Create your AKWANTUO ID. Your Ghanaian player name will appear in your profile."
+      : "Sign in to sync your character profile to AKWANTUO cloud saves.";
+  };
+  accountSignUp?.addEventListener("click", () => {
+    setAccountMode(accountMode === "signin" ? "signup" : "signin");
+  });
+
   accountForm?.addEventListener("submit", async (event: SubmitEvent) => {
     event.preventDefault();
     const email = accountEmail?.value.trim() || "";
     const password = accountPassword?.value || "";
-    if (!email || password.length < 8) {
-      if (accountStatus) accountStatus.textContent = "Enter a valid email and a password of at least 8 characters.";
-      return;
-    }
-    const submit = document.querySelector<HTMLButtonElement>("#account-signin");
-    if (submit) submit.disabled = true;
-    if (accountStatus) accountStatus.textContent = "Signing in to AKWANTUO…";
-    try {
-      activeAccountSession = await signInAkwantuo(email, password);
-      const profile = await loadPlayerProfile(activeAccountSession);
-      await refreshPlayerEconomy();
-      if (profile?.look) {
-        currentAppearance = resolveAppearance(profile.look);
-        player.applyAppearance(currentAppearance);
-        if (characterForm) fillAppearanceForm(characterForm, currentAppearance);
-      } else {
-        await savePlayerProfile(activeAccountSession, currentAppearance);
-      }
-      if (accountStatus) accountStatus.textContent = `Signed in as ${email}. Your character profile is synced to AKWANTUO cloud saves. Wallet: GH₵${(walletBalancePesewas / 100).toFixed(2)}.`;
-      if (accountSignOut) accountSignOut.classList.remove("is-hidden");
-      if (accountButton) accountButton.innerHTML = "ACCOUNT <small>CONNECTED</small>";
-      if (accountPassword) accountPassword.value = "";
-    } catch (error) {
-      if (accountStatus) accountStatus.textContent = error instanceof Error ? error.message : "Sign-in failed. Please try again.";
-    } finally {
-      if (submit) submit.disabled = false;
-    }
-  });
-
-  accountSignUp?.addEventListener("click", async () => {
-    const email = accountEmail?.value.trim() || "";
-    const password = accountPassword?.value || "";
     const displayName = accountDisplayName?.value.trim() || "";
-    if (!email || password.length < 8 || !displayName) {
-      if (accountStatus) accountStatus.textContent = "Enter your email, a player name and a password of at least 8 characters.";
+    const creating = accountMode === "signup";
+    if (!email || password.length < 8 || (creating && !displayName)) {
+      if (accountStatus) accountStatus.textContent = creating
+        ? "Enter your email, your player name and a password of at least 8 characters."
+        : "Enter a valid email and a password of at least 8 characters.";
       return;
     }
-    accountSignUp.disabled = true;
-    if (accountStatus) accountStatus.textContent = "Creating your AKWANTUO account…";
+    if (accountSubmit) accountSubmit.disabled = true;
+    if (accountSignUp) accountSignUp.disabled = true;
+    if (accountStatus) accountStatus.textContent = creating
+      ? "Creating your AKWANTUO account…"
+      : "Signing in to AKWANTUO…";
     try {
-      const result = await signUpAkwantuo(email, password, displayName);
-      if (!result.session) {
-        if (accountStatus) accountStatus.textContent = "Account created. Check your email to confirm it, then return here to sign in.";
-        return;
+      if (creating) {
+        const result = await signUpAkwantuo(email, password, displayName);
+        if (!result.session) {
+          if (accountStatus) accountStatus.textContent = "Account created successfully. Check your email (including spam) to confirm it. Then tap BACK TO SIGN IN.";
+          setAccountMode("signup");
+          return;
+        }
+        activeAccountSession = result.session;
+        await refreshPlayerEconomy();
+        firstSpawnAfterCharacterSave = true;
+        if (accountStatus) accountStatus.textContent = `Welcome to AKWANTUO, ${displayName}. Now create and save your character.`;
+      } else {
+        activeAccountSession = await signInAkwantuo(email, password);
+        const profile = await loadPlayerProfile(activeAccountSession);
+        await refreshPlayerEconomy();
+        if (profile?.look) {
+          currentAppearance = resolveAppearance(profile.look);
+          player.applyAppearance(currentAppearance);
+          if (characterForm) fillAppearanceForm(characterForm, currentAppearance);
+          if (accountStatus) accountStatus.textContent = `Welcome back, ${email}. Your saved character is ready. Loading your world…`;
+        } else {
+          firstSpawnAfterCharacterSave = true;
+          if (accountStatus) accountStatus.textContent = `Welcome to AKWANTUO, ${email}. Create your character to begin.`;
+        }
       }
-      activeAccountSession = result.session;
-      await savePlayerProfile(activeAccountSession, currentAppearance, displayName);
-      await refreshPlayerEconomy();
-      if (accountStatus) accountStatus.textContent = `Welcome to AKWANTUO, ${displayName}. Your cloud profile is ready. Wallet: GH₵${(walletBalancePesewas / 100).toFixed(2)}.`;
       if (accountSignOut) accountSignOut.classList.remove("is-hidden");
       if (accountButton) accountButton.innerHTML = "ACCOUNT <small>CONNECTED</small>";
       if (accountPassword) accountPassword.value = "";
+      closeAccountPanel();
+      if (creating || firstSpawnAfterCharacterSave) {
+        openCharacterCreator();
+      } else {
+        enterWorld();
+      }
     } catch (error) {
-      if (accountStatus) accountStatus.textContent = error instanceof Error ? error.message : "Account creation failed. Please try again.";
+      if (accountStatus) accountStatus.textContent = error instanceof Error
+        ? error.message
+        : (creating ? "Account creation failed. Please try again." : "Sign-in failed. Please try again.");
     } finally {
-      accountSignUp.disabled = false;
+      if (accountSubmit) accountSubmit.disabled = false;
+      if (accountSignUp) accountSignUp.disabled = false;
     }
   });
 
@@ -1563,9 +1651,13 @@ async function start(): Promise<void> {
     }
   });
 
-  playButton?.addEventListener("click", () => {
+  const enterWorld = (): void => {
+    dismissStudioIntro();
     closeCharacterCreator();
+    settingsPanel?.classList.add("is-hidden");
+    newsPanel?.classList.add("is-hidden");
     hasEnteredWorld = true;
+    if (!document.hidden) engine.runRenderLoop(render);
     mainMenu?.classList.add("is-hidden");
     footerBar?.classList.add("is-hidden");
     gameHud?.classList.remove("is-hidden");
@@ -1573,13 +1665,18 @@ async function start(): Promise<void> {
     camera.target = new Vector3(0, 1.25, 5);
     showNotice("Welcome to AKWANTUO. Explore the streets with WASD or the touch joystick.");
     window.setTimeout(() => notice?.classList.remove("is-visible"), 4200);
-  });
+  };
+  playButton?.addEventListener("click", enterWorld);
+  continueButton?.addEventListener("click", enterWorld);
 
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) {
       engine.stopRenderLoop();
-    } else {
+    } else if (hasEnteredWorld) {
       engine.runRenderLoop(render);
+    } else {
+      // The menu is static: one frame is enough until Play is selected.
+      scene.render();
     }
   });
 }
