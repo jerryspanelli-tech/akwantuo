@@ -1,5 +1,5 @@
-const projectUrl = process.env.VITE_SUPABASE_URL || "https://fktvbxmgseojcvztheqz.supabase.co";
-const publishableKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || "sb_publishable_4oyGhQ6mUqtEXocFiqq2FA_GvFpSOuC";
+const projectUrl = process.env.VITE_SUPABASE_URL || "https://ugiysogfkclbcryhtkyn.supabase.co";
+const publishableKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || "sb_publishable__WFhhKIwP7yxOqaMNsy9pA_ZHY9xE3m";
 
 if (!projectUrl.startsWith("https://") || !publishableKey.startsWith("sb_publishable_")) {
   throw new Error("AKWANTUO Supabase public configuration is missing or invalid.");
