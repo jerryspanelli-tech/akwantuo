@@ -32,8 +32,9 @@ function addBuilding(scene: Scene, x: number, z: number, width: number, depth: n
   }
 }
 
-export function startWorld(canvas: HTMLCanvasElement, joystick: HTMLElement): () => void {
+export function startWorld(canvas: HTMLCanvasElement, joystick: HTMLElement, quality: "auto" | "high" | "low"): () => void {
   const engine = new Engine(canvas, true, { preserveDrawingBuffer: false, stencil: true, antialias: true });
+  engine.setHardwareScalingLevel(quality === "high" ? 1 : quality === "low" ? 1.75 : 1.25);
   const scene = new Scene(engine);
   scene.clearColor = new Color4(0.66, 0.78, 0.79, 1);
   const camera = new ArcRotateCamera("player camera", -Math.PI / 2, 1.12, 19, new Vector3(0, 1.3, 0), scene);
