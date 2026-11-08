@@ -276,8 +276,8 @@ function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
   };
   const loadCharacterModel = async (appearance: CharacterAppearance): Promise<void> => {
     const generation = ++loadGeneration;
-    const file = appearance.presentation === "feminine" ? "mh_3183.glb" : "mh_3427.glb";
-    const baseUrl = "https://raw.githubusercontent.com/MMWilliams/char-kit/master/characters/";
+    const file = appearance.presentation === "feminine" ? "akwantuo-female.glb" : "akwantuo-male.glb";
+    const baseUrl = "./assets/characters/";
     try {
       const imported = await SceneLoader.ImportMeshAsync("", baseUrl, file, scene);
       if (generation !== loadGeneration) {
