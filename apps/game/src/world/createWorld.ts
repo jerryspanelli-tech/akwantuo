@@ -158,7 +158,7 @@ export function startWorld(canvas: HTMLCanvasElement, joystick: HTMLElement, qua
 
     // Forward follows the camera's view direction (+Z from the starting camera).
     // A gentle walking pace replaces the previous frame-dependent high speed.
-    const walkSpeed = 1.8;
+    const walkSpeed = 2.8;
     player.position.x = Math.max(-3.1, Math.min(3.1, player.position.x + sideways * walkSpeed * deltaSeconds));
     player.position.z = Math.max(-42, Math.min(42, player.position.z + forward * walkSpeed * deltaSeconds));
 
