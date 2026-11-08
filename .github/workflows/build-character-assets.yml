@@ -1,4 +1,5 @@
 name: Build Ghanaian player characters
+# Re-triggered after repository Actions settings were checked.
 
 on:
   push:
