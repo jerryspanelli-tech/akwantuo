@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#101b1a" />
+    <meta name="description" content="AKWANTUO — build your life in a living Ghanaian world." />
+    <title>AKWANTUO — A Ghanaian Life</title>
+  </head>
+  <body>
+    <main id="app">
+      <section id="loading" class="loading-screen" aria-live="polite">
+        <div class="loading-mark">A<span>.</span></div>
+        <p>PREPARING YOUR WORLD</p>
+        <div class="loading-track"><span></span></div>
+      </section>
+      <section id="menu" class="menu-screen" hidden>
+        <header class="topbar">
+          <a class="wordmark" href="#" aria-label="AKWANTUO home">AKWANTUO<span>.</span></a>
+          <div class="topbar-right"><span class="status-dot"></span><span>WORLD PREVIEW</span></div>
+        </header>
+        <div class="hero-copy">
+          <p class="eyebrow">YOUR STORY. YOUR GHANA.</p>
+          <h1>Life is what<br /><em>you make it.</em></h1>
+          <p class="intro">A new world is taking shape. Explore the streets, find your path and make Ghana your own.</p>
+          <nav class="menu-actions" aria-label="Main menu">
+            <button id="play" class="primary-button" type="button"><span>Enter the world</span><b>↗</b></button>
+            <button id="continue" class="secondary-button" type="button" disabled>Continue <small>COMING SOON</small></button>
+            <button id="settings" class="text-button" type="button">Settings</button>
+          </nav>
+        </div>
+        <footer class="footer"><span>AKWANTUO STUDIO</span><span>GHANA · WEST AFRICA</span><span>FOUNDATION BUILD 01</span></footer>
+        <aside id="settings-panel" class="settings-panel" hidden>
+          <div class="panel-heading"><div><p class="eyebrow">PREFERENCES</p><h2>Settings</h2></div><button id="close-settings" class="close-button" aria-label="Close settings">×</button></div>
+          <label class="setting-row">Graphics quality<select id="quality"><option value="auto">Auto</option><option value="high">High</option><option value="low">Performance</option></select></label>
+          <p class="settings-note">Settings are local to this device in this foundation build.</p>
+        </aside>
+      </section>
+      <section id="world" class="world-screen" hidden>
+        <canvas id="game-canvas" aria-label="AKWANTUO 3D Ghana environment"></canvas>
+        <div class="world-hud"><div><strong>AKWANTUO</strong><span>GREATER ACCRA · WORLD TEST</span></div><button id="back-menu" type="button">← MENU</button></div>
+        <div class="world-hint">WASD / ARROWS TO MOVE <span>·</span> TOUCH AND DRAG TO LOOK</div>
+        <div id="world-error" class="world-error" role="alert" hidden></div>
+      </section>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
