@@ -149,18 +149,27 @@ export function startWorld(canvas: HTMLCanvasElement, joystick: HTMLElement, qua
     let forward = Number(keys.has("w") || keys.has("arrowup")) - Number(keys.has("s") || keys.has("arrowdown")) - axisY;
     let sideways = Number(keys.has("d") || keys.has("arrowright")) - Number(keys.has("a") || keys.has("arrowleft")) + axisX;
 
-    // Keep diagonal movement from becoming faster than straight movement.
+    // Joystick distance controls pace: light push = slow walk, middle = normal walk,
+    // and a full push = sprint. Capture strength before normalising direction.
     const inputLength = Math.hypot(sideways, forward);
+    const inputStrength = Math.min(1, inputLength);
     if (inputLength > 1) {
       sideways /= inputLength;
       forward /= inputLength;
     }
 
     // Forward follows the camera's view direction (+Z from the starting camera).
-    // A gentle walking pace replaces the previous frame-dependent high speed.
-    const walkSpeed = 2.8;
-    player.position.x = Math.max(-3.1, Math.min(3.1, player.position.x + sideways * walkSpeed * deltaSeconds));
-    player.position.z = Math.max(-42, Math.min(42, player.position.z + forward * walkSpeed * deltaSeconds));
+    // Keep the walking range measured and reserve sprint speed for a full push.
+    const slowWalkSpeed = 1.35;
+    const normalWalkSpeed = 2.35;
+    const sprintSpeed = 6.0;
+    const pace = Math.max(0, Math.min(1, (inputStrength - 0.08) / 0.92));
+    const walkBlend = Math.min(1, pace / 0.55);
+    const speed = walkBlend < 1
+      ? slowWalkSpeed + (normalWalkSpeed - slowWalkSpeed) * walkBlend
+      : normalWalkSpeed + (sprintSpeed - normalWalkSpeed) * ((pace - 0.55) / 0.45);
+    player.position.x = Math.max(-3.1, Math.min(3.1, player.position.x + sideways * speed * deltaSeconds));
+    player.position.z = Math.max(-42, Math.min(42, player.position.z + forward * speed * deltaSeconds));
 
     head.position.x = player.position.x; head.position.z = player.position.z;
     shadow.position.x = player.position.x; shadow.position.z = player.position.z;
