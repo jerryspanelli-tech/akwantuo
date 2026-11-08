@@ -1435,7 +1435,9 @@ async function start(): Promise<void> {
         onGround = true;
       }
 
-      player.setMoving(moving && onGround);\n\n      if (moving && onGround) {
+      player.setMoving(moving && onGround);
+
+      if (moving && onGround) {
         const swing = Math.sin(walkClock) * 0.48;
         player.leftLeg.rotation.x = swing;
         player.rightLeg.rotation.x = -swing;
