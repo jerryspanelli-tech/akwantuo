@@ -1,0 +1,34 @@
+{
+  "name": "Akwantuo Ghanaian Male",
+  "seed": 26001,
+  "gender": 1,
+  "age": 0.52,
+  "muscle": 0.58,
+  "weight": 0.5,
+  "height": 0.54,
+  "proportions": 0.75,
+  "african": 1,
+  "asian": 0,
+  "caucasian": 0,
+  "eyes": "blackbrown",
+  "hair": "cornrows",
+  "hairColor": "#17100c",
+  "facialHair": "short_beard",
+  "beardColor": "#17100c",
+  "outfit": "male_casualsuit01",
+  "shoes": "shoes01",
+  "garmentStyles": {
+    "male_casualsuit01": {
+      "pattern": "kente",
+      "color": "#6f1725",
+      "color2": "#d7ad38"
+    }
+  },
+  "detail": "medium",
+  "rig": "game",
+  "faceBones": true,
+  "restPose": "A",
+  "animations": true,
+  "faceShapes": true,
+  "speechShapes": true
+}

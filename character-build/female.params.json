@@ -1,0 +1,33 @@
+{
+  "name": "Akwantuo Ghanaian Female",
+  "seed": 26002,
+  "gender": 0,
+  "age": 0.52,
+  "muscle": 0.52,
+  "weight": 0.48,
+  "height": 0.53,
+  "proportions": 0.75,
+  "breastSize": 0.55,
+  "african": 1,
+  "asian": 0,
+  "caucasian": 0,
+  "eyes": "blackbrown",
+  "hair": "box_braids",
+  "hairColor": "#17100c",
+  "outfit": "female_sportsuit01",
+  "shoes": "shoes03",
+  "garmentStyles": {
+    "female_sportsuit01": {
+      "pattern": "ankara",
+      "color": "#153b59",
+      "color2": "#d7ad38"
+    }
+  },
+  "detail": "medium",
+  "rig": "game",
+  "faceBones": true,
+  "restPose": "A",
+  "animations": true,
+  "faceShapes": true,
+  "speechShapes": true
+}
