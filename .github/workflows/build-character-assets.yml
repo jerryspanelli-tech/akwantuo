@@ -33,8 +33,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: /tmp/ara3dgen/package-lock.json
 
       - name: Get Ara 3D Gen
         run: git clone --depth 1 https://github.com/olatunde85/3d-gen.git /tmp/ara3dgen
