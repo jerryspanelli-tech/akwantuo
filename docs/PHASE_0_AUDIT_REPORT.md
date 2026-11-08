@@ -1,6 +1,6 @@
 # AKWANTUO Phase 0 Audit Report
 
-Status: **Research findings recorded; architecture proposal awaiting CEO decision.**
+Status: **Phase 0 research complete; architecture approved by CEO 2026-11-08. Phase 1 implementation underway.**
 Audit date: 2026-11-08
 Scope: GitHub repository, existing Supabase project and Vercel project. All Supabase inspection was read-only; no production service settings were changed.
 
@@ -13,7 +13,7 @@ Scope: GitHub repository, existing Supabase project and Vercel project. All Supa
 - Current clean branch head after recording the architecture proposal: `4d6dbfbe164cf0b59bf483efd54d88b3469dd70d`.
 - Four archive branches remain: `archive/pre-rebuild-main-2026-11-08`, `archive/pre-rebuild-phase1-2026-11-08`, `archive/pre-rebuild-studio-2026-11-08`, `archive/pre-rebuild-transport-2026-11-08`.
 - Existing non-archive branches `phase-1/backend-isolation-and-runtime-truth` and `fix/transport-offshore-disembark-test` also remain.
-- The clean branch has only the new README, approved master prompt and architecture proposal. The previous game implementation has not been copied into the clean branch.
+- At the time of the Phase 0 audit, the clean branch had only the README, approved master prompt and architecture proposal. The Phase 1 scaffold is now being created separately; no previous gameplay source is being copied into the clean branch.
 
 Recovery refs are present, but GitHub reports the branches are not protected. The team must avoid force-pushing or deleting these branches. A separate backup/export would provide additional protection before any future destructive repository administration.
 
