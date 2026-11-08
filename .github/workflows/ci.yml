@@ -26,16 +26,20 @@ jobs:
           node-version: 22
       - name: Install dependencies
         run: npm install
-      - name: Verify dedicated AKWANTUO Supabase connection
+      - name: Verify dedicated AKWANTUO Supabase connection (when configured)
         run: node apps/game/scripts/verify-supabase-connection.mjs
       - name: Typecheck
         run: npm run typecheck
       - name: Build
         run: npm run build
       - name: Verify built browser bundle is isolated to AKWANTUO
+        env:
+          EXPECTED_AKWANTUO_SUPABASE_URL: ${{ secrets.AKWANTUO_SUPABASE_URL }}
         run: |
           if grep -R -q 'fktvbxmgseojcvztheqz.supabase.co' apps/game/dist/assets; then
             echo 'Accra Life Supabase URL leaked into the AKWANTUO browser bundle.'
             exit 1
           fi
-          grep -R -q 'ugiysogfkclbcryhtkyn.supabase.co' apps/game/dist/assets
+          if [ -n "$EXPECTED_AKWANTUO_SUPABASE_URL" ]; then
+            grep -R -q 'ugiysogfkclbcryhtkyn.supabase.co' apps/game/dist/assets
+          fi
