@@ -1,6 +1,6 @@
 # AKWANTUO Architecture Decision Record — Phase 0 Proposal
 
-Status: **Proposed for CEO review; not yet approved for implementation**
+Status: **CEO approved 2026-11-08; Phase 1 implementation in progress**
 
 ## 1. Constraints established from the preserved project
 
@@ -143,4 +143,4 @@ Build the approved vision in dependency order: world and regions; characters/NPC
 3. Approve keeping Supabase as identity and persistence, with an authoritative realtime server chosen only after the spike.
 4. Approve Phase 1 as the first implementation milestone after Phase 0.
 
-No code scaffold, database mutation, Vercel configuration change, production deployment switch or merge is authorised by this proposal alone.
+The CEO approved the architecture and Phase 1 scope on 2026-11-08. Client scaffold implementation is authorised on the isolated rebuild branch. Database mutations, Vercel configuration changes, production deployment switches and merges remain excluded.
