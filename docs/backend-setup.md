@@ -7,8 +7,6 @@
 - Region: `eu-west-1`
 - Project URL: `https://ugiysogfkclbcryhtkyn.supabase.co`
 
-This project is separate from Accra Life. Never point AKWANTUO at Accra Life's Supabase project.
-
 ## Browser configuration
 
 Set these Vercel project environment variables for Production, Preview and Development:
