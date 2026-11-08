@@ -10,7 +10,7 @@ The client is responsible for rendering, input, audio presentation and non-autho
 
 The client-side Supabase integration code exists in `apps/game/src/services/supabase.ts`, including account, profile, wallet, inventory and purchase request helpers. This does **not** mean a dedicated AKWANTUO backend is provisioned or that online persistence is ready for players.
 
-The AKWANTUO client must not use Accra Life credentials or its Supabase project. Configure only a dedicated AKWANTUO Supabase project using the public project URL and publishable key. Until that project is configured and verified, online features must fail clearly and local prototype play must remain available.
+Configure the client to use only the dedicated AKWANTUO Supabase project, with its public project URL and publishable key. Until that project is configured and verified, online features must fail clearly and local prototype play must remain available.
 
 The economy migration in `supabase/migrations` defines profile, wallet, catalogue, inventory, transaction and ownership tables, row-level security policies, and trusted purchase functions. Its presence in the repository does not prove that it has been applied to a dedicated project. Migration application, RLS behaviour, account/profile round trips, purchase edge cases and ownership reload must be verified against that project before online economy features are enabled.
 
