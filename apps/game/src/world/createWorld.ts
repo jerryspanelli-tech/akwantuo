@@ -144,16 +144,29 @@ export function startWorld(canvas: HTMLCanvasElement, joystick: HTMLElement, qua
   window.addEventListener("keyup", onKeyUp);
 
   scene.onBeforeRenderObservable.add(() => {
-    const forward = Math.max(-1, Math.min(1, Number(keys.has("w") || keys.has("arrowup")) - Number(keys.has("s") || keys.has("arrowdown")) - axisY));
-    const sideways = Math.max(-1, Math.min(1, Number(keys.has("d") || keys.has("arrowright")) - Number(keys.has("a") || keys.has("arrowleft")) + axisX));
-    moveX += sideways * 0.075 - moveX * 0.2;
-    moveZ += forward * 0.075 - moveZ * 0.2;
-    player.position.x = Math.max(-3.1, Math.min(3.1, player.position.x + moveX));
-    player.position.z = Math.max(-42, Math.min(42, player.position.z - moveZ));
+    // Use elapsed time, not per-frame movement, so speed stays consistent across devices.
+    const deltaSeconds = Math.min(engine.getDeltaTime() / 1000, 0.05);
+    let forward = Number(keys.has("w") || keys.has("arrowup")) - Number(keys.has("s") || keys.has("arrowdown")) - axisY;
+    let sideways = Number(keys.has("d") || keys.has("arrowright")) - Number(keys.has("a") || keys.has("arrowleft")) + axisX;
+
+    // Keep diagonal movement from becoming faster than straight movement.
+    const inputLength = Math.hypot(sideways, forward);
+    if (inputLength > 1) {
+      sideways /= inputLength;
+      forward /= inputLength;
+    }
+
+    // Forward follows the camera's view direction (+Z from the starting camera).
+    // A gentle walking pace replaces the previous frame-dependent high speed.
+    const walkSpeed = 1.8;
+    player.position.x = Math.max(-3.1, Math.min(3.1, player.position.x + sideways * walkSpeed * deltaSeconds));
+    player.position.z = Math.max(-42, Math.min(42, player.position.z + forward * walkSpeed * deltaSeconds));
+
     head.position.x = player.position.x; head.position.z = player.position.z;
     shadow.position.x = player.position.x; shadow.position.z = player.position.z;
-    camera.target.x += (player.position.x - camera.target.x) * 0.035;
-    camera.target.z += (player.position.z - camera.target.z) * 0.035;
+    const cameraFollow = 1 - Math.exp(-5 * deltaSeconds);
+    camera.target.x += (player.position.x - camera.target.x) * cameraFollow;
+    camera.target.z += (player.position.z - camera.target.z) * cameraFollow;
   });
 
   engine.runRenderLoop(() => scene.render());
