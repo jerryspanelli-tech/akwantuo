@@ -13,6 +13,15 @@ const settingsPanel = byId<HTMLElement>("settings-panel");
 const errorBox = byId<HTMLElement>("world-error");
 let stopWorld: (() => void) | null = null;
 let startingWorld = false;
+type Quality = "auto" | "high" | "low";
+function readQuality(): Quality {
+  try {
+    const value = localStorage.getItem("akwantuo.graphics-quality");
+    return value === "high" || value === "low" ? value : "auto";
+  } catch { return "auto"; }
+}
+let selectedQuality: Quality = readQuality();
+byId<HTMLSelectElement>("quality").value = selectedQuality;
 
 function showMenu() {
   stopWorld?.();
@@ -31,7 +40,7 @@ async function enterWorld() {
   errorBox.hidden = true;
   try {
     const { startWorld } = await import("./world/createWorld");
-    stopWorld = startWorld(byId<HTMLCanvasElement>("game-canvas"), byId<HTMLElement>("movement-stick"));
+    stopWorld = startWorld(byId<HTMLCanvasElement>("game-canvas"), byId<HTMLElement>("movement-stick"), selectedQuality);
   } catch (error) {
     errorBox.textContent = error instanceof Error
       ? `The 3D world could not start: ${error.message}`
@@ -47,8 +56,9 @@ byId<HTMLButtonElement>("back-menu").addEventListener("click", showMenu);
 byId<HTMLButtonElement>("settings").addEventListener("click", () => { settingsPanel.hidden = false; });
 byId<HTMLButtonElement>("close-settings").addEventListener("click", () => { settingsPanel.hidden = true; });
 byId<HTMLSelectElement>("quality").addEventListener("change", (event) => {
-  const quality = (event.currentTarget as HTMLSelectElement).value;
-  document.documentElement.dataset.quality = quality;
+  const value = (event.currentTarget as HTMLSelectElement).value;
+  selectedQuality = value === "high" || value === "low" ? value : "auto";
+  try { localStorage.setItem("akwantuo.graphics-quality", selectedQuality); } catch { /* Storage may be unavailable. */ }
 });
 window.addEventListener("pagehide", () => stopWorld?.());
 
