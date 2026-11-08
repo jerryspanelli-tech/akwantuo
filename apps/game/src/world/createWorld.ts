@@ -1,7 +1,12 @@
-import {
-  ArcRotateCamera, Color3, Color4, DirectionalLight, Engine, HemisphericLight,
-  MeshBuilder, Scene, StandardMaterial, Vector3
-} from "@babylonjs/core";
+import { ArcRotateCamera } from "@babylonjs/core/Cameras/arcRotateCamera";
+import { Engine } from "@babylonjs/core/Engines/engine";
+import { DirectionalLight } from "@babylonjs/core/Lights/directionalLight";
+import { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight";
+import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
+import { Color3, Color4 } from "@babylonjs/core/Maths/math.color";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector";
+import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
+import { Scene } from "@babylonjs/core/scene";
 
 function makeMaterial(scene: Scene, name: string, color: Color3): StandardMaterial {
   const mat = new StandardMaterial(name, scene);
