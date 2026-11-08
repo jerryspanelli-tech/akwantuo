@@ -13,6 +13,7 @@ jobs:
   game-client:
     name: Typecheck and build game client
     runs-on: ubuntu-latest
+    # Match the repository engine requirement and transport-preview runtime.
     # Only the public browser key is exposed to the client build. Never use a service-role key.
     env:
       VITE_SUPABASE_URL: ${{ secrets.AKWANTUO_SUPABASE_URL }}
@@ -22,6 +23,8 @@ jobs:
         uses: actions/checkout@v4
       - name: Set up Node.js
         uses: actions/setup-node@v4
+        with:
+          node-version: 22.12.0
       - name: Install dependencies
         run: npm install
       - name: Verify dedicated AKWANTUO Supabase connection (when configured)
