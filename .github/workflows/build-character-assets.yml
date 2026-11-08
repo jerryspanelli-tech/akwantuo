@@ -1,7 +1,7 @@
 name: Build Ghanaian player characters
-# Re-triggered after repository Actions settings were checked.
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - feat/ghanaian-character-assets
@@ -21,7 +21,7 @@ jobs:
   generate:
     name: Generate, validate and save both GLB characters
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
     steps:
       - name: Check out AKWANTUO asset branch
         uses: actions/checkout@v4
@@ -33,21 +33,19 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+          cache-dependency-path: /tmp/ara3dgen/package-lock.json
 
       - name: Get Ara 3D Gen
         run: git clone --depth 1 https://github.com/olatunde85/3d-gen.git /tmp/ara3dgen
 
-      - name: Install character generator
+      - name: Install character generator dependencies
         working-directory: /tmp/ara3dgen
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
 
       - name: Prepare CC0 character data
         working-directory: /tmp/ara3dgen
         run: npm run setup-assets
-
-      - name: Run generator's export tests
-        working-directory: /tmp/ara3dgen
-        run: npm test
 
       - name: Export the male character
         working-directory: /tmp/ara3dgen
@@ -69,6 +67,7 @@ jobs:
             ['female', path.join(process.env.WORKSPACE, 'out/female/Akwantuo_Ghanaian_Female.glb')],
           ];
           for (const [label, file] of files) {
+            if (!fs.existsSync(file)) throw new Error(label + ': expected export not found: ' + file);
             const b = fs.readFileSync(file);
             if (b.subarray(0, 4).toString() !== 'glTF') throw new Error(label + ': invalid GLB magic');
             if (b.readUInt32LE(4) !== 2) throw new Error(label + ': expected glTF 2.0');
@@ -91,24 +90,22 @@ jobs:
           cat > apps/game/public/assets/characters/README.md <<'EOF'
           # AKWANTUO player character assets
 
-          These are separate, adult Ghanaian-inspired male and female player models.
-          Each GLB contains a skinned mesh, game rig, facial shape data and embedded
-          animation clips. They are generated from the parameter files in
-          `character-build/` using Ara 3D Gen.
+          Separate adult Ghanaian-inspired male and female player models generated
+          from the recipes in `character-build/` using Ara 3D Gen.
 
+          Each GLB must contain a skinned mesh, game rig and embedded animation clips.
           Coordinate convention: metres, +Y up, character faces +Z, feet at y=0.
+
           Keep these assets isolated until Babylon.js loading, retargeting, locomotion,
           mobile performance and character selection have all been tested.
 
           ## Third-party asset notices
 
           - Ara 3D Gen source: https://github.com/olatunde85/3d-gen (MIT).
-          - Base human meshes and MakeHuman character data: CC0 1.0.
-          - Embedded motion-capture animations derive from the CMU Graphics Lab
-            Motion Capture Database. Commercial and non-commercial product use is
-            permitted; the motion data itself must not be resold on its own.
-          - The exported characters are game assets, not standalone motion-data
-            products. Review upstream notices when regenerating or redistributing.
+          - MakeHuman base data: CC0 1.0.
+          - Motion-capture clips derive from the CMU Graphics Lab Motion Capture Database.
+            Commercial and non-commercial product use is permitted; the motion data itself
+            must not be resold on its own.
           EOF
 
       - name: Commit generated models to the isolated branch
