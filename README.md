@@ -7,7 +7,6 @@ AKWANTUO is a browser-first 3D game for phones and computers. Its long-term dire
 
 ## Project rules
 
-- AKWANTUO is a separate project from Accra Life. Never share game data, backend credentials or deployment configuration between them.
 - Improve the existing project; do not replace it with an unrelated demo.
 - Ghanaian identity, believable scale, realistic art and stable gameplay take priority over feature count.
 - Use original or appropriately licensed assets.
@@ -53,13 +52,12 @@ npm run typecheck
 npm run build
 ```
 
-## Backend separation and credentials
+## Backend configuration
 
-The dedicated AKWANTUO Supabase project is `ugiysogfkclbcryhtkyn`. It is separate from Accra Life.
+The dedicated AKWANTUO Supabase project is `ugiysogfkclbcryhtkyn`.
 
 - Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` in the local environment or hosting provider.
 - CI uses GitHub Actions secrets `AKWANTUO_SUPABASE_URL` and `AKWANTUO_SUPABASE_PUBLISHABLE_KEY` for the live connection smoke test.
-- Do not reuse Accra Life's Supabase project or credentials.
 - Never put a Supabase service-role key or any private server secret in browser-exposed `VITE_*` variables.
 - The applied migration creates profiles, wallets, shop catalogue, inventory, transaction ledger and premium asset ownership with RLS.
 - The Auth URL allow-list must be verified in the Supabase dashboard. Real email-confirmed account and purchase round-trip tests are still required.
