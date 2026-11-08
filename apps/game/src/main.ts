@@ -4,10 +4,12 @@ import {
   Engine,
   MeshBuilder,
   Scene,
+  SceneLoader,
   StandardMaterial,
   TransformNode,
   Vector3
 } from "@babylonjs/core";
+import "@babylonjs/loaders/glTF";
 import "./style.css";
 import { COMPLEXIONS, DEFAULT_APPEARANCE, OUTFITS, resolveAppearance, type CharacterAppearance } from "./character/appearance";
 import { loadAppearance, saveAppearance } from "./character/appearanceStore";
@@ -152,6 +154,7 @@ function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
   leftLeg: TransformNode;
   rightLeg: TransformNode;
   applyAppearance: (appearance: CharacterAppearance) => void;
+  setMoving: (moving: boolean) => void;
 } {
   const root = new TransformNode("player-root", scene);
   root.position.set(WORLD_CONFIG.spawn.x, WORLD_CONFIG.spawn.y, WORLD_CONFIG.spawn.z);
@@ -253,7 +256,67 @@ function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
     afroHair.isVisible = ["afro", "twists", "starter-locs", "locs", "cornrows", "box-braids", "knotless-braids", "ghana-braids", "feed-in-cornrows", "fulani-braids", "faux-locs", "passion-twists", "wig-install", "natural-bun"].includes(styleId);
   };
   applyAppearance(initialAppearance);
-  return { root, leftArm, rightArm, leftLeg, rightLeg, applyAppearance };
+
+  // Load a real, skinned African character model. The low-cost primitive rig
+  // remains only as a startup fallback while the GLB downloads.
+  const fallbackMeshes = root.getChildMeshes(false);
+  const fallbackPivots = [leftArm, rightArm, leftLeg, rightLeg];
+  let activeModelMeshes: import("@babylonjs/core").AbstractMesh[] = [];
+  let locomotionGroups: import("@babylonjs/core").AnimationGroup[] = [];
+  let currentLocomotion = "idle";
+  let loadGeneration = 0;
+  const setMoving = (moving: boolean): void => {
+    const next = moving ? "walk" : "idle";
+    if (next === currentLocomotion) return;
+    currentLocomotion = next;
+    const selected = locomotionGroups.find((group) => group.name.toLowerCase() === next);
+    if (!selected) return;
+    for (const group of locomotionGroups) group.stop();
+    selected.start(true);
+  };
+  const loadCharacterModel = async (appearance: CharacterAppearance): Promise<void> => {
+    const generation = ++loadGeneration;
+    const file = appearance.presentation === "feminine" ? "mh_3183.glb" : "mh_3427.glb";
+    const baseUrl = "https://raw.githubusercontent.com/MMWilliams/char-kit/master/characters/";
+    try {
+      const imported = await SceneLoader.ImportMeshAsync("", baseUrl, file, scene);
+      if (generation !== loadGeneration) {
+        imported.meshes.forEach((mesh) => mesh.dispose(false, true));
+        imported.animationGroups.forEach((group) => group.dispose());
+        return;
+      }
+      for (const mesh of imported.meshes) {
+        if (!mesh.parent) mesh.parent = root;
+      }
+      imported.meshes.forEach((mesh) => {
+        mesh.isPickable = false;
+        mesh.receiveShadows = true;
+        activeModelMeshes.push(mesh);
+      });
+      fallbackMeshes.forEach((mesh) => mesh.setEnabled(false));
+      fallbackPivots.forEach((pivot) => pivot.setEnabled(false));
+      locomotionGroups = imported.animationGroups;
+      const idle = locomotionGroups.find((group) => group.name.toLowerCase() === "idle");
+      if (idle) idle.start(true);
+      const walk = locomotionGroups.find((group) => group.name.toLowerCase() === "walk");
+      if (!walk) showNotice("3D character loaded; walk animation is unavailable.");
+      document.documentElement.dataset.akwantuoCharacterModel = file;
+      document.documentElement.dataset.akwantuoCharacterAnimations = String(locomotionGroups.length);
+      setMoving(currentLocomotion === "walk");
+    } catch (error) {
+      console.error("AKWANTUO character GLB failed to load:", error);
+      document.documentElement.dataset.akwantuoCharacterModel = "fallback";
+      showNotice("The 3D character could not load. Check your connection and retry.");
+    }
+  };
+  void loadCharacterModel(initialAppearance);
+  const originalApplyAppearance = applyAppearance;
+  const applyModelAppearance = (appearance: CharacterAppearance): void => {
+    originalApplyAppearance(appearance);
+    const expected = appearance.presentation === "feminine" ? "mh_3183.glb" : "mh_3427.glb";
+    if (document.documentElement.dataset.akwantuoCharacterModel !== expected) void loadCharacterModel(appearance);
+  };
+  return { root, leftArm, rightArm, leftLeg, rightLeg, applyAppearance: applyModelAppearance, setMoving };
 }
 
 function installTouchControls(): void {
@@ -1372,7 +1435,7 @@ async function start(): Promise<void> {
         onGround = true;
       }
 
-      if (moving && onGround) {
+      player.setMoving(moving && onGround);\n\n      if (moving && onGround) {
         const swing = Math.sin(walkClock) * 0.48;
         player.leftLeg.rotation.x = swing;
         player.rightLeg.rotation.x = -swing;
