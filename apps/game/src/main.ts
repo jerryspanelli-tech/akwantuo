@@ -600,7 +600,7 @@ async function start(): Promise<void> {
       };
     },
     onChunkLoaded: (key) => {
-      document.documentElement.dataset.akwantuoLoadedChunks = chunkManager.getLoadedChunkKeys().concat(key).join(",");
+      document.documentElement.dataset.akwantuoLoadedChunks = chunkManager.getLoadedChunkKeys().join(",");
       document.documentElement.dataset.akwantuoLastChunkLoaded = key;
     },
     onChunkUnloaded: (key) => {
