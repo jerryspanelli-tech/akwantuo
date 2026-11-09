@@ -20,7 +20,7 @@ concurrency:
 jobs:
   generate:
     name: Generate, validate and save both GLB characters
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 120
     steps:
       - name: Check out AKWANTUO asset branch
