@@ -1453,7 +1453,11 @@ async function start(): Promise<void> {
           camera.alpha = -Math.PI / 2 - vehicleState.headingRadians;
           camera.radius = 9;
         }
-        if (interactButton) interactButton.textContent = passengerState.mode === "riding" ? "ALIGHT" : "EXIT";
+        if (interactButton) {
+          interactButton.hidden = false;
+          interactButton.textContent = passengerState.mode === "riding" ? "ALIGHT" : "EXIT";
+          interactButton.setAttribute("aria-label", passengerState.mode === "riding" ? "Alight from public transport" : "Exit vehicle");
+        }
         if (jumpButton) jumpButton.classList.add("is-hidden");
         if (vehicleViewButton) vehicleViewButton.classList.remove("is-hidden");
       } else {
@@ -1461,7 +1465,25 @@ async function start(): Promise<void> {
           passengerState.mode === "not_riding" &&
           greaterAccraMappedRailService.isBoardingOpen() &&
           Math.hypot(player.root.position.x + 250, player.root.position.z - 150) <= 14;
-        if (interactButton) interactButton.textContent = activeInterior ? "EXIT" : nearMappedRailBoarding ? "BOARD" : "ENTER";
+        if (interactButton) {
+          const vehicleEntryX = vehicleState.x - Math.cos(vehicleState.headingRadians) * 1.15;
+          const vehicleEntryZ = vehicleState.z + Math.sin(vehicleState.headingRadians) * 1.15;
+          const nearCarDoor = Math.hypot(player.root.position.x - vehicleEntryX, player.root.position.z - vehicleEntryZ) <= 2.5;
+          const nearTrotroDoor = Math.hypot(player.root.position.x - (publicTaxiState.x - 1.15), player.root.position.z - publicTaxiState.z) <= 3;
+          const nearBoat = findNearestMarinaCraft().distanceM <= 26;
+          const nearPreviewRail = railStatus.boardingOpen && Math.hypot(player.root.position.x + 41, player.root.position.z + 20) <= 9;
+          const nearMappedRail = nearMappedRailBoarding;
+          const nearBuilding = DISTRICT_BUILDINGS.some((building) => {
+            if (!building.interiorId) return false;
+            const frontX = building.side === "west" ? building.x + building.width / 2 : building.x - building.width / 2;
+            const exitX = frontX + (building.side === "west" ? 1.4 : -1.4);
+            return Math.hypot(player.root.position.x - exitX, player.root.position.z - building.z) <= 3.5;
+          });
+          const canInteract = !!activeInterior || nearMappedRail || nearPreviewRail || nearTrotroDoor || nearBoat || nearCarDoor || nearBuilding;
+          interactButton.hidden = !canInteract;
+          interactButton.textContent = activeInterior ? "EXIT" : nearMappedRail || nearPreviewRail ? "BOARD" : "ENTER";
+          interactButton.setAttribute("aria-label", activeInterior ? "Exit building" : nearMappedRail || nearPreviewRail ? "Board public transport" : "Enter nearby vehicle or building");
+        }
         if (jumpButton) jumpButton.classList.remove("is-hidden");
         if (vehicleViewButton) vehicleViewButton.classList.add("is-hidden");
       }
@@ -1479,7 +1501,7 @@ async function start(): Promise<void> {
         inputZ /= inputLength;
       }
 
-      const forward = new Vector3(-Math.sin(camera.alpha), 0, -Math.cos(camera.alpha));
+      const forward = new Vector3(-Math.cos(camera.alpha), 0, -Math.sin(camera.alpha));
       const right = new Vector3(-forward.z, 0, forward.x);
       const direction = forward.scale(inputZ).add(right.scale(inputX));
       const moving = interactionState.mode === "on_foot" && passengerState.mode !== "riding" && !watercraftMode && direction.lengthSquared() > 0.001;
