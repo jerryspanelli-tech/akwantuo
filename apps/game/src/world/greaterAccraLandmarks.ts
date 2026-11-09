@@ -286,5 +286,22 @@ export function createGreaterAccraLandmarks(scene: Scene): LandmarkReport {
     { x: 3650, z: 1750 }, { x: 3480, z: 1980 }, { x: 3350, z: 2200 }, { x: 3250, z: 2460 }
   ], 11);
 
-  // Links into the airport, mall, Legon and central-city street systems.\n  addRoad(scene, "kotoka-terminal-access", [\n    { x: 1050, z: 850 }, { x: 1260, z: 900 }, { x: 1480, z: 930 }, { x: 1700, z: 950 }\n  ], 14);\n  addRoad(scene, "kotoka-airport-residential-link", [\n    { x: 650, z: 1770 }, { x: 900, z: 1450 }, { x: 1250, z: 1150 }, { x: 1700, z: 950 }\n  ], 12);\n  addRoad(scene, "accra-mall-west-access", [\n    { x: 3250, z: 2460 }, { x: 3270, z: 2360 }, { x: 3290, z: 2240 }, { x: 3350, z: 2200 }\n  ], 12);\n  addRoad(scene, "legon-campus-road", [\n    { x: 3250, z: 2460 }, { x: 3280, z: 2800 }, { x: 3310, z: 3200 }, { x: 3350, z: 3550 }\n  ], 12);\n  addRoad(scene, "central-stadium-access", [\n    { x: -450, z: 450 }, { x: -330, z: 80 }, { x: -240, z: -360 }, { x: -150, z: -820 }\n  ], 12);\n\n  return { landmarkCount: 6, localRoadCount: 13, solidAreas };
+  // Links into the airport, mall, Legon and central-city street systems.
+  addRoad(scene, "kotoka-terminal-access", [
+    { x: 1050, z: 850 }, { x: 1260, z: 900 }, { x: 1480, z: 930 }, { x: 1700, z: 950 }
+  ], 14);
+  addRoad(scene, "kotoka-airport-residential-link", [
+    { x: 650, z: 1770 }, { x: 900, z: 1450 }, { x: 1250, z: 1150 }, { x: 1700, z: 950 }
+  ], 12);
+  addRoad(scene, "accra-mall-west-access", [
+    { x: 3250, z: 2460 }, { x: 3270, z: 2360 }, { x: 3290, z: 2240 }, { x: 3350, z: 2200 }
+  ], 12);
+  addRoad(scene, "legon-campus-road", [
+    { x: 3250, z: 2460 }, { x: 3280, z: 2800 }, { x: 3310, z: 3200 }, { x: 3350, z: 3550 }
+  ], 12);
+  addRoad(scene, "central-stadium-access", [
+    { x: -450, z: 450 }, { x: -330, z: 80 }, { x: -240, z: -360 }, { x: -150, z: -820 }
+  ], 12);
+
+  return { landmarkCount: 6, localRoadCount: 13, solidAreas };
 }
