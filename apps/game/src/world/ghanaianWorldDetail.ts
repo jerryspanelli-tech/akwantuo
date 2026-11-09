@@ -68,7 +68,7 @@ export function createGreaterAccraWorldDetail(scene: Scene): void {
   };
 
   // Green, shaded residential edges around Legon, East Legon and Achimota.
-  [
+  ([
     [3100, 3000, 1.2], [3500, 2800, 1], [4100, 2500, 1.15],
     [4300, 3200, 1.25], [2850, 3700, 1.1], [-1900, 2550, 1.15],
     [-2250, 2250, 1], [-1450, 1850, 1.1], [5200, 2200, 1.1],
@@ -79,7 +79,7 @@ export function createGreaterAccraWorldDetail(scene: Scene): void {
 
   // Coastal palms make the Osu–Labadi and Tema shoreline read differently
   // from the inland residential and commercial districts.
-  [
+  ([
     [900, -2800], [1250, -2920], [1650, -2760], [2050, -2950],
     [2500, -2800], [2900, -3000], [3300, -2800], [3800, -3000],
     [4500, -2860], [5200, -3000], [6000, -2820], [6900, -3000],
