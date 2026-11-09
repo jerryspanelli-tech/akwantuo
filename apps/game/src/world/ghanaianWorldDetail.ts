@@ -75,7 +75,7 @@ export function createGreaterAccraWorldDetail(scene: Scene): void {
     [5750, 2450, 1.2], [6100, 1900, 1], [4800, 1300, 0.9],
     [-5400, -200], [-5000, -450], [-4600, -850], [-3900, -500],
     [7600, -100], [8000, -350], [8400, -1000], [9400, -450]
-  ].forEach(([x, z, scale]) => shadeTree(x, z, scale));
+  ] as const).forEach(([x, z, scale]) => shadeTree(x, z, scale));
 
   // Coastal palms make the Osu–Labadi and Tema shoreline read differently
   // from the inland residential and commercial districts.
@@ -84,7 +84,7 @@ export function createGreaterAccraWorldDetail(scene: Scene): void {
     [2500, -2800], [2900, -3000], [3300, -2800], [3800, -3000],
     [4500, -2860], [5200, -3000], [6000, -2820], [6900, -3000],
     [7900, -2800], [8800, -2920], [9700, -2850]
-  ].forEach(([x, z], index) => palm(x, z, index % 4 === 0 ? 1.12 : 0.92));
+  ] as const).forEach(([x, z], index) => palm(x, z, index % 4 === 0 ? 1.12 : 0.92));
 
   // A recognisable lighthouse silhouette on the western coast.
   const lighthouse = MeshBuilder.CreateCylinder("jamestown-inspired-lighthouse", {
