@@ -283,10 +283,50 @@ function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
       if (generation !== loadGeneration) {
         imported.meshes.forEach((mesh) => mesh.dispose(false, true));
         imported.animationGroups.forEach((group) => group.dispose());
+        imported.skeletons.forEach((skeleton) => skeleton.dispose());
         return;
       }
-      // Keep the previous model visible until the replacement has loaded.
-      // Dispose its rig and meshes only after the new GLB is ready.
+
+      // The character meshes and the locomotion clips are separate CC0 GLBs.
+      // Retarget each clip by bone/transform-node name onto this character's rig.
+      const modelNodes = new Map<string, import("@babylonjs/core").Node>();
+      for (const node of [...(imported.transformNodes ?? []), ...imported.meshes]) {
+        if (!modelNodes.has(node.name)) modelNodes.set(node.name, node);
+      }
+      const animationSpecs = [
+        { file: "idle.glb", name: "idle" },
+        { file: "walk.glb", name: "walk" }
+      ] as const;
+      const retargetedGroups: import("@babylonjs/core").AnimationGroup[] = [];
+      for (const spec of animationSpecs) {
+        try {
+          const source = await SceneLoader.ImportMeshAsync("", baseUrl, spec.file, scene);
+          const sourceGroup = source.animationGroups[0];
+          if (sourceGroup) {
+            const cloned = sourceGroup.clone(
+              spec.name,
+              (target) => modelNodes.get(target.name) ?? null
+            );
+            if (cloned) retargetedGroups.push(cloned);
+          }
+          source.animationGroups.forEach((group) => group.dispose());
+          source.meshes.forEach((mesh) => mesh.dispose(false, true));
+          (source.transformNodes ?? []).forEach((node) => node.dispose(false, true));
+          source.skeletons.forEach((skeleton) => skeleton.dispose());
+        } catch (animationError) {
+          console.warn(`AKWANTUO ${spec.name} animation could not be loaded:`, animationError);
+        }
+      }
+
+      if (generation !== loadGeneration) {
+        retargetedGroups.forEach((group) => group.dispose());
+        imported.meshes.forEach((mesh) => mesh.dispose(false, true));
+        imported.animationGroups.forEach((group) => group.dispose());
+        imported.skeletons.forEach((skeleton) => skeleton.dispose());
+        return;
+      }
+
+      // Keep the previous model visible until the replacement and its clips load.
       for (const group of locomotionGroups) group.stop();
       for (const group of locomotionGroups) group.dispose();
       for (const mesh of activeModelMeshes) mesh.dispose(false, true);
@@ -299,14 +339,14 @@ function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
       }
       fallbackMeshes.forEach((mesh) => mesh.setEnabled(false));
       fallbackPivots.forEach((pivot) => pivot.setEnabled(false));
-      locomotionGroups = imported.animationGroups;
-      const idle = locomotionGroups.find((group) => group.name.toLowerCase() === "idle");
-      if (idle) idle.start(true);
+      locomotionGroups = [...imported.animationGroups, ...retargetedGroups];
+      const selected = locomotionGroups.find((group) => group.name.toLowerCase() === currentLocomotion)
+        ?? locomotionGroups.find((group) => group.name.toLowerCase() === "idle");
+      if (selected) selected.start(true);
       const walk = locomotionGroups.find((group) => group.name.toLowerCase() === "walk");
-      if (!walk) showNotice("3D character loaded; walk animation is unavailable.");
+      if (!walk) showNotice("3D character loaded, but its walking animation could not be connected.");
       document.documentElement.dataset.akwantuoCharacterModel = file;
       document.documentElement.dataset.akwantuoCharacterAnimations = String(locomotionGroups.length);
-      setMoving(currentLocomotion === "walk");
     } catch (error) {
       console.error("AKWANTUO character GLB failed to load:", error);
       document.documentElement.dataset.akwantuoCharacterModel = "fallback";
