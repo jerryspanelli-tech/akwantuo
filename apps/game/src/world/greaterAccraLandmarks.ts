@@ -1,7 +1,8 @@
 import {
   Color3,
-  MeshBuilder,
   Material,
+  Mesh,
+  MeshBuilder,
   Scene,
   StandardMaterial,
   Vector3
