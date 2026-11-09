@@ -50,8 +50,12 @@ import { getAkwantuoSession, loadPlayerProfile, savePlayerProfile, signInAkwantu
 // its WebGL context before this module is replaced during development.
 let activeEngine: Engine | null = null;
 let activeScene: Scene | null = null;
+// Each start owns a generation. HMR disposal or a newer start invalidates
+// pending asynchronous work before it can create or wire stale game state.
+let startupGeneration = 0;
 
 function disposeActiveGame(): void {
+  startupGeneration += 1;
   activeEngine?.stopRenderLoop();
   activeScene?.dispose();
   activeScene = null;
@@ -494,6 +498,7 @@ function sampleRouteAtDistance(
 async function start(): Promise<void> {
   // A second start must not leave an older WebGL context running.
   disposeActiveGame();
+  const generation = startupGeneration;
   if (!canvas || !bootScreen || !gameShell || !bootStatus) {
     throw new Error("The game startup interface could not be found.");
   }
@@ -533,6 +538,7 @@ async function start(): Promise<void> {
     return bounds;
   };
   const canvasBounds = await waitForCanvasLayout();
+  if (generation !== startupGeneration) return;
   document.documentElement.dataset.akwantuoCanvasSize =
     Math.round(canvasBounds.width) + "x" + Math.round(canvasBounds.height);
   if (canvasBounds.width < 2 || canvasBounds.height < 2) {
@@ -595,6 +601,7 @@ async function start(): Promise<void> {
   document.documentElement.dataset.playableMappedRailService = "true";
   document.documentElement.dataset.playableMappedRailBoardingOpen = String(greaterAccraMappedRailService.isBoardingOpen());
   let activeAccountSession: AkwantuoSession | null = await getAkwantuoSession();
+  if (generation !== startupGeneration) return;
   let currentAppearance = loadAppearance(window.localStorage);
   let walletBalancePesewas = 0;
   let ownedGameAssetIds = new Set<string>();
@@ -602,13 +609,16 @@ async function start(): Promise<void> {
   if (activeAccountSession) {
     try {
       const cloudProfile = await loadPlayerProfile(activeAccountSession);
+      if (generation !== startupGeneration) return;
       if (cloudProfile?.look) currentAppearance = resolveAppearance(cloudProfile.look);
       const economy = await loadEconomyState(activeAccountSession);
+      if (generation !== startupGeneration) return;
       walletBalancePesewas = economy.wallet?.balance_pesewas ?? 0;
       ownedGameAssetIds = new Set(economy.owned_assets.map((asset) => asset.asset_id));
       document.documentElement.dataset.akwantuoWalletPesewas = String(walletBalancePesewas);
       document.documentElement.dataset.akwantuoOwnedAssetCount = String(ownedGameAssetIds.size);
       const shopProducts = await loadShopProducts(activeAccountSession);
+      if (generation !== startupGeneration) return;
       shopStockById = new Map(shopProducts.map((item) => [item.product_id, item.stock_quantity]));
       if (accountStatus) accountStatus.textContent = `Signed in as ${activeAccountSession.user.email || "AKWANTUO player"}. Cloud saves are enabled.`;
       if (accountSignOut) accountSignOut.classList.remove("is-hidden");
