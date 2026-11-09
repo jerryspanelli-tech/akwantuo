@@ -19,6 +19,7 @@ import { clampToWorld, isBlocked } from "./world/collision";
 import { createPreviewWorld } from "./world/previewWorld";
 import { createGreaterAccraPlayableWorld } from "./world/greaterAccraPlayableWorld";
 import { createGreaterAccraWorldDetail } from "./world/ghanaianWorldDetail";
+import { createGreaterAccraLandmarks } from "./world/greaterAccraLandmarks";
 import { getMapRoadPath } from "./world/greaterAccraLayout";
 import { findNearestRoadProjection, getRoadLaneCenterPoint } from "./world/roadNavigation";
 import { getRoadVehicleAutopilotControl } from "./vehicles/roadVehicleAutopilot";
@@ -522,6 +523,10 @@ async function start(): Promise<void> {
   const privateIslandMeshCount = createAkwantuoPrivateIsland(scene);
   document.documentElement.dataset.akwantuoPrivateIslandMeshCount = String(privateIslandMeshCount);
   const greaterAccraTransportReport = createGreaterAccraPlayableWorld(scene);
+  const greaterAccraLandmarkReport = createGreaterAccraLandmarks(scene);
+  solidAreas.push(...greaterAccraLandmarkReport.solidAreas);
+  document.documentElement.dataset.greaterAccraLandmarkCount = String(greaterAccraLandmarkReport.landmarkCount);
+  document.documentElement.dataset.greaterAccraLandmarkLocalRoadCount = String(greaterAccraLandmarkReport.localRoadCount);
   createGreaterAccraWorldDetail(scene);
   document.documentElement.dataset.playableRoadSurfaceMeshes = String(greaterAccraTransportReport.roadSurfaceMeshCount);
   document.documentElement.dataset.playableRoadMarkingMeshes = String(greaterAccraTransportReport.roadMarkingMeshCount);
