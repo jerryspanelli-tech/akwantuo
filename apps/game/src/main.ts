@@ -567,7 +567,15 @@ async function start(): Promise<void> {
   engine.resize();
   const scene = new Scene(engine);
   activeScene = scene;
+  const yieldToStartupFrame = async (): Promise<boolean> => {
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    return generation === startupGeneration;
+  };
+
+  bootStatus.textContent = "Preparing Accra streets…";
   const solidAreas = createPreviewWorld(scene, { includeGround: false });
+  if (!(await yieldToStartupFrame())) return;
+  bootStatus.textContent = "Building interiors…";
   const interiorRooms = createInteriorRooms(scene);
   document.documentElement.dataset.akwantuoInteriorRoomCount = String(interiorRooms.length);
   document.documentElement.dataset.akwantuoStoreCollisionCount = String(interiorRooms.find((room) => room.id === "convenience-store")?.solidAreas.length ?? 0);
@@ -581,14 +589,23 @@ async function start(): Promise<void> {
   document.documentElement.dataset.akwantuoStoreShopkeeperRig =
     String(!!scene.getMeshByName("shopkeeper-head") && !!scene.getMeshByName("shopkeeper-arm--1") && !!scene.getMeshByName("shopkeeper-arm-1"));
   for (const room of interiorRooms) solidAreas.push(...room.solidAreas);
+  if (!(await yieldToStartupFrame())) return;
+  bootStatus.textContent = "Preparing the coastline and island…";
   const privateIslandMeshCount = createAkwantuoPrivateIsland(scene);
   document.documentElement.dataset.akwantuoPrivateIslandMeshCount = String(privateIslandMeshCount);
+  if (!(await yieldToStartupFrame())) return;
+  bootStatus.textContent = "Building Greater Accra roads and rail…";
   const greaterAccraTransportReport = createGreaterAccraPlayableWorld(scene);
-  const greaterAccraLandmarkReport = createGreaterAccraLandmarks(scene);
+  if (!(await yieldToStartupFrame())) return;
+  bootStatus.textContent = "Adding Accra landmarks and neighbourhood roads…";
+  const greaterAccraLandmarkReport = await createGreaterAccraLandmarks(scene);
   solidAreas.push(...greaterAccraLandmarkReport.solidAreas);
   document.documentElement.dataset.greaterAccraLandmarkCount = String(greaterAccraLandmarkReport.landmarkCount);
   document.documentElement.dataset.greaterAccraLandmarkLocalRoadCount = String(greaterAccraLandmarkReport.localRoadCount);
+  if (!(await yieldToStartupFrame())) return;
+  bootStatus.textContent = "Finishing Ghanaian scenery…";
   createGreaterAccraWorldDetail(scene);
+  if (!(await yieldToStartupFrame())) return;
   document.documentElement.dataset.playableRoadSurfaceMeshes = String(greaterAccraTransportReport.roadSurfaceMeshCount);
   document.documentElement.dataset.playableRoadMarkingMeshes = String(greaterAccraTransportReport.roadMarkingMeshCount);
   document.documentElement.dataset.playableRailRoutes = String(greaterAccraTransportReport.railRouteCount);
@@ -596,7 +613,9 @@ async function start(): Promise<void> {
   document.documentElement.dataset.playableCircleStructures = String(greaterAccraTransportReport.circleElevatedStructureCount);
   document.documentElement.dataset.playableRailRoadCrossingCandidates = String(greaterAccraTransportReport.railRoadCrossingCandidateCount);
   document.documentElement.dataset.playablePublicTransportCorridors = String(greaterAccraTransportReport.publicTransportCorridorCount);
+  bootStatus.textContent = "Preparing public transport…";
   const playableRailDemo = createPlayableRailDemo(scene);
+  if (!(await yieldToStartupFrame())) return;
   const greaterAccraMappedRailService = createGreaterAccraMappedRailService(scene);
   document.documentElement.dataset.playableMappedRailService = "true";
   document.documentElement.dataset.playableMappedRailBoardingOpen = String(greaterAccraMappedRailService.isBoardingOpen());
