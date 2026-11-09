@@ -18,7 +18,7 @@ import { createGhanaianStreetBuildings } from "./ghanaianStreetBuildings";
  * prototype. It is deliberately not created here: Greater Accra transport,
  * coastline and district geography are owned by createGreaterAccraPlayableWorld.
  */
-export function createPreviewWorld(scene: Scene, options: { includeGround?: boolean } = {}): SolidArea[] {
+export function createPreviewWorld(scene: Scene, options: { includeGround?: boolean; includeBuildings?: boolean } = {}): SolidArea[] {
   const light = new HemisphericLight("sunlight", new Vector3(
     WORLD_CONFIG.environment.sunlightDirection.x,
     WORLD_CONFIG.environment.sunlightDirection.y,
@@ -40,6 +40,7 @@ export function createPreviewWorld(scene: Scene, options: { includeGround?: bool
 
   // District buildings are placed against Greater Accra's real game-layout
   // anchors. Keep their collision data for building entry and walking.
+  if (options.includeBuildings === false) return [];
   const buildingDistrict = createGhanaianStreetBuildings(scene);
   return [...buildingDistrict.solidAreas];
 }
