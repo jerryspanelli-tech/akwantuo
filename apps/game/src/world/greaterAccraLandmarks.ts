@@ -43,8 +43,9 @@ function addRoad(
   const asphalt = sharedMaterial(scene, "akwantuo-road-asphalt", new Color3(0.105, 0.12, 0.125));
   const sidewalk = sharedMaterial(scene, "akwantuo-road-sidewalk", new Color3(0.48, 0.47, 0.42));
   const drain = sharedMaterial(scene, "akwantuo-road-drain", new Color3(0.075, 0.09, 0.085));
-  const markings = sharedMaterial(scene, "akwantuo-road-markings", new Color3(0.91, 0.86, 0.68));
+  const markings = sharedMaterial(scene, "akwantuo-road-markings", new Color3(0.92, 0.92, 0.86));
 
+  const scale = width / 12;
   const band = (name: string, innerOffset: number, outerOffset: number, material: StandardMaterial): void => {
     const inner: Vector3[] = [];
     const outer: Vector3[] = [];
@@ -56,8 +57,8 @@ function addRoad(
       const length = Math.hypot(dx, dz) || 1;
       const nx = dz / length;
       const nz = -dx / length;
-      inner.push(new Vector3(point.x + nx * innerOffset, 0.05, point.z + nz * innerOffset));
-      outer.push(new Vector3(point.x + nx * outerOffset, 0.05, point.z + nz * outerOffset));
+      inner.push(new Vector3(point.x + nx * innerOffset * scale, 0.05, point.z + nz * innerOffset * scale));
+      outer.push(new Vector3(point.x + nx * outerOffset * scale, 0.05, point.z + nz * outerOffset * scale));
     });
     const mesh = MeshBuilder.CreateRibbon(name, { pathArray: [inner, outer], sideOrientation: Mesh.DOUBLESIDE }, scene);
     mesh.material = material;
@@ -303,5 +304,28 @@ export function createGreaterAccraLandmarks(scene: Scene): LandmarkReport {
     { x: -450, z: 450 }, { x: -330, z: 80 }, { x: -240, z: -360 }, { x: -150, z: -820 }
   ], 12);
 
-  return { landmarkCount: 6, localRoadCount: 13, solidAreas };
+
+  // Neighbourhood streets fill out the city blocks around the major corridors.
+  // They use the same asphalt, sidewalk, drain and marking palette as the main roads.
+  addRoad(scene, "dansoman-market-street", [{ x: -5900, z: -1100 }, { x: -5400, z: -1100 }, { x: -4900, z: -1100 }, { x: -4300, z: -1100 }], 12);
+  addRoad(scene, "dansoman-residential-street", [{ x: -5900, z: -600 }, { x: -5400, z: -600 }, { x: -4900, z: -600 }, { x: -4300, z: -600 }], 11);
+  addRoad(scene, "kaneshie-market-street", [{ x: -3400, z: -500 }, { x: -3000, z: -500 }, { x: -2600, z: -500 }, { x: -2200, z: -500 }], 12);
+  addRoad(scene, "kaneshie-residential-street", [{ x: -3400, z: -40 }, { x: -3000, z: -40 }, { x: -2600, z: -40 }, { x: -2200, z: -40 }], 11);
+  addRoad(scene, "central-makola-market-street", [{ x: -1100, z: 40 }, { x: -650, z: 40 }, { x: -200, z: 40 }, { x: 250, z: 40 }, { x: 650, z: 40 }], 12);
+  addRoad(scene, "central-ridge-street", [{ x: -1100, z: 650 }, { x: -650, z: 650 }, { x: -200, z: 650 }, { x: 250, z: 650 }, { x: 650, z: 650 }], 11);
+  addRoad(scene, "osu-oxford-street-link", [{ x: 650, z: -1600 }, { x: 950, z: -1600 }, { x: 1300, z: -1600 }, { x: 1700, z: -1600 }], 12);
+  addRoad(scene, "osu-residential-street", [{ x: 650, z: -1050 }, { x: 950, z: -1050 }, { x: 1300, z: -1050 }, { x: 1700, z: -1050 }], 11);
+  addRoad(scene, "labadi-beach-road-local", [{ x: 2100, z: -2250 }, { x: 2450, z: -2250 }, { x: 2800, z: -2250 }, { x: 3200, z: -2250 }], 12);
+  addRoad(scene, "labadi-estate-street", [{ x: 2100, z: -1650 }, { x: 2450, z: -1650 }, { x: 2800, z: -1650 }, { x: 3200, z: -1650 }], 11);
+  addRoad(scene, "spintex-commercial-street", [{ x: 4700, z: -1450 }, { x: 5200, z: -1450 }, { x: 5700, z: -1450 }, { x: 6200, z: -1450 }], 12);
+  addRoad(scene, "spintex-estate-street", [{ x: 4700, z: -850 }, { x: 5200, z: -850 }, { x: 5700, z: -850 }, { x: 6200, z: -850 }], 11);
+  addRoad(scene, "tema-community-street", [{ x: 8000, z: -1100 }, { x: 8500, z: -1100 }, { x: 9000, z: -1100 }, { x: 9500, z: -1100 }], 12);
+  addRoad(scene, "tema-industrial-street", [{ x: 8000, z: -500 }, { x: 8500, z: -500 }, { x: 9000, z: -500 }, { x: 9500, z: -500 }], 11);
+  addRoad(scene, "achimota-residential-street", [{ x: -2400, z: 1900 }, { x: -2000, z: 1900 }, { x: -1600, z: 1900 }, { x: -1200, z: 1900 }], 12);
+  addRoad(scene, "achimota-community-street", [{ x: -2400, z: 2450 }, { x: -2000, z: 2450 }, { x: -1600, z: 2450 }, { x: -1200, z: 2450 }], 11);
+  addRoad(scene, "madina-commercial-street", [{ x: 4700, z: 1500 }, { x: 5150, z: 1500 }, { x: 5600, z: 1500 }, { x: 6000, z: 1500 }], 12);
+  addRoad(scene, "madina-residential-street", [{ x: 4700, z: 2050 }, { x: 5150, z: 2050 }, { x: 5600, z: 2050 }, { x: 6000, z: 2050 }], 11);
+  addRoad(scene, "legon-campus-avenue", [{ x: 2800, z: 3100 }, { x: 3200, z: 3100 }, { x: 3600, z: 3100 }, { x: 3900, z: 3100 }], 12);
+  addRoad(scene, "legon-residential-street", [{ x: 2800, z: 3650 }, { x: 3200, z: 3650 }, { x: 3600, z: 3650 }, { x: 3900, z: 3650 }], 11);
+  return { landmarkCount: 6, localRoadCount: 33, solidAreas };
 }
