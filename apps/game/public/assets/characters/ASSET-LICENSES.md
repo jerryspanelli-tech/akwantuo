@@ -1,7 +1,10 @@
-# Character model credits
+# Character model and animation credits
 
-The male and female GLB source models in this directory were copied from the human model assets in [Mesh2Motion/mesh2motion-app](https://github.com/Mesh2Motion/mesh2motion-app), specifically `static/assets/human/model.glb` and `static/assets/human/variations/mannequin-female.glb`.
+The male and female player models and the shared idle/walk animation clips were copied from [Mesh2Motion/mesh2motion-app](https://github.com/Mesh2Motion/mesh2motion-app):
 
-The source repository's `LICENSE-CC0.MD` dedicates its 3D models, rigs and animations to CC0 1.0 Universal. The source credits Quaternius for the base human model, rig and animations. These assets may be used and modified commercially under CC0.
+- Male model: `static/assets/human/variations/psx-28-hm.glb`
+- Female model: `static/assets/human/variations/psx-28-female-hm.glb`
+- Idle animation: `static/assets/human/animations/idle-a.glb`
+- Walk animation: `static/assets/human/animations/walk.glb`
 
-Source license: https://github.com/Mesh2Motion/mesh2motion-app/blob/main/LICENSE-CC0.MD
+The source repository's [LICENSE-CC0.MD](https://github.com/Mesh2Motion/mesh2motion-app/blob/main/LICENSE-CC0.MD) dedicates its 3D models, rigs and animations to CC0 1.0 Universal. Its contributor credits identify Quaternius as the source of the base human model, rig and animations. The assets may be used and modified commercially under CC0.
