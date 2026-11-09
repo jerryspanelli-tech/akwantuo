@@ -285,14 +285,18 @@ function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
         imported.animationGroups.forEach((group) => group.dispose());
         return;
       }
+      // Keep the previous model visible until the replacement has loaded.
+      // Dispose its rig and meshes only after the new GLB is ready.
+      for (const group of locomotionGroups) group.stop();
+      for (const group of locomotionGroups) group.dispose();
+      for (const mesh of activeModelMeshes) mesh.dispose(false, true);
+      activeModelMeshes = [];
       for (const mesh of imported.meshes) {
         if (!mesh.parent) mesh.parent = root;
-      }
-      imported.meshes.forEach((mesh) => {
         mesh.isPickable = false;
         mesh.receiveShadows = true;
         activeModelMeshes.push(mesh);
-      });
+      }
       fallbackMeshes.forEach((mesh) => mesh.setEnabled(false));
       fallbackPivots.forEach((pivot) => pivot.setEnabled(false));
       locomotionGroups = imported.animationGroups;
@@ -313,7 +317,7 @@ function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
   const originalApplyAppearance = applyAppearance;
   const applyModelAppearance = (appearance: CharacterAppearance): void => {
     originalApplyAppearance(appearance);
-    const expected = appearance.presentation === "feminine" ? "mh_3183.glb" : "mh_3427.glb";
+    const expected = appearance.presentation === "feminine" ? "akwantuo-female.glb" : "akwantuo-male.glb";
     if (document.documentElement.dataset.akwantuoCharacterModel !== expected) void loadCharacterModel(appearance);
   };
   return { root, leftArm, rightArm, leftLeg, rightLeg, applyAppearance: applyModelAppearance, setMoving };
