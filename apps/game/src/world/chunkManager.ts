@@ -189,7 +189,9 @@ export class WorldChunkManager {
         }
       }
     }
-    return result;
+    return new Map([...result.entries()].sort((a, b) =>
+      distanceSquaredToBounds(position, a[1].bounds) - distanceSquaredToBounds(position, b[1].bounds)
+    ));
   }
 
   private pumpQueue(): void {
