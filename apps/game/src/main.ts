@@ -46,6 +46,25 @@ import { AKWANTUO_RETAIL_PRODUCTS, isAkwantuoRetailCatalogueValid } from "./worl
 import { AKWANTUO_PRIVATE_ISLAND, PRIVATE_ISLAND_WATERCRAFT, createAkwantuoPrivateIsland, isPrivateIslandCatalogueValid } from "./world/privateIsland";
 import { getAkwantuoSession, loadPlayerProfile, savePlayerProfile, signInAkwantuo, signOutAkwantuo, signUpAkwantuo, loadEconomyState, loadShopProducts, purchaseShopItems, purchaseGameAsset, type AkwantuoSession } from "./services/supabase";
 
+// Keep the active Babylon instance at module scope so Vite HMR can release
+// its WebGL context before this module is replaced during development.
+let activeEngine: Engine | null = null;
+let activeScene: Scene | null = null;
+
+function disposeActiveGame(): void {
+  activeEngine?.stopRenderLoop();
+  activeScene?.dispose();
+  activeScene = null;
+  activeEngine?.dispose();
+  activeEngine = null;
+}
+
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    disposeActiveGame();
+  });
+}
+
 const bootScreen = document.querySelector<HTMLElement>("#boot-screen");
 const gameShell = document.querySelector<HTMLElement>("#game-shell");
 const bootStatus = document.querySelector<HTMLElement>("#boot-status");
@@ -473,6 +492,8 @@ function sampleRouteAtDistance(
 }
 
 async function start(): Promise<void> {
+  // A second start must not leave an older WebGL context running.
+  disposeActiveGame();
   if (!canvas || !bootScreen || !gameShell || !bootStatus) {
     throw new Error("The game startup interface could not be found.");
   }
@@ -536,8 +557,10 @@ async function start(): Promise<void> {
     document.documentElement.dataset.akwantuoWebglInitError = detail.slice(0, 240);
     throw new Error("Babylon could not create a WebGL rendering context: " + detail);
   }
+  activeEngine = engine;
   engine.resize();
   const scene = new Scene(engine);
+  activeScene = scene;
   const solidAreas = createPreviewWorld(scene, { includeGround: false });
   const interiorRooms = createInteriorRooms(scene);
   document.documentElement.dataset.akwantuoInteriorRoomCount = String(interiorRooms.length);
