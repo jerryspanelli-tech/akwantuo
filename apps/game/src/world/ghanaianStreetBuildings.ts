@@ -137,13 +137,13 @@ function addSign(scene: Scene, building: DistrictBuilding, faceX: number, y: num
   sign.isPickable = false;
 }
 
-export function createGhanaianStreetBuildings(scene: Scene, bounds?: ChunkGenerationBounds): {
+export function createGhanaianStreetBuildings(scene: Scene, bounds?: ChunkGenerationBounds, buildingIds?: ReadonlySet<string>): {
   buildings: readonly DistrictBuilding[];
   solidAreas: SolidArea[];
 } {
   const solidAreas: SolidArea[] = [];
   const selectedBuildings = bounds
-    ? DISTRICT_BUILDINGS.filter((building) => buildingIntersectsChunk(building, bounds))
+    ? DISTRICT_BUILDINGS.filter((building) => buildingIntersectsChunk(building, bounds) && (!buildingIds || buildingIds.has(building.id)))
     : DISTRICT_BUILDINGS;
   for (const building of selectedBuildings) {
     const palette = PALETTES[building.exteriorStyle];
