@@ -11,6 +11,7 @@ import {
  * silhouettes. These are scenery meshes, not surveyed landmark coordinates.
  */
 export function createGreaterAccraWorldDetail(scene: Scene): void {
+  const firstNewMeshIndex = scene.meshes.length;
   const trunk = new StandardMaterial("ghana-world-tree-trunk", scene);
   trunk.diffuseColor = new Color3(0.29, 0.18, 0.1);
   const leaf = new StandardMaterial("ghana-world-tree-leaf", scene);
@@ -145,4 +146,13 @@ export function createGreaterAccraWorldDetail(scene: Scene): void {
     seat.material = dryLeaf;
     seat.isPickable = false;
   }
+  // Trees, palms, lighthouse and waterfront props are static scenery.
+  // Freeze their transforms and shared materials after construction.
+  const staticMaterials = new Set<StandardMaterial>();
+  for (const mesh of scene.meshes.slice(firstNewMeshIndex)) {
+    mesh.freezeWorldMatrix();
+    if (mesh.material instanceof StandardMaterial) staticMaterials.add(mesh.material);
+  }
+  for (const material of staticMaterials) material.freeze();
+
 }
