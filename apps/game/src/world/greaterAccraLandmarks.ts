@@ -76,26 +76,32 @@ function addRoad(
   band(id + "-sidewalk-east", -6.05, -4.25, sidewalk);
   band(id + "-drain-east", -6.5, -6.05, drain);
 
-  // Broken centre lines follow the road centreline and reuse the main-road marking colour.
-  for (let i = 0; i < points.length - 1; i += 1) {
-    const a = points[i], b = points[i + 1];
-    const length = Math.hypot(b.x - a.x, b.z - a.z);
-    const angle = Math.atan2(b.x - a.x, b.z - a.z);
-    const dashCount = Math.max(1, Math.floor(length / 26));
-    for (let dash = 0; dash < dashCount; dash += 2) {
-      const t = (dash + 0.5) / dashCount;
-      const x = a.x + (b.x - a.x) * t;
-      const z = a.z + (b.z - a.z) * t;
-      const mark = MeshBuilder.CreateBox(id + "-centre-dash-" + i + "-" + dash, {
-        width: 0.16, height: 0.025, depth: Math.min(5.5, length / dashCount * 0.58)
-      }, scene);
-      mark.position.set(x, 0.075, z);
-      mark.rotation.y = angle;
-      mark.material = markings;
-      mark.isPickable = false;
-      mark.checkCollisions = false;
-    }
+  // Use the same continuous edge/centre paint colour as the main road marking system.
+  const edgeMarkings: Vector3[][] = [];
+  for (const offset of [0, 3.25 * scale, -3.25 * scale]) {
+    const line = points.map((point, index) => {
+      const before = points[Math.max(0, index - 1)];
+      const after = points[Math.min(points.length - 1, index + 1)];
+      const dx = after.x - before.x;
+      const dz = after.z - before.z;
+      const length = Math.hypot(dx, dz) || 1;
+      return new Vector3(
+        point.x + (dz / length) * offset,
+        0.085,
+        point.z - (dx / length) * offset
+      );
+    });
+    edgeMarkings.push(line);
   }
+  const paint = MeshBuilder.CreateLineSystem(id + "-road-markings", {
+    lines: edgeMarkings,
+    updatable: false
+  }, scene);
+  paint.color = new Color3(0.78, 0.8, 0.77);
+  paint.alpha = 1;
+  paint.isPickable = false;
+  paint.checkCollisions = false;
+  paint.renderingGroupId = 1;
 }
 
 function createVillaggio(scene: Scene, solids: SolidArea[]): void {
