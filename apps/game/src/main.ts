@@ -496,15 +496,47 @@ async function start(): Promise<void> {
   document.documentElement.dataset.akwantuoStage6Checks = "passed";
   document.documentElement.dataset.akwantuoBuildingInteriorLinkCount = String(DISTRICT_BUILDINGS.filter((building) => building.interiorId).length);
 
-  bootStatus.textContent = "Loading the world engine…";
-  await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+  bootStatus.textContent = "Preparing the 3D display…";
 
-  const engine = new Engine(canvas, true, {
-    preserveDrawingBuffer: false,
-    stencil: true,
-    antialias: true,
-    powerPreference: "high-performance"
-  });
+  // The game shell starts hidden behind the boot screen. Give the canvas a real
+  // layout box before Babylon creates its rendering engine; some mobile browsers
+  // initialise a zero-sized drawing buffer when the parent is display:none.
+  gameShell.hidden = false;
+  gameShell.classList.remove("is-hidden");
+  const waitForCanvasLayout = async (): Promise<DOMRect> => {
+    let bounds = canvas.getBoundingClientRect();
+    for (let attempt = 0; attempt < 12 && (bounds.width < 2 || bounds.height < 2); attempt += 1) {
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      bounds = canvas.getBoundingClientRect();
+    }
+    return bounds;
+  };
+  const canvasBounds = await waitForCanvasLayout();
+  document.documentElement.dataset.akwantuoCanvasSize =
+    Math.round(canvasBounds.width) + "x" + Math.round(canvasBounds.height);
+  if (canvasBounds.width < 2 || canvasBounds.height < 2) {
+    throw new Error("The 3D canvas has no visible layout size (" +
+      Math.round(canvasBounds.width) + "x" + Math.round(canvasBounds.height) +
+      "). The game display did not finish mounting.");
+  }
+
+  bootStatus.textContent = "Starting the 3D world…";
+  let engine: Engine;
+  try {
+    // Mobile GPUs are more reliable with antialiasing disabled. Babylon still
+    // selects WebGL2/WebGL1 as supported by the device.
+    engine = new Engine(canvas, true, {
+      preserveDrawingBuffer: false,
+      stencil: true,
+      antialias: false,
+      powerPreference: "low-power"
+    });
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    document.documentElement.dataset.akwantuoWebglInitError = detail.slice(0, 240);
+    throw new Error("Babylon could not create a WebGL rendering context: " + detail);
+  }
+  engine.resize();
   const scene = new Scene(engine);
   const solidAreas = createPreviewWorld(scene, { includeGround: false });
   const interiorRooms = createInteriorRooms(scene);
@@ -1768,10 +1800,11 @@ async function start(): Promise<void> {
 }
 
 start().catch((error: unknown) => {
+  const detail = error instanceof Error ? error.message : String(error);
   console.error("AKWANTUO startup failed at " + startupHandoffStage + ":", error);
   document.documentElement.dataset.startupHandoffStage = startupHandoffStage;
-  document.documentElement.dataset.startupHandoffError = error instanceof Error ? error.message : String(error);
+  document.documentElement.dataset.startupHandoffError = detail.slice(0, 500);
   if (bootStatus) {
-    bootStatus.textContent = "Unable to start the 3D preview. Please refresh and try again.";
+    bootStatus.textContent = "3D startup failed (" + startupHandoffStage + "): " + detail;
   }
 });
