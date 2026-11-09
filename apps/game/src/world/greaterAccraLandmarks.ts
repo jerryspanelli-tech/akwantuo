@@ -1,6 +1,7 @@
 import {
   Color3,
   MeshBuilder,
+  Material,
   Scene,
   StandardMaterial,
   Vector3
@@ -310,6 +311,7 @@ function createNationalTheatre(scene: Scene, solids: SolidArea[]): void {
 }
 
 export function createGreaterAccraLandmarks(scene: Scene): LandmarkReport {
+  const firstNewMeshIndex = scene.meshes.length;
   const solidAreas: SolidArea[] = [];
   createVillaggio(scene, solidAreas);
   createSignature(scene, solidAreas);
@@ -396,6 +398,24 @@ export function createGreaterAccraLandmarks(scene: Scene): LandmarkReport {
   addRoad(scene, "national-theatre-access", [
     { x: -450, z: 450 }, { x: -260, z: 100 }, { x: -150, z: -160 }, { x: -80, z: -420 }
   ], 12);
+
+  // All geometry authored in this module is fixed scenery, so freeze its
+  // world matrices once instead of recalculating static transforms each frame.
+  const staticMeshes = scene.meshes.slice(firstNewMeshIndex);
+  const staticMaterials = new Set<Material>();
+  for (const mesh of staticMeshes) {
+    mesh.freezeWorldMatrix();
+    if (mesh.material) staticMaterials.add(mesh.material);
+  }
+  // These shared road/landmark materials are colour-only and do not animate.
+  for (const material of staticMaterials) {
+    if (material.name.startsWith("akwantuo-") || material.name.startsWith("villaggio-") ||
+        material.name.startsWith("the-signature-") || material.name.startsWith("accra-") ||
+        material.name.startsWith("kotoka-") || material.name.startsWith("university-") ||
+        material.name.startsWith("kwame-") || material.name.startsWith("ghana-")) {
+      material.freeze();
+    }
+  }
 
   return { landmarkCount: 8, localRoadCount: 35, solidAreas };
 }
