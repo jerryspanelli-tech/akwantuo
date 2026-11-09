@@ -45,9 +45,9 @@ function addRoad(
   const drain = sharedMaterial(scene, "akwantuo-road-drain", new Color3(0.075, 0.09, 0.085));
   const markings = sharedMaterial(scene, "akwantuo-road-markings", new Color3(0.91, 0.86, 0.68));
 
-  const ribbon = (name: string, halfWidth: number, y: number, material: StandardMaterial): void => {
-    const left: Vector3[] = [];
-    const right: Vector3[] = [];
+  const band = (name: string, innerOffset: number, outerOffset: number, material: StandardMaterial): void => {
+    const inner: Vector3[] = [];
+    const outer: Vector3[] = [];
     points.forEach((point, index) => {
       const before = points[Math.max(0, index - 1)];
       const after = points[Math.min(points.length - 1, index + 1)];
@@ -56,20 +56,24 @@ function addRoad(
       const length = Math.hypot(dx, dz) || 1;
       const nx = dz / length;
       const nz = -dx / length;
-      left.push(new Vector3(point.x + nx * halfWidth, y, point.z + nz * halfWidth));
-      right.push(new Vector3(point.x - nx * halfWidth, y, point.z - nz * halfWidth));
+      inner.push(new Vector3(point.x + nx * innerOffset, 0.05, point.z + nz * innerOffset));
+      outer.push(new Vector3(point.x + nx * outerOffset, 0.05, point.z + nz * outerOffset));
     });
-    const mesh = MeshBuilder.CreateRibbon(name, { pathArray: [left, right], sideOrientation: Mesh.DOUBLESIDE }, scene);
+    const mesh = MeshBuilder.CreateRibbon(name, { pathArray: [inner, outer], sideOrientation: Mesh.DOUBLESIDE }, scene);
     mesh.material = material;
     mesh.isPickable = false;
     mesh.checkCollisions = false;
   };
 
-  ribbon(id + "-drain-west", width / 2 + 3.0, 0.018, drain);
-  ribbon(id + "-walk-west", width / 2 + 1.1, 0.032, sidewalk);
-  ribbon(id + "-asphalt", width / 2, 0.05, asphalt);
-  ribbon(id + "-walk-east", width / 2 + 4.9, 0.032, sidewalk);
-  ribbon(id + "-drain-east", width / 2 + 6.8, 0.018, drain);
+  // Match the existing local-street cross-section: 6.5m carriageway,
+  // 0.5m shoulders, 1.8m sidewalks and 0.45m drains on both sides.
+  band(id + "-asphalt", -3.75, 3.75, asphalt);
+  band(id + "-shoulder-west", 3.75, 4.25, asphalt);
+  band(id + "-sidewalk-west", 4.25, 6.05, sidewalk);
+  band(id + "-drain-west", 6.05, 6.5, drain);
+  band(id + "-shoulder-east", -4.25, -3.75, asphalt);
+  band(id + "-sidewalk-east", -6.05, -4.25, sidewalk);
+  band(id + "-drain-east", -6.5, -6.05, drain);
 
   // Broken centre lines follow the road centreline and reuse the main-road marking colour.
   for (let i = 0; i < points.length - 1; i += 1) {
