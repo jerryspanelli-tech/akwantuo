@@ -6,28 +6,67 @@
   "muscle": 0.52,
   "weight": 0.48,
   "height": 0.53,
-  "proportions": 0.75,
-  "breastSize": 0.55,
+  "proportions": 0.78,
   "african": 1,
   "asian": 0,
   "caucasian": 0,
+  "breastSize": 0.55,
+  "breastFirmness": 0.55,
+  "modifiers": {},
+  "skin": "auto",
+  "skinTint": "#ffffff",
   "eyes": "blackbrown",
+  "eyebrows": "eyebrow010",
+  "eyelashes": "eyelashes02",
   "hair": "box_braids",
+  "hairTint": "#ffffff",
   "hairColor": "#17100c",
-  "outfit": "female_sportsuit01",
-  "shoes": "shoes03",
+  "facialHair": "none",
+  "beardColor": "#17100c",
+  "tattoos": [],
+  "tattooInk": "#1c2128",
+  "earrings": "small_hoops",
+  "earringMetal": "gold",
+  "outfit": "none",
+  "top": "long_tunic",
+  "jacket": "none",
+  "bottom": "wrapper_long",
+  "underwear": true,
+  "accessories": [
+    "waist_sash"
+  ],
   "garmentStyles": {
-    "female_sportsuit01": {
+    "long_tunic": {
       "pattern": "ankara",
       "color": "#153b59",
       "color2": "#d7ad38"
+    },
+    "wrapper_long": {
+      "pattern": "ankara",
+      "color": "#153b59",
+      "color2": "#d7ad38"
+    },
+    "waist_sash": {
+      "pattern": "kente",
+      "color": "#6f1725",
+      "color2": "#d7ad38"
     }
   },
-  "detail": "medium",
+  "shoes": "shoes03",
+  "hat": "none",
+  "outfitTint": "#ffffff",
+  "detail": "high",
   "rig": "game",
   "faceBones": true,
   "restPose": "A",
   "animations": true,
+  "weapon": "none",
+  "carry": "none",
+  "vehicle": "none",
+  "vehicleStyle": {},
+  "expression": "neutral",
   "faceShapes": true,
-  "speechShapes": true
+  "speechShapes": true,
+  "teeth": "teeth_base",
+  "tongue": true
 }
