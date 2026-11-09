@@ -379,35 +379,60 @@ function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
 function installTouchControls(): void {
   if (!joystick || !joystickStick) return;
 
-  const resetStick = (): void => {
-    touchInput.x = 0;
-    touchInput.z = 0;
-    joystickStick.style.transform = "translate(0, 0)";
-  };
+  // Read layout once at the start of a touch. Pointer-move events only store
+  // coordinates; visual/input updates are coalesced to one animation frame.
+  let centreX = 0;
+  let centreY = 0;
+  let maxTravel = 1;
+  let latestX = 0;
+  let latestY = 0;
+  let framePending = false;
+  let activePointerId: number | null = null;
 
-  const updateStick = (event: PointerEvent): void => {
-    const bounds = joystick.getBoundingClientRect();
-    const centreX = bounds.left + bounds.width / 2;
-    const centreY = bounds.top + bounds.height / 2;
-    const max = bounds.width * 0.31;
-    const dx = event.clientX - centreX;
-    const dy = event.clientY - centreY;
+  const applyLatestPosition = (): void => {
+    framePending = false;
+    if (activePointerId === null) return;
+
+    const dx = latestX - centreX;
+    const dy = latestY - centreY;
     const distance = Math.hypot(dx, dy);
-    const scale = distance > max ? max / distance : 1;
+    const scale = distance > maxTravel ? maxTravel / distance : 1;
     const x = dx * scale;
     const y = dy * scale;
-    touchInput.x = x / max;
-    touchInput.z = -y / max;
-    joystickStick.style.transform = `translate(${x}px, ${y}px)`;
+
+    touchInput.x = x / maxTravel;
+    touchInput.z = -y / maxTravel;
+    joystickStick.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+  };
+
+  const queuePosition = (event: PointerEvent): void => {
+    latestX = event.clientX;
+    latestY = event.clientY;
+    if (framePending) return;
+    framePending = true;
+    requestAnimationFrame(applyLatestPosition);
+  };
+
+  const resetStick = (): void => {
+    activePointerId = null;
+    touchInput.x = 0;
+    touchInput.z = 0;
+    joystickStick.style.transform = "translate3d(0, 0, 0)";
   };
 
   joystick.addEventListener("pointerdown", (event: PointerEvent) => {
     event.preventDefault();
+    activePointerId = event.pointerId;
+    const bounds = joystick.getBoundingClientRect();
+    centreX = bounds.left + bounds.width / 2;
+    centreY = bounds.top + bounds.height / 2;
+    maxTravel = Math.max(1, bounds.width * 0.31);
     joystick.setPointerCapture(event.pointerId);
-    updateStick(event);
+    queuePosition(event);
   });
+
   joystick.addEventListener("pointermove", (event: PointerEvent) => {
-    if (joystick.hasPointerCapture(event.pointerId)) updateStick(event);
+    if (event.pointerId === activePointerId) queuePosition(event);
   });
   joystick.addEventListener("pointerup", resetStick);
   joystick.addEventListener("pointercancel", resetStick);
