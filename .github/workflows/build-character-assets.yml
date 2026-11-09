@@ -35,23 +35,19 @@ jobs:
           node-version: 22
 
       - name: Get Ara 3D Gen
-        run: git clone --depth 1 https://github.com/olatunde85/3d-gen.git /tmp/ara3dgen
+        run: git clone --depth 1 https://github.com/olatunde85/3d-gen.git character-build/generator
 
       - name: Install character generator dependencies
-        working-directory: /tmp/ara3dgen
+        working-directory: character-build/generator
         run: npm ci --no-audit --no-fund
 
       - name: Prepare CC0 character data
-        working-directory: /tmp/ara3dgen
+        working-directory: character-build/generator
         run: npm run setup-assets
 
-      - name: Export the male character
-        working-directory: /tmp/ara3dgen
-        run: npm run export -- --params "$GITHUB_WORKSPACE/character-build/male.params.json" --formats glb --out "$GITHUB_WORKSPACE/out/male"
-
-      - name: Export the female character
-        working-directory: /tmp/ara3dgen
-        run: npm run export -- --params "$GITHUB_WORKSPACE/character-build/female.params.json" --formats glb --out "$GITHUB_WORKSPACE/out/female"
+      - name: Export both Ghanaian characters with embedded Idle and Walk clips
+        working-directory: character-build/generator
+        run: npx tsx ../export-characters.ts
 
       - name: Validate both GLB files and embedded animation clips
         env:
@@ -61,8 +57,8 @@ jobs:
           import fs from 'node:fs';
           import path from 'node:path';
           const files = [
-            ['male', path.join(process.env.WORKSPACE, 'out/male/Akwantuo_Ghanaian_Male.glb')],
-            ['female', path.join(process.env.WORKSPACE, 'out/female/Akwantuo_Ghanaian_Female.glb')],
+            ['male', path.join(process.env.WORKSPACE, 'apps/game/public/assets/characters/akwantuo-male.glb')],
+            ['female', path.join(process.env.WORKSPACE, 'apps/game/public/assets/characters/akwantuo-female.glb')],
           ];
           for (const [label, file] of files) {
             if (!fs.existsSync(file)) throw new Error(label + ': expected export not found: ' + file);
@@ -80,11 +76,9 @@ jobs:
           }
           NODE
 
-      - name: Install generated characters in AKWANTUO
+      - name: Record character asset provenance
         run: |
           mkdir -p apps/game/public/assets/characters
-          cp out/male/Akwantuo_Ghanaian_Male.glb apps/game/public/assets/characters/akwantuo-male.glb
-          cp out/female/Akwantuo_Ghanaian_Female.glb apps/game/public/assets/characters/akwantuo-female.glb
           cat > apps/game/public/assets/characters/README.md <<'EOF'
           # AKWANTUO player character assets
 
