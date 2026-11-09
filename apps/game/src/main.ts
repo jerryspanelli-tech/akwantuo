@@ -15,6 +15,8 @@ import { COMPLEXIONS, DEFAULT_APPEARANCE, OUTFITS, resolveAppearance, type Chara
 import { loadAppearance, saveAppearance } from "./character/appearanceStore";
 import { getHairstyle } from "./character/hairstyles";
 import { WORLD_CONFIG } from "./world/config";
+import { WorldChunkManager } from "./world/chunkManager";
+import { ChunkRegistry } from "./world/chunkRegistry";
 import { clampToWorld, isBlocked } from "./world/collision";
 import { createPreviewWorld } from "./world/previewWorld";
 import { createGreaterAccraPlayableWorld } from "./world/greaterAccraPlayableWorld";
@@ -50,12 +52,15 @@ import { getAkwantuoSession, loadPlayerProfile, savePlayerProfile, signInAkwantu
 // its WebGL context before this module is replaced during development.
 let activeEngine: Engine | null = null;
 let activeScene: Scene | null = null;
+let activeChunkManager: WorldChunkManager | null = null;
 // Each start owns a generation. HMR disposal or a newer start invalidates
 // pending asynchronous work before it can create or wire stale game state.
 let startupGeneration = 0;
 
 function disposeActiveGame(): void {
   startupGeneration += 1;
+  activeChunkManager?.dispose();
+  activeChunkManager = null;
   activeEngine?.stopRenderLoop();
   activeScene?.dispose();
   activeScene = null;
@@ -573,7 +578,46 @@ async function start(): Promise<void> {
   };
 
   bootStatus.textContent = "Preparing Accra streets…";
-  const solidAreas = createPreviewWorld(scene, { includeGround: false });
+  const solidAreas = createPreviewWorld(scene, { includeGround: false, includeBuildings: false });
+  const chunkRegistry = new ChunkRegistry();
+  const chunkManager = new WorldChunkManager({
+    chunkSize: 600,
+    loadRadius: 850,
+    unloadRadius: 1250,
+    maxConcurrentLoads: 1,
+    loadChunk: (key, bounds) => {
+      const result = chunkRegistry.loadChunk(scene, key, bounds);
+      const chunkSolidAreas = result.solidAreas;
+      solidAreas.push(...chunkSolidAreas);
+      return {
+        dispose(): void {
+          for (const area of chunkSolidAreas) {
+            const index = solidAreas.indexOf(area);
+            if (index >= 0) solidAreas.splice(index, 1);
+          }
+          result.handle.dispose();
+        }
+      };
+    },
+    onChunkLoaded: (key) => {
+      document.documentElement.dataset.akwantuoLoadedChunks = chunkManager.getLoadedChunkKeys().concat(key).join(",");
+      document.documentElement.dataset.akwantuoLastChunkLoaded = key;
+    },
+    onChunkUnloaded: (key) => {
+      document.documentElement.dataset.akwantuoLastChunkUnloaded = key;
+      document.documentElement.dataset.akwantuoLoadedChunks = chunkManager.getLoadedChunkKeys().filter((item) => item !== key).join(",");
+    },
+    onChunkError: (key, error) => {
+      document.documentElement.dataset.akwantuoChunkError = key + ": " +
+        (error instanceof Error ? error.message : String(error)).slice(0, 180);
+    }
+  });
+  activeChunkManager = chunkManager;
+  // Spawn (1100, -1250) maps to chunk 1:-3. Request it before any
+  // neighbouring chunk so the player's immediate buildings/collisions appear first.
+  chunkManager.update(WORLD_CONFIG.spawn);
+  document.documentElement.dataset.akwantuoSpawnChunk = "1:-3";
+  document.documentElement.dataset.akwantuoChunkGenerators = chunkRegistry.getGeneratorIds().join(",");
   if (!(await yieldToStartupFrame())) return;
   bootStatus.textContent = "Building interiors…";
   const interiorRooms = createInteriorRooms(scene);
@@ -1149,11 +1193,19 @@ async function start(): Promise<void> {
   let onGround = true;
   let walkClock = 0;
 
+  let chunkUpdateElapsed = 0;
   const render = (): void => {
     const rawDelta = engine.getDeltaTime() / 1000;
     const delta = Math.min(rawDelta, 0.05);
 
     if (hasEnteredWorld) {
+      chunkUpdateElapsed += delta;
+      if (chunkUpdateElapsed >= 0.25) {
+        chunkUpdateElapsed = 0;
+        chunkManager.update({ x: player.root.position.x, z: player.root.position.z });
+        document.documentElement.dataset.akwantuoLoadedChunks = chunkManager.getLoadedChunkKeys().join(",");
+        document.documentElement.dataset.akwantuoPendingChunks = chunkManager.getPendingChunkKeys().join(",");
+      }
       document.documentElement.dataset.transportRenderFrame = String(
         Number(document.documentElement.dataset.transportRenderFrame ?? 0) + 1
       );
@@ -1277,7 +1329,7 @@ async function start(): Promise<void> {
           showNotice("You stepped back outside.");
         } else if (interactionState.mode === "on_foot" && passengerState.mode === "not_riding" &&
           DISTRICT_BUILDINGS.some((building) => {
-            if (!building.interiorId) return false;
+            if (!building.interiorId || !scene.getMeshByName("building-shell-" + building.id)) return false;
             const frontX = building.side === "west"
               ? building.x + building.width / 2
               : building.x - building.width / 2;
@@ -1285,7 +1337,7 @@ async function start(): Promise<void> {
             return Math.hypot(player.root.position.x - exitX, player.root.position.z - building.z) <= 3.5;
           })) {
           const nearbyBuilding = DISTRICT_BUILDINGS
-            .filter((building) => building.interiorId)
+            .filter((building) => building.interiorId && scene.getMeshByName("building-shell-" + building.id))
             .map((building) => {
               const frontX = building.side === "west"
                 ? building.x + building.width / 2
