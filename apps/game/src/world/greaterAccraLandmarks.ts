@@ -168,10 +168,93 @@ function createSignature(scene: Scene, solids: SolidArea[]): void {
   solids.push({ x, z, halfWidth: 59, halfDepth: 43 });
 }
 
+function createAccraMall(scene: Scene, solids: SolidArea[]): void {
+  const x = 3290, z = 2240;
+  const concrete = sharedMaterial(scene, "akwantuo-accra-mall-concrete", new Color3(0.69, 0.7, 0.67));
+  const glass = sharedMaterial(scene, "akwantuo-accra-mall-glass", new Color3(0.22, 0.38, 0.43));
+  const roof = sharedMaterial(scene, "akwantuo-accra-mall-roof", new Color3(0.26, 0.29, 0.3));
+  const brand = sharedMaterial(scene, "akwantuo-accra-mall-brand", new Color3(0.75, 0.18, 0.16));
+  box(scene, "accra-mall-main-volume", 132, 19, 78, x, 9.5, z, concrete);
+  box(scene, "accra-mall-glass-front", 110, 11, 0.8, x, 7.2, z - 39.5, glass);
+  box(scene, "accra-mall-roof", 136, 1.2, 82, x, 19.6, z, roof);
+  box(scene, "accra-mall-sign-band", 54, 3.2, 1.0, x, 17.2, z - 40.2, brand);
+  box(scene, "accra-mall-parking-forecourt", 170, 0.12, 54, x, 0.04, z - 68, concrete);
+  solids.push({ x, z, halfWidth: 69, halfDepth: 42 });
+}
+
+function createKotokaAirport(scene: Scene, solids: SolidArea[]): void {
+  const x = 1700, z = 950;
+  const terminal = sharedMaterial(scene, "akwantuo-kotoka-terminal", new Color3(0.72, 0.75, 0.73));
+  const glass = sharedMaterial(scene, "akwantuo-kotoka-glass", new Color3(0.2, 0.39, 0.46));
+  const roof = sharedMaterial(scene, "akwantuo-kotoka-roof", new Color3(0.37, 0.42, 0.43));
+  const runway = sharedMaterial(scene, "akwantuo-kotoka-runway", new Color3(0.13, 0.15, 0.16));
+  box(scene, "kotoka-terminal-main", 150, 15, 43, x, 7.5, z, terminal);
+  box(scene, "kotoka-terminal-glass", 132, 8, 0.8, x, 6.8, z - 22, glass);
+  box(scene, "kotoka-terminal-roof", 158, 1.5, 48, x, 15.4, z, roof);
+  box(scene, "kotoka-airside-runway", 470, 0.1, 32, x + 190, 0.02, z + 100, runway);
+  const runwayMark = sharedMaterial(scene, "akwantuo-kotoka-runway-marking", new Color3(0.9, 0.9, 0.84));
+  for (let i = 0; i < 13; i += 1) {
+    box(scene, "kotoka-runway-centre-mark-" + i, 13, 0.035, 0.45,
+      x + 10 + i * 28, 0.09, z + 100, runwayMark);
+  }
+  solids.push({ x, z, halfWidth: 80, halfDepth: 27 });
+}
+
+function createAccraSportsStadium(scene: Scene, solids: SolidArea[]): void {
+  const x = -150, z = -820;
+  const concrete = sharedMaterial(scene, "akwantuo-stadium-concrete", new Color3(0.67, 0.68, 0.64));
+  const roof = sharedMaterial(scene, "akwantuo-stadium-roof", new Color3(0.3, 0.37, 0.39));
+  const pitch = sharedMaterial(scene, "akwantuo-stadium-pitch", new Color3(0.18, 0.39, 0.22));
+  const track = sharedMaterial(scene, "akwantuo-stadium-track", new Color3(0.58, 0.28, 0.19));
+  const seating = MeshBuilder.CreateCylinder("accra-sports-stadium-bowl", {
+    height: 18, diameterTop: 142, diameterBottom: 178, tessellation: 48
+  }, scene);
+  seating.position.set(x, 8, z);
+  seating.scaling.z = 0.72;
+  seating.material = concrete;
+  seating.isPickable = false;
+  const roofRing = MeshBuilder.CreateTorus("accra-sports-stadium-roof-ring", {
+    diameter: 148, thickness: 5, tessellation: 48
+  }, scene);
+  roofRing.position.set(x, 18, z);
+  roofRing.scaling.z = 0.72;
+  roofRing.material = roof;
+  roofRing.isPickable = false;
+  const field = MeshBuilder.CreateGround("accra-sports-stadium-field", { width: 78, height: 48 }, scene);
+  field.position.set(x, 0.06, z);
+  field.material = pitch;
+  field.isPickable = false;
+  const athletics = MeshBuilder.CreateTorus("accra-sports-stadium-track", {
+    diameter: 105, thickness: 3, tessellation: 48
+  }, scene);
+  athletics.position.set(x, 0.08, z);
+  athletics.scaling.z = 0.72;
+  athletics.material = track;
+  athletics.isPickable = false;
+  solids.push({ x, z, halfWidth: 94, halfDepth: 72 });
+}
+
+function createUniversityOfGhana(scene: Scene, solids: SolidArea[]): void {
+  const x = 3350, z = 3550;
+  const stone = sharedMaterial(scene, "akwantuo-legon-stone", new Color3(0.72, 0.66, 0.53));
+  const roof = sharedMaterial(scene, "akwantuo-legon-roof", new Color3(0.43, 0.34, 0.26));
+  const glass = sharedMaterial(scene, "akwantuo-legon-glass", new Color3(0.28, 0.42, 0.44));
+  box(scene, "university-of-ghana-main-hall", 66, 26, 46, x, 13, z, stone);
+  box(scene, "university-of-ghana-main-hall-roof", 72, 2.2, 52, x, 27, z, roof);
+  box(scene, "university-of-ghana-main-hall-tower", 15, 44, 15, x, 22, z - 20, stone);
+  box(scene, "university-of-ghana-main-hall-clock-face", 3.4, 3.4, 0.25, x, 37, z - 27.7, glass);
+  box(scene, "university-of-ghana-campus-annex", 92, 16, 32, x + 115, 8, z + 25, stone);
+  solids.push({ x, z, halfWidth: 43, halfDepth: 35 });
+}
+
 export function createGreaterAccraLandmarks(scene: Scene): LandmarkReport {
   const solidAreas: SolidArea[] = [];
   createVillaggio(scene, solidAreas);
   createSignature(scene, solidAreas);
+  createAccraMall(scene, solidAreas);
+  createKotokaAirport(scene, solidAreas);
+  createAccraSportsStadium(scene, solidAreas);
+  createUniversityOfGhana(scene, solidAreas);
 
   // Airport Residential local streets and access links, aligned with the
   // northbound side of Airport City and the Liberation Road corridor.
@@ -203,5 +286,5 @@ export function createGreaterAccraLandmarks(scene: Scene): LandmarkReport {
     { x: 3650, z: 1750 }, { x: 3480, z: 1980 }, { x: 3350, z: 2200 }, { x: 3250, z: 2460 }
   ], 11);
 
-  return { landmarkCount: 2, localRoadCount: 8, solidAreas };
+  // Links into the airport, mall, Legon and central-city street systems.\n  addRoad(scene, "kotoka-terminal-access", [\n    { x: 1050, z: 850 }, { x: 1260, z: 900 }, { x: 1480, z: 930 }, { x: 1700, z: 950 }\n  ], 14);\n  addRoad(scene, "kotoka-airport-residential-link", [\n    { x: 650, z: 1770 }, { x: 900, z: 1450 }, { x: 1250, z: 1150 }, { x: 1700, z: 950 }\n  ], 12);\n  addRoad(scene, "accra-mall-west-access", [\n    { x: 3250, z: 2460 }, { x: 3270, z: 2360 }, { x: 3290, z: 2240 }, { x: 3350, z: 2200 }\n  ], 12);\n  addRoad(scene, "legon-campus-road", [\n    { x: 3250, z: 2460 }, { x: 3280, z: 2800 }, { x: 3310, z: 3200 }, { x: 3350, z: 3550 }\n  ], 12);\n  addRoad(scene, "central-stadium-access", [\n    { x: -450, z: 450 }, { x: -330, z: 80 }, { x: -240, z: -360 }, { x: -150, z: -820 }\n  ], 12);\n\n  return { landmarkCount: 6, localRoadCount: 13, solidAreas };
 }
