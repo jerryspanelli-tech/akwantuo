@@ -254,6 +254,61 @@ function createUniversityOfGhana(scene: Scene, solids: SolidArea[]): void {
   solids.push({ x, z, halfWidth: 43, halfDepth: 35 });
 }
 
+function createKwameNkrumahMemorial(scene: Scene, solids: SolidArea[]): void {
+  const x = -760, z = 300;
+  const stone = sharedMaterial(scene, "akwantuo-nkrumah-memorial-stone", new Color3(0.34, 0.39, 0.35));
+  const roof = sharedMaterial(scene, "akwantuo-nkrumah-memorial-roof", new Color3(0.18, 0.23, 0.2));
+  const water = sharedMaterial(scene, "akwantuo-nkrumah-memorial-water", new Color3(0.12, 0.39, 0.47));
+  const gold = sharedMaterial(scene, "akwantuo-nkrumah-memorial-gold", new Color3(0.72, 0.57, 0.28));
+  const plinth = MeshBuilder.CreateCylinder("kwame-nkrumah-memorial-plinth", {
+    height: 1.4, diameter: 62, tessellation: 40
+  }, scene);
+  plinth.position.set(x, 0.7, z);
+  plinth.material = stone;
+  plinth.isPickable = false;
+  const mausoleum = MeshBuilder.CreateSphere("kwame-nkrumah-mausoleum-dome", {
+    diameter: 1, segments: 32
+  }, scene);
+  mausoleum.scaling.set(27, 13, 23);
+  mausoleum.position.set(x, 10, z);
+  mausoleum.material = roof;
+  mausoleum.isPickable = false;
+  const reflectingPool = MeshBuilder.CreateCylinder("kwame-nkrumah-memorial-reflecting-pool", {
+    height: 0.22, diameter: 82, tessellation: 40
+  }, scene);
+  reflectingPool.position.set(x, 0.08, z);
+  reflectingPool.scaling.z = 0.72;
+  reflectingPool.material = water;
+  reflectingPool.isPickable = false;
+  box(scene, "kwame-nkrumah-memorial-entrance-marker", 2.2, 15, 2.2, x, 8, z - 31, gold);
+  solids.push({ x, z, halfWidth: 48, halfDepth: 42 });
+}
+
+function createNationalTheatre(scene: Scene, solids: SolidArea[]): void {
+  const x = -80, z = -420;
+  const shell = sharedMaterial(scene, "akwantuo-national-theatre-shell", new Color3(0.78, 0.77, 0.7));
+  const glass = sharedMaterial(scene, "akwantuo-national-theatre-glass", new Color3(0.22, 0.4, 0.46));
+  const roof = sharedMaterial(scene, "akwantuo-national-theatre-roof", new Color3(0.42, 0.45, 0.43));
+  const base = MeshBuilder.CreateBox("ghana-national-theatre-base", {
+    width: 100, height: 5, depth: 72
+  }, scene);
+  base.position.set(x, 2.5, z);
+  base.material = shell;
+  base.isPickable = false;
+  const shellOne = MeshBuilder.CreateSphere("ghana-national-theatre-west-shell", { diameter: 1, segments: 24 }, scene);
+  shellOne.scaling.set(40, 17, 34);
+  shellOne.position.set(x - 24, 12, z);
+  shellOne.material = shell;
+  shellOne.isPickable = false;
+  const shellTwo = MeshBuilder.CreateSphere("ghana-national-theatre-east-shell", { diameter: 1, segments: 24 }, scene);
+  shellTwo.scaling.set(34, 15, 30);
+  shellTwo.position.set(x + 29, 11, z + 5);
+  shellTwo.material = roof;
+  shellTwo.isPickable = false;
+  box(scene, "ghana-national-theatre-glass-entrance", 42, 7, 0.6, x, 5.2, z - 36.5, glass);
+  solids.push({ x, z, halfWidth: 55, halfDepth: 42 });
+}
+
 export function createGreaterAccraLandmarks(scene: Scene): LandmarkReport {
   const solidAreas: SolidArea[] = [];
   createVillaggio(scene, solidAreas);
@@ -262,6 +317,8 @@ export function createGreaterAccraLandmarks(scene: Scene): LandmarkReport {
   createKotokaAirport(scene, solidAreas);
   createAccraSportsStadium(scene, solidAreas);
   createUniversityOfGhana(scene, solidAreas);
+  createKwameNkrumahMemorial(scene, solidAreas);
+  createNationalTheatre(scene, solidAreas);
 
   // Airport Residential local streets and access links, aligned with the
   // northbound side of Airport City and the Liberation Road corridor.
@@ -333,5 +390,12 @@ export function createGreaterAccraLandmarks(scene: Scene): LandmarkReport {
   addRoad(scene, "madina-residential-street", [{ x: 4700, z: 2050 }, { x: 5150, z: 2050 }, { x: 5600, z: 2050 }, { x: 6000, z: 2050 }], 11);
   addRoad(scene, "legon-campus-avenue", [{ x: 2800, z: 3100 }, { x: 3200, z: 3100 }, { x: 3600, z: 3100 }, { x: 3900, z: 3100 }], 12);
   addRoad(scene, "legon-residential-street", [{ x: 2800, z: 3650 }, { x: 3200, z: 3650 }, { x: 3600, z: 3650 }, { x: 3900, z: 3650 }], 11);
-  return { landmarkCount: 6, localRoadCount: 33, solidAreas };
+  addRoad(scene, "nkrumah-memorial-access", [
+    { x: -450, z: 450 }, { x: -620, z: 390 }, { x: -760, z: 300 }
+  ], 12);
+  addRoad(scene, "national-theatre-access", [
+    { x: -450, z: 450 }, { x: -260, z: 100 }, { x: -150, z: -160 }, { x: -80, z: -420 }
+  ], 12);
+
+  return { landmarkCount: 8, localRoadCount: 35, solidAreas };
 }
