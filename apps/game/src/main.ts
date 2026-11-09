@@ -261,7 +261,8 @@ function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
   // remains only as a startup fallback while the GLB downloads.
   const fallbackMeshes = root.getChildMeshes(false);
   const fallbackPivots = [leftArm, rightArm, leftLeg, rightLeg];
-  let activeModelMeshes: import("@babylonjs/core").AbstractMesh[] = [];
+  let activeModelRoots: import("@babylonjs/core").Node[] = [];
+  let activeModelSkeletons: import("@babylonjs/core").Skeleton[] = [];
   let locomotionGroups: import("@babylonjs/core").AnimationGroup[] = [];
   let currentLocomotion = "idle";
   let loadGeneration = 0;
@@ -281,7 +282,8 @@ function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
     try {
       const imported = await SceneLoader.ImportMeshAsync("", baseUrl, file, scene);
       if (generation !== loadGeneration) {
-        imported.meshes.forEach((mesh) => mesh.dispose(false, true));
+        const staleNodes = [...(imported.transformNodes ?? []), ...imported.meshes];
+        staleNodes.filter((node) => !node.parent).forEach((node) => node.dispose(false, true));
         imported.animationGroups.forEach((group) => group.dispose());
         imported.skeletons.forEach((skeleton) => skeleton.dispose());
         return;
@@ -310,8 +312,8 @@ function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
             if (cloned) retargetedGroups.push(cloned);
           }
           source.animationGroups.forEach((group) => group.dispose());
-          source.meshes.forEach((mesh) => mesh.dispose(false, true));
-          (source.transformNodes ?? []).forEach((node) => node.dispose(false, true));
+          const sourceNodes = [...(source.transformNodes ?? []), ...source.meshes];
+          sourceNodes.filter((node) => !node.parent).forEach((node) => node.dispose(false, true));
           source.skeletons.forEach((skeleton) => skeleton.dispose());
         } catch (animationError) {
           console.warn(`AKWANTUO ${spec.name} animation could not be loaded:`, animationError);
@@ -320,7 +322,8 @@ function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
 
       if (generation !== loadGeneration) {
         retargetedGroups.forEach((group) => group.dispose());
-        imported.meshes.forEach((mesh) => mesh.dispose(false, true));
+        const staleNodes = [...(imported.transformNodes ?? []), ...imported.meshes];
+        staleNodes.filter((node) => !node.parent).forEach((node) => node.dispose(false, true));
         imported.animationGroups.forEach((group) => group.dispose());
         imported.skeletons.forEach((skeleton) => skeleton.dispose());
         return;
@@ -329,14 +332,17 @@ function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
       // Keep the previous model visible until the replacement and its clips load.
       for (const group of locomotionGroups) group.stop();
       for (const group of locomotionGroups) group.dispose();
-      for (const mesh of activeModelMeshes) mesh.dispose(false, true);
-      activeModelMeshes = [];
+      activeModelSkeletons.forEach((skeleton) => skeleton.dispose());
+      activeModelRoots.forEach((node) => node.dispose(false, true));
+      activeModelRoots = [];
+      const importedNodes = [...(imported.transformNodes ?? []), ...imported.meshes];
+      activeModelRoots = importedNodes.filter((node) => !node.parent);
+      activeModelRoots.forEach((node) => { node.parent = root; });
       for (const mesh of imported.meshes) {
-        if (!mesh.parent) mesh.parent = root;
         mesh.isPickable = false;
         mesh.receiveShadows = true;
-        activeModelMeshes.push(mesh);
       }
+      activeModelSkeletons = imported.skeletons;
       fallbackMeshes.forEach((mesh) => mesh.setEnabled(false));
       fallbackPivots.forEach((pivot) => pivot.setEnabled(false));
       locomotionGroups = [...imported.animationGroups, ...retargetedGroups];
