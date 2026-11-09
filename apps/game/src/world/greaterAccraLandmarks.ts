@@ -311,94 +311,141 @@ function createNationalTheatre(scene: Scene, solids: SolidArea[]): void {
   solids.push({ x, z, halfWidth: 55, halfDepth: 42 });
 }
 
-export function createGreaterAccraLandmarks(scene: Scene): LandmarkReport {
+function yieldToNextFrame(): Promise<void> {
+  return new Promise((resolve) => requestAnimationFrame(() => resolve()));
+}
+
+export async function createGreaterAccraLandmarks(scene: Scene): Promise<LandmarkReport> {
   const firstNewMeshIndex = scene.meshes.length;
   const solidAreas: SolidArea[] = [];
   createVillaggio(scene, solidAreas);
+  await yieldToNextFrame();
   createSignature(scene, solidAreas);
+  await yieldToNextFrame();
   createAccraMall(scene, solidAreas);
+  await yieldToNextFrame();
   createKotokaAirport(scene, solidAreas);
+  await yieldToNextFrame();
   createAccraSportsStadium(scene, solidAreas);
+  await yieldToNextFrame();
   createUniversityOfGhana(scene, solidAreas);
+  await yieldToNextFrame();
   createKwameNkrumahMemorial(scene, solidAreas);
+  await yieldToNextFrame();
   createNationalTheatre(scene, solidAreas);
+  await yieldToNextFrame();
 
   // Airport Residential local streets and access links, aligned with the
   // northbound side of Airport City and the Liberation Road corridor.
   addRoad(scene, "airport-residential-drive", [
     { x: 250, z: 1030 }, { x: 340, z: 1260 }, { x: 470, z: 1510 }, { x: 650, z: 1770 }
   ], 13);
+  await yieldToNextFrame();
   addRoad(scene, "north-airport-road", [
     { x: -250, z: 1260 }, { x: 80, z: 1430 }, { x: 420, z: 1580 }, { x: 650, z: 1770 }
   ], 12);
+  await yieldToNextFrame();
   addRoad(scene, "airport-residential-loop-east", [
     { x: 470, z: 1510 }, { x: 880, z: 1630 }, { x: 1180, z: 1900 }, { x: 1290, z: 2210 }
   ], 11);
+  await yieldToNextFrame();
   addRoad(scene, "airport-residential-loop-west", [
     { x: -250, z: 1260 }, { x: -420, z: 1630 }, { x: -350, z: 2020 }, { x: 40, z: 2220 }
   ], 11);
+  await yieldToNextFrame();
 
   // Tetteh Quarshie / Accra Mall / The Signature local street grid and
   // access road; the main N1 and N4 remain the dominant highway corridors.
   addRoad(scene, "tetteh-quarshie-east-access", [
     { x: 3650, z: 1750 }, { x: 3740, z: 1920 }, { x: 3790, z: 2100 }, { x: 3750, z: 2260 }
   ], 14);
+  await yieldToNextFrame();
   addRoad(scene, "accra-mall-signature-link", [
     { x: 3350, z: 2200 }, { x: 3510, z: 2230 }, { x: 3650, z: 2260 }, { x: 3750, z: 2260 }
   ], 12);
+  await yieldToNextFrame();
   addRoad(scene, "east-legon-boundary-road", [
     { x: 3790, z: 2100 }, { x: 4150, z: 2050 }, { x: 4480, z: 1880 }, { x: 4600, z: 1775 }
   ], 12);
+  await yieldToNextFrame();
   addRoad(scene, "tetteh-quarshie-local-north", [
     { x: 3650, z: 1750 }, { x: 3480, z: 1980 }, { x: 3350, z: 2200 }, { x: 3250, z: 2460 }
   ], 11);
+  await yieldToNextFrame();
 
   // Links into the airport, mall, Legon and central-city street systems.
   addRoad(scene, "kotoka-terminal-access", [
     { x: 1050, z: 850 }, { x: 1260, z: 900 }, { x: 1480, z: 930 }, { x: 1700, z: 950 }
   ], 14);
+  await yieldToNextFrame();
   addRoad(scene, "kotoka-airport-residential-link", [
     { x: 650, z: 1770 }, { x: 900, z: 1450 }, { x: 1250, z: 1150 }, { x: 1700, z: 950 }
   ], 12);
+  await yieldToNextFrame();
   addRoad(scene, "accra-mall-west-access", [
     { x: 3250, z: 2460 }, { x: 3270, z: 2360 }, { x: 3290, z: 2240 }, { x: 3350, z: 2200 }
   ], 12);
+  await yieldToNextFrame();
   addRoad(scene, "legon-campus-road", [
     { x: 3250, z: 2460 }, { x: 3280, z: 2800 }, { x: 3310, z: 3200 }, { x: 3350, z: 3550 }
   ], 12);
+  await yieldToNextFrame();
   addRoad(scene, "central-stadium-access", [
     { x: -450, z: 450 }, { x: -330, z: 80 }, { x: -240, z: -360 }, { x: -150, z: -820 }
   ], 12);
+  await yieldToNextFrame();
 
 
   // Neighbourhood streets fill out the city blocks around the major corridors.
   // They use the same asphalt, sidewalk, drain and marking palette as the main roads.
   addRoad(scene, "dansoman-market-street", [{ x: -5900, z: -1100 }, { x: -5400, z: -1100 }, { x: -4900, z: -1100 }, { x: -4300, z: -1100 }], 12);
+  await yieldToNextFrame();
   addRoad(scene, "dansoman-residential-street", [{ x: -5900, z: -600 }, { x: -5400, z: -600 }, { x: -4900, z: -600 }, { x: -4300, z: -600 }], 11);
+  await yieldToNextFrame();
   addRoad(scene, "kaneshie-market-street", [{ x: -3400, z: -500 }, { x: -3000, z: -500 }, { x: -2600, z: -500 }, { x: -2200, z: -500 }], 12);
+  await yieldToNextFrame();
   addRoad(scene, "kaneshie-residential-street", [{ x: -3400, z: -40 }, { x: -3000, z: -40 }, { x: -2600, z: -40 }, { x: -2200, z: -40 }], 11);
+  await yieldToNextFrame();
   addRoad(scene, "central-makola-market-street", [{ x: -1100, z: 40 }, { x: -650, z: 40 }, { x: -200, z: 40 }, { x: 250, z: 40 }, { x: 650, z: 40 }], 12);
+  await yieldToNextFrame();
   addRoad(scene, "central-ridge-street", [{ x: -1100, z: 650 }, { x: -650, z: 650 }, { x: -200, z: 650 }, { x: 250, z: 650 }, { x: 650, z: 650 }], 11);
+  await yieldToNextFrame();
   addRoad(scene, "osu-oxford-street-link", [{ x: 650, z: -1600 }, { x: 950, z: -1600 }, { x: 1300, z: -1600 }, { x: 1700, z: -1600 }], 12);
+  await yieldToNextFrame();
   addRoad(scene, "osu-residential-street", [{ x: 650, z: -1050 }, { x: 950, z: -1050 }, { x: 1300, z: -1050 }, { x: 1700, z: -1050 }], 11);
+  await yieldToNextFrame();
   addRoad(scene, "labadi-beach-road-local", [{ x: 2100, z: -2250 }, { x: 2450, z: -2250 }, { x: 2800, z: -2250 }, { x: 3200, z: -2250 }], 12);
+  await yieldToNextFrame();
   addRoad(scene, "labadi-estate-street", [{ x: 2100, z: -1650 }, { x: 2450, z: -1650 }, { x: 2800, z: -1650 }, { x: 3200, z: -1650 }], 11);
+  await yieldToNextFrame();
   addRoad(scene, "spintex-commercial-street", [{ x: 4700, z: -1450 }, { x: 5200, z: -1450 }, { x: 5700, z: -1450 }, { x: 6200, z: -1450 }], 12);
+  await yieldToNextFrame();
   addRoad(scene, "spintex-estate-street", [{ x: 4700, z: -850 }, { x: 5200, z: -850 }, { x: 5700, z: -850 }, { x: 6200, z: -850 }], 11);
+  await yieldToNextFrame();
   addRoad(scene, "tema-community-street", [{ x: 8000, z: -1100 }, { x: 8500, z: -1100 }, { x: 9000, z: -1100 }, { x: 9500, z: -1100 }], 12);
+  await yieldToNextFrame();
   addRoad(scene, "tema-industrial-street", [{ x: 8000, z: -500 }, { x: 8500, z: -500 }, { x: 9000, z: -500 }, { x: 9500, z: -500 }], 11);
+  await yieldToNextFrame();
   addRoad(scene, "achimota-residential-street", [{ x: -2400, z: 1900 }, { x: -2000, z: 1900 }, { x: -1600, z: 1900 }, { x: -1200, z: 1900 }], 12);
+  await yieldToNextFrame();
   addRoad(scene, "achimota-community-street", [{ x: -2400, z: 2450 }, { x: -2000, z: 2450 }, { x: -1600, z: 2450 }, { x: -1200, z: 2450 }], 11);
+  await yieldToNextFrame();
   addRoad(scene, "madina-commercial-street", [{ x: 4700, z: 1500 }, { x: 5150, z: 1500 }, { x: 5600, z: 1500 }, { x: 6000, z: 1500 }], 12);
+  await yieldToNextFrame();
   addRoad(scene, "madina-residential-street", [{ x: 4700, z: 2050 }, { x: 5150, z: 2050 }, { x: 5600, z: 2050 }, { x: 6000, z: 2050 }], 11);
+  await yieldToNextFrame();
   addRoad(scene, "legon-campus-avenue", [{ x: 2800, z: 3100 }, { x: 3200, z: 3100 }, { x: 3600, z: 3100 }, { x: 3900, z: 3100 }], 12);
+  await yieldToNextFrame();
   addRoad(scene, "legon-residential-street", [{ x: 2800, z: 3650 }, { x: 3200, z: 3650 }, { x: 3600, z: 3650 }, { x: 3900, z: 3650 }], 11);
+  await yieldToNextFrame();
   addRoad(scene, "nkrumah-memorial-access", [
     { x: -450, z: 450 }, { x: -620, z: 390 }, { x: -760, z: 300 }
   ], 12);
+  await yieldToNextFrame();
   addRoad(scene, "national-theatre-access", [
     { x: -450, z: 450 }, { x: -260, z: 100 }, { x: -150, z: -160 }, { x: -80, z: -420 }
   ], 12);
+  await yieldToNextFrame();
 
   // All geometry authored in this module is fixed scenery, so freeze its
   // world matrices once instead of recalculating static transforms each frame.
