@@ -295,9 +295,14 @@ function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
       for (const node of [...(imported.transformNodes ?? []), ...imported.meshes]) {
         if (!modelNodes.has(node.name)) modelNodes.set(node.name, node);
       }
+      // Ara character GLBs can carry their own embedded animation groups.
+      // Prefer those clips: they are already bound to this exact skeleton and need
+      // no cross-file retargeting. Keep the older separate-GLB path as a fallback.
+      const embeddedIdle = imported.animationGroups.some((group) => group.name.toLowerCase() === "idle");
+      const embeddedWalk = imported.animationGroups.some((group) => group.name.toLowerCase() === "walk");
       const animationSpecs = [
-        { file: "idle.glb", name: "idle" },
-        { file: "walk.glb", name: "walk" }
+        ...(!embeddedIdle ? [{ file: "idle.glb", name: "idle" }] : []),
+        ...(!embeddedWalk ? [{ file: "walk.glb", name: "walk" }] : [])
       ] as const;
       const retargetedGroups: import("@babylonjs/core").AnimationGroup[] = [];
       for (const spec of animationSpecs) {
