@@ -38,6 +38,7 @@ export type GreaterAccraPlayableWorldReport = Readonly<{
 export function createGreaterAccraPlayableWorld(
   scene: Scene
 ): GreaterAccraPlayableWorldReport {
+  const firstNewMeshIndex = scene.meshes.length;
   scene.clearColor = new Color4(0.66, 0.76, 0.79, 1);
 
   const land = MeshBuilder.CreateGround("greater-accra-playable-land", {
@@ -115,6 +116,15 @@ export function createGreaterAccraPlayableWorld(
     marker.isPickable = false;
     marker.checkCollisions = false;
   }
+
+  // Roads, rail corridors, station markers and coastline are static.
+  // Freeze their transforms and the materials created for this world layer.
+  const staticMaterials = new Set<StandardMaterial>();
+  for (const mesh of scene.meshes.slice(firstNewMeshIndex)) {
+    mesh.freezeWorldMatrix();
+    if (mesh.material instanceof StandardMaterial) staticMaterials.add(mesh.material);
+  }
+  for (const material of staticMaterials) material.freeze();
 
   return {
     roadSurfaceMeshCount: roadMeshes.length,
