@@ -600,7 +600,13 @@ async function start(): Promise<void> {
   const greaterAccraMappedRailService = createGreaterAccraMappedRailService(scene);
   document.documentElement.dataset.playableMappedRailService = "true";
   document.documentElement.dataset.playableMappedRailBoardingOpen = String(greaterAccraMappedRailService.isBoardingOpen());
-  let activeAccountSession: AkwantuoSession | null = await getAkwantuoSession();
+  let activeAccountSession: AkwantuoSession | null;
+  try {
+    activeAccountSession = await getAkwantuoSession();
+  } catch (error) {
+    if (generation !== startupGeneration) return;
+    throw error;
+  }
   if (generation !== startupGeneration) return;
   let currentAppearance = loadAppearance(window.localStorage);
   let walletBalancePesewas = 0;
@@ -624,6 +630,7 @@ async function start(): Promise<void> {
       if (accountSignOut) accountSignOut.classList.remove("is-hidden");
       if (accountButton) accountButton.innerHTML = "ACCOUNT <small>CONNECTED</small>";
     } catch (error) {
+      if (generation !== startupGeneration) return;
       console.warn("AKWANTUO cloud profile could not be loaded:", error);
     }
   }
