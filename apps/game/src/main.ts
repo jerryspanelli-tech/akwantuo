@@ -1501,8 +1501,15 @@ async function start(): Promise<void> {
         inputZ /= inputLength;
       }
 
-      const forward = new Vector3(-Math.cos(camera.alpha), 0, -Math.sin(camera.alpha));
-      const right = new Vector3(-forward.z, 0, forward.x);
+      // Use the camera's actual world-space basis, not a hand-derived alpha
+      // approximation. ArcRotateCamera's alpha convention is easy to rotate
+      // incorrectly by 90 degrees, which makes touch movement feel misaligned.
+      const forward = camera.getForwardRay().direction.clone();
+      forward.y = 0;
+      forward.normalize();
+      const right = camera.getDirection(Vector3.Right());
+      right.y = 0;
+      right.normalize();
       const direction = forward.scale(inputZ).add(right.scale(inputX));
       const moving = interactionState.mode === "on_foot" && passengerState.mode !== "riding" && !watercraftMode && direction.lengthSquared() > 0.001;
 
