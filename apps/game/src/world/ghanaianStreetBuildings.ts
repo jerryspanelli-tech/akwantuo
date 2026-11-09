@@ -7,6 +7,7 @@ import {
 } from "@babylonjs/core";
 import type { SolidArea } from "./collision";
 import { GREATER_ACCRA_REGION_ANCHORS } from "./greaterAccraLayout";
+import { buildingIntersectsChunk, type ChunkGenerationBounds } from "./spatialIntersection";
 
 export type BuildingUse =
   | "provisions"
@@ -136,12 +137,15 @@ function addSign(scene: Scene, building: DistrictBuilding, faceX: number, y: num
   sign.isPickable = false;
 }
 
-export function createGhanaianStreetBuildings(scene: Scene): {
+export function createGhanaianStreetBuildings(scene: Scene, bounds?: ChunkGenerationBounds): {
   buildings: readonly DistrictBuilding[];
   solidAreas: SolidArea[];
 } {
   const solidAreas: SolidArea[] = [];
-  for (const building of DISTRICT_BUILDINGS) {
+  const selectedBuildings = bounds
+    ? DISTRICT_BUILDINGS.filter((building) => buildingIntersectsChunk(building, bounds))
+    : DISTRICT_BUILDINGS;
+  for (const building of selectedBuildings) {
     const palette = PALETTES[building.exteriorStyle];
     const wall = material(scene, "building-wall-" + building.id, palette.wall);
     const trim = material(scene, "building-trim-" + building.id, palette.trim);
@@ -338,7 +342,7 @@ export function createGhanaianStreetBuildings(scene: Scene): {
       halfDepth: building.depth / 2 + 0.2
     });
   }
-  return { buildings: DISTRICT_BUILDINGS, solidAreas };
+  return { buildings: selectedBuildings, solidAreas };
 }
 
 export function isBuildingCatalogueValid(): boolean {
