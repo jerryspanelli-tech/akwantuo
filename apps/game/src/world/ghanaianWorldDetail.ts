@@ -25,46 +25,102 @@ export function createGreaterAccraWorldDetail(scene: Scene): void {
   const oceanBlue = new StandardMaterial("ghana-world-beach-canopy", scene);
   oceanBlue.diffuseColor = new Color3(0.82, 0.63, 0.31);
 
+  // Reuse source geometry for repeated trees and palms. Instances keep
+  // the same silhouettes/materials while avoiding one GPU draw call per prop.
+  let shadeTrunkSource: ReturnType<typeof MeshBuilder.CreateCylinder> | undefined;
+  let shadeCrownSource: ReturnType<typeof MeshBuilder.CreateSphere> | undefined;
+  let palmTrunkSource: ReturnType<typeof MeshBuilder.CreateCylinder> | undefined;
+  let palmFrondSource: ReturnType<typeof MeshBuilder.CreateBox> | undefined;
+
+  const placeInstance = <T extends import("@babylonjs/core").Mesh>(
+    source: T | undefined,
+    createSource: () => T,
+    name: string,
+    x: number,
+    y: number,
+    z: number,
+    scale: number,
+    rotationY = 0,
+    rotationX = 0
+  ): T => {
+    const mesh = source
+      ? source.createInstance(name) as unknown as T
+      : createSource();
+    mesh.name = name;
+    mesh.position.set(x, y, z);
+    mesh.scaling.set(scale, scale, scale);
+    mesh.rotation.set(rotationX, 0, rotationY);
+    mesh.isPickable = false;
+    mesh.checkCollisions = false;
+    mesh.freezeWorldMatrix();
+    return mesh;
+  };
+
   const shadeTree = (x: number, z: number, scale = 1): void => {
     const height = 4.8 * scale;
-    const stem = MeshBuilder.CreateCylinder("ghana-shade-tree-trunk", {
-      height, diameterTop: 0.22 * scale, diameterBottom: 0.48 * scale, tessellation: 7
-    }, scene);
-    stem.position.set(x, height / 2, z);
-    stem.material = trunk;
-    stem.isPickable = false;
-    const crown = MeshBuilder.CreateSphere("ghana-shade-tree-crown", {
-      diameter: 4.2 * scale, segments: 5
-    }, scene);
-    crown.scaling.y = 0.72;
-    crown.position.set(x, height + 1.05 * scale, z);
-    crown.material = leaf;
-    crown.isPickable = false;
+    const stem = placeInstance(
+      shadeTrunkSource,
+      () => {
+        const mesh = MeshBuilder.CreateCylinder("ghana-shade-tree-trunk-source", {
+          height: 4.8, diameterTop: 0.22, diameterBottom: 0.48, tessellation: 7
+        }, scene);
+        mesh.material = trunk;
+        return mesh;
+      },
+      "ghana-shade-tree-trunk", x, height / 2, z, scale
+    );
+    shadeTrunkSource ??= stem;
+    const crown = placeInstance(
+      shadeCrownSource,
+      () => {
+        const mesh = MeshBuilder.CreateSphere("ghana-shade-tree-crown-source", {
+          diameter: 4.2, segments: 5
+        }, scene);
+        mesh.material = leaf;
+        return mesh;
+      },
+      "ghana-shade-tree-crown", x, height + 1.05 * scale, z, scale
+    );
+    crown.scaling.y = 0.72 * scale;
+    crown.freezeWorldMatrix();
+    shadeCrownSource ??= crown;
   };
 
   const palm = (x: number, z: number, scale = 1): void => {
     const height = 7.2 * scale;
-    const stem = MeshBuilder.CreateCylinder("ghana-coastal-palm-trunk", {
-      height, diameterTop: 0.2 * scale, diameterBottom: 0.42 * scale, tessellation: 7
-    }, scene);
-    stem.position.set(x, height / 2, z);
-    stem.rotation.z = -0.035;
-    stem.material = trunk;
-    stem.isPickable = false;
+    const stem = placeInstance(
+      palmTrunkSource,
+      () => {
+        const mesh = MeshBuilder.CreateCylinder("ghana-coastal-palm-trunk-source", {
+          height: 7.2, diameterTop: 0.2, diameterBottom: 0.42, tessellation: 7
+        }, scene);
+        mesh.material = trunk;
+        return mesh;
+      },
+      "ghana-coastal-palm-trunk", x, height / 2, z, scale, -0.035
+    );
+    palmTrunkSource ??= stem;
+
     for (let index = 0; index < 7; index += 1) {
       const angle = index * Math.PI * 2 / 7;
-      const frond = MeshBuilder.CreateBox("ghana-coastal-palm-frond", {
-        width: 0.24 * scale, height: 0.12 * scale, depth: 4.5 * scale
-      }, scene);
-      frond.position.set(
+      const frond = placeInstance(
+        palmFrondSource,
+        () => {
+          const mesh = MeshBuilder.CreateBox("ghana-coastal-palm-frond-source", {
+            width: 0.24, height: 0.12, depth: 4.5
+          }, scene);
+          mesh.material = leaf;
+          return mesh;
+        },
+        "ghana-coastal-palm-frond",
         x + Math.sin(angle) * 1.45 * scale,
         height + 0.35 * scale,
-        z + Math.cos(angle) * 1.45 * scale
+        z + Math.cos(angle) * 1.45 * scale,
+        scale,
+        angle,
+        0.34
       );
-      frond.rotation.y = angle;
-      frond.rotation.x = 0.34;
-      frond.material = leaf;
-      frond.isPickable = false;
+      palmFrondSource ??= frond;
     }
   };
 
