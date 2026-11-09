@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Run Ara's headless exporter on Vercel, then publish only the two game-ready GLBs.
-git clone --depth 1 https://github.com/olatunde85/3d-gen.git character-build/generator
+# Vercel may restore the previous cloned generator from its build cache.\n# Remove that disposable checkout before cloning a clean copy.\nrm -rf character-build/generator\ngit clone --depth 1 https://github.com/olatunde85/3d-gen.git character-build/generator
 cd character-build/generator
 npm ci --no-audit --no-fund
 npm run setup-assets
