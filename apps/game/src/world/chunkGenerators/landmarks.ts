@@ -29,7 +29,7 @@ export const greaterAccraLandmarksGenerator: ChunkGenerator = {
     const marginBounds = withChunkMargin(bounds, 24);
     const owned = GREATER_ACCRA_LANDMARK_FOOTPRINTS.filter((landmark) =>
       getChunkKey({ x: landmark.x, z: landmark.z }, size) === getChunkKey({ x: bounds.minX, z: bounds.minZ }, size) &&
-      boundsIntersect({ x: landmark.x, z: landmark.z, width: landmark.maxX - landmark.minX, depth: landmark.maxZ - landmark.minZ }, marginBounds)
+      boundsIntersect({ minX: landmark.minX, maxX: landmark.maxX, minZ: landmark.minZ, maxZ: landmark.maxZ }, marginBounds)
     );
     if (!owned.length) return null;
     const firstMesh = scene.meshes.length;
