@@ -3,7 +3,7 @@ name: Build AKWANTUO GitHub Pages test build
 on:
   push:
     branches:
-      - feat/ghanaian-character-assets
+      - main
   workflow_dispatch:
 
 permissions:
@@ -13,15 +13,16 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out testing branch
+      - name: Check out current game
         uses: actions/checkout@v4
         with:
-          ref: feat/ghanaian-character-assets
+          ref: main
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
 
       - name: Install dependencies
         run: npm install
