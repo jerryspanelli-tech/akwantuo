@@ -315,7 +315,10 @@ function yieldToNextFrame(): Promise<void> {
   return new Promise((resolve) => requestAnimationFrame(() => resolve()));
 }
 
-export async function createGreaterAccraLandmarks(scene: Scene): Promise<LandmarkReport> {
+export async function createGreaterAccraLandmarks(
+  scene: Scene,
+  options: { includeLocalRoads?: boolean } = {}
+): Promise<LandmarkReport> {
   const firstNewMeshIndex = scene.meshes.length;
   const solidAreas: SolidArea[] = [];
   createVillaggio(scene, solidAreas);
@@ -335,6 +338,7 @@ export async function createGreaterAccraLandmarks(scene: Scene): Promise<Landmar
   createNationalTheatre(scene, solidAreas);
   await yieldToNextFrame();
 
+  if (options.includeLocalRoads) {
   // Airport Residential local streets and access links, aligned with the
   // northbound side of Airport City and the Liberation Road corridor.
   addRoad(scene, "airport-residential-drive", [
@@ -447,6 +451,8 @@ export async function createGreaterAccraLandmarks(scene: Scene): Promise<Landmar
   ], 12);
   await yieldToNextFrame();
 
+  }
+
   // All geometry authored in this module is fixed scenery, so freeze its
   // world matrices once instead of recalculating static transforms each frame.
   const staticMeshes = scene.meshes.slice(firstNewMeshIndex);
@@ -465,5 +471,5 @@ export async function createGreaterAccraLandmarks(scene: Scene): Promise<Landmar
     }
   }
 
-  return { landmarkCount: 8, localRoadCount: 35, solidAreas };
+  return { landmarkCount: 8, localRoadCount: options.includeLocalRoads ? 35 : 0, solidAreas };
 }
