@@ -557,12 +557,19 @@ async function start(): Promise<void> {
   try {
     // Mobile GPUs are more reliable with antialiasing disabled. Babylon still
     // selects WebGL2/WebGL1 as supported by the device.
-    engine = new Engine(canvas, true, {
+    // iPhone/iPad browsers can terminate a WebGL tab when its drawing
+    // buffer and scene exceed the device's available graphics memory.
+    // Use a deliberately smaller render target on touch-first devices.
+    const mobileGraphicsProfile =
+      window.matchMedia("(pointer: coarse)").matches ||
+      Math.min(window.innerWidth, window.innerHeight) <= 820;
+    engine = new Engine(canvas, false, {
       preserveDrawingBuffer: false,
-      stencil: true,
-      antialias: false,
-      powerPreference: "low-power"
+      stencil: false,
+      powerPreference: "low-power",
+      adaptToDeviceRatio: false
     });
+    engine.setHardwareScalingLevel(mobileGraphicsProfile ? 2 : 1);
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
     document.documentElement.dataset.akwantuoWebglInitError = detail.slice(0, 240);
@@ -582,8 +589,9 @@ async function start(): Promise<void> {
   const chunkRegistry = new ChunkRegistry();
   const chunkManager = new WorldChunkManager({
     chunkSize: 600,
-    loadRadius: 850,
-    unloadRadius: 1250,
+    // Keep the live mobile scene tightly local; expand it as the player moves.
+    loadRadius: 500,
+    unloadRadius: 800,
     maxConcurrentLoads: 1,
     loadChunk: (key, bounds) => {
       const result = chunkRegistry.loadChunk(scene, key, bounds);
