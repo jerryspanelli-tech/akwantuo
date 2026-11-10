@@ -1,4 +1,4 @@
-import { Color3, MeshBuilder, Scene, StandardMaterial, Vector3 } from "@babylonjs/core";
+import { Color3, Mesh, MeshBuilder, Scene, StandardMaterial, Vector3 } from "@babylonjs/core";
 import type { ChunkBounds, ChunkHandle } from "../chunkManager";
 import type { ChunkBuildResult, ChunkGenerator } from "../chunkRegistry";
 import { GREATER_ACCRA_LOCAL_ROADS } from "../greaterAccraRoadData";
@@ -24,7 +24,7 @@ function buildRoadPiece(scene: Scene, id: string, points: readonly RoadPoint[], 
       inner.push(new Vector3(point.x + nx * innerOffset * scale, 0.05, point.z + nz * innerOffset * scale));
       outer.push(new Vector3(point.x + nx * outerOffset * scale, 0.05, point.z + nz * outerOffset * scale));
     });
-    const mesh = MeshBuilder.CreateRibbon(name, { pathArray: [inner, outer], sideOrientation: MeshBuilder.DOUBLESIDE }, scene);
+    const mesh = MeshBuilder.CreateRibbon(name, { pathArray: [inner, outer], sideOrientation: Mesh.DOUBLESIDE }, scene);
     mesh.material = material; mesh.isPickable = false; mesh.checkCollisions = false;
   };
   band(id + "-asphalt", -3.75, 3.75, materials.asphalt);
