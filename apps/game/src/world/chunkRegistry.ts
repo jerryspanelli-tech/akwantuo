@@ -1,6 +1,7 @@
 import type { Scene } from "@babylonjs/core";
 import type { ChunkBounds, ChunkHandle } from "./chunkManager";
 import { districtBuildingsGenerator } from "./chunkGenerators/buildings";
+import { localRoadsGenerator } from "./chunkGenerators/roads";
 
 export interface ChunkBuildResult {
   handle: ChunkHandle;
@@ -24,7 +25,7 @@ export const SPAWN_CHUNK_KEY = "1:-3";
 export class ChunkRegistry {
   private readonly generators: readonly ChunkGenerator[];
 
-  constructor(generators: readonly ChunkGenerator[] = [districtBuildingsGenerator]) {
+  constructor(generators: readonly ChunkGenerator[] = [districtBuildingsGenerator, localRoadsGenerator]) {
     const ids = new Set<string>();
     for (const generator of generators) {
       if (!generator.id || ids.has(generator.id)) {
