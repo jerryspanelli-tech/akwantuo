@@ -150,7 +150,9 @@ export async function savePlayerProfile(
     gender: appearance.presentation === "feminine" ? "female" : "male",
     age: appearance.age,
     look: appearance,
-    game_save: { schema_version: 1, last_saved_at: new Date().toISOString() }
+    updated_at: new Date().toISOString()
+    // Do not write game_save here. This client flow only saves appearance;
+    // replacing game_save with metadata/timestamp would erase persisted world state.
   };
   await request<unknown>(
     "/rest/v1/player_profiles?on_conflict=id",
