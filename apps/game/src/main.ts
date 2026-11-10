@@ -4,18 +4,24 @@ import {
   Engine,
   MeshBuilder,
   Scene,
+  SceneLoader,
   StandardMaterial,
   TransformNode,
   Vector3
 } from "@babylonjs/core";
+import "@babylonjs/loaders/glTF";
 import "./style.css";
 import { COMPLEXIONS, DEFAULT_APPEARANCE, OUTFITS, resolveAppearance, type CharacterAppearance } from "./character/appearance";
 import { loadAppearance, saveAppearance } from "./character/appearanceStore";
 import { getHairstyle } from "./character/hairstyles";
 import { WORLD_CONFIG } from "./world/config";
+import { WorldChunkManager } from "./world/chunkManager";
+import { ChunkRegistry } from "./world/chunkRegistry";
 import { clampToWorld, isBlocked } from "./world/collision";
 import { createPreviewWorld } from "./world/previewWorld";
 import { createGreaterAccraPlayableWorld } from "./world/greaterAccraPlayableWorld";
+import { createGreaterAccraWorldDetail } from "./world/ghanaianWorldDetail";
+import { createGreaterAccraLandmarks } from "./world/greaterAccraLandmarks";
 import { getMapRoadPath } from "./world/greaterAccraLayout";
 import { findNearestRoadProjection, getRoadLaneCenterPoint } from "./world/roadNavigation";
 import { getRoadVehicleAutopilotControl } from "./vehicles/roadVehicleAutopilot";
@@ -41,6 +47,32 @@ import { AKWAABA_VENUE_PROGRAMME, isVenueProgrammeValid } from "./world/venuePro
 import { AKWANTUO_RETAIL_PRODUCTS, isAkwantuoRetailCatalogueValid } from "./world/retailCatalogue";
 import { AKWANTUO_PRIVATE_ISLAND, PRIVATE_ISLAND_WATERCRAFT, createAkwantuoPrivateIsland, isPrivateIslandCatalogueValid } from "./world/privateIsland";
 import { getAkwantuoSession, loadPlayerProfile, savePlayerProfile, signInAkwantuo, signOutAkwantuo, signUpAkwantuo, loadEconomyState, loadShopProducts, purchaseShopItems, purchaseGameAsset, type AkwantuoSession } from "./services/supabase";
+
+// Keep the active Babylon instance at module scope so Vite HMR can release
+// its WebGL context before this module is replaced during development.
+let activeEngine: Engine | null = null;
+let activeScene: Scene | null = null;
+let activeChunkManager: WorldChunkManager | null = null;
+// Each start owns a generation. HMR disposal or a newer start invalidates
+// pending asynchronous work before it can create or wire stale game state.
+let startupGeneration = 0;
+
+function disposeActiveGame(): void {
+  startupGeneration += 1;
+  activeChunkManager?.dispose();
+  activeChunkManager = null;
+  activeEngine?.stopRenderLoop();
+  activeScene?.dispose();
+  activeScene = null;
+  activeEngine?.dispose();
+  activeEngine = null;
+}
+
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    disposeActiveGame();
+  });
+}
 
 const bootScreen = document.querySelector<HTMLElement>("#boot-screen");
 const gameShell = document.querySelector<HTMLElement>("#game-shell");
@@ -152,6 +184,7 @@ function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
   leftLeg: TransformNode;
   rightLeg: TransformNode;
   applyAppearance: (appearance: CharacterAppearance) => void;
+  setMoving: (moving: boolean) => void;
 } {
   const root = new TransformNode("player-root", scene);
   root.position.set(WORLD_CONFIG.spawn.x, WORLD_CONFIG.spawn.y, WORLD_CONFIG.spawn.z);
@@ -253,41 +286,183 @@ function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
     afroHair.isVisible = ["afro", "twists", "starter-locs", "locs", "cornrows", "box-braids", "knotless-braids", "ghana-braids", "feed-in-cornrows", "fulani-braids", "faux-locs", "passion-twists", "wig-install", "natural-bun"].includes(styleId);
   };
   applyAppearance(initialAppearance);
-  return { root, leftArm, rightArm, leftLeg, rightLeg, applyAppearance };
+
+  // Load a real, skinned African character model. The low-cost primitive rig
+  // remains only as a startup fallback while the GLB downloads.
+  const fallbackMeshes = root.getChildMeshes(false);
+  const fallbackPivots = [leftArm, rightArm, leftLeg, rightLeg];
+  let activeModelRoots: import("@babylonjs/core").Node[] = [];
+  let activeModelSkeletons: import("@babylonjs/core").Skeleton[] = [];
+  let locomotionGroups: import("@babylonjs/core").AnimationGroup[] = [];
+  let currentLocomotion = "idle";
+  let loadGeneration = 0;
+  const setMoving = (moving: boolean): void => {
+    const next = moving ? "walk" : "idle";
+    if (next === currentLocomotion) return;
+    currentLocomotion = next;
+    const selected = locomotionGroups.find((group) => group.name.toLowerCase() === next);
+    if (!selected) return;
+    for (const group of locomotionGroups) group.stop();
+    selected.start(true);
+  };
+  const loadCharacterModel = async (appearance: CharacterAppearance): Promise<void> => {
+    const generation = ++loadGeneration;
+    const file = appearance.presentation === "feminine" ? "akwantuo-female.glb" : "akwantuo-male.glb";
+    // Character GLBs are published by the dedicated asset build project.
+    // Keep this stable URL separate from the game site so large models do not bloat its deployment.
+    const baseUrl = "https://akwantuo-character-assets.vercel.app/";
+    try {
+      const imported = await SceneLoader.ImportMeshAsync("", baseUrl, file, scene);
+      if (generation !== loadGeneration) {
+        const staleNodes = [...(imported.transformNodes ?? []), ...imported.meshes];
+        staleNodes.filter((node) => !node.parent).forEach((node) => node.dispose(false, true));
+        imported.animationGroups.forEach((group) => group.dispose());
+        imported.skeletons.forEach((skeleton) => skeleton.dispose());
+        return;
+      }
+
+      // The character meshes and the locomotion clips are separate CC0 GLBs.
+      // Retarget each clip by bone/transform-node name onto this character's rig.
+      const modelNodes = new Map<string, import("@babylonjs/core").Node>();
+      for (const node of [...(imported.transformNodes ?? []), ...imported.meshes]) {
+        if (!modelNodes.has(node.name)) modelNodes.set(node.name, node);
+      }
+      // Ara character GLBs can carry their own embedded animation groups.
+      // Prefer those clips: they are already bound to this exact skeleton and need
+      // no cross-file retargeting. Keep the older separate-GLB path as a fallback.
+      const embeddedIdle = imported.animationGroups.some((group) => group.name.toLowerCase() === "idle");
+      const embeddedWalk = imported.animationGroups.some((group) => group.name.toLowerCase() === "walk");
+      const animationSpecs = [
+        ...(!embeddedIdle ? [{ file: "idle.glb", name: "idle" }] : []),
+        ...(!embeddedWalk ? [{ file: "walk.glb", name: "walk" }] : [])
+      ] as const;
+      const retargetedGroups: import("@babylonjs/core").AnimationGroup[] = [];
+      for (const spec of animationSpecs) {
+        try {
+          const source = await SceneLoader.ImportMeshAsync("", baseUrl, spec.file, scene);
+          const sourceGroup = source.animationGroups[0];
+          if (sourceGroup) {
+            const cloned = sourceGroup.clone(
+              spec.name,
+              (target) => modelNodes.get(target.name) ?? null
+            );
+            if (cloned) retargetedGroups.push(cloned);
+          }
+          source.animationGroups.forEach((group) => group.dispose());
+          const sourceNodes = [...(source.transformNodes ?? []), ...source.meshes];
+          sourceNodes.filter((node) => !node.parent).forEach((node) => node.dispose(false, true));
+          source.skeletons.forEach((skeleton) => skeleton.dispose());
+        } catch (animationError) {
+          console.warn(`AKWANTUO ${spec.name} animation could not be loaded:`, animationError);
+        }
+      }
+
+      if (generation !== loadGeneration) {
+        retargetedGroups.forEach((group) => group.dispose());
+        const staleNodes = [...(imported.transformNodes ?? []), ...imported.meshes];
+        staleNodes.filter((node) => !node.parent).forEach((node) => node.dispose(false, true));
+        imported.animationGroups.forEach((group) => group.dispose());
+        imported.skeletons.forEach((skeleton) => skeleton.dispose());
+        return;
+      }
+
+      // Keep the previous model visible until the replacement and its clips load.
+      for (const group of locomotionGroups) group.stop();
+      for (const group of locomotionGroups) group.dispose();
+      activeModelSkeletons.forEach((skeleton) => skeleton.dispose());
+      activeModelRoots.forEach((node) => node.dispose(false, true));
+      activeModelRoots = [];
+      const importedNodes = [...(imported.transformNodes ?? []), ...imported.meshes];
+      activeModelRoots = importedNodes.filter((node) => !node.parent);
+      activeModelRoots.forEach((node) => { node.parent = root; });
+      for (const mesh of imported.meshes) {
+        mesh.isPickable = false;
+        mesh.receiveShadows = true;
+      }
+      activeModelSkeletons = imported.skeletons;
+      fallbackMeshes.forEach((mesh) => mesh.setEnabled(false));
+      fallbackPivots.forEach((pivot) => pivot.setEnabled(false));
+      locomotionGroups = [...imported.animationGroups, ...retargetedGroups];
+      const selected = locomotionGroups.find((group) => group.name.toLowerCase() === currentLocomotion)
+        ?? locomotionGroups.find((group) => group.name.toLowerCase() === "idle");
+      if (selected) selected.start(true);
+      const walk = locomotionGroups.find((group) => group.name.toLowerCase() === "walk");
+      if (!walk) showNotice("3D character loaded, but its walking animation could not be connected.");
+      document.documentElement.dataset.akwantuoCharacterModel = file;
+      document.documentElement.dataset.akwantuoCharacterAnimations = String(locomotionGroups.length);
+    } catch (error) {
+      console.error("AKWANTUO character GLB failed to load:", error);
+      document.documentElement.dataset.akwantuoCharacterModel = "fallback";
+      showNotice("The 3D character could not load. Check your connection and retry.");
+    }
+  };
+  void loadCharacterModel(initialAppearance);
+  const originalApplyAppearance = applyAppearance;
+  const applyModelAppearance = (appearance: CharacterAppearance): void => {
+    originalApplyAppearance(appearance);
+    const expected = appearance.presentation === "feminine" ? "akwantuo-female.glb" : "akwantuo-male.glb";
+    if (document.documentElement.dataset.akwantuoCharacterModel !== expected) void loadCharacterModel(appearance);
+  };
+  return { root, leftArm, rightArm, leftLeg, rightLeg, applyAppearance: applyModelAppearance, setMoving };
 }
 
 function installTouchControls(): void {
   if (!joystick || !joystickStick) return;
 
-  const resetStick = (): void => {
-    touchInput.x = 0;
-    touchInput.z = 0;
-    joystickStick.style.transform = "translate(0, 0)";
-  };
+  // Read layout once at the start of a touch. Pointer-move events only store
+  // coordinates; visual/input updates are coalesced to one animation frame.
+  let centreX = 0;
+  let centreY = 0;
+  let maxTravel = 1;
+  let latestX = 0;
+  let latestY = 0;
+  let framePending = false;
+  let activePointerId: number | null = null;
 
-  const updateStick = (event: PointerEvent): void => {
-    const bounds = joystick.getBoundingClientRect();
-    const centreX = bounds.left + bounds.width / 2;
-    const centreY = bounds.top + bounds.height / 2;
-    const max = bounds.width * 0.31;
-    const dx = event.clientX - centreX;
-    const dy = event.clientY - centreY;
+  const applyLatestPosition = (): void => {
+    framePending = false;
+    if (activePointerId === null) return;
+
+    const dx = latestX - centreX;
+    const dy = latestY - centreY;
     const distance = Math.hypot(dx, dy);
-    const scale = distance > max ? max / distance : 1;
+    const scale = distance > maxTravel ? maxTravel / distance : 1;
     const x = dx * scale;
     const y = dy * scale;
-    touchInput.x = x / max;
-    touchInput.z = -y / max;
-    joystickStick.style.transform = `translate(${x}px, ${y}px)`;
+
+    touchInput.x = x / maxTravel;
+    touchInput.z = -y / maxTravel;
+    joystickStick.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+  };
+
+  const queuePosition = (event: PointerEvent): void => {
+    latestX = event.clientX;
+    latestY = event.clientY;
+    if (framePending) return;
+    framePending = true;
+    requestAnimationFrame(applyLatestPosition);
+  };
+
+  const resetStick = (): void => {
+    activePointerId = null;
+    touchInput.x = 0;
+    touchInput.z = 0;
+    joystickStick.style.transform = "translate3d(0, 0, 0)";
   };
 
   joystick.addEventListener("pointerdown", (event: PointerEvent) => {
     event.preventDefault();
+    activePointerId = event.pointerId;
+    const bounds = joystick.getBoundingClientRect();
+    centreX = bounds.left + bounds.width / 2;
+    centreY = bounds.top + bounds.height / 2;
+    maxTravel = Math.max(1, bounds.width * 0.31);
     joystick.setPointerCapture(event.pointerId);
-    updateStick(event);
+    queuePosition(event);
   });
+
   joystick.addEventListener("pointermove", (event: PointerEvent) => {
-    if (joystick.hasPointerCapture(event.pointerId)) updateStick(event);
+    if (event.pointerId === activePointerId) queuePosition(event);
   });
   joystick.addEventListener("pointerup", resetStick);
   joystick.addEventListener("pointercancel", resetStick);
@@ -326,6 +501,9 @@ function sampleRouteAtDistance(
 }
 
 async function start(): Promise<void> {
+  // A second start must not leave an older WebGL context running.
+  disposeActiveGame();
+  const generation = startupGeneration;
   if (!canvas || !bootScreen || !gameShell || !bootStatus) {
     throw new Error("The game startup interface could not be found.");
   }
@@ -349,17 +527,107 @@ async function start(): Promise<void> {
   document.documentElement.dataset.akwantuoStage6Checks = "passed";
   document.documentElement.dataset.akwantuoBuildingInteriorLinkCount = String(DISTRICT_BUILDINGS.filter((building) => building.interiorId).length);
 
-  bootStatus.textContent = "Loading the world engine…";
-  await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+  bootStatus.textContent = "Preparing the 3D display…";
 
-  const engine = new Engine(canvas, true, {
-    preserveDrawingBuffer: false,
-    stencil: true,
-    antialias: true,
-    powerPreference: "high-performance"
-  });
+  // The game shell starts hidden behind the boot screen. Give the canvas a real
+  // layout box before Babylon creates its rendering engine; some mobile browsers
+  // initialise a zero-sized drawing buffer when the parent is display:none.
+  gameShell.hidden = false;
+  gameShell.classList.remove("is-hidden");
+  const waitForCanvasLayout = async (): Promise<DOMRect> => {
+    let bounds = canvas.getBoundingClientRect();
+    for (let attempt = 0; attempt < 12 && (bounds.width < 2 || bounds.height < 2); attempt += 1) {
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      bounds = canvas.getBoundingClientRect();
+    }
+    return bounds;
+  };
+  const canvasBounds = await waitForCanvasLayout();
+  if (generation !== startupGeneration) return;
+  document.documentElement.dataset.akwantuoCanvasSize =
+    Math.round(canvasBounds.width) + "x" + Math.round(canvasBounds.height);
+  if (canvasBounds.width < 2 || canvasBounds.height < 2) {
+    throw new Error("The 3D canvas has no visible layout size (" +
+      Math.round(canvasBounds.width) + "x" + Math.round(canvasBounds.height) +
+      "). The game display did not finish mounting.");
+  }
+
+  bootStatus.textContent = "Starting the 3D world…";
+  let engine: Engine;
+  try {
+    // Mobile GPUs are more reliable with antialiasing disabled. Babylon still
+    // selects WebGL2/WebGL1 as supported by the device.
+    // iPhone/iPad browsers can terminate a WebGL tab when its drawing
+    // buffer and scene exceed the device's available graphics memory.
+    // Use a deliberately smaller render target on touch-first devices.
+    const mobileGraphicsProfile =
+      window.matchMedia("(pointer: coarse)").matches ||
+      Math.min(window.innerWidth, window.innerHeight) <= 820;
+    engine = new Engine(canvas, false, {
+      preserveDrawingBuffer: false,
+      stencil: false,
+      powerPreference: "low-power",
+      adaptToDeviceRatio: false
+    });
+    engine.setHardwareScalingLevel(mobileGraphicsProfile ? 2 : 1);
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    document.documentElement.dataset.akwantuoWebglInitError = detail.slice(0, 240);
+    throw new Error("Babylon could not create a WebGL rendering context: " + detail);
+  }
+  activeEngine = engine;
+  engine.resize();
   const scene = new Scene(engine);
-  const solidAreas = createPreviewWorld(scene, { includeGround: false });
+  activeScene = scene;
+  const yieldToStartupFrame = async (): Promise<boolean> => {
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    return generation === startupGeneration;
+  };
+
+  bootStatus.textContent = "Preparing Accra streets…";
+  const solidAreas = createPreviewWorld(scene, { includeGround: false, includeBuildings: false });
+  const chunkRegistry = new ChunkRegistry();
+  const chunkManager = new WorldChunkManager({
+    chunkSize: 600,
+    // Keep the live mobile scene tightly local; expand it as the player moves.
+    loadRadius: 500,
+    unloadRadius: 800,
+    maxConcurrentLoads: 1,
+    loadChunk: (key, bounds) => {
+      const result = chunkRegistry.loadChunk(scene, key, bounds);
+      const chunkSolidAreas = result.solidAreas;
+      solidAreas.push(...chunkSolidAreas);
+      return {
+        dispose(): void {
+          for (const area of chunkSolidAreas) {
+            const index = solidAreas.indexOf(area);
+            if (index >= 0) solidAreas.splice(index, 1);
+          }
+          result.handle.dispose();
+        }
+      };
+    },
+    onChunkLoaded: (key) => {
+      document.documentElement.dataset.akwantuoLoadedChunks = chunkManager.getLoadedChunkKeys().join(",");
+      document.documentElement.dataset.akwantuoLastChunkLoaded = key;
+    },
+    onChunkUnloaded: (key) => {
+      document.documentElement.dataset.akwantuoLastChunkUnloaded = key;
+      document.documentElement.dataset.akwantuoLoadedChunks = chunkManager.getLoadedChunkKeys().filter((item) => item !== key).join(",");
+    },
+    onChunkError: (key, error) => {
+      document.documentElement.dataset.akwantuoChunkError = key + ": " +
+        (error instanceof Error ? error.message : String(error)).slice(0, 180);
+    }
+  });
+  activeChunkManager = chunkManager;
+  // Spawn (1100, -1250) maps to chunk 1:-3. Request it before any
+  // neighbouring chunk so the player's immediate buildings/collisions appear first.
+  chunkManager.update(WORLD_CONFIG.spawn);
+  document.documentElement.dataset.akwantuoSpawnChunk = "1:-3";
+  document.documentElement.dataset.akwantuoChunkGenerators = chunkRegistry.getGeneratorIds().join(",");
+  if (!(await yieldToStartupFrame())) return;
+  bootStatus.textContent = "Building interiors…";
   const interiorRooms = createInteriorRooms(scene);
   document.documentElement.dataset.akwantuoInteriorRoomCount = String(interiorRooms.length);
   document.documentElement.dataset.akwantuoStoreCollisionCount = String(interiorRooms.find((room) => room.id === "convenience-store")?.solidAreas.length ?? 0);
@@ -373,9 +641,23 @@ async function start(): Promise<void> {
   document.documentElement.dataset.akwantuoStoreShopkeeperRig =
     String(!!scene.getMeshByName("shopkeeper-head") && !!scene.getMeshByName("shopkeeper-arm--1") && !!scene.getMeshByName("shopkeeper-arm-1"));
   for (const room of interiorRooms) solidAreas.push(...room.solidAreas);
+  if (!(await yieldToStartupFrame())) return;
+  bootStatus.textContent = "Preparing the coastline and island…";
   const privateIslandMeshCount = createAkwantuoPrivateIsland(scene);
   document.documentElement.dataset.akwantuoPrivateIslandMeshCount = String(privateIslandMeshCount);
+  if (!(await yieldToStartupFrame())) return;
+  bootStatus.textContent = "Building Greater Accra roads and rail…";
   const greaterAccraTransportReport = createGreaterAccraPlayableWorld(scene);
+  if (!(await yieldToStartupFrame())) return;
+  bootStatus.textContent = "Adding Accra landmarks and neighbourhood roads…";
+  const greaterAccraLandmarkReport = await createGreaterAccraLandmarks(scene);
+  solidAreas.push(...greaterAccraLandmarkReport.solidAreas);
+  document.documentElement.dataset.greaterAccraLandmarkCount = String(greaterAccraLandmarkReport.landmarkCount);
+  document.documentElement.dataset.greaterAccraLandmarkLocalRoadCount = String(greaterAccraLandmarkReport.localRoadCount);
+  if (!(await yieldToStartupFrame())) return;
+  bootStatus.textContent = "Finishing Ghanaian scenery…";
+  createGreaterAccraWorldDetail(scene);
+  if (!(await yieldToStartupFrame())) return;
   document.documentElement.dataset.playableRoadSurfaceMeshes = String(greaterAccraTransportReport.roadSurfaceMeshCount);
   document.documentElement.dataset.playableRoadMarkingMeshes = String(greaterAccraTransportReport.roadMarkingMeshCount);
   document.documentElement.dataset.playableRailRoutes = String(greaterAccraTransportReport.railRouteCount);
@@ -383,11 +665,20 @@ async function start(): Promise<void> {
   document.documentElement.dataset.playableCircleStructures = String(greaterAccraTransportReport.circleElevatedStructureCount);
   document.documentElement.dataset.playableRailRoadCrossingCandidates = String(greaterAccraTransportReport.railRoadCrossingCandidateCount);
   document.documentElement.dataset.playablePublicTransportCorridors = String(greaterAccraTransportReport.publicTransportCorridorCount);
+  bootStatus.textContent = "Preparing public transport…";
   const playableRailDemo = createPlayableRailDemo(scene);
+  if (!(await yieldToStartupFrame())) return;
   const greaterAccraMappedRailService = createGreaterAccraMappedRailService(scene);
   document.documentElement.dataset.playableMappedRailService = "true";
   document.documentElement.dataset.playableMappedRailBoardingOpen = String(greaterAccraMappedRailService.isBoardingOpen());
-  let activeAccountSession: AkwantuoSession | null = await getAkwantuoSession();
+  let activeAccountSession: AkwantuoSession | null;
+  try {
+    activeAccountSession = await getAkwantuoSession();
+  } catch (error) {
+    if (generation !== startupGeneration) return;
+    throw error;
+  }
+  if (generation !== startupGeneration) return;
   let currentAppearance = loadAppearance(window.localStorage);
   let walletBalancePesewas = 0;
   let ownedGameAssetIds = new Set<string>();
@@ -395,18 +686,22 @@ async function start(): Promise<void> {
   if (activeAccountSession) {
     try {
       const cloudProfile = await loadPlayerProfile(activeAccountSession);
+      if (generation !== startupGeneration) return;
       if (cloudProfile?.look) currentAppearance = resolveAppearance(cloudProfile.look);
       const economy = await loadEconomyState(activeAccountSession);
+      if (generation !== startupGeneration) return;
       walletBalancePesewas = economy.wallet?.balance_pesewas ?? 0;
       ownedGameAssetIds = new Set(economy.owned_assets.map((asset) => asset.asset_id));
       document.documentElement.dataset.akwantuoWalletPesewas = String(walletBalancePesewas);
       document.documentElement.dataset.akwantuoOwnedAssetCount = String(ownedGameAssetIds.size);
       const shopProducts = await loadShopProducts(activeAccountSession);
+      if (generation !== startupGeneration) return;
       shopStockById = new Map(shopProducts.map((item) => [item.product_id, item.stock_quantity]));
       if (accountStatus) accountStatus.textContent = `Signed in as ${activeAccountSession.user.email || "AKWANTUO player"}. Cloud saves are enabled.`;
       if (accountSignOut) accountSignOut.classList.remove("is-hidden");
       if (accountButton) accountButton.innerHTML = "ACCOUNT <small>CONNECTED</small>";
     } catch (error) {
+      if (generation !== startupGeneration) return;
       console.warn("AKWANTUO cloud profile could not be loaded:", error);
     }
   }
@@ -906,11 +1201,19 @@ async function start(): Promise<void> {
   let onGround = true;
   let walkClock = 0;
 
+  let chunkUpdateElapsed = 0;
   const render = (): void => {
     const rawDelta = engine.getDeltaTime() / 1000;
     const delta = Math.min(rawDelta, 0.05);
 
     if (hasEnteredWorld) {
+      chunkUpdateElapsed += delta;
+      if (chunkUpdateElapsed >= 0.25) {
+        chunkUpdateElapsed = 0;
+        chunkManager.update({ x: player.root.position.x, z: player.root.position.z });
+        document.documentElement.dataset.akwantuoLoadedChunks = chunkManager.getLoadedChunkKeys().join(",");
+        document.documentElement.dataset.akwantuoPendingChunks = chunkManager.getPendingChunkKeys().join(",");
+      }
       document.documentElement.dataset.transportRenderFrame = String(
         Number(document.documentElement.dataset.transportRenderFrame ?? 0) + 1
       );
@@ -1034,7 +1337,7 @@ async function start(): Promise<void> {
           showNotice("You stepped back outside.");
         } else if (interactionState.mode === "on_foot" && passengerState.mode === "not_riding" &&
           DISTRICT_BUILDINGS.some((building) => {
-            if (!building.interiorId) return false;
+            if (!building.interiorId || !scene.getMeshByName("building-shell-" + building.id)) return false;
             const frontX = building.side === "west"
               ? building.x + building.width / 2
               : building.x - building.width / 2;
@@ -1042,7 +1345,7 @@ async function start(): Promise<void> {
             return Math.hypot(player.root.position.x - exitX, player.root.position.z - building.z) <= 3.5;
           })) {
           const nearbyBuilding = DISTRICT_BUILDINGS
-            .filter((building) => building.interiorId)
+            .filter((building) => building.interiorId && scene.getMeshByName("building-shell-" + building.id))
             .map((building) => {
               const frontX = building.side === "west"
                 ? building.x + building.width / 2
@@ -1306,7 +1609,11 @@ async function start(): Promise<void> {
           camera.alpha = -Math.PI / 2 - vehicleState.headingRadians;
           camera.radius = 9;
         }
-        if (interactButton) interactButton.textContent = passengerState.mode === "riding" ? "ALIGHT" : "EXIT";
+        if (interactButton) {
+          interactButton.hidden = false;
+          interactButton.textContent = passengerState.mode === "riding" ? "ALIGHT" : "EXIT";
+          interactButton.setAttribute("aria-label", passengerState.mode === "riding" ? "Alight from public transport" : "Exit vehicle");
+        }
         if (jumpButton) jumpButton.classList.add("is-hidden");
         if (vehicleViewButton) vehicleViewButton.classList.remove("is-hidden");
       } else {
@@ -1314,7 +1621,25 @@ async function start(): Promise<void> {
           passengerState.mode === "not_riding" &&
           greaterAccraMappedRailService.isBoardingOpen() &&
           Math.hypot(player.root.position.x + 250, player.root.position.z - 150) <= 14;
-        if (interactButton) interactButton.textContent = activeInterior ? "EXIT" : nearMappedRailBoarding ? "BOARD" : "ENTER";
+        if (interactButton) {
+          const vehicleEntryX = vehicleState.x - Math.cos(vehicleState.headingRadians) * 1.15;
+          const vehicleEntryZ = vehicleState.z + Math.sin(vehicleState.headingRadians) * 1.15;
+          const nearCarDoor = Math.hypot(player.root.position.x - vehicleEntryX, player.root.position.z - vehicleEntryZ) <= 2.5;
+          const nearTrotroDoor = Math.hypot(player.root.position.x - (publicTaxiState.x - 1.15), player.root.position.z - publicTaxiState.z) <= 3;
+          const nearBoat = findNearestMarinaCraft().distanceM <= 26;
+          const nearPreviewRail = railStatus.boardingOpen && Math.hypot(player.root.position.x + 41, player.root.position.z + 20) <= 9;
+          const nearMappedRail = nearMappedRailBoarding;
+          const nearBuilding = DISTRICT_BUILDINGS.some((building) => {
+            if (!building.interiorId) return false;
+            const frontX = building.side === "west" ? building.x + building.width / 2 : building.x - building.width / 2;
+            const exitX = frontX + (building.side === "west" ? 1.4 : -1.4);
+            return Math.hypot(player.root.position.x - exitX, player.root.position.z - building.z) <= 3.5;
+          });
+          const canInteract = !!activeInterior || nearMappedRail || nearPreviewRail || nearTrotroDoor || nearBoat || nearCarDoor || nearBuilding;
+          interactButton.hidden = !canInteract;
+          interactButton.textContent = activeInterior ? "EXIT" : nearMappedRail || nearPreviewRail ? "BOARD" : "ENTER";
+          interactButton.setAttribute("aria-label", activeInterior ? "Exit building" : nearMappedRail || nearPreviewRail ? "Board public transport" : "Enter nearby vehicle or building");
+        }
         if (jumpButton) jumpButton.classList.remove("is-hidden");
         if (vehicleViewButton) vehicleViewButton.classList.add("is-hidden");
       }
@@ -1332,8 +1657,15 @@ async function start(): Promise<void> {
         inputZ /= inputLength;
       }
 
-      const forward = new Vector3(-Math.sin(camera.alpha), 0, -Math.cos(camera.alpha));
-      const right = new Vector3(-forward.z, 0, forward.x);
+      // Use the camera's actual world-space basis, not a hand-derived alpha
+      // approximation. ArcRotateCamera's alpha convention is easy to rotate
+      // incorrectly by 90 degrees, which makes touch movement feel misaligned.
+      const forward = camera.getForwardRay().direction.clone();
+      forward.y = 0;
+      forward.normalize();
+      const right = camera.getDirection(Vector3.Right());
+      right.y = 0;
+      right.normalize();
       const direction = forward.scale(inputZ).add(right.scale(inputX));
       const moving = interactionState.mode === "on_foot" && passengerState.mode !== "riding" && !watercraftMode && direction.lengthSquared() > 0.001;
 
@@ -1371,6 +1703,8 @@ async function start(): Promise<void> {
         verticalVelocity = 0;
         onGround = true;
       }
+
+      player.setMoving(moving && onGround);
 
       if (moving && onGround) {
         const swing = Math.sin(walkClock) * 0.48;
@@ -1585,10 +1919,11 @@ async function start(): Promise<void> {
 }
 
 start().catch((error: unknown) => {
+  const detail = error instanceof Error ? error.message : String(error);
   console.error("AKWANTUO startup failed at " + startupHandoffStage + ":", error);
   document.documentElement.dataset.startupHandoffStage = startupHandoffStage;
-  document.documentElement.dataset.startupHandoffError = error instanceof Error ? error.message : String(error);
+  document.documentElement.dataset.startupHandoffError = detail.slice(0, 500);
   if (bootStatus) {
-    bootStatus.textContent = "Unable to start the 3D preview. Please refresh and try again.";
+    bootStatus.textContent = "3D startup failed (" + startupHandoffStage + "): " + detail;
   }
 });

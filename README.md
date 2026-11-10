@@ -43,7 +43,7 @@ Open the local URL printed by Vite. The current prototype includes the AKWANTUO 
 
 ## Current stage
 
-**Phase 1 — foundation and first playable prototype.** The client now has a responsive startup/menu flow, a simple third-person character, follow camera, basic walk/jump controls, and a touch joystick for phones.\n\n### Prototype controls\n\n- Desktop: WASD or arrow keys to move; Space to jump; drag the scene to rotate the camera.\n- Touchscreen: use the left virtual joystick to move and the JUMP button to jump; drag the scene to rotate the camera.\n\nThe character, buildings and street are temporary development geometry. Character appearance is saved only in this browser; there is no cloud profile, authentication, multiplayer server or production art yet.
+**Phase 1 — foundation and first playable prototype.** The client has a responsive startup/menu flow, a third-person placeholder character, follow camera, basic walk/jump controls, and a touch joystick for phones. Supabase authentication, cloud player profiles, and the first economy schema are connected. The game is still a prototype: multiplayer server infrastructure and production-quality character/world assets are not complete.\n\n### Prototype controls\n\n- Desktop: WASD or arrow keys to move; Space to jump; drag the scene to rotate the camera.\n- Touchscreen: use the left virtual joystick to move and the JUMP button to jump; drag the scene to rotate the camera.\n\nThe character, buildings and street remain temporary development geometry. Appearance can be saved locally and to the dedicated AKWANTUO cloud profile when signed in. There is not yet a running multiplayer game server or production art pipeline.
 
 ## Ownership and safety
 
