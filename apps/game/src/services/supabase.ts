@@ -1,8 +1,9 @@
 import type { CharacterAppearance } from "../character/appearance";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://ugiysogfkclbcryhtkyn.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "sb_publishable__WFhhKIwP7yxOqaMNsy9pA_ZHY9xE3m";
+const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "sb_publishable__WFhhKIwP7yxO9pA9ZHY9xE3m";
 const SESSION_KEY = "akwantuo.auth.session.v1";
+const REFRESH_TIMEOUT_MS = 10_000;
 
 export interface AkwantuoUser {
   id: string;
@@ -26,10 +27,24 @@ export interface PlayerProfile {
   game_save: Record<string, unknown>;
 }
 
+class SupabaseRequestError extends Error {
+  constructor(message: string, readonly status: number, readonly code?: string) {
+    super(message);
+    this.name = "SupabaseRequestError";
+  }
+}
+
 function readStoredSession(): AkwantuoSession | null {
   try {
     const raw = window.localStorage.getItem(SESSION_KEY);
-    return raw ? JSON.parse(raw) as AkwantuoSession : null;
+    if (!raw) return null;
+    const value = JSON.parse(raw) as Partial<AkwantuoSession>;
+    if (typeof value.access_token !== "string" || typeof value.refresh_token !== "string" ||
+        !value.user || typeof value.user.id !== "string") {
+      window.localStorage.removeItem(SESSION_KEY);
+      return null;
+    }
+    return value as AkwantuoSession;
   } catch {
     return null;
   }
@@ -61,9 +76,35 @@ async function request<T>(path: string, init: RequestInit = {}, accessToken?: st
       : typeof payload.error_description === "string" ? payload.error_description
       : typeof payload.error === "string" ? payload.error
       : `Supabase request failed (${response.status})`;
-    throw new Error(message);
+    const code = typeof payload.error_code === "string" ? payload.error_code
+      : typeof payload.code === "string" ? payload.code
+      : typeof payload.error === "string" ? payload.error
+      : undefined;
+    throw new SupabaseRequestError(message, response.status, code);
   }
   return payload as T;
+}
+
+function isDefinitiveInvalidRefresh(error: unknown): boolean {
+  if (!(error instanceof SupabaseRequestError) || error.status !== 400) return false;
+  const reason = `${error.code ?? ""} ${error.message}`.toLowerCase();
+  return reason.includes("refresh_token_not_found") ||
+    reason.includes("invalid refresh token") ||
+    reason.includes("refresh token not found");
+}
+
+function showOfflineAccountState(user: AkwantuoUser): void {
+  // Startup can still enter the local game, but no expired access token is exposed
+  // as an active session and authenticated cloud operations remain unavailable.
+  document.documentElement.dataset.akwantuoAuthState = "offline";
+  const accountStatus = document.querySelector<HTMLElement>("#account-status");
+  if (accountStatus) {
+    accountStatus.textContent = `Welcome back, ${user.email || "AKWANTUO player"}. You are offline; reconnect to restore cloud access.`;
+  }
+  const accountButton = document.querySelector<HTMLElement>("#account-button");
+  if (accountButton) accountButton.innerHTML = "ACCOUNT <small>OFFLINE</small>";
+  const signOutButton = document.querySelector<HTMLElement>("#account-signout");
+  signOutButton?.classList.remove("is-hidden");
 }
 
 export function isSupabaseConfigured(): boolean {
@@ -72,23 +113,47 @@ export function isSupabaseConfigured(): boolean {
 
 export async function getAkwantuoSession(): Promise<AkwantuoSession | null> {
   const session = readStoredSession();
-  if (!session) return null;
-  if (session.expires_at && session.expires_at > Math.floor(Date.now() / 1000) + 60) return session;
-  if (!session.refresh_token) {
-    storeSession(null);
+  if (!session) {
+    document.documentElement.dataset.akwantuoAuthState = "signed_out";
     return null;
   }
+  if (session.expires_at && session.expires_at > Math.floor(Date.now() / 1000) + 60) {
+    document.documentElement.dataset.akwantuoAuthState = "signed_in";
+    return session;
+  }
+  if (!session.refresh_token) {
+    storeSession(null);
+    document.documentElement.dataset.akwantuoAuthState = "signed_out";
+    return null;
+  }
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), REFRESH_TIMEOUT_MS);
   try {
     const refreshed = await request<Omit<AkwantuoSession, "user"> & { user?: AkwantuoUser }>(
       "/auth/v1/token?grant_type=refresh_token",
-      { method: "POST", body: JSON.stringify({ refresh_token: session.refresh_token }) }
+      {
+        method: "POST",
+        body: JSON.stringify({ refresh_token: session.refresh_token }),
+        signal: controller.signal
+      }
     );
     const nextSession = { ...refreshed, user: refreshed.user ?? session.user };
     storeSession(nextSession);
+    document.documentElement.dataset.akwantuoAuthState = "signed_in";
     return nextSession;
-  } catch {
-    storeSession(null);
+  } catch (error) {
+    if (isDefinitiveInvalidRefresh(error)) {
+      storeSession(null);
+      document.documentElement.dataset.akwantuoAuthState = "signed_out";
+      return null;
+    }
+    // Network errors, timeouts, rate limits and server errors do not prove that
+    // the refresh credential is invalid. Retain it for a later retry, but never
+    // return or use the possibly expired access token.
+    showOfflineAccountState(session.user);
     return null;
+  } finally {
+    window.clearTimeout(timeout);
   }
 }
 
@@ -98,6 +163,7 @@ export async function signInAkwantuo(email: string, password: string): Promise<A
     { method: "POST", body: JSON.stringify({ email: email.trim(), password }) }
   );
   storeSession(session);
+  document.documentElement.dataset.akwantuoAuthState = "signed_in";
   return session;
 }
 
@@ -116,17 +182,19 @@ export async function signUpAkwantuo(email: string, password: string, displayNam
     user: result.user
   };
   storeSession(session);
+  document.documentElement.dataset.akwantuoAuthState = "signed_in";
   return { session, confirmationRequired: false };
 }
 
 export async function signOutAkwantuo(): Promise<void> {
   const session = readStoredSession();
   try {
-    if (session?.access_token) {
+    if (session?.access_token && (!session.expires_at || session.expires_at > Math.floor(Date.now() / 1000))) {
       await request<unknown>("/auth/v1/logout", { method: "POST" }, session.access_token);
     }
   } finally {
     storeSession(null);
+    document.documentElement.dataset.akwantuoAuthState = "signed_out";
   }
 }
 
