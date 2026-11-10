@@ -3,6 +3,7 @@ import type { CharacterAppearance } from "../character/appearance";
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://ugiysogfkclbcryhtkyn.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "sb_publishable__WFhhKIwP7yxOqaMNsy9pA_ZHY9xE3m";
 const SESSION_KEY = "akwantuo.auth.session.v1";
+const STARTUP_REQUEST_TIMEOUT_MS = 15_000;
 
 export interface AkwantuoUser {
   id: string;
@@ -26,6 +27,14 @@ export interface PlayerProfile {
   game_save: Record<string, unknown>;
 }
 
+/** A bounded read used during startup timed out before Supabase responded. */
+export class SupabaseRequestTimeoutError extends Error {
+  constructor(timeoutMs: number) {
+    super(`AKWANTUO cloud request timed out after ${Math.round(timeoutMs / 1000)} seconds.`);
+    this.name = "SupabaseRequestTimeoutError";
+  }
+}
+
 function readStoredSession(): AkwantuoSession | null {
   try {
     const raw = window.localStorage.getItem(SESSION_KEY);
@@ -44,26 +53,47 @@ function storeSession(session: AkwantuoSession | null): void {
   }
 }
 
-async function request<T>(path: string, init: RequestInit = {}, accessToken?: string): Promise<T> {
-  const response = await fetch(`${SUPABASE_URL}${path}`, {
-    ...init,
-    headers: {
-      apikey: SUPABASE_PUBLISHABLE_KEY,
-      "Content-Type": "application/json",
-      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-      ...init.headers
+async function request<T>(
+  path: string,
+  init: RequestInit = {},
+  accessToken?: string,
+  timeoutMs?: number
+): Promise<T> {
+  const controller = timeoutMs === undefined ? null : new AbortController();
+  let timedOut = false;
+  const timeout = controller && timeoutMs !== undefined
+    ? window.setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, timeoutMs)
+    : undefined;
+  try {
+    const response = await fetch(`${SUPABASE_URL}${path}`, {
+      ...init,
+      ...(controller ? { signal: controller.signal } : {}),
+      headers: {
+        apikey: SUPABASE_PUBLISHABLE_KEY,
+        "Content-Type": "application/json",
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        ...init.headers
+      }
+    });
+    const payload = await response.json().catch(() => ({})) as Record<string, unknown>;
+    if (!response.ok) {
+      const message = typeof payload.message === "string" ? payload.message
+        : typeof payload.msg === "string" ? payload.msg
+        : typeof payload.error_description === "string" ? payload.error_description
+        : typeof payload.error === "string" ? payload.error
+        : `Supabase request failed (${response.status})`;
+      throw new Error(message);
     }
-  });
-  const payload = await response.json().catch(() => ({})) as Record<string, unknown>;
-  if (!response.ok) {
-    const message = typeof payload.message === "string" ? payload.message
-      : typeof payload.msg === "string" ? payload.msg
-      : typeof payload.error_description === "string" ? payload.error_description
-      : typeof payload.error === "string" ? payload.error
-      : `Supabase request failed (${response.status})`;
-    throw new Error(message);
+    return payload as T;
+  } catch (error) {
+    if (timedOut && timeoutMs !== undefined) throw new SupabaseRequestTimeoutError(timeoutMs);
+    throw error;
+  } finally {
+    if (timeout !== undefined) window.clearTimeout(timeout);
   }
-  return payload as T;
 }
 
 export function isSupabaseConfigured(): boolean {
@@ -81,13 +111,17 @@ export async function getAkwantuoSession(): Promise<AkwantuoSession | null> {
   try {
     const refreshed = await request<Omit<AkwantuoSession, "user"> & { user?: AkwantuoUser }>(
       "/auth/v1/token?grant_type=refresh_token",
-      { method: "POST", body: JSON.stringify({ refresh_token: session.refresh_token }) }
+      { method: "POST", body: JSON.stringify({ refresh_token: session.refresh_token }) },
+      undefined,
+      STARTUP_REQUEST_TIMEOUT_MS
     );
     const nextSession = { ...refreshed, user: refreshed.user ?? session.user };
     storeSession(nextSession);
     return nextSession;
-  } catch {
-    storeSession(null);
+  } catch (error) {
+    // A transient timeout must not erase a possibly valid refresh token. Other
+    // refresh failures retain the previous behavior and clear the unusable session.
+    if (!(error instanceof SupabaseRequestTimeoutError)) storeSession(null);
     return null;
   }
 }
@@ -134,7 +168,8 @@ export async function loadPlayerProfile(session: AkwantuoSession): Promise<Playe
   const rows = await request<PlayerProfile[]>(
     `/rest/v1/player_profiles?id=eq.${encodeURIComponent(session.user.id)}&select=id,display_name,gender,age,look,game_save`,
     { method: "GET" },
-    session.access_token
+    session.access_token,
+    STARTUP_REQUEST_TIMEOUT_MS
   );
   return rows[0] ?? null;
 }
@@ -181,14 +216,15 @@ export async function loadEconomyState(session: AkwantuoSession): Promise<Econom
   return request<EconomyState>("/rest/v1/rpc/akwantuo_get_economy_state", {
     method: "POST",
     body: "{}"
-  }, session.access_token);
+  }, session.access_token, STARTUP_REQUEST_TIMEOUT_MS);
 }
 
 export async function loadShopProducts(session: AkwantuoSession): Promise<ShopProductRecord[]> {
   return request<ShopProductRecord[]>(
     "/rest/v1/shop_products?select=product_id,name,category,price_pesewas,stock_quantity&order=category,name",
     { method: "GET" },
-    session.access_token
+    session.access_token,
+    STARTUP_REQUEST_TIMEOUT_MS
   );
 }
 
