@@ -106,7 +106,7 @@ function addRoad(
   paint.renderingGroupId = 1;
 }
 
-function createVillaggio(scene: Scene, solids: SolidArea[]): void {
+export function createVillaggio(scene: Scene, solids: SolidArea[]): void {
   const x = 650, z = 1770;
   const podium = sharedMaterial(scene, "akwantuo-villaggio-podium", new Color3(0.72, 0.74, 0.71));
   const glass = sharedMaterial(scene, "akwantuo-villaggio-glass", new Color3(0.24, 0.39, 0.43));
@@ -144,7 +144,7 @@ function createVillaggio(scene: Scene, solids: SolidArea[]): void {
   solids.push({ x, z, halfWidth: 62, halfDepth: 48 });
 }
 
-function createSignature(scene: Scene, solids: SolidArea[]): void {
+export function createSignature(scene: Scene, solids: SolidArea[]): void {
   const x = 3750, z = 2260;
   const podium = sharedMaterial(scene, "akwantuo-signature-podium", new Color3(0.76, 0.75, 0.68));
   const glass = sharedMaterial(scene, "akwantuo-signature-glass", new Color3(0.25, 0.42, 0.48));
@@ -177,7 +177,7 @@ function createSignature(scene: Scene, solids: SolidArea[]): void {
   solids.push({ x, z, halfWidth: 59, halfDepth: 43 });
 }
 
-function createAccraMall(scene: Scene, solids: SolidArea[]): void {
+export function createAccraMall(scene: Scene, solids: SolidArea[]): void {
   const x = 3290, z = 2240;
   const concrete = sharedMaterial(scene, "akwantuo-accra-mall-concrete", new Color3(0.69, 0.7, 0.67));
   const glass = sharedMaterial(scene, "akwantuo-accra-mall-glass", new Color3(0.22, 0.38, 0.43));
@@ -191,7 +191,7 @@ function createAccraMall(scene: Scene, solids: SolidArea[]): void {
   solids.push({ x, z, halfWidth: 69, halfDepth: 42 });
 }
 
-function createKotokaAirport(scene: Scene, solids: SolidArea[]): void {
+export function createKotokaAirport(scene: Scene, solids: SolidArea[]): void {
   const x = 1700, z = 950;
   const terminal = sharedMaterial(scene, "akwantuo-kotoka-terminal", new Color3(0.72, 0.75, 0.73));
   const glass = sharedMaterial(scene, "akwantuo-kotoka-glass", new Color3(0.2, 0.39, 0.46));
@@ -209,7 +209,7 @@ function createKotokaAirport(scene: Scene, solids: SolidArea[]): void {
   solids.push({ x, z, halfWidth: 80, halfDepth: 27 });
 }
 
-function createAccraSportsStadium(scene: Scene, solids: SolidArea[]): void {
+export function createAccraSportsStadium(scene: Scene, solids: SolidArea[]): void {
   const x = -150, z = -820;
   const concrete = sharedMaterial(scene, "akwantuo-stadium-concrete", new Color3(0.67, 0.68, 0.64));
   const roof = sharedMaterial(scene, "akwantuo-stadium-roof", new Color3(0.3, 0.37, 0.39));
@@ -243,7 +243,7 @@ function createAccraSportsStadium(scene: Scene, solids: SolidArea[]): void {
   solids.push({ x, z, halfWidth: 94, halfDepth: 72 });
 }
 
-function createUniversityOfGhana(scene: Scene, solids: SolidArea[]): void {
+export function createUniversityOfGhana(scene: Scene, solids: SolidArea[]): void {
   const x = 3350, z = 3550;
   const stone = sharedMaterial(scene, "akwantuo-legon-stone", new Color3(0.72, 0.66, 0.53));
   const roof = sharedMaterial(scene, "akwantuo-legon-roof", new Color3(0.43, 0.34, 0.26));
@@ -256,7 +256,7 @@ function createUniversityOfGhana(scene: Scene, solids: SolidArea[]): void {
   solids.push({ x, z, halfWidth: 43, halfDepth: 35 });
 }
 
-function createKwameNkrumahMemorial(scene: Scene, solids: SolidArea[]): void {
+export function createKwameNkrumahMemorial(scene: Scene, solids: SolidArea[]): void {
   const x = -760, z = 300;
   const stone = sharedMaterial(scene, "akwantuo-nkrumah-memorial-stone", new Color3(0.34, 0.39, 0.35));
   const roof = sharedMaterial(scene, "akwantuo-nkrumah-memorial-roof", new Color3(0.18, 0.23, 0.2));
@@ -286,7 +286,7 @@ function createKwameNkrumahMemorial(scene: Scene, solids: SolidArea[]): void {
   solids.push({ x, z, halfWidth: 48, halfDepth: 42 });
 }
 
-function createNationalTheatre(scene: Scene, solids: SolidArea[]): void {
+export function createNationalTheatre(scene: Scene, solids: SolidArea[]): void {
   const x = -80, z = -420;
   const shell = sharedMaterial(scene, "akwantuo-national-theatre-shell", new Color3(0.78, 0.77, 0.7));
   const glass = sharedMaterial(scene, "akwantuo-national-theatre-glass", new Color3(0.22, 0.4, 0.46));
