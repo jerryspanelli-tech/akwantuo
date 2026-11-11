@@ -1,7 +1,7 @@
 import type { CharacterAppearance } from "../character/appearance";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://ugiysogfkclbcryhtkyn.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "sb_publishable__WFhhKIwP7yx9pA_ZHY9xE3m";
+const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "sb_publishable__WFhhKIwP7yxOqaMNsy9pA_ZHY9xE3m";
 const SESSION_KEY = "akwantuo.auth.session.v1";
 const REFRESH_TIMEOUT_MS = 10_000;
 
