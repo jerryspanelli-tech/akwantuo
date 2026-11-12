@@ -5,18 +5,40 @@ if (!projectUrl.startsWith("https://") || !publishableKey.startsWith("sb_publish
   throw new Error("AKWANTUO Supabase public configuration is missing or invalid.");
 }
 
-const response = await fetch(`${projectUrl}/auth/v1/settings`, {
-  headers: { apikey: publishableKey }
-});
+const endpoint = `${projectUrl.replace(/\/$/, "")}/auth/v1/settings`;
+const maxAttempts = 3;
+let lastError;
 
-if (!response.ok) {
-  const detail = await response.text();
-  throw new Error(`AKWANTUO Supabase Auth endpoint returned ${response.status}: ${detail.slice(0, 240)}`);
+for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+  try {
+    const response = await fetch(endpoint, {
+      headers: { apikey: publishableKey, Accept: "application/json" },
+      signal: AbortSignal.timeout(12000)
+    });
+
+    if (response.ok) {
+      const settings = await response.json();
+      if (!settings || typeof settings !== "object" || Array.isArray(settings)) {
+        throw new Error("AKWANTUO Supabase Auth endpoint returned an invalid settings payload.");
+      }
+      console.log(`AKWANTUO Supabase Auth is reachable (HTTP ${response.status}); publishable key accepted.`);
+      process.exit(0);
+    }
+
+    const detail = (await response.text()).slice(0, 240);
+    const error = new Error(`AKWANTUO Supabase Auth returned HTTP ${response.status}: ${detail}`);
+    if (response.status < 500 && response.status !== 429) throw error;
+    lastError = error;
+  } catch (error) {
+    if (error instanceof Error && /HTTP 4\d\d/.test(error.message) && !/HTTP 429/.test(error.message)) throw error;
+    lastError = error;
+  }
+
+  if (attempt < maxAttempts) {
+    const delayMs = attempt * 2000;
+    console.warn(`Supabase connectivity attempt ${attempt}/${maxAttempts} failed; retrying in ${delayMs / 1000}s.`);
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+  }
 }
 
-const settings = await response.json();
-if (!settings || typeof settings !== "object") {
-  throw new Error("AKWANTUO Supabase Auth endpoint returned an invalid settings payload.");
-}
-
-console.log("AKWANTUO Supabase Auth endpoint is reachable and accepts the project's publishable key.");
+throw new Error(`AKWANTUO Supabase Auth connectivity failed after ${maxAttempts} attempts: ${lastError instanceof Error ? lastError.message : String(lastError)}`);
