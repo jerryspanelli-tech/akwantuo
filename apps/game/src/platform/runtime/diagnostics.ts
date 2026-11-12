@@ -64,7 +64,14 @@ export class RuntimeDiagnostics {
       message: redact(input.message),
       ...(input.phase ? { phase: redact(input.phase) } : {}),
       ...(typeof input.durationMs === "number" ? { durationMs: input.durationMs } : {}),
-      ...(input.details ? { details: Object.freeze({ ...input.details }) } : {})
+      ...(input.details ? {
+        details: Object.freeze(Object.fromEntries(
+          Object.entries(input.details).map(([key, value]) => [
+            redact(key),
+            typeof value === "string" ? redact(value) : value
+          ])
+        ))
+      } : {})
     });
 
     this.#events.push(event);
