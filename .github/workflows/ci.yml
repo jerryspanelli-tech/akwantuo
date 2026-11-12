@@ -2,7 +2,7 @@ name: AKWANTUO CI
 
 on:
   push:
-    branches: [main, "feat/**", "fix/**"]
+    branches: [main, "feat/**", "fix/**", "foundation/**"]
   pull_request:
     branches: [main]
 
