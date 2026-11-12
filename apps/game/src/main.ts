@@ -308,9 +308,9 @@ function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
   const loadCharacterModel = async (appearance: CharacterAppearance): Promise<void> => {
     const generation = ++loadGeneration;
     const file = appearance.presentation === "feminine" ? "akwantuo-female.glb" : "akwantuo-male.glb";
-    // Character GLBs are published by the dedicated asset build project.
-    // Keep this stable URL separate from the game site so large models do not bloat its deployment.
-    const baseUrl = "https://akwantuo-character-assets.vercel.app/";
+    // Serve the character GLBs from this game's own public assets.
+    // BASE_URL keeps the path valid on Vercel and GitHub Pages project URLs.
+    const baseUrl = `${import.meta.env.BASE_URL}assets/characters/`;
     try {
       const imported = await SceneLoader.ImportMeshAsync("", baseUrl, file, scene);
       if (generation !== loadGeneration) {
