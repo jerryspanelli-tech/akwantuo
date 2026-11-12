@@ -148,6 +148,12 @@ export async function withRuntimeTimeout<T>(
   parentSignal?.addEventListener("abort", abortFromParent, { once: true });
 
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  let rejectAbort: ((reason?: unknown) => void) | undefined;
+  const aborted = new Promise<never>((_, reject) => {
+    rejectAbort = reject;
+  });
+  const abortListener = (): void => rejectAbort?.(controller.signal.reason);
+
   const timeout = new Promise<never>((_, reject) => {
     timeoutId = setTimeout(() => {
       const error = new RuntimeTimeoutError(operation, timeoutMs);
@@ -156,9 +162,11 @@ export async function withRuntimeTimeout<T>(
     }, timeoutMs);
   });
 
+  controller.signal.addEventListener("abort", abortListener, { once: true });
   try {
-    return await Promise.race([task(controller.signal), timeout]);
+    return await Promise.race([task(controller.signal), timeout, aborted]);
   } finally {
+    controller.signal.removeEventListener("abort", abortListener);
     if (timeoutId !== undefined) clearTimeout(timeoutId);
     parentSignal?.removeEventListener("abort", abortFromParent);
   }
