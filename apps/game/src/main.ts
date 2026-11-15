@@ -1468,7 +1468,8 @@ async function start(): Promise<void> {
           else if (!result.ok) showNotice("Unable to board train: " + result.reason.replaceAll("_", " ") + ".");
         } else if (passengerState.mode === "riding" && passengerState.vehicleId === "preview-shared-trotro") {
           const result = alightPublicTransport(passengerState, { id: "preview-terminal", vehicleStopped: publicRideArrived, boardingOpen: false, alightingOpen: publicRideArrived, remainingSeats: 0 }, "preview-shared-trotro");
-          if (result.ok) { passengerState = result.state; passengerCameraRig?.dispose(); passengerCameraRig = null; player.root.setEnabled(true); player.root.position.set(publicTaxiState.x - 1.7, 0, publicTaxiState.z); showNotice("You alighted. Balance: GH₵" + (passengerState.balancePesewas / 100).toFixed(2)); }
+          if (result.ok) { passengerState = result.state; passengerCameraRig?.dispose(); passengerCameraRig = null; player.root.setEnabled(true); // Spawn beyond the 2m vehicle collision radius so the player can walk away immediately.
+            player.root.position.set(publicTaxiState.x - 2.6, 0, publicTaxiState.z); showNotice("You alighted. Balance: GH₵" + (passengerState.balancePesewas / 100).toFixed(2)); }
           else showNotice("The trotro is still travelling. Wait for the terminal stop.");
         } else if (interactionState.mode === "on_foot" && passengerState.mode === "not_riding" && Math.hypot(player.root.position.x - (publicTaxiState.x - 1.15), player.root.position.z - publicTaxiState.z) <= 3) {
           document.documentElement.dataset.transportTrotroBranch = "entered";
