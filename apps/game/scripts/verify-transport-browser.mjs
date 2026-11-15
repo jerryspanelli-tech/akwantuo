@@ -59,14 +59,14 @@ try {
       privateIslandWatercraft: Number(document.documentElement.dataset.akwantuoPrivateIslandWatercraftCount ?? 0),
       privateIslandMeshes: Number(document.documentElement.dataset.akwantuoPrivateIslandMeshCount ?? 0),
       interiorBlueprints: Number(document.documentElement.dataset.akwantuoInteriorBlueprintCount ?? 0),
-      renderedInteriorRooms: Number(document.documentElement.dataset.akwantuoInteriorRoomCount ?? 0),
+      builtInteriorRooms: Number(document.documentElement.dataset.akwantuoInteriorBuiltRoomCount ?? 0),
       interiorLinks: Number(document.documentElement.dataset.akwantuoBuildingInteriorLinkCount ?? 0),
       stage6Checks: document.documentElement.dataset.akwantuoStage6Checks === "passed"
     }));
     if (stageSixCatalogues.buildings !== 23 || stageSixCatalogues.districts !== 12 || stageSixCatalogues.properties !== 23 || stageSixCatalogues.businesses !== 17 || stageSixCatalogues.venueProgramme !== 7 ||
-        stageSixCatalogues.interiorBlueprints !== 11 || stageSixCatalogues.renderedInteriorRooms !== 11 ||
+        stageSixCatalogues.interiorBlueprints !== 11 || stageSixCatalogues.builtInteriorRooms !== 0 ||
         stageSixCatalogues.retailProducts < 15 || stageSixCatalogues.storeFridges < 3 ||
-        stageSixCatalogues.storeSnackRacks < 2 || stageSixCatalogues.storeCollisionAreas < 12 || !stageSixCatalogues.shopkeeperRig || stageSixCatalogues.privateIsland !== "Akwaaba Cay Private Island" ||
+        stageSixCatalogues.storeSnackRacks < 2 || stageSixCatalogues.storeCollisionAreas !== 0 || stageSixCatalogues.shopkeeperRig || stageSixCatalogues.privateIsland !== "Akwaaba Cay Private Island" ||
         stageSixCatalogues.privateIslandPrice < 10_000_000_000 || stageSixCatalogues.privateIslandWatercraft < 4 || stageSixCatalogues.privateIslandMeshes !== 1 ||
         stageSixCatalogues.interiorLinks !== 23 || !stageSixCatalogues.stage6Checks) {
       failures.push(target.name + ": Stage 6 building/district/property/interior catalogues are incomplete: " +
@@ -287,7 +287,16 @@ try {
         interiorCase.roomId,
         { timeout: 5000 }
       );
-      if (interiorCase.retail && stageSixCatalogues.retailProducts < 15) throw new Error(target.name + ": fictional convenience-store product catalogue is missing.");
+      if (interiorCase.retail) {
+        await page.waitForFunction(() =>
+          Number(document.documentElement.dataset.akwantuoInteriorBuiltRoomCount ?? 0) === 1 &&
+          Number(document.documentElement.dataset.akwantuoStoreCollisionCount ?? 0) >= 12 &&
+          document.documentElement.dataset.akwantuoStoreShopkeeperRig === "true",
+          null,
+          { timeout: 5000 }
+        );
+        if (stageSixCatalogues.retailProducts < 15) throw new Error(target.name + ": fictional convenience-store product catalogue is missing.");
+      }
       const activeBusiness = await page.evaluate(() => ({
         id: document.documentElement.dataset.activeBusinessId ?? "",
         serviceCount: Number(document.documentElement.dataset.activeBusinessServiceCount ?? 0),
@@ -382,6 +391,12 @@ try {
         { timeout: 5000 }
       );
       console.log(target.name + ": entered and exited " + interiorCase.roomId + " at " + interiorCase.buildingId);
+    }
+    const builtInteriorCount = await page.evaluate(() =>
+      Number(document.documentElement.dataset.akwantuoInteriorBuiltRoomCount ?? 0)
+    );
+    if (builtInteriorCount !== 11) {
+      throw new Error(target.name + ": expected all 11 distinct interiors to be built on demand after the full access test, got " + builtInteriorCount);
     }
     await page.goto("http://127.0.0.1:4173/?akwantuoIslandTest=1", { waitUntil: "networkidle", timeout: 30000 });
     await page.waitForFunction(() => (document.querySelector("#boot-status")?.textContent ?? "").includes("Your world is ready"), { timeout: 30000 });
