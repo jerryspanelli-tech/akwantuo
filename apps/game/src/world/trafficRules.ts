@@ -28,9 +28,9 @@ export type RoadTrafficRules = Readonly<{
 export const GREATER_ACCRA_TRAFFIC_RULES: RoadTrafficRules = {
   id: "greater-accra-road-traffic-baseline",
   regionId: "greater-accra",
-  driveSide: "right",
-  overtakeSide: "left",
-  roundaboutCirculation: "counterclockwise",
+  driveSide: "left",
+  overtakeSide: "right",
+  roundaboutCirculation: "clockwise",
   giveWayToTrafficOnRoundabout: true,
   keepJunctionClear: true,
   stopAtRedSignal: true,
@@ -40,7 +40,7 @@ export const GREATER_ACCRA_TRAFFIC_RULES: RoadTrafficRules = {
   motorwayStoppingForbiddenExceptEmergency: true,
   speedLimitSource: "posted_sign_or_explicit_area_rule",
   status: "planned",
-  designNote: "Right-hand traffic is the Greater Accra gameplay baseline. Junction priority, signal timing, speed limits and local restrictions must be supplied by reviewed road-control data; road class alone never invents a posted speed."
+  designNote: "Left-hand traffic is the Greater Accra gameplay baseline. Overtaking is on the right and roundabout circulation is clockwise. Junction priority, signal timing, speed limits and local restrictions must be supplied by reviewed road-control data; road class alone never invents a posted speed."
 };
 
 export function isRoadTrafficRulesValid(value: unknown): value is RoadTrafficRules {
@@ -66,7 +66,8 @@ export function isRoadTrafficRulesValid(value: unknown): value is RoadTrafficRul
 
 export function isGreaterAccraTrafficRulesValid(): boolean {
   return GREATER_ACCRA_TRAFFIC_RULES.regionId === "greater-accra" &&
-    GREATER_ACCRA_TRAFFIC_RULES.driveSide === "right" &&
-    GREATER_ACCRA_TRAFFIC_RULES.roundaboutCirculation === "counterclockwise" &&
+    GREATER_ACCRA_TRAFFIC_RULES.driveSide === "left" &&
+    GREATER_ACCRA_TRAFFIC_RULES.overtakeSide === "right" &&
+    GREATER_ACCRA_TRAFFIC_RULES.roundaboutCirculation === "clockwise" &&
     isRoadTrafficRulesValid(GREATER_ACCRA_TRAFFIC_RULES);
 }
