@@ -634,11 +634,10 @@ async function start(): Promise<void> {
   bootStatus.textContent = "Starting the 3D world…";
   let engine: Engine;
   try {
-    // Mobile GPUs are more reliable with antialiasing disabled. Babylon still
-    // selects WebGL2/WebGL1 as supported by the device.
-    // iPhone/iPad browsers can terminate a WebGL tab when its drawing
-    // buffer and scene exceed the device's available graphics memory.
-    // Use a deliberately smaller render target on touch-first devices.
+    // Keep MSAA disabled for older mobile GPUs, but avoid the visibly soft
+    // half-resolution image previously used on every touch-first device.
+    // A 1.5 scaling factor is a middle ground between native resolution and
+    // the former 2x downscale while retaining the low-power WebGL profile.
     const mobileGraphicsProfile =
       window.matchMedia("(pointer: coarse)").matches ||
       Math.min(window.innerWidth, window.innerHeight) <= 820;
@@ -648,7 +647,7 @@ async function start(): Promise<void> {
       powerPreference: "low-power",
       adaptToDeviceRatio: false
     });
-    engine.setHardwareScalingLevel(mobileGraphicsProfile ? 2 : 1);
+    engine.setHardwareScalingLevel(mobileGraphicsProfile ? 1.5 : 1);
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
     document.documentElement.dataset.akwantuoWebglInitError = detail.slice(0, 240);
