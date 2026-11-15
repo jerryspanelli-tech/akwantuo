@@ -6,7 +6,7 @@ export const WORLD_CONFIG = {
   coordinateUnit: "metres",
   ground: {
     width: 21000,
-    depth: 13500
+    depth: 37500
   },
   road: {
     width: 13,
