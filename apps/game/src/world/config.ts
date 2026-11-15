@@ -16,11 +16,11 @@ export const WORLD_CONFIG = {
     minX: -8000,
     maxX: 13000,
     minZ: -5000,
-    maxZ: 8500,
+    maxZ: 32500,
     playerMinX: -7900,
     playerMaxX: 12900,
     playerMinZ: -4900,
-    playerMaxZ: 8400
+    playerMaxZ: 32400
   },
   spawn: {
     x: 1100,
