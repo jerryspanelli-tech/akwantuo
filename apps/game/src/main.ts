@@ -461,7 +461,7 @@ function installTouchControls(): void {
     const bounds = joystick.getBoundingClientRect();
     centreX = bounds.left + bounds.width / 2;
     centreY = bounds.top + bounds.height / 2;
-    maxTravel = Math.max(1, bounds.width * 0.31);
+    maxTravel = Math.max(1, bounds.width * 0.43);
     joystick.setPointerCapture(event.pointerId);
     queuePosition(event);
   });
@@ -1696,7 +1696,7 @@ async function start(): Promise<void> {
 
       if (moving) {
         direction.normalize();
-        const moveSpeed = WORLD_CONFIG.movement.maxSpeed * movementStrength;
+        const moveSpeed = 1.2 + (WORLD_CONFIG.movement.maxSpeed - 1.2) * Math.pow(movementStrength, 1.6);
         const stepX = direction.x * moveSpeed * delta;
         const stepZ = direction.z * moveSpeed * delta;
         const nextX = player.root.position.x + stepX;
