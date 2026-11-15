@@ -6,6 +6,7 @@ import { isGreaterAccraMapLayoutValid } from "./greaterAccraLayout";
 import { isGreaterAccraRailNetworkValid } from "./railNetwork";
 import { isGreaterAccraTrackDesignValid } from "./railTrackDesign";
 import { isGreaterAccraRoadDesignCatalogueValid } from "./roadDesign";
+import { GREATER_ACCRA_TRAFFIC_RULES, isGreaterAccraTrafficRulesValid } from "./trafficRules";
 import { isPedestrianCrossingLayoutValid } from "./pedestrianCrossingGeometry";
 import { getTrafficSignalState, isTrafficSignalPlanValid, mayProceedOnTrafficSignal } from "./trafficSignals";
 import {
@@ -72,6 +73,10 @@ export function runTransportSmokeChecks(): void {
   assert(isGreaterAccraRailNetworkValid(), "Greater Accra Cape-gauge rail routes and station nodes validate");
   assert(isGreaterAccraTrackDesignValid(), "Greater Accra rail track design assignments validate");
   assert(isGreaterAccraRoadDesignCatalogueValid(), "Greater Accra road cross-section assignments validate");
+  assert(isGreaterAccraTrafficRulesValid() && GREATER_ACCRA_TRAFFIC_RULES.driveSide === "left" &&
+    GREATER_ACCRA_TRAFFIC_RULES.overtakeSide === "right" &&
+    GREATER_ACCRA_TRAFFIC_RULES.roundaboutCirculation === "clockwise",
+    "Greater Accra traffic follows Ghana left-hand driving, right-side overtaking and clockwise roundabout circulation");
   assert(isCircleRampGroundAccessLayoutValid(), "both Circle overpass ramp feet have a nearby tie-in to an authored ground approach");
   assert(isGreaterAccraPublicTransportRouteCatalogueValid() &&
     GREATER_ACCRA_PUBLIC_TRANSPORT_ROUTE_PLANS.length === 4,
