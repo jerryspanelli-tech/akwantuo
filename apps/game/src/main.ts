@@ -576,6 +576,15 @@ async function start(): Promise<void> {
     throw new Error("Babylon could not create a WebGL rendering context: " + detail);
   }
   activeEngine = engine;
+  // Keep graphics failures distinguishable from application/account failures.
+  engine.onContextLostObservable.add(() => {
+    document.documentElement.dataset.akwantuoWebglContext = "lost";
+    document.documentElement.dataset.akwantuoWebglContextLostAt = new Date().toISOString();
+    showNotice("The 3D graphics context was interrupted. Please reload AKWANTUO.");
+  });
+  engine.onContextRestoredObservable.add(() => {
+    document.documentElement.dataset.akwantuoWebglContext = "restored";
+  });
   engine.resize();
   const scene = new Scene(engine);
   activeScene = scene;
@@ -1898,6 +1907,12 @@ async function start(): Promise<void> {
   });
 
   playButton?.addEventListener("click", () => {
+    // Capture the exact scene footprint at the menu-to-gameplay handoff.
+    document.documentElement.dataset.akwantuoPlayClickedAt = new Date().toISOString();
+    document.documentElement.dataset.akwantuoPlayMeshCount = String(scene.meshes.length);
+    document.documentElement.dataset.akwantuoPlayMaterialCount = String(scene.materials.length);
+    document.documentElement.dataset.akwantuoPlayTextureCount = String(scene.textures.length);
+    document.documentElement.dataset.akwantuoPlayActiveCamera = scene.activeCamera?.name ?? "none";
     closeCharacterCreator();
     hasEnteredWorld = true;
     mainMenu?.classList.add("is-hidden");
