@@ -154,9 +154,14 @@ export function isCircleRampGroundAccessLayoutValid(): boolean {
       return {
         along,
         distanceM: Math.hypot(foot.x - projectedX, foot.z - projectedZ),
-        roadHalfWidthM: approach.roadWidthM / 2
+        roadHalfWidthM: approach.roadWidthM / 2,
+        roadLengthM: approach.roadLengthM
       };
-    }).filter((candidate) => candidate.along >= 50)
+    }).filter((candidate) =>
+        candidate.along >= CIRCLE_GROUND_ROUNDABOUT_LAYOUT.outerRadiusM - 8 &&
+        candidate.along <= CIRCLE_GROUND_ROUNDABOUT_LAYOUT.outerRadiusM +
+          candidate.roadLengthM - 8
+      )
       .sort((a, b) => a.distanceM - b.distanceM)[0];
     return !!nearest && nearest.distanceM <= 80 &&
       nearest.roadHalfWidthM > 0 && ramp.deckWidthM > 0;
@@ -197,7 +202,11 @@ export function createCircleGroundAccessGeometry(
         distanceM: Math.hypot(foot.x - projectedX, foot.z - projectedZ),
         along
       };
-    }).filter((candidate) => candidate.along >= 50)
+    }).filter((candidate) =>
+        candidate.along >= CIRCLE_GROUND_ROUNDABOUT_LAYOUT.outerRadiusM - 8 &&
+        candidate.along <= CIRCLE_GROUND_ROUNDABOUT_LAYOUT.outerRadiusM +
+          candidate.approach.roadLengthM - 8
+      )
       .sort((a, b) => a.distanceM - b.distanceM);
     const nearest = candidates[0];
     if (!nearest || nearest.distanceM > 80) {
