@@ -69,6 +69,10 @@ export const CIRCLE_ACCESS_PATH_LAYOUTS: readonly CircleAccessPathLayout[] = [
 ] as const;
 
 function materialFor(scene: Scene, surface: CircleAccessPathLayout["surface"]): StandardMaterial {
+  if (surface === "asphalt") {
+    const sharedRoadMaterial = scene.getMaterialByName("akwantuo-road-asphalt");
+    if (sharedRoadMaterial instanceof StandardMaterial) return sharedRoadMaterial;
+  }
   const name = surface === "asphalt"
     ? "akwantuo-circle-local-asphalt"
     : "akwantuo-circle-pedestrian-paving";
