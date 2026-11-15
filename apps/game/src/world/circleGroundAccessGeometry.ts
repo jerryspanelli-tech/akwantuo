@@ -136,6 +136,32 @@ export type CircleGroundAccessGeometryResult = Readonly<{
   pedestrianAccessPaths: readonly Mesh[];
 }>;
 
+/**
+ * Checks that both elevated-ramp feet have a short, deterministic tie-in to
+ * one of the authored ground-level Circle approach arms.
+ */
+export function isCircleRampGroundAccessLayoutValid(): boolean {
+  if (CIRCLE_FEO_OYEO_RAMPS.length !== 2) return false;
+  return CIRCLE_FEO_OYEO_RAMPS.every((ramp) => {
+    const foot = ramp.points.reduce((lowest, point) => point.y < lowest.y ? point : lowest);
+    const nearest = CIRCLE_GROUND_ROUNDABOUT_LAYOUT.approaches.map((approach) => {
+      const directionX = Math.sin(approach.bearingRadians);
+      const directionZ = Math.cos(approach.bearingRadians);
+      const along = foot.x * directionX + foot.z * directionZ;
+      const projectedX = directionX * along;
+      const projectedZ = directionZ * along;
+      return {
+        along,
+        distanceM: Math.hypot(foot.x - projectedX, foot.z - projectedZ),
+        roadHalfWidthM: approach.roadWidthM / 2
+      };
+    }).filter((candidate) => candidate.along >= 50)
+      .sort((a, b) => a.distanceM - b.distanceM)[0];
+    return !!nearest && nearest.distanceM <= 80 &&
+      nearest.roadHalfWidthM > 0 && ramp.deckWidthM > 0;
+  });
+}
+
 /** Builds provisional local access surfaces around the Circle preview. */
 export function createCircleGroundAccessGeometry(
   scene: Scene
