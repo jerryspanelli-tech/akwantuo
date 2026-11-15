@@ -86,6 +86,7 @@ const gameHud = document.querySelector<HTMLElement>("#game-hud");
 const joystick = document.querySelector<HTMLElement>("#joystick");
 const joystickStick = document.querySelector<HTMLElement>("#joystick-stick");
 const jumpButton = document.querySelector<HTMLButtonElement>("#jump-button");
+const sprintButton = document.querySelector<HTMLButtonElement>("#sprint-button");
 const interactButton = document.querySelector<HTMLButtonElement>("#interact-button");
 const vehicleViewButton = document.querySelector<HTMLButtonElement>("#vehicle-view-button");
 const notice = document.querySelector<HTMLElement>("#notice");
@@ -107,6 +108,7 @@ const accountDisplayName = document.querySelector<HTMLInputElement>("#account-di
 
 const pressedKeys = new Set<string>();
 const touchInput = { x: 0, z: 0 };
+let sprintHeld = false;
 let jumpRequested = false;
 let hasEnteredWorld = false;
 let vehicleActionRequested = false;
@@ -296,14 +298,19 @@ function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
   let locomotionGroups: import("@babylonjs/core").AnimationGroup[] = [];
   let currentLocomotion = "idle";
   let loadGeneration = 0;
-  const setMoving = (moving: boolean): void => {
+  const setMoving = (moving: boolean, sprinting = false): void => {
     const next = moving ? "walk" : "idle";
-    if (next === currentLocomotion) return;
-    currentLocomotion = next;
     const selected = locomotionGroups.find((group) => group.name.toLowerCase() === next);
-    if (!selected) return;
-    for (const group of locomotionGroups) group.stop();
-    selected.start(true);
+    if (next !== currentLocomotion) {
+      currentLocomotion = next;
+      if (selected) {
+        for (const group of locomotionGroups) group.stop();
+        selected.start(true);
+      }
+    }
+    // Until a dedicated run clip is available, speed up the walk cycle while sprinting.
+    const walk = locomotionGroups.find((group) => group.name.toLowerCase() === "walk");
+    if (walk) walk.speedRatio = sprinting && moving ? 1.45 : 1;
   };
   const loadCharacterModel = async (appearance: CharacterAppearance): Promise<void> => {
     const generation = ++loadGeneration;
@@ -1193,7 +1200,20 @@ async function start(): Promise<void> {
   window.addEventListener("keyup", (event: KeyboardEvent) => {
     pressedKeys.delete(event.key.toLowerCase());
   });
-  window.addEventListener("blur", () => { pressedKeys.clear(); vehicleBrake = false; });
+  window.addEventListener("blur", () => { pressedKeys.clear(); vehicleBrake = false; sprintHeld = false; sprintButton?.classList.remove("is-active"); });
+  sprintButton?.addEventListener("pointerdown", (event: PointerEvent) => {
+    event.preventDefault();
+    sprintHeld = true;
+    sprintButton.setPointerCapture(event.pointerId);
+    sprintButton.classList.add("is-active");
+  });
+  const releaseSprint = (): void => {
+    sprintHeld = false;
+    sprintButton?.classList.remove("is-active");
+  };
+  for (const eventName of ["pointerup", "pointercancel", "lostpointercapture"] as const) {
+    sprintButton?.addEventListener(eventName, releaseSprint);
+  }
   interactButton?.addEventListener("pointerdown", (event: PointerEvent) => {
     event.preventDefault();
     vehicleActionRequested = true;
@@ -1688,8 +1708,10 @@ async function start(): Promise<void> {
 
       if (moving) {
         direction.normalize();
-        const stepX = direction.x * WORLD_CONFIG.movement.walkSpeed * delta;
-        const stepZ = direction.z * WORLD_CONFIG.movement.walkSpeed * delta;
+        const sprinting = pressedKeys.has("shift") || sprintHeld;
+        const moveSpeed = sprinting ? WORLD_CONFIG.movement.sprintSpeed : WORLD_CONFIG.movement.walkSpeed;
+        const stepX = direction.x * moveSpeed * delta;
+        const stepZ = direction.z * moveSpeed * delta;
         const nextX = player.root.position.x + stepX;
         const nextZ = player.root.position.z + stepZ;
         const onMainlandMarinaDock = Math.abs(nextX - mainlandMarina.x) <= 16 &&
@@ -1703,7 +1725,7 @@ async function start(): Promise<void> {
         if (onWalkableShore && !isBlocked(nextX, player.root.position.z, solidAreas, WORLD_CONFIG.movement.collisionRadius) && Math.hypot(nextX - vehicleState.x, player.root.position.z - vehicleState.z) >= 2.0 && Math.hypot(nextX - publicTaxiState.x, player.root.position.z - publicTaxiState.z) >= 2.0) player.root.position.x = nextX;
         if (onWalkableShore && !isBlocked(player.root.position.x, nextZ, solidAreas, WORLD_CONFIG.movement.collisionRadius) && Math.hypot(player.root.position.x - vehicleState.x, nextZ - vehicleState.z) >= 2.0 && Math.hypot(player.root.position.x - publicTaxiState.x, nextZ - publicTaxiState.z) >= 2.0) player.root.position.z = nextZ;
         player.root.rotation.y = Math.atan2(direction.x, direction.z);
-        walkClock += delta * 9;
+        walkClock += delta * (sprinting ? 13 : 9);
       }
 
       if (interactionState.mode === "on_foot" && passengerState.mode !== "riding" && !watercraftMode && jumpRequested && onGround) {
@@ -1721,7 +1743,7 @@ async function start(): Promise<void> {
         onGround = true;
       }
 
-      player.setMoving(moving && onGround);
+      player.setMoving(moving && onGround, (pressedKeys.has("shift") || sprintHeld) && moving && onGround);
 
       if (moving && onGround) {
         const swing = Math.sin(walkClock) * 0.48;
