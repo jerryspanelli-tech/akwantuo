@@ -1,5 +1,6 @@
 import {
   Color3,
+  DynamicTexture,
   Mesh,
   MeshBuilder,
   Scene,
@@ -42,7 +43,33 @@ function getMaterial(scene: Scene, kind: RoadBandKind): StandardMaterial {
 
   const material = new StandardMaterial(name, scene);
   material.diffuseColor = ROAD_MATERIAL_COLORS[kind];
-  material.specularColor = new Color3(0.08, 0.08, 0.08);
+  material.specularColor = new Color3(0.025, 0.025, 0.025);
+  if (kind === "asphalt") {
+    // One shared, subtle procedural asphalt texture avoids a flat plastic look
+    // without adding per-road images or large texture memory allocations.
+    const texture = new DynamicTexture(
+      "akwantuo-road-asphalt-grain",
+      { width: 256, height: 256 },
+      scene,
+      false
+    );
+    const context = texture.getContext();
+    context.fillStyle = "#343a3b";
+    context.fillRect(0, 0, 256, 256);
+    for (let index = 0; index < 5200; index += 1) {
+      const x = (index * 73 + 19) % 256;
+      const y = (index * 151 + 47) % 256;
+      const shade = index % 3 === 0 ? 75 : index % 3 === 1 ? 105 : 135;
+      context.fillStyle = "rgba(" + shade + "," + shade + "," + shade + "," + (0.08 + (index % 4) * 0.025) + ")";
+      context.fillRect(x, y, 1 + (index % 2), 1);
+    }
+    texture.update(false);
+    texture.uScale = 3;
+    texture.vScale = 72;
+    texture.anisotropicFilteringLevel = Math.min(8, scene.getEngine().getCaps().maxAnisotropy || 1);
+    material.diffuseTexture = texture;
+    material.diffuseColor = new Color3(0.9, 0.92, 0.92);
+  }
   return material;
 }
 
