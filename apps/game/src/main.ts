@@ -643,7 +643,7 @@ async function start(): Promise<void> {
     const mobileGraphicsProfile =
       window.matchMedia("(pointer: coarse)").matches ||
       Math.min(window.innerWidth, window.innerHeight) <= 820;
-    engine = new Engine(canvas, false, {
+    engine = new Engine(canvas, !mobileGraphicsProfile, {
       preserveDrawingBuffer: false,
       stencil: false,
       powerPreference: "low-power",
