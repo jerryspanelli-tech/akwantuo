@@ -27,6 +27,8 @@ export type ElevatedRoadGeometryOptions = Readonly<{
   supportStationsM?: readonly number[];
   supportWidthM?: number;
   supportDepthM?: number;
+  /** Lateral offset from the carriageway centreline; use the median or shoulder, not a live lane. */
+  supportLateralOffsetM?: number;
   guardrailHeightM?: number;
   guardrailInsetM?: number;
 }>;
@@ -168,7 +170,9 @@ function createRoadPaintLine(
   mesh.material = getRoadPaintMaterial(scene);
   mesh.isPickable = false;
   mesh.checkCollisions = false;
-  mesh.renderingGroupId = 1;
+  // Keep paint in the opaque road pass so the depth buffer correctly hides
+  // markings behind vehicles instead of drawing them over car bodies.
+  mesh.renderingGroupId = 0;
   return mesh;
 }
 
@@ -269,8 +273,10 @@ function validateOptions(options: ElevatedRoadGeometryOptions, totalLengthM: num
   }
   if (options.supportStationsM && (
     !Number.isFinite(options.supportWidthM ?? 1.2) || (options.supportWidthM ?? 1.2) <= 0 ||
-    !Number.isFinite(options.supportDepthM ?? 1.2) || (options.supportDepthM ?? 1.2) <= 0
-  )) throw new Error("Support dimensions must be positive finite values.");
+    !Number.isFinite(options.supportDepthM ?? 1.2) || (options.supportDepthM ?? 1.2) <= 0 ||
+    !Number.isFinite(options.supportLateralOffsetM ?? 0) ||
+    Math.abs(options.supportLateralOffsetM ?? 0) + (options.supportWidthM ?? 1.2) / 2 > options.deckWidthM / 2 - 0.35
+  )) throw new Error("Support dimensions and lateral offset must keep columns within the deck and outside the edge clearance.");
   if (!Number.isFinite(options.guardrailHeightM ?? 1.1) || (options.guardrailHeightM ?? 1.1) < 0) {
     throw new Error("Guardrail height must be a non-negative finite value.");
   }
@@ -364,6 +370,11 @@ export function createElevatedRoadGeometry(
   const supportMaterial = getOrCreateMaterial(scene, "akwantuo-elevated-road-support", CONCRETE_COLOR);
   const supports = (options.supportStationsM ?? []).map((station, index) => {
     const deckPoint = pointAtDistance(options.points, station);
+    const segmentIndex = options.points.findIndex((point, index) =>
+      index < options.points.length - 1 &&
+      getPathLength(options.points.slice(0, index + 2)) >= station
+    );
+    const lateral = getSideOffset(options.points, Math.max(0, segmentIndex), options.supportLateralOffsetM ?? 0);
     const supportHeight = deckPoint.y - halfThickness - options.groundElevationM;
     const support = MeshBuilder.CreateBox(`${options.id}-support-${index + 1}`, {
       width: supportWidth,
@@ -371,9 +382,9 @@ export function createElevatedRoadGeometry(
       height: supportHeight
     }, scene);
     support.position.set(
-      deckPoint.x,
+      deckPoint.x + lateral.x,
       options.groundElevationM + supportHeight / 2,
-      deckPoint.z
+      deckPoint.z + lateral.z
     );
     support.material = supportMaterial;
     support.isPickable = false;
