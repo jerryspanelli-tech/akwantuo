@@ -211,7 +211,8 @@ function createLineMesh(
   mesh.material = material;
   mesh.isPickable = false;
   mesh.checkCollisions = false;
-  mesh.renderingGroupId = 1;
+  // Opaque pass preserves depth testing: vehicles must occlude paint beneath them.
+  mesh.renderingGroupId = 0;
   return mesh;
 }
 
