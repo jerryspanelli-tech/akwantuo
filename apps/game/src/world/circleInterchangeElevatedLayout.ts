@@ -133,28 +133,38 @@ function makeFeoOyeoRamp(
   id: string,
   referenceId: CircleFeoOyeoRampLayout["referenceId"],
   lengthM: number,
-  startX: number,
-  startZ: number
+  _startX: number,
+  _startZ: number
 ): CircleFeoOyeoRampLayout {
-  const riseM = 7.5;
-  const horizontalLengthM = Math.sqrt(lengthM * lengthM - riseM * riseM);
-  const dx = horizontalLengthM * 0.8;
-  const dz = horizontalLengthM * 0.6;
-  const ascendingPoints = [
-    { x: startX, y: 0, z: startZ },
-    { x: startX + dx / 2, y: riseM / 2, z: startZ + dz / 2 },
-    { x: startX + dx, y: riseM, z: startZ + dz }
-  ];
-  const points = id.includes("ramp-down")
-    ? [...ascendingPoints].reverse()
-    : ascendingPoints;
+  // Attach both ramps to the two actual ends of the existing loop viaduct.
+  // The earlier offsets placed them beside the deck, leaving a visible gap.
+  const loopRadius = loopLength / (10 * 2 * Math.sin(Math.PI / 20));
+  const deckElevationM = 8.5;
+  const horizontalLengthM = Math.sqrt(lengthM * lengthM - deckElevationM * deckElevationM);
+  const isDownRamp = id.includes("ramp-down");
+  const deckX = isDownRamp ? 145 + loopRadius : 145 - loopRadius;
+  const groundX = isDownRamp
+    ? deckX + horizontalLengthM
+    : deckX - horizontalLengthM;
+  const middleX = (deckX + groundX) / 2;
+  const ascendingPoints = isDownRamp
+    ? [
+        { x: deckX, y: deckElevationM, z: -95 },
+        { x: middleX, y: deckElevationM / 2, z: -95 },
+        { x: groundX, y: 0, z: -95 }
+      ]
+    : [
+        { x: groundX, y: 0, z: -95 },
+        { x: middleX, y: deckElevationM / 2, z: -95 },
+        { x: deckX, y: deckElevationM, z: -95 }
+      ];
   return {
     id,
     referenceId,
     lengthM,
     deckWidthM: 6.5,
-    points,
-    designNote: "Published length and width; local alignment and vertical profile are provisional visual-design assumptions, not surveyed ramp geometry."
+    points: ascendingPoints,
+    designNote: "The elevated ends now meet the two ends of the Circle loop viaduct. Ground-level ramp termini remain provisional and require final tie-in to the local road layout."
   };
 }
 
