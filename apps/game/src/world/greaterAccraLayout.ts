@@ -3,7 +3,7 @@ import { GREATER_ACCRA_ROAD_NETWORK } from "./roadNetwork";
 import { GREATER_ACCRA_REGIONS } from "./regions";
 
 /**
- * First spatial layout for the Greater Accra game world.
+ * First spatial layout for Greater Accra and the N6 Accra–Kumasi corridor.
  *
  * Local map coordinates are metres: +X east, +Z north, Y elevation.
  * The layout is intentionally compressed and stylised for gameplay. It is
@@ -31,7 +31,7 @@ export const GREATER_ACCRA_MAP_EXTENT = {
   orientation: { east: "+X", north: "+Z", south: "coastline / Gulf of Guinea" }
 } as const;
 
-/** Approximate district anchors used to organise later streets and landmarks. */
+/** Approximate district and intercity town anchors for streets and landmarks. */
 export const GREATER_ACCRA_REGION_ANCHORS: readonly MapRegionAnchor[] = [
   { regionId: "greater-accra", x: 2200, z: 900 },
   { regionId: "airport-city", x: 1100, z: 350 },
