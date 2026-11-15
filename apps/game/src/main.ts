@@ -1146,6 +1146,8 @@ async function start(): Promise<void> {
   document.documentElement.dataset.npcRoadTraffic = String(npcTraffic.length);
   document.documentElement.dataset.npcRoadTrafficRoute = npcTrafficRoutes.map((route) => route.id).join(",");
   document.documentElement.dataset.npcRoadTrafficRoutes = npcTrafficRoutes.map((route) => route.id).join(",");
+  document.documentElement.dataset.npcTrafficTimeHeadway = "1.8";
+  document.documentElement.dataset.npcTrafficConflictPrediction = "true";
   document.documentElement.dataset.npcRoadTrafficLoop = String(npcTrafficRoutes.every((route) =>
     route.points.length >= 4 &&
     route.points[0].x === route.points[route.points.length - 1].x &&
@@ -1419,15 +1421,54 @@ async function start(): Promise<void> {
             ? leader.distanceM - traffic.distanceM +
               (index === trafficInRouteOrder.length - 1 ? route.lengthM : 0)
             : Number.POSITIVE_INFINITY;
-          const headwaySpeed = Number.isFinite(gapM) ? Math.sqrt(2 * 2.0 * Math.max(0, gapM - 12)) : 9;
+          // Maintain a speed-dependent time gap, not just a fixed number of metres.
+          const desiredGapM = 8 + traffic.state.speedMps * 1.8;
+          const headwaySpeed = Number.isFinite(gapM)
+            ? Math.sqrt(2 * 2.5 * Math.max(0, gapM - desiredGapM))
+            : 8.5;
+
+          // Predict short-horizon conflicts with vehicles on other routes.
+          // This is a safety fallback for close approaches; it does not replace
+          // signal phases or right-of-way rules at authored junctions.
+          let conflictSpeedLimitMps = 8.5;
+          for (const other of npcTraffic) {
+            if (other === traffic) continue;
+            const relativeX = other.state.x - traffic.state.x;
+            const relativeZ = other.state.z - traffic.state.z;
+            const relativeVelocityX =
+              Math.sin(other.state.headingRadians) * other.state.speedMps -
+              Math.sin(traffic.state.headingRadians) * traffic.state.speedMps;
+            const relativeVelocityZ =
+              Math.cos(other.state.headingRadians) * other.state.speedMps -
+              Math.cos(traffic.state.headingRadians) * traffic.state.speedMps;
+            const relativeSpeedSquared =
+              relativeVelocityX * relativeVelocityX + relativeVelocityZ * relativeVelocityZ;
+            if (relativeSpeedSquared <= 1e-4) continue;
+            const closestApproachSeconds = Math.max(0, Math.min(1.5,
+              -(relativeX * relativeVelocityX + relativeZ * relativeVelocityZ) /
+              relativeSpeedSquared
+            ));
+            const closestDistanceM = Math.hypot(
+              relativeX + relativeVelocityX * closestApproachSeconds,
+              relativeZ + relativeVelocityZ * closestApproachSeconds
+            );
+            if (closestApproachSeconds > 0.05 && closestDistanceM < 2.4) {
+              conflictSpeedLimitMps = 0;
+              break;
+            }
+            if (closestApproachSeconds > 0.05 && closestDistanceM < 3.2) {
+              conflictSpeedLimitMps = Math.min(conflictSpeedLimitMps, 3.0);
+            }
+          }
+
           const npcControl = getRoadVehicleAutopilotControl({
             wheelbaseM: 2.65,
             maximumSteeringAngleRadians: 0.48,
-            targetSpeedMps: Math.min(9, headwaySpeed),
+            targetSpeedMps: Math.min(8.5, headwaySpeed, conflictSpeedLimitMps),
             baseLookaheadM: 9,
             speedLookaheadFactor: 0.65,
             throttleGain: 0.32,
-            brakeGain: 0.55
+            brakeGain: 0.65
           }, traffic.state, traffic.route);
           traffic.state = advanceRoadVehicleElapsed({
             wheelbaseM: 2.65,
