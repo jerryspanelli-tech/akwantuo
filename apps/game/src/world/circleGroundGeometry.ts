@@ -249,20 +249,19 @@ export function createCircleGroundGeometry(
     // High-contrast zebra crossing set back from the give-way line.
     const crossingDistance = options.outerRadiusM + 16;
     const stripeCount = 9;
-    const crossingHalfWidth = approach.roadWidthM * 0.36;
+    const stripeSpacingM = 1.25;
     for (let stripe = 0; stripe < stripeCount; stripe += 1) {
-      const lateral = -crossingHalfWidth +
-        (crossingHalfWidth * 2 * stripe) / (stripeCount - 1);
+      const alongOffset = (stripe - (stripeCount - 1) / 2) * stripeSpacingM;
       const crossingStripe = MeshBuilder.CreateBox(
         `${options.id}-approach-zebra-${approach.id}-${stripe + 1}`,
-        { width: 1.25, height: 0.035, depth: 0.9 },
+        { width: approach.roadWidthM * 0.72, height: 0.035, depth: 0.72 },
         scene
       );
       crossingStripe.rotation.y = bearing;
       crossingStripe.position.set(
-        options.centerX + directionX * crossingDistance + perpendicularX * lateral,
+        options.centerX + directionX * (crossingDistance + alongOffset),
         markingY,
-        options.centerZ + directionZ * crossingDistance + perpendicularZ * lateral
+        options.centerZ + directionZ * (crossingDistance + alongOffset)
       );
       markStatic(crossingStripe, material(scene, "akwantuo-circle-junction-paint", LINE_WHITE));
       laneMarkings.push(crossingStripe);
