@@ -191,6 +191,34 @@ export function getCircleRampElevationAtPosition(
   if (!centre) return null;
   let nearest: { distanceM: number; elevationM: number } | null = null;
 
+  // The two ramps meet the semicircular loop at its endpoints. Include the
+  // loop deck itself so a vehicle does not drop back to ground height after
+  // reaching the top of a ramp.
+  const loopLayout = CIRCLE_ELEVATED_STRUCTURE_LAYOUTS.find(
+    (layout) => layout.id === "circle-loop-viaduct-3d"
+  );
+  if (loopLayout) {
+    for (let index = 1; index < loopLayout.points.length; index += 1) {
+      const a = loopLayout.points[index - 1];
+      const b = loopLayout.points[index];
+      const ax = centre.x + a.x;
+      const az = centre.z + a.z;
+      const bx = centre.x + b.x;
+      const bz = centre.z + b.z;
+      const dx = bx - ax;
+      const dz = bz - az;
+      const lengthSquared = dx * dx + dz * dz;
+      if (lengthSquared <= 1e-8) continue;
+      const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / lengthSquared));
+      const closestX = ax + dx * t;
+      const closestZ = az + dz * t;
+      const distanceM = Math.hypot(x - closestX, z - closestZ);
+      if (!nearest || distanceM < nearest.distanceM) {
+        nearest = { distanceM, elevationM: loopLayout.deckElevationM };
+      }
+    }
+  }
+
   for (const ramp of CIRCLE_FEO_OYEO_RAMPS) {
     for (let index = 1; index < ramp.points.length; index += 1) {
       const a = ramp.points[index - 1];
