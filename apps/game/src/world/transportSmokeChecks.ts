@@ -1,5 +1,6 @@
 import { findShortestRoadRoute, isRoadRouteValid } from "./roadRouting";
-import { GREATER_ACCRA_ROAD_PATHS } from "./greaterAccraLayout";
+import { GREATER_ACCRA_MAP_EXTENT, GREATER_ACCRA_ROAD_PATHS } from "./greaterAccraLayout";
+import { WORLD_CONFIG } from "./config";
 import { findNearestRoadProjection, getRoadLaneCenterOffset, getRoadLaneCenterPoint, isPointOnRoadNetwork, isRoadProjectionValid } from "./roadNavigation";
 import { isGreaterAccraMapLayoutValid } from "./greaterAccraLayout";
 import { isGreaterAccraRailNetworkValid } from "./railNetwork";
@@ -63,6 +64,10 @@ export function runTransportSmokeChecks(): void {
   assert(DISTRICT_BUILDINGS.every((building) => !building.interiorId || interiorIds.has(building.interiorId)),
     "every advertised building interior resolves to a known interior blueprint");
   assert(isGreaterAccraMapLayoutValid(), "Greater Accra map nodes, roads and coastline validate");
+  assert(WORLD_CONFIG.bounds.maxZ === GREATER_ACCRA_MAP_EXTENT.maxZ &&
+    WORLD_CONFIG.bounds.playerMaxZ < GREATER_ACCRA_MAP_EXTENT.maxZ &&
+    WORLD_CONFIG.bounds.playerMaxZ >= GREATER_ACCRA_MAP_EXTENT.maxZ - 200,
+    "player movement bounds cover the full Accra–Kumasi map without allowing travel beyond its northern edge");
   assert(isGreaterAccraRailNetworkValid(), "Greater Accra Cape-gauge rail routes and station nodes validate");
   assert(isGreaterAccraTrackDesignValid(), "Greater Accra rail track design assignments validate");
   assert(isGreaterAccraRoadDesignCatalogueValid(), "Greater Accra road cross-section assignments validate");
