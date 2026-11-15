@@ -19,10 +19,10 @@ export const CIRCLE_GROUND_ROUNDABOUT_LAYOUT = {
   approaches: [
     // Bearings follow the actual authored Greater Accra road centrelines.
     // Their ends overlap the clipped main-road ribbons at the Circle envelope.
-    { id: "n1-west-approach", bearingRadians: -1.85459, roadWidthM: 24.5, roadLengthM: 650 },
-    { id: "n1-tema-corridor", bearingRadians: 1.69710, roadWidthM: 24.5, roadLengthM: 650 },
+    { id: "n1-west-approach", bearingRadians: -1.85459, roadWidthM: 24.5, roadLengthM: 675 },
+    { id: "n1-tema-corridor", bearingRadians: 1.69710, roadWidthM: 24.5, roadLengthM: 675 },
     { id: "n6-circle-caprice", bearingRadians: -0.41822, roadWidthM: 24.5, roadLengthM: 443 },
-    { id: "ring-road-central", bearingRadians: 2.01064, roadWidthM: 24.5, roadLengthM: 650 }
+    { id: "ring-road-central", bearingRadians: 2.01064, roadWidthM: 24.5, roadLengthM: 675 }
   ],
   status: "prototype",
   designNote: "The ground-level roundabout is documented in the Circle project descriptions. Radius, island size, approach bearings and widths here are provisional game-layout values chosen to make a first spatial prototype; they are not measurements of the real interchange."
