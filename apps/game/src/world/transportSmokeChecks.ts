@@ -139,6 +139,12 @@ export function runTransportSmokeChecks(): void {
     circleToOfankor.roadSegmentIds.includes("n6-circle-caprice") &&
     circleToOfankor.roadSegmentIds.includes("n6-achimota-ofankor"),
     "N6 connects Circle through Caprice, Alajo, Apenkwa and Achimota to Ofankor");
+  const accraToKumasi = findShortestRoadRoute("circle-junction", "kumasi-gateway");
+  assert(!!accraToKumasi && isRoadRouteValid(accraToKumasi) &&
+    accraToKumasi.roadSegmentIds.includes("n6-nsawam-suhum") &&
+    accraToKumasi.roadSegmentIds.includes("n6-ejisu-kumasi") &&
+    !accraToKumasi.includesFutureExpansion,
+    "N6 connects Accra through Nsawam, Suhum, Bunso, Anyinam, Nkawkaw, Konongo and Ejisu to Kumasi");
   const achimotaToMallam = findShortestRoadRoute("achimota-interchange", "mallam-junction");
   assert(!!achimotaToMallam && isRoadRouteValid(achimotaToMallam) &&
     achimotaToMallam.roadSegmentIds.length > 0,
@@ -173,8 +179,8 @@ export function runTransportSmokeChecks(): void {
   assert(Number.isFinite(laneCentre.x) && Number.isFinite(laneCentre.z) &&
     isPointOnRoadNetwork(laneCentre.x, laneCentre.z, { maxDistanceM: 10 }),
     "computed lane centres fall inside the drivable carriageway");
-  const futureRoad = GREATER_ACCRA_ROAD_PATHS.find((road) => road.roadSegmentId === "n6-nsawam-expansion");
-  assert(!!futureRoad, "future Nsawam road stub exists in the planning catalogue");
+  const futureRoad = GREATER_ACCRA_ROAD_PATHS.find((road) => road.roadSegmentId === "n2-prampram-expansion");
+  assert(!!futureRoad, "future Prampram road stub exists in the planning catalogue");
   const futurePoint = futureRoad.points[1];
   assert(findNearestRoadProjection(futurePoint.x, futurePoint.z, { maxDistanceM: 1 }) === null,
     "future road stubs are excluded from normal road projection");
