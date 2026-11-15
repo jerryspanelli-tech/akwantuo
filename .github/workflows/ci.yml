@@ -16,10 +16,10 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-      - name: Set up Node.js (match Vercel runtime)
+      - name: Set up Node.js (match repository runtime)
         uses: actions/setup-node@v4
         with:
-          node-version: 26
+          node-version: 22
       - name: Install dependencies
         run: npm install --no-audit --no-fund
       - name: Typecheck shared package and game client
@@ -35,9 +35,9 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-      - name: Set up Node.js (match Vercel runtime)
+      - name: Set up Node.js (match repository runtime)
         uses: actions/setup-node@v4
         with:
-          node-version: 26
+          node-version: 22
       - name: Verify live AKWANTUO Supabase connection
         run: node apps/game/scripts/verify-supabase-connection.mjs
