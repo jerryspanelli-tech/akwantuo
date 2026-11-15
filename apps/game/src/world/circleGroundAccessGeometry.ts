@@ -145,10 +145,40 @@ export function createCircleGroundAccessGeometry(
   const meshes = CIRCLE_ACCESS_PATH_LAYOUTS.map((layout) =>
     createPathMesh(scene, layout, centre.x, centre.z)
   );
+
+  // Tie the two new ramp feet into the nearest authored ground-road surfaces.
+  // These short connectors close the visual gaps; vehicle navigation remains
+  // governed by the separate transport system.
+  const rampGroundConnectors: CircleAccessPathLayout[] = [
+    {
+      routeId: "circle-ramp-down-to-ring-road-connector",
+      widthM: 6.5,
+      surface: "asphalt",
+      points: [
+        { name: "Loop viaduct ramp foot", x: 145 + 323 / (10 * 2 * Math.sin(Math.PI / 20)) + Math.sqrt(141.5 * 141.5 - 8.5 * 8.5), z: -95 },
+        { name: "Ring Road Central tie-in", x: 338, z: -141 }
+      ],
+      designNote: "Short visual tie-in from the ramp foot to the Ring Road Central surface."
+    },
+    {
+      routeId: "circle-ramp-up-from-feo-oye-o-connector",
+      widthM: 6.5,
+      surface: "asphalt",
+      points: [
+        { name: "Feo Oyeo local-road tie-in", x: -76, z: -58 },
+        { name: "Loop viaduct ramp foot", x: 145 - 323 / (10 * 2 * Math.sin(Math.PI / 20)) - Math.sqrt(143 * 143 - 8.5 * 8.5), z: -95 }
+      ],
+      designNote: "Short visual tie-in from the Feo Oyeo local-road surface to the ramp foot."
+    }
+  ];
+  const connectorMeshes = rampGroundConnectors.map((layout) =>
+    createPathMesh(scene, layout, centre.x, centre.z)
+  );
   return {
-    vehicleAccessRoads: meshes.filter((_, index) =>
-      CIRCLE_ACCESS_PATH_LAYOUTS[index].surface === "asphalt"
-    ),
+    vehicleAccessRoads: [
+      ...meshes.filter((_, index) => CIRCLE_ACCESS_PATH_LAYOUTS[index].surface === "asphalt"),
+      ...connectorMeshes
+    ],
     pedestrianAccessPaths: meshes.filter((_, index) =>
       CIRCLE_ACCESS_PATH_LAYOUTS[index].surface === "pedestrian_paving"
     )
