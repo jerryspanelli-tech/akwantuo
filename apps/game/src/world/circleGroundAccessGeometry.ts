@@ -16,6 +16,7 @@ export type CircleAccessPathPoint = Readonly<{
   /** Metres relative to the Circle centre node. */
   x: number;
   z: number;
+  elevationM?: number;
 }>;
 
 export type CircleAccessPathLayout = Readonly<{
@@ -111,12 +112,12 @@ function createPathMesh(
     const normalZ = -dx / length;
     left.push(new Vector3(
       centreX + point.x + normalX * halfWidth,
-      layout.surface === "pedestrian_paving" ? 0.12 : 0.08,
+      point.elevationM ?? (layout.surface === "pedestrian_paving" ? 0.12 : 0.08),
       centreZ + point.z + normalZ * halfWidth
     ));
     right.push(new Vector3(
       centreX + point.x - normalX * halfWidth,
-      layout.surface === "pedestrian_paving" ? 0.12 : 0.08,
+      point.elevationM ?? (layout.surface === "pedestrian_paving" ? 0.12 : 0.08),
       centreZ + point.z - normalZ * halfWidth
     ));
   });
@@ -207,8 +208,8 @@ export function createCircleGroundAccessGeometry(
       widthM: Math.min(ramp.deckWidthM, nearest.approach.roadWidthM - 2),
       surface: "asphalt" as const,
       points: [
-        { name: "Ramp ground foot", x: foot.x, z: foot.z },
-        { name: nearest.approach.id + " road centreline", x: nearest.projectedX, z: nearest.projectedZ }
+        { name: "Ramp ground foot", x: foot.x, z: foot.z, elevationM: foot.y },
+        { name: nearest.approach.id + " road centreline", x: nearest.projectedX, z: nearest.projectedZ, elevationM: 0.055 }
       ],
       designNote: "Ground-level connector joins the ramp foot to the nearest authored Circle approach surface."
     };
