@@ -53,6 +53,9 @@ export const GREATER_ACCRA_MAP_NODES: readonly MapNodePosition[] = [
   { nodeId: "mallam-junction", x: -6100, z: -700 },
   { nodeId: "kaneshie-interchange", x: -2850, z: -250 },
   { nodeId: "circle-junction", x: -450, z: 450 },
+  { nodeId: "caprice-junction", x: -650, z: 900 },
+  { nodeId: "alajo-junction", x: -1000, z: 1250 },
+  { nodeId: "apenkwa-junction", x: -1400, z: 1700 },
   { nodeId: "37-junction", x: 1250, z: -350 },
   { nodeId: "airport-city-anchor", x: 1050, z: 850 },
   { nodeId: "tetteh-quarshie-interchange", x: 3650, z: 1750 },
@@ -108,6 +111,30 @@ export const GREATER_ACCRA_ROAD_PATHS: readonly MapRoadPath[] = [
     points: [{ x: -450, z: 450 }, { x: 1600, z: 250 }, { x: 3650, z: 50 }, { x: 5900, z: -250 }, { x: 7600, z: -550 }, { x: 9000, z: -750 }],
     playableInFirstRelease: true,
     designNote: "Eastern corridor toward Tema; local geometry must distinguish highway carriageways from urban frontage."
+  },
+  {
+    roadSegmentId: "n6-circle-caprice",
+    points: [{ x: -450, z: 450 }, { x: -520, z: 620 }, { x: -650, z: 900 }],
+    playableInFirstRelease: true,
+    designNote: "N6 north-west approach from Circle toward Caprice; schematic centreline pending detailed junction survey."
+  },
+  {
+    roadSegmentId: "n6-caprice-alajo",
+    points: [{ x: -650, z: 900 }, { x: -790, z: 1060 }, { x: -1000, z: 1250 }],
+    playableInFirstRelease: true,
+    designNote: "N6 continuation from Caprice through the Alajo corridor; schematic centreline pending detailed junction survey."
+  },
+  {
+    roadSegmentId: "n6-alajo-apenkwa",
+    points: [{ x: -1000, z: 1250 }, { x: -1180, z: 1450 }, { x: -1400, z: 1700 }],
+    playableInFirstRelease: true,
+    designNote: "N6 continuation through Alajo toward Apenkwa; schematic centreline pending detailed junction survey."
+  },
+  {
+    roadSegmentId: "n6-apenkwa-achimota",
+    points: [{ x: -1400, z: 1700 }, { x: -1560, z: 1880 }, { x: -1750, z: 2100 }],
+    playableInFirstRelease: true,
+    designNote: "N6 connection from Apenkwa to Achimota Interchange; schematic centreline pending detailed junction survey."
   },
   {
     roadSegmentId: "n6-achimota-ofankor",
