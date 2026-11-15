@@ -41,7 +41,7 @@ import { DISTRICT_BUILDINGS } from "./world/ghanaianStreetBuildings";
 import { DISTRICT_PROPERTIES } from "./world/districtProperties";
 import { DISTRICT_BUSINESSES } from "./world/districtBusinesses";
 import { INTERIOR_BLUEPRINTS } from "./world/interiorBlueprints";
-import { createInteriorRooms } from "./world/interiorRooms";
+import { createInteriorRoom } from "./world/interiorRooms";
 import { runStage6SmokeChecks } from "./world/stage6SmokeChecks";
 import { AKWAABA_VENUE_PROGRAMME, isVenueProgrammeValid } from "./world/venueProgramme";
 import { AKWANTUO_RETAIL_PRODUCTS, isAkwantuoRetailCatalogueValid } from "./world/retailCatalogue";
@@ -645,9 +645,12 @@ async function start(): Promise<void> {
   document.documentElement.dataset.akwantuoChunkGenerators = chunkRegistry.getGeneratorIds().join(",");
   if (!(await yieldToStartupFrame())) return;
   bootStatus.textContent = "Building interiors…";
-  const interiorRooms = createInteriorRooms(scene);
-  document.documentElement.dataset.akwantuoInteriorRoomCount = String(interiorRooms.length);
-  document.documentElement.dataset.akwantuoStoreCollisionCount = String(interiorRooms.find((room) => room.id === "convenience-store")?.solidAreas.length ?? 0);
+  // Interior geometry is created on first entry and cached for later visits.
+  // Blueprints and building links remain available without allocating room meshes.
+  const interiorRooms = new Map<string, NonNullable<ReturnType<typeof createInteriorRoom>>>();
+  document.documentElement.dataset.akwantuoInteriorRoomCount = "0";
+  document.documentElement.dataset.akwantuoInteriorBuiltRoomCount = "0";
+  document.documentElement.dataset.akwantuoStoreCollisionCount = "0";
   const convenienceStoreBlueprint = INTERIOR_BLUEPRINTS.find((blueprint) => blueprint.id === "convenience-store");
   document.documentElement.dataset.akwantuoStoreFridgeCount = String(
     convenienceStoreBlueprint?.fixtures.filter((fixture) => fixture.type === "refrigerator").length ?? 0
@@ -655,9 +658,7 @@ async function start(): Promise<void> {
   document.documentElement.dataset.akwantuoStoreSnackRackCount = String(
     convenienceStoreBlueprint?.fixtures.filter((fixture) => fixture.type === "snack_rack").length ?? 0
   );
-  document.documentElement.dataset.akwantuoStoreShopkeeperRig =
-    String(!!scene.getMeshByName("shopkeeper-head") && !!scene.getMeshByName("shopkeeper-arm--1") && !!scene.getMeshByName("shopkeeper-arm-1"));
-  for (const room of interiorRooms) solidAreas.push(...room.solidAreas);
+  document.documentElement.dataset.akwantuoStoreShopkeeperRig = "false";
   if (!(await yieldToStartupFrame())) return;
   bootStatus.textContent = "Preparing the coastline and island…";
   const privateIslandMeshCount = createAkwantuoPrivateIsland(scene);
@@ -1347,7 +1348,7 @@ async function start(): Promise<void> {
               : "Welcome to Akwaaba Cay. Your ownership has been verified against your AKWANTUO account.");
           }
         } else if (activeInterior) {
-          const room = interiorRooms.find((item) => item.id === activeInterior?.roomId);
+          const room = interiorRooms.get(activeInterior.roomId);
           room?.root.setEnabled(false);
           player.root.position.set(activeInterior.exitX, 0, activeInterior.exitZ);
           activeInterior = null;
@@ -1381,7 +1382,22 @@ async function start(): Promise<void> {
             })
             .sort((a, b) => a.distanceM - b.distanceM)[0];
           if (nearbyBuilding && nearbyBuilding.distanceM <= 3.5 && nearbyBuilding.building.interiorId) {
-            const room = interiorRooms.find((item) => item.id === nearbyBuilding.building.interiorId);
+            let room = interiorRooms.get(nearbyBuilding.building.interiorId);
+            if (!room) {
+              const createdRoom = createInteriorRoom(scene, nearbyBuilding.building.interiorId);
+              if (createdRoom) {
+                room = createdRoom;
+                interiorRooms.set(createdRoom.id, createdRoom);
+                solidAreas.push(...createdRoom.solidAreas);
+                document.documentElement.dataset.akwantuoInteriorRoomCount = String(interiorRooms.size);
+                document.documentElement.dataset.akwantuoInteriorBuiltRoomCount = String(interiorRooms.size);
+                if (createdRoom.id === "convenience-store") {
+                  document.documentElement.dataset.akwantuoStoreCollisionCount = String(createdRoom.solidAreas.length);
+                  document.documentElement.dataset.akwantuoStoreShopkeeperRig =
+                    String(!!scene.getMeshByName("shopkeeper-head") && !!scene.getMeshByName("shopkeeper-arm--1") && !!scene.getMeshByName("shopkeeper-arm-1"));
+                }
+              }
+            }
             if (room) {
               room.root.setEnabled(true);
               player.root.position.set(room.spawn.x, 0, room.spawn.z);
