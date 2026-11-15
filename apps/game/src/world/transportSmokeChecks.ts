@@ -36,6 +36,7 @@ import { GREATER_ACCRA_PUBLIC_TRANSPORT_ROUTE_PLANS, isGreaterAccraPublicTranspo
 import { isBuildingCatalogueValid, DISTRICT_BUILDINGS } from "./ghanaianStreetBuildings";
 import { isDistrictPropertyCatalogueValid } from "./districtProperties";
 import { INTERIOR_BLUEPRINTS, isInteriorBlueprintCatalogueValid } from "./interiorBlueprints";
+import { isCircleRampGroundAccessLayoutValid } from "./circleGroundAccessGeometry";
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error("Transport smoke check failed: " + message);
@@ -71,6 +72,7 @@ export function runTransportSmokeChecks(): void {
   assert(isGreaterAccraRailNetworkValid(), "Greater Accra Cape-gauge rail routes and station nodes validate");
   assert(isGreaterAccraTrackDesignValid(), "Greater Accra rail track design assignments validate");
   assert(isGreaterAccraRoadDesignCatalogueValid(), "Greater Accra road cross-section assignments validate");
+  assert(isCircleRampGroundAccessLayoutValid(), "both Circle overpass ramp feet have a nearby tie-in to an authored ground approach");
   assert(isGreaterAccraPublicTransportRouteCatalogueValid() &&
     GREATER_ACCRA_PUBLIC_TRANSPORT_ROUTE_PLANS.length === 4,
     "Greater Accra proposed public transport corridors validate against the primary-road graph");
