@@ -33,7 +33,7 @@ export const WORLD_CONFIG = {
     sunlightIntensity: 0.9
   },
   movement: {
-    maxSpeed: 8.0,
+    maxSpeed: 12.0,
     gravity: 17,
     jumpVelocity: 6.3,
     collisionRadius: 0.48
