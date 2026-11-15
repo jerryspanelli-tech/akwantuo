@@ -225,7 +225,7 @@ export function createGreaterAccraPlayableWorld(
   coast.checkCollisions = false;
 
   const roadMeshes = createGreaterAccraRoadGeometry(scene, { sampleSpacingM: 90 });
-  const roadMarkingMeshes = createGreaterAccraRoadMarkings(scene, { sampleSpacingM: 35 });
+  const roadMarkingMeshes = createGreaterAccraRoadMarkings(scene, { sampleSpacingM: 18, dashLengthM: 4.5, dashGapM: 5.5, lineHeightM: 0.095 });
   const n6TownSignCount = createN6TownSigns(scene);
   const circle = createCircleInterchangeGeometry(scene);
   const railTracks = createGreaterAccraRailTrackGeometry(scene, { sleeperSpacingM: 1.2 });
