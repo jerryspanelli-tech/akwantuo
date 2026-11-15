@@ -6,7 +6,8 @@ import {
   StandardMaterial
 } from "@babylonjs/core";
 import type { SolidArea } from "./collision";
-import { GREATER_ACCRA_REGION_ANCHORS } from "./greaterAccraLayout";
+import { GREATER_ACCRA_REGION_ANCHORS, GREATER_ACCRA_ROAD_PATHS } from "./greaterAccraLayout";
+import { getRoadDesignWidth } from "./roadDesign";
 import { buildingIntersectsChunk, type ChunkGenerationBounds } from "./spatialIntersection";
 
 export type BuildingUse =
@@ -348,6 +349,62 @@ export function createGhanaianStreetBuildings(scene: Scene, bounds?: ChunkGenera
   return { buildings: selectedBuildings, solidAreas };
 }
 
+/**
+ * Conservative AABB clearance test: no playable primary-road centreline may
+ * enter a building footprint expanded by half the road's designed width.
+ * This catches roads accidentally routed through buildings before geometry
+ * reaches the game scene.
+ */
+function segmentIntersectsBuildingClearance(
+  start: { x: number; z: number },
+  end: { x: number; z: number },
+  building: DistrictBuilding,
+  roadHalfWidth: number
+): boolean {
+  const minX = building.x - building.width / 2 - roadHalfWidth;
+  const maxX = building.x + building.width / 2 + roadHalfWidth;
+  const minZ = building.z - building.depth / 2 - roadHalfWidth;
+  const maxZ = building.z + building.depth / 2 + roadHalfWidth;
+  const dx = end.x - start.x;
+  const dz = end.z - start.z;
+  let tMin = 0;
+  let tMax = 1;
+  const clippingPlanes: readonly [number, number][] = [
+    [-dx, start.x - minX], [dx, maxX - start.x],
+    [-dz, start.z - minZ], [dz, maxZ - start.z]
+  ];
+  for (const [p, q] of clippingPlanes) {
+    if (Math.abs(p) < 1e-9) {
+      if (q < 0) return false;
+      continue;
+    }
+    const ratio = q / p;
+    if (p < 0) {
+      if (ratio > tMax) return false;
+      tMin = Math.max(tMin, ratio);
+    } else {
+      if (ratio < tMin) return false;
+      tMax = Math.min(tMax, ratio);
+    }
+  }
+  return tMin <= tMax;
+}
+
+function isBuildingClearOfPrimaryRoads(building: DistrictBuilding): boolean {
+  return GREATER_ACCRA_ROAD_PATHS
+    .filter((path) => path.playableInFirstRelease)
+    .every((path) => {
+      const width = getRoadDesignWidth(path.roadSegmentId);
+      if (width === undefined) return false;
+      const roadHalfWidth = width / 2;
+      return path.points.slice(1).every((point, index) =>
+        !segmentIntersectsBuildingClearance(
+          path.points[index], point, building, roadHalfWidth
+        )
+      );
+    });
+}
+
 export function isBuildingCatalogueValid(): boolean {
   const ids = new Set(DISTRICT_BUILDINGS.map((building) => building.id));
   const coveredDistricts = new Set(DISTRICT_BUILDINGS.map((building) => building.districtId));
@@ -374,6 +431,7 @@ export function isBuildingCatalogueValid(): boolean {
           return !overlapX || !overlapZ;
         });
     }) &&
+    DISTRICT_BUILDINGS.every(isBuildingClearOfPrimaryRoads) &&
     ["provisions", "pharmacy", "salon", "food", "workshop", "office", "compound_house", "apartment", "market_stall", "guest_house", "clinic", "event_venue"]
       .every((use) => DISTRICT_BUILDINGS.some((building) => building.use === use));
 }
