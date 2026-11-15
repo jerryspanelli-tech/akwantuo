@@ -15,6 +15,7 @@ import { COMPLEXIONS, DEFAULT_APPEARANCE, OUTFITS, resolveAppearance, type Chara
 import { loadAppearance, saveAppearance } from "./character/appearanceStore";
 import { getHairstyle } from "./character/hairstyles";
 import { WORLD_CONFIG } from "./world/config";
+import { createAkwantuoDaylight } from "./world/lighting";
 import { GREATER_ACCRA_REGION_ANCHORS } from "./world/greaterAccraLayout";
 import { getCircleRampElevationAtPosition } from "./world/circleInterchangeElevatedLayout";
 import { GREATER_ACCRA_REGIONS } from "./world/regions";
@@ -669,6 +670,10 @@ async function start(): Promise<void> {
   document.documentElement.dataset.akwantuoRenderSize =
     engine.getRenderWidth() + "x" + engine.getRenderHeight();
   const scene = new Scene(engine);
+  const daylightReport = createAkwantuoDaylight(scene);
+  document.documentElement.dataset.akwantuoLighting = "daylight";
+  document.documentElement.dataset.akwantuoAmbientLight = daylightReport.ambientLightName;
+  document.documentElement.dataset.akwantuoSunLight = daylightReport.sunLightName;
   activeScene = scene;
   const yieldToStartupFrame = async (): Promise<boolean> => {
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
