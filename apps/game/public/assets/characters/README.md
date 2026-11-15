@@ -1,9 +1,13 @@
 # AKWANTUO player character assets
 
-These two game-ready GLB files are the adult Ghanaian-inspired player characters used by the character selector.
+These two game-ready GLB files are the adult Ghanaian-inspired player characters used by the character selector. Each character file contains a skinned humanoid rig, but does not embed animation clips.
 
-- `akwantuo-male.glb`: skinned character model with embedded Idle and Walk animation clips.
-- `akwantuo-female.glb`: skinned character model with embedded Idle and Walk animation clips.
+- `akwantuo-male.glb`: male-presenting skinned character model.
+- `akwantuo-female.glb`: female-presenting skinned character model.
+- `idle.glb`: shared idle animation clip (`Idle_A`).
+- `walk.glb`: shared walking animation clip (`Walk`).
+
+The loader imports the selected character model, then retargets the separate idle and walk clips by matching their animated node names to the character rig. The male and female rigs contain the matching bone/node names needed by these clips.
 
 ## Provenance
 
@@ -13,4 +17,4 @@ These two game-ready GLB files are the adult Ghanaian-inspired player characters
 
 ## Delivery
 
-The game loads these files from `import.meta.env.BASE_URL + assets/characters/`, so the models are served by the same game deployment. No separate character-assets hosting project is required.
+The game loads these files from `import.meta.env.BASE_URL` followed by `assets/characters/`, so the models and animation clips are served by the same game deployment. No separate character-assets hosting project is required.
