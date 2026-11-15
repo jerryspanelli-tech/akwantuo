@@ -37,6 +37,7 @@ export function createPublicTransportVehicle(
   const seatTrim = makeMaterial(scene, id + "-seat-trim", "#b89a61");
   const cabinDark = makeMaterial(scene, id + "-cabin-dark", "#171d1c");
   const meshes: Mesh[] = [];
+  const wheels: Mesh[] = [];
   const addBox = (name: string, w: number, h: number, d: number, x: number, y: number, z: number, mat: StandardMaterial) => {
     const mesh = MeshBuilder.CreateBox(id + "-" + name, { width: w, height: h, depth: d }, scene);
     mesh.position.set(x, y, z);
@@ -62,6 +63,7 @@ export function createPublicTransportVehicle(
       wheel.parent = root;
       wheel.isPickable = false;
       meshes.push(wheel);
+      wheels.push(wheel);
     }
   }
   // Visible cabin fit-out: driver controls, aisle and passenger seating.
@@ -101,10 +103,14 @@ export function createPublicTransportVehicle(
   exteriorFollow.parent = root;
 
   let disposed = false;
+  let previousWheelPosition = { x: origin.x, z: origin.z };
   const update = (state: RoadVehicleDynamicsState) => {
     if (disposed || ![state.x, state.z, state.headingRadians, state.speedMps].every(Number.isFinite)) {
       throw new Error("Invalid public transport vehicle update.");
     }
+    const travelledM = Math.hypot(state.x - previousWheelPosition.x, state.z - previousWheelPosition.z) * Math.sign(state.speedMps || 1);
+    for (const wheel of wheels) wheel.rotation.x += travelledM / 0.36;
+    previousWheelPosition = { x: state.x, z: state.z };
     root.position.set(state.x, origin.y, state.z);
     root.rotation.y = state.headingRadians;
   };
