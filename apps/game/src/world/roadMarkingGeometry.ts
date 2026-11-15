@@ -1,4 +1,4 @@
-import { Color3, Mesh, MeshBuilder, Scene, Vector3 } from "@babylonjs/core";
+import { Color3, Mesh, MeshBuilder, Scene, StandardMaterial, Vector3, VertexData } from "@babylonjs/core";
 import type { RoadCrossSectionProfile } from "@akwantuo/shared";
 import { getMapRoadPath, GREATER_ACCRA_ROAD_PATHS, type MapPoint } from "./greaterAccraLayout";
 import { getRoadCrossSectionProfile, ROAD_CROSS_SECTION_PROFILES, GREATER_ACCRA_ROAD_DESIGNS } from "./roadDesign";
@@ -162,9 +162,52 @@ function createLineMesh(
   color: Color3
 ): Mesh | undefined {
   if (lines.length === 0) return undefined;
-  const mesh = MeshBuilder.CreateLineSystem(name, { lines, updatable: false }, scene);
-  mesh.color = color;
-  mesh.alpha = 1;
+  // Use shallow ribbon-like quads instead of one-pixel WebGL lines. This keeps
+  // road paint readable at mobile render scale and avoids stair-stepped edges.
+  const width = color === EDGE_WHITE ? 0.14 : 0.18;
+  const positions: number[] = [];
+  const indices: number[] = [];
+  for (const line of lines) {
+    for (let index = 1; index < line.length; index += 1) {
+      const start = line[index - 1];
+      const end = line[index];
+      const dx = end.x - start.x;
+      const dz = end.z - start.z;
+      const length = Math.hypot(dx, dz);
+      if (length < 0.01) continue;
+      const halfX = (dz / length) * width / 2;
+      const halfZ = (-dx / length) * width / 2;
+      const base = positions.length / 3;
+      positions.push(
+        start.x + halfX, start.y, start.z + halfZ,
+        start.x - halfX, start.y, start.z - halfZ,
+        end.x + halfX, end.y, end.z + halfZ,
+        end.x - halfX, end.y, end.z - halfZ
+      );
+      indices.push(base, base + 1, base + 2, base + 1, base + 3, base + 2);
+    }
+  }
+  if (indices.length === 0) return undefined;
+  const normals: number[] = [];
+  VertexData.ComputeNormals(positions, indices, normals);
+  const vertexData = new VertexData();
+  vertexData.positions = positions;
+  vertexData.indices = indices;
+  vertexData.normals = normals;
+  const mesh = new Mesh(name, scene);
+  vertexData.applyToMesh(mesh, false);
+  const materialName = color === EDGE_WHITE
+    ? "akwantuo-road-edge-paint-material"
+    : "akwantuo-road-lane-paint-material";
+  let material = scene.getMaterialByName(materialName);
+  if (!(material instanceof StandardMaterial)) {
+    material = new StandardMaterial(materialName, scene);
+    material.diffuseColor = color;
+    material.emissiveColor = color.scale(0.12);
+    material.specularColor = new Color3(0, 0, 0);
+    material.backFaceCulling = false;
+  }
+  mesh.material = material;
   mesh.isPickable = false;
   mesh.checkCollisions = false;
   mesh.renderingGroupId = 1;
