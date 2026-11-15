@@ -1080,7 +1080,7 @@ async function start(): Promise<void> {
   // Put ambient NPC traffic on the connected Osu street loop beside the player spawn,
   // rather than hiding every car kilometres away on the N1 Tema corridor.
   // Each route follows a separate lane around the authored local street loop.
-  const npcTrafficRoutes = [
+  const npcTrafficRouteDefinitions = [
     {
       id: "osu-residential-street",
       // Clockwise lane: east on the north street, south on the east link,
@@ -1113,6 +1113,19 @@ async function start(): Promise<void> {
     lengthM: route.points.slice(1).reduce((total, point, index) =>
       total + Math.hypot(point.x - route.points[index].x, point.z - route.points[index].z), 0)
   }));
+
+  // Ghana uses left-hand traffic. Swap the two physical lane paths while
+  // reversing their direction so each stream remains on its proper left lane.
+  const npcTrafficRoutes = [
+    {
+      ...npcTrafficRouteDefinitions[0],
+      points: [...npcTrafficRouteDefinitions[1].points].reverse()
+    },
+    {
+      ...npcTrafficRouteDefinitions[1],
+      points: [...npcTrafficRouteDefinitions[0].points].reverse()
+    }
+  ];
   const npcTraffic = npcTrafficRoutes.flatMap((route, routeIndex) =>
     (routeIndex === 0 ? [200, 850, 1500] : [500, 1150, 1800]).map((startDistanceM, index) => {
       const start = sampleRouteAtDistance(route.points, startDistanceM);
@@ -1143,6 +1156,7 @@ async function start(): Promise<void> {
     })
   );
   document.documentElement.dataset.npcRoadTrafficLaneCenter = "true";
+  document.documentElement.dataset.npcRoadTrafficDriveSide = "left";
   document.documentElement.dataset.npcRoadTraffic = String(npcTraffic.length);
   document.documentElement.dataset.npcRoadTrafficRoute = npcTrafficRoutes.map((route) => route.id).join(",");
   document.documentElement.dataset.npcRoadTrafficRoutes = npcTrafficRoutes.map((route) => route.id).join(",");
