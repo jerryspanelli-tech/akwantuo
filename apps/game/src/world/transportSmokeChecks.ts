@@ -56,7 +56,7 @@ function expectThrow(action: () => unknown, message: string): void {
  * railway certification, or authoritative multiplayer validation.
  */
 export function runTransportSmokeChecks(): void {
-  assert(isBuildingCatalogueValid(), "Ghanaian building catalogue has unique, dimensionally valid entries across every planned building use");
+  assert(isBuildingCatalogueValid(), "Ghanaian building footprints are unique, non-overlapping and clear of every playable primary-road corridor");
   assert(isDistrictPropertyCatalogueValid(), "district property records match buildings and cannot grant client-side ownership");
   assert(isInteriorBlueprintCatalogueValid(), "business, home and convenience-store interior plans have valid dimensions and fixture placements");
   const interiorIds = new Set(INTERIOR_BLUEPRINTS.map((blueprint) => blueprint.id));
