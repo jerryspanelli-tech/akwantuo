@@ -39,6 +39,10 @@ const KERB_GREY = new Color3(0.62, 0.62, 0.58);
 const LINE_WHITE = new Color3(0.9, 0.9, 0.86);
 
 function material(scene: Scene, name: string, color: Color3): StandardMaterial {
+  if (name === "akwantuo-circle-ground-asphalt") {
+    const sharedRoadMaterial = scene.getMaterialByName("akwantuo-road-asphalt");
+    if (sharedRoadMaterial instanceof StandardMaterial) return sharedRoadMaterial;
+  }
   const existing = scene.getMaterialByName(name);
   if (existing instanceof StandardMaterial) return existing;
   const created = new StandardMaterial(name, scene);
