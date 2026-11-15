@@ -186,6 +186,7 @@ function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
   rightLeg: TransformNode;
   applyAppearance: (appearance: CharacterAppearance) => void;
   setMoving: (moving: boolean, movementStrength?: number) => void;
+  setJumping: (phase: "jump-start" | "jump-air" | "jump-land" | null) => void;
 } {
   const root = new TransformNode("player-root", scene);
   root.position.set(WORLD_CONFIG.spawn.x, WORLD_CONFIG.spawn.y, WORLD_CONFIG.spawn.z);
