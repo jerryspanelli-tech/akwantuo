@@ -9,7 +9,7 @@ import { GREATER_ACCRA_REGIONS } from "./regions";
 export const GREATER_ACCRA_ROAD_NETWORK: RoadNetwork = {
   id: "greater-accra-primary-roads",
   name: "Greater Accra Primary Road Network",
-  version: 1,
+  version: 2,
   nodes: [
     { id: "mallam-junction", name: "Mallam Junction", kind: "junction", regionId: "dansoman", status: "planned" },
     { id: "kaneshie-interchange", name: "Kaneshie Interchange", kind: "interchange", regionId: "kaneshie", status: "planned" },
@@ -22,7 +22,16 @@ export const GREATER_ACCRA_ROAD_NETWORK: RoadNetwork = {
     { id: "tetteh-quarshie-interchange", name: "Tetteh Quarshie Interchange", kind: "interchange", regionId: "east-legon", status: "planned" },
     { id: "achimota-interchange", name: "Achimota Interchange", kind: "interchange", regionId: "achimota", status: "planned" },
     { id: "ofankor-junction", name: "Ofankor Junction", kind: "junction", regionId: "achimota", status: "planned" },
-    { id: "nsawam-expansion-gateway", name: "Nsawam Expansion Gateway", kind: "future_gateway", regionId: null, status: "planned" },
+    { id: "pokuase-junction", name: "Pokuase Interchange", kind: "interchange", regionId: "pokuase", status: "planned" },
+    { id: "amasaman-junction", name: "Amasaman Junction", kind: "junction", regionId: "amasaman", status: "planned" },
+    { id: "nsawam-junction", name: "Nsawam Junction", kind: "junction", regionId: "nsawam", status: "planned" },
+    { id: "suhum-junction", name: "Suhum Junction", kind: "junction", regionId: "suhum", status: "planned" },
+    { id: "bunso-junction", name: "Bunso Junction", kind: "junction", regionId: "bunso", status: "planned" },
+    { id: "anyinam-junction", name: "Anyinam Junction", kind: "junction", regionId: "anyinam", status: "planned" },
+    { id: "nkawkaw-junction", name: "Nkawkaw Junction", kind: "junction", regionId: "nkawkaw", status: "planned" },
+    { id: "konongo-junction", name: "Konongo Junction", kind: "junction", regionId: "konongo", status: "planned" },
+    { id: "ejisu-junction", name: "Ejisu Junction", kind: "junction", regionId: "ejisu", status: "planned" },
+    { id: "kumasi-gateway", name: "Kumasi City Gateway", kind: "gateway", regionId: "kumasi", status: "planned" },
     { id: "madina-junction", name: "Madina Junction", kind: "junction", regionId: "madina-adenta", status: "planned" },
     { id: "adenta-gateway", name: "Adenta Connection", kind: "gateway", regionId: "madina-adenta", status: "planned" },
     { id: "osu-junction", name: "Osu Connection", kind: "junction", regionId: "osu", status: "planned" },
@@ -105,14 +114,94 @@ export const GREATER_ACCRA_ROAD_NETWORK: RoadNetwork = {
       status: "planned"
     },
     {
-      id: "n6-nsawam-expansion",
-      name: "N6 Future Nsawam Corridor",
+      id: "n6-ofankor-pokuase",
+      name: "N6 Ofankor–Pokuase Corridor",
       roadClass: "major_road",
       fromNodeId: "ofankor-junction",
-      toNodeId: "nsawam-expansion-gateway",
-      regionIds: ["greater-accra", "achimota"],
-      status: "planned",
-      futureExpansion: true
+      toNodeId: "pokuase-junction",
+      regionIds: ["greater-accra", "pokuase"],
+      status: "planned"
+    },
+    {
+      id: "n6-pokuase-amasaman",
+      name: "N6 Pokuase–Amasaman Corridor",
+      roadClass: "major_road",
+      fromNodeId: "pokuase-junction",
+      toNodeId: "amasaman-junction",
+      regionIds: ["pokuase", "amasaman"],
+      status: "planned"
+    },
+    {
+      id: "n6-amasaman-nsawam",
+      name: "N6 Amasaman–Nsawam Corridor",
+      roadClass: "major_road",
+      fromNodeId: "amasaman-junction",
+      toNodeId: "nsawam-junction",
+      regionIds: ["amasaman", "nsawam"],
+      status: "planned"
+    },
+    {
+      id: "n6-nsawam-suhum",
+      name: "N6 Nsawam–Suhum Corridor",
+      roadClass: "major_road",
+      fromNodeId: "nsawam-junction",
+      toNodeId: "suhum-junction",
+      regionIds: ["nsawam", "suhum"],
+      status: "planned"
+    },
+    {
+      id: "n6-suhum-bunso",
+      name: "N6 Suhum–Bunso Corridor",
+      roadClass: "major_road",
+      fromNodeId: "suhum-junction",
+      toNodeId: "bunso-junction",
+      regionIds: ["suhum", "bunso"],
+      status: "planned"
+    },
+    {
+      id: "n6-bunso-anyinam",
+      name: "N6 Bunso–Anyinam Corridor",
+      roadClass: "major_road",
+      fromNodeId: "bunso-junction",
+      toNodeId: "anyinam-junction",
+      regionIds: ["bunso", "anyinam"],
+      status: "planned"
+    },
+    {
+      id: "n6-anyinam-nkawkaw",
+      name: "N6 Anyinam–Nkawkaw Corridor",
+      roadClass: "major_road",
+      fromNodeId: "anyinam-junction",
+      toNodeId: "nkawkaw-junction",
+      regionIds: ["anyinam", "nkawkaw"],
+      status: "planned"
+    },
+    {
+      id: "n6-nkawkaw-konongo",
+      name: "N6 Nkawkaw–Konongo Corridor",
+      roadClass: "major_road",
+      fromNodeId: "nkawkaw-junction",
+      toNodeId: "konongo-junction",
+      regionIds: ["nkawkaw", "konongo"],
+      status: "planned"
+    },
+    {
+      id: "n6-konongo-ejisu",
+      name: "N6 Konongo–Ejisu Corridor",
+      roadClass: "major_road",
+      fromNodeId: "konongo-junction",
+      toNodeId: "ejisu-junction",
+      regionIds: ["konongo", "ejisu"],
+      status: "planned"
+    },
+    {
+      id: "n6-ejisu-kumasi",
+      name: "N6 Ejisu–Kumasi Corridor",
+      roadClass: "major_road",
+      fromNodeId: "ejisu-junction",
+      toNodeId: "kumasi-gateway",
+      regionIds: ["ejisu", "kumasi"],
+      status: "planned"
     },
     {
       id: "n4-madina-approach",
