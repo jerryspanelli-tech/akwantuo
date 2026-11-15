@@ -77,6 +77,11 @@ function trimAtJunctionReservations(
   const clipFromEndpoint = (points: readonly MapPoint[], nodeId: string): MapPoint[] => {
     const reservation = GREATER_ACCRA_JUNCTION_LAYOUTS.find((item) => item.nodeId === nodeId);
     if (!reservation) return [...points];
+    // Only Circle currently has a dedicated grade-separated/ground-level
+    // junction package. Other reserved junctions have no connector geometry
+    // yet, so clipping them creates visible dead ends. Keep those approaches
+    // continuous and let them meet at grade until their interchanges are built.
+    if (nodeId !== "circle-junction") return [...points];
 
     const halfWidth = reservation.reserveWidthM / 2 + 25;
     const halfDepth = reservation.reserveDepthM / 2 + 25;
