@@ -1117,6 +1117,11 @@ async function start(): Promise<void> {
   document.documentElement.dataset.npcRoadTraffic = String(npcTraffic.length);
   document.documentElement.dataset.npcRoadTrafficRoute = npcTrafficRoutes.map((route) => route.id).join(",");
   document.documentElement.dataset.npcRoadTrafficRoutes = npcTrafficRoutes.map((route) => route.id).join(",");
+  document.documentElement.dataset.npcRoadTrafficLoop = String(npcTrafficRoutes.every((route) =>
+    route.points.length >= 4 &&
+    route.points[0].x === route.points[route.points.length - 1].x &&
+    route.points[0].z === route.points[route.points.length - 1].z
+  ));
 
 
   // First real in-world road vehicle: a nearby saloon that can be entered,
