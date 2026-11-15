@@ -586,9 +586,9 @@ async function start(): Promise<void> {
     document.documentElement.dataset.akwantuoWebglContext = "restored";
   });
   document.documentElement.dataset.akwantuoHardwareScaling = String(engine.getHardwareScalingLevel());
+  engine.resize();
   document.documentElement.dataset.akwantuoRenderSize =
     engine.getRenderWidth() + "x" + engine.getRenderHeight();
-  engine.resize();
   const scene = new Scene(engine);
   activeScene = scene;
   const yieldToStartupFrame = async (): Promise<boolean> => {
