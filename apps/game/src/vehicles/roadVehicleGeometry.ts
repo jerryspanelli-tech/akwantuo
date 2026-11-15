@@ -67,6 +67,11 @@ export function createRoadVehicleGeometry(
   const tailMaterial = material(scene, `${options.id}-tail-material`, new Color3(0.68, 0.08, 0.06));
   const tyreMaterial = material(scene, `${options.id}-tyre-material`, new Color3(0.055, 0.06, 0.065));
   const wheelHubMaterial = material(scene, `${options.id}-wheel-hub-material`, new Color3(0.58, 0.6, 0.61));
+  const cabinMaterial = material(scene, `${options.id}-cabin-material`, new Color3(0.075, 0.09, 0.09));
+  const seatMaterial = material(scene, `${options.id}-seat-material`, new Color3(0.16, 0.2, 0.18));
+  const interiorTrimMaterial = material(scene, `${options.id}-interior-trim-material`, new Color3(0.55, 0.42, 0.22));
+  glassMaterial.alpha = 0.3;
+  glassMaterial.transparencyMode = StandardMaterial.MATERIAL_ALPHABLEND;
 
   const x = options.centerX;
   const z = options.centerZ;
@@ -129,6 +134,28 @@ export function createRoadVehicleGeometry(
     x, y + 0.57, z + 2.17, trimMaterial));
   detailMeshes.push(box(scene, `${options.id}-rear-bumper`, 1.84, 0.16, 0.12,
     x, y + 0.57, z - 2.17, trimMaterial));
+
+  // Cabin detail makes the vehicle readable from its first-person driver view.
+  detailMeshes.push(box(scene, `${options.id}-dashboard`, 1.52, 0.32, 0.42, x, y + 1.28, z + 0.78, cabinMaterial));
+  detailMeshes.push(box(scene, `${options.id}-instrument-panel`, 1.12, 0.1, 0.035, x, y + 1.39, z + 0.98, interiorTrimMaterial));
+  detailMeshes.push(box(scene, `${options.id}-centre-console`, 0.28, 0.28, 0.56, x, y + 0.98, z + 0.36, cabinMaterial));
+  for (const seatX of [-0.43, 0.43]) {
+    detailMeshes.push(box(scene, `${options.id}-front-seat-base-${seatX}`, 0.58, 0.16, 0.62, x + seatX, y + 0.91, z + 0.05, seatMaterial));
+    detailMeshes.push(box(scene, `${options.id}-front-seat-back-${seatX}`, 0.58, 0.72, 0.18, x + seatX, y + 1.31, z - 0.23, seatMaterial));
+    detailMeshes.push(box(scene, `${options.id}-front-headrest-${seatX}`, 0.38, 0.22, 0.14, x + seatX, y + 1.78, z - 0.23, interiorTrimMaterial));
+  }
+  detailMeshes.push(box(scene, `${options.id}-rear-bench-base`, 1.22, 0.16, 0.58, x, y + 0.91, z - 0.76, seatMaterial));
+  detailMeshes.push(box(scene, `${options.id}-rear-bench-back`, 1.22, 0.64, 0.18, x, y + 1.29, z - 1.02, seatMaterial));
+  const steeringWheel = MeshBuilder.CreateTorus(`${options.id}-steering-wheel`, { diameter: 0.46, thickness: 0.055, tessellation: 20 }, scene);
+  steeringWheel.position.set(x - 0.43, y + 1.56, z + 0.66);
+  steeringWheel.rotation.x = Math.PI / 2;
+  steeringWheel.material = interiorTrimMaterial;
+  steeringWheel.isPickable = false;
+  detailMeshes.push(steeringWheel);
+  for (const side of [-1, 1]) {
+    detailMeshes.push(box(scene, `${options.id}-side-mirror-${side}`, 0.12, 0.2, 0.28, x + side * 1.02, y + 1.48, z + 1.28, trimMaterial));
+    detailMeshes.push(box(scene, `${options.id}-door-inner-trim-${side}`, 0.08, 0.28, 1.4, x + side * 0.84, y + 1.02, z - 0.1, cabinMaterial));
+  }
 
   const allMeshes = [...bodyMeshes, ...glassMeshes, ...wheelMeshes, ...detailMeshes];
   return { bodyMeshes, glassMeshes, wheelMeshes, detailMeshes, allMeshes };
