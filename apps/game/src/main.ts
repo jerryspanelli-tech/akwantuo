@@ -1125,7 +1125,11 @@ async function start(): Promise<void> {
       ...npcTrafficRouteDefinitions[1],
       points: [...npcTrafficRouteDefinitions[0].points].reverse()
     }
-  ];
+  ].map((route) => ({
+    ...route,
+    lengthM: route.points.slice(1).reduce((total, point, index) =>
+      total + Math.hypot(point.x - route.points[index].x, point.z - route.points[index].z), 0)
+  }));
   const npcTraffic = npcTrafficRoutes.flatMap((route, routeIndex) =>
     (routeIndex === 0 ? [200, 850, 1500] : [500, 1150, 1800]).map((startDistanceM, index) => {
       const start = sampleRouteAtDistance(route.points, startDistanceM);
