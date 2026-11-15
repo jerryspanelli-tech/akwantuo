@@ -173,6 +173,48 @@ export const CIRCLE_FEO_OYEO_RAMPS: readonly CircleFeoOyeoRampLayout[] = [
   makeFeoOyeoRamp("circle-feo-oye-ramp-up-3d", "circle-feo-oye-o-ramp-up", feoOyeoRampUpLength, 170, -178)
 ] as const;
 
+
+/**
+ * Returns the elevated deck height under a vehicle on either Feo Oyeo ramp.
+ * The vehicle controller is kinematic, so it must explicitly follow the ramp
+ * profile rather than relying on Babylon mesh collisions.
+ */
+export function getCircleRampElevationAtPosition(
+  x: number,
+  z: number,
+  maximumLateralErrorM = 2.6
+): number | null {
+  if (![x, z, maximumLateralErrorM].every(Number.isFinite) || maximumLateralErrorM <= 0) {
+    return null;
+  }
+  const centre = getMapNodePosition("circle-junction");
+  if (!centre) return null;
+  let nearest: { distanceM: number; elevationM: number } | null = null;
+
+  for (const ramp of CIRCLE_FEO_OYEO_RAMPS) {
+    for (let index = 1; index < ramp.points.length; index += 1) {
+      const a = ramp.points[index - 1];
+      const b = ramp.points[index];
+      const ax = centre.x + a.x;
+      const az = centre.z + a.z;
+      const bx = centre.x + b.x;
+      const bz = centre.z + b.z;
+      const dx = bx - ax;
+      const dz = bz - az;
+      const lengthSquared = dx * dx + dz * dz;
+      if (lengthSquared <= 1e-8) continue;
+      const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / lengthSquared));
+      const closestX = ax + dx * t;
+      const closestZ = az + dz * t;
+      const distanceM = Math.hypot(x - closestX, z - closestZ);
+      if (!nearest || distanceM < nearest.distanceM) {
+        nearest = { distanceM, elevationM: a.y + (b.y - a.y) * t };
+      }
+    }
+  }
+  return nearest && nearest.distanceM <= maximumLateralErrorM ? nearest.elevationM : null;
+}
+
 export function isCircleFeoOyeoRampLayoutValid(): boolean {
   const ids = new Set(CIRCLE_FEO_OYEO_RAMPS.map((ramp) => ramp.id));
   const refs = new Set(CIRCLE_FEO_OYEO_RAMPS.map((ramp) => ramp.referenceId));
