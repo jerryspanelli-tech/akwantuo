@@ -50,7 +50,8 @@ const N6_TOWN_SIGN_LABELS = [
 function createN6TownSigns(scene: Scene): number {
   const postMaterial = new StandardMaterial("n6-town-sign-post-material", scene);
   postMaterial.diffuseColor = new Color3(0.22, 0.25, 0.23);
-  const labels = new Map(GREATER_ACCRA_REGION_ANCHORS.map((anchor) => [anchor.regionId, anchor]));
+  const labels = new Map<string, (typeof GREATER_ACCRA_REGION_ANCHORS)[number]>();
+  for (const anchor of GREATER_ACCRA_REGION_ANCHORS) labels.set(anchor.regionId, anchor);
   for (const [regionId, label] of N6_TOWN_SIGN_LABELS) {
     const anchor = labels.get(regionId);
     if (!anchor) throw new Error("Missing N6 town sign anchor for " + regionId);
