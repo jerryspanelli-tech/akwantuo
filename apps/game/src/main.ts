@@ -1299,13 +1299,13 @@ async function start(): Promise<void> {
     x: mainlandMarina.x, z: mainlandMarina.z, headingRadians: Math.atan2(4445, -1100), speedMps: 0
   };
   const interiorWindowAnchor = new TransformNode("starter-saloon-interior-camera-anchor", scene);
-  interiorWindowAnchor.position.set(0, 1.48, 0.22);
+  interiorWindowAnchor.position.set(0, 1.56, 0.34);
   interiorWindowAnchor.parent = vehicleRig.root;
   const exteriorFollowAnchor = new TransformNode("starter-saloon-exterior-camera-anchor", scene);
   exteriorFollowAnchor.position.set(0, 3.7, -7.5);
   exteriorFollowAnchor.parent = vehicleRig.root;
   let passengerCameraRig: PassengerCameraRig | null = null;
-  const vehicleCameraModes = ["interior_window", "interior_free_look", "exterior_follow"] as const;
+  const vehicleCameraModes = ["interior_window", "exterior_follow"] as const;
   let vehicleCameraModeIndex = 0;
 
   const camera = new ArcRotateCamera(
@@ -1797,7 +1797,12 @@ async function start(): Promise<void> {
           vehicleViewRequested = false;
           vehicleCameraModeIndex = (vehicleCameraModeIndex + 1) % vehicleCameraModes.length;
           activePassengerCameraRig.setMode(vehicleCameraModes[vehicleCameraModeIndex], canvas ?? undefined);
-          showNotice(`Vehicle view: ${vehicleCameraModes[vehicleCameraModeIndex].replaceAll("_", " ")}.`);
+          if (vehicleViewButton) {
+            vehicleViewButton.textContent = vehicleCameraModeIndex === 0 ? "OUTSIDE" : "INSIDE";
+            vehicleViewButton.setAttribute("aria-label", vehicleCameraModeIndex === 0 ? "Switch to outside vehicle camera" : "Switch to inside vehicle camera");
+          }
+          document.documentElement.dataset.akwantuoVehicleCamera = vehicleCameraModes[vehicleCameraModeIndex];
+          showNotice(vehicleCameraModeIndex === 0 ? "Inside vehicle view." : "Outside follow view.");
           window.setTimeout(() => notice?.classList.remove("is-visible"), 1800);
         }
         if (passengerState.mode === "riding" && passengerState.vehicleId === "preview-shared-trotro") {
