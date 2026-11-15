@@ -34,6 +34,7 @@ export const WORLD_CONFIG = {
   },
   movement: {
     walkSpeed: 5.2,
+    sprintSpeed: 8.0,
     gravity: 17,
     jumpVelocity: 6.3,
     collisionRadius: 0.48
