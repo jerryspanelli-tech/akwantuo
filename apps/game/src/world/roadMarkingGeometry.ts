@@ -16,6 +16,7 @@ type MarkingPath = Readonly<{ points: readonly Vector3[] }>;
 
 const WHITE = new Color3(0.92, 0.92, 0.86);
 const EDGE_WHITE = new Color3(0.78, 0.8, 0.77);
+const CENTRE_YELLOW = new Color3(0.95, 0.72, 0.16);
 
 function distance(a: MapPoint, b: MapPoint): number {
   return Math.hypot(b.x - a.x, b.z - a.z);
@@ -164,7 +165,7 @@ function createLineMesh(
   if (lines.length === 0) return undefined;
   // Use shallow ribbon-like quads instead of one-pixel WebGL lines. This keeps
   // road paint readable at mobile render scale and avoids stair-stepped edges.
-  const width = color === EDGE_WHITE ? 0.14 : 0.18;
+  const width = color === EDGE_WHITE ? 0.16 : color === CENTRE_YELLOW ? 0.22 : 0.2;
   const positions: number[] = [];
   const indices: number[] = [];
   for (const line of lines) {
@@ -251,7 +252,10 @@ export function createRoadSegmentMarkings(
   for (const side of [-1, 1] as const) {
     const inner = offsetPath(points, normals, side * innerEdge, y);
     const outer = offsetPath(points, normals, side * outerEdge, y);
-    solidLines.push(inner, outer);
+    // Divided roads have a painted inner edge on each carriageway. On
+    // undivided two-way roads the centre is marked once in yellow below.
+    if (profile.medianWidthM > 0) solidLines.push(inner);
+    solidLines.push(outer);
 
     for (let lane = 1; lane < profile.lanesPerDirection; lane += 1) {
       const dividerOffset = innerEdge + lane * profile.laneWidthM;
@@ -265,6 +269,16 @@ export function createRoadSegmentMarkings(
   const dashed = createLineMesh(scene, `${roadSegmentId}-lane-markings`, dashedLines, WHITE);
   if (solid) meshes.push(solid);
   if (dashed) meshes.push(dashed);
+  if (profile.medianWidthM === 0) {
+    const centre = offsetPath(points, normals, 0, y + 0.003);
+    const centreMarking = createLineMesh(
+      scene,
+      `${roadSegmentId}-yellow-centre-marking`,
+      [centre],
+      CENTRE_YELLOW
+    );
+    if (centreMarking) meshes.push(centreMarking);
+  }
   return meshes;
 }
 
