@@ -16,6 +16,7 @@ import { loadAppearance, saveAppearance } from "./character/appearanceStore";
 import { getHairstyle } from "./character/hairstyles";
 import { WORLD_CONFIG } from "./world/config";
 import { GREATER_ACCRA_REGION_ANCHORS } from "./world/greaterAccraLayout";
+import { getCircleRampElevationAtPosition } from "./world/circleInterchangeElevatedLayout";
 import { GREATER_ACCRA_REGIONS } from "./world/regions";
 import { WorldChunkManager } from "./world/chunkManager";
 import { ChunkRegistry } from "./world/chunkRegistry";
@@ -1811,7 +1812,8 @@ async function start(): Promise<void> {
           } else {
             vehicleState = { ...vehicleState, speedMps: 0 };
           }
-          vehicleRig.update(vehicleState);
+          const rampElevationM = getCircleRampElevationAtPosition(vehicleState.x, vehicleState.z);
+          vehicleRig.update(vehicleState, rampElevationM ?? 0);
           camera.target = Vector3.Lerp(camera.target, new Vector3(vehicleState.x, 1.4, vehicleState.z), Math.min(1, delta * 8));
           camera.alpha = -Math.PI / 2 - vehicleState.headingRadians;
           camera.radius = 9;
