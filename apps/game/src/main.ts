@@ -731,6 +731,7 @@ async function start(): Promise<void> {
   document.documentElement.dataset.playableRailRoutes = String(greaterAccraTransportReport.railRouteCount);
   document.documentElement.dataset.playableRailStations = String(greaterAccraTransportReport.plannedStationAnchorCount);
   document.documentElement.dataset.playableCircleStructures = String(greaterAccraTransportReport.circleElevatedStructureCount);
+  document.documentElement.dataset.playableN6TownSigns = String(greaterAccraTransportReport.n6TownSignCount);
   document.documentElement.dataset.playableRailRoadCrossingCandidates = String(greaterAccraTransportReport.railRoadCrossingCandidateCount);
   document.documentElement.dataset.playablePublicTransportCorridors = String(greaterAccraTransportReport.publicTransportCorridorCount);
   bootStatus.textContent = "Preparing public transport…";
