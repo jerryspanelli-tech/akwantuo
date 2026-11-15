@@ -1466,12 +1466,13 @@ async function start(): Promise<void> {
               relativeX + relativeVelocityX * closestApproachSeconds,
               relativeZ + relativeVelocityZ * closestApproachSeconds
             );
-            if (closestApproachSeconds > 0.05 && closestDistanceM < 2.4) {
+            // The two Osu routes occupy opposing, parallel lane centres about
+            // three metres apart. Do not treat ordinary opposite-direction
+            // lane traffic as a junction conflict; brake only for a genuinely
+            // overlapping predicted vehicle footprint.
+            if (closestApproachSeconds > 0.05 && closestDistanceM < 2.05) {
               conflictSpeedLimitMps = 0;
               break;
-            }
-            if (closestApproachSeconds > 0.05 && closestDistanceM < 3.2) {
-              conflictSpeedLimitMps = Math.min(conflictSpeedLimitMps, 3.0);
             }
           }
 
