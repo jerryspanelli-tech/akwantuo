@@ -34,11 +34,16 @@ export function createRoadVehicleRig(
   }
 
   let disposed = false;
+  let previousWheelPosition = { x: options.origin.x, z: options.origin.z };
   const update = (state: RoadVehicleDynamicsState, elevationM = options.origin.y): void => {
     if (disposed) throw new Error("Cannot update a disposed road vehicle rig.");
     if (![state.x, state.z, state.headingRadians, state.speedMps, elevationM].every(Number.isFinite)) {
       throw new Error("Road vehicle state contains non-finite transform values.");
     }
+    const travelledM = Math.hypot(state.x - previousWheelPosition.x, state.z - previousWheelPosition.z) * Math.sign(state.speedMps || 1);
+    const wheelRotation = travelledM / 0.34;
+    for (const wheel of geometry.wheelMeshes) wheel.rotation.x += wheelRotation;
+    previousWheelPosition = { x: state.x, z: state.z };
     root.position.copyFrom(new Vector3(state.x, elevationM, state.z));
     root.rotation.y = state.headingRadians;
   };
