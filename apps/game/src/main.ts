@@ -742,7 +742,7 @@ async function start(): Promise<void> {
   bootStatus.textContent = "Adding Accra landmarks and neighbourhood roads…";
   const greaterAccraLandmarkReport = await createGreaterAccraLandmarks(scene);
   solidAreas.push(...greaterAccraLandmarkReport.solidAreas);
-  // Add only the two Osu local links needed for nearby traffic. The full
+  // Add the four connected Osu local streets needed for nearby traffic. The full
   // 35-road neighbourhood layer remains streamed into later map work.
   const osuLocalRoadCount = createOsuLocalRoads(scene);
   document.documentElement.dataset.playableLocalRoadCount = String(osuLocalRoadCount);
@@ -1075,9 +1075,9 @@ async function start(): Promise<void> {
     document.documentElement.dataset.interiorTestMode = testBuilding.id;
   }
 
-  // Put ambient NPC traffic on the two Osu streets beside the player spawn,
+  // Put ambient NPC traffic on the connected Osu street loop beside the player spawn,
   // rather than hiding every car kilometres away on the N1 Tema corridor.
-  // Each route follows the authored local street centreline with a lane offset.
+  // Each route follows a separate lane around the authored local street loop.
   const npcTrafficRoutes = [
     {
       id: "osu-residential-street",
