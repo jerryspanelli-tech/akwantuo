@@ -15,6 +15,8 @@ import { COMPLEXIONS, DEFAULT_APPEARANCE, OUTFITS, resolveAppearance, type Chara
 import { loadAppearance, saveAppearance } from "./character/appearanceStore";
 import { getHairstyle } from "./character/hairstyles";
 import { WORLD_CONFIG } from "./world/config";
+import { GREATER_ACCRA_REGION_ANCHORS } from "./world/greaterAccraLayout";
+import { GREATER_ACCRA_REGIONS } from "./world/regions";
 import { WorldChunkManager } from "./world/chunkManager";
 import { ChunkRegistry } from "./world/chunkRegistry";
 import { clampToWorld, isBlocked } from "./world/collision";
@@ -75,6 +77,30 @@ if (import.meta.hot) {
 const bootScreen = document.querySelector<HTMLElement>("#boot-screen");
 const gameShell = document.querySelector<HTMLElement>("#game-shell");
 const bootStatus = document.querySelector<HTMLElement>("#boot-status");
+const hudLocation = document.querySelector<HTMLElement>(".hud-location");
+let locationRefreshElapsed = 0;
+let lastDisplayedRegionId = "";
+const refreshHudLocation = (x: number, z: number): void => {
+  if (!hudLocation) return;
+  let nearestRegionId = "";
+  let nearestDistanceSquared = Number.POSITIVE_INFINITY;
+  for (const anchor of GREATER_ACCRA_REGION_ANCHORS) {
+    const dx = anchor.x - x;
+    const dz = anchor.z - z;
+    const distanceSquared = dx * dx + dz * dz;
+    if (distanceSquared < nearestDistanceSquared) {
+      nearestDistanceSquared = distanceSquared;
+      nearestRegionId = anchor.regionId;
+    }
+  }
+  if (!nearestRegionId || nearestRegionId === lastDisplayedRegionId) return;
+  const region = GREATER_ACCRA_REGIONS.find((item) => item.id === nearestRegionId);
+  const label = region?.name ?? (nearestDistanceSquared > 2200 * 2200 ? "N6 INTERCITY ROUTE" : "GHANA");
+  hudLocation.textContent = "AKWANTUO · " + label.toUpperCase();
+  hudLocation.dataset.regionId = nearestRegionId;
+  lastDisplayedRegionId = nearestRegionId;
+};
+
 const canvas = document.querySelector<HTMLCanvasElement>("#world-canvas");
 const playButton = document.querySelector<HTMLButtonElement>("#play-button");
 const mainMenu = document.querySelector<HTMLElement>("#main-menu");
@@ -1329,6 +1355,11 @@ async function start(): Promise<void> {
     const delta = Math.min(rawDelta, 0.05);
 
     if (hasEnteredWorld) {
+      locationRefreshElapsed += delta;
+      if (locationRefreshElapsed >= 0.5) {
+        locationRefreshElapsed = 0;
+        refreshHudLocation(player.root.position.x, player.root.position.z);
+      }
       // Keep pedestrian motion bounded and deterministic on mobile frame rates.
       let pedestrianWalkedM = 0;
       for (const pedestrian of pedestrianNpcs) {
