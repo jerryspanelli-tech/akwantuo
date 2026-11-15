@@ -117,6 +117,11 @@ export function createGreaterAccraPlayableWorld(
 ): GreaterAccraPlayableWorldReport {
   const firstNewMeshIndex = scene.meshes.length;
   scene.clearColor = new Color4(0.66, 0.76, 0.79, 1);
+  // Light distance haze softens the hard horizon while preserving visibility
+  // along the long Accra–Kumasi corridor.
+  scene.fogMode = Scene.FOGMODE_EXP2;
+  scene.fogColor = new Color3(0.66, 0.76, 0.79);
+  scene.fogDensity = 0.000025;
 
   const land = MeshBuilder.CreateGround("greater-accra-playable-land", {
     width: GREATER_ACCRA_MAP_EXTENT.widthM,
