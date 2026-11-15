@@ -108,19 +108,22 @@ try {
     const npcTraffic = await page.evaluate(() => ({
       count: Number(document.documentElement.dataset.npcRoadTraffic ?? 0),
       route: document.documentElement.dataset.npcRoadTrafficRoute ?? "",
+      routes: document.documentElement.dataset.npcRoadTrafficRoutes ?? "",
       laneCentre: document.documentElement.dataset.npcRoadTrafficLaneCenter === "true",
       distanceM: Number(document.documentElement.dataset.npcRoadTrafficDistanceM ?? 0),
       speedMps: Number(document.documentElement.dataset.npcRoadTrafficSpeedMps ?? 0),
       minimumGapM: Number(document.documentElement.dataset.npcRoadTrafficMinimumGapM ?? 0)
     }));
-    if (npcTraffic.count !== 3 || npcTraffic.route !== "n1-tema-corridor" || !npcTraffic.laneCentre ||
+    if (npcTraffic.count !== 6 ||
+        npcTraffic.routes !== "osu-residential-street,osu-oxford-street-link" ||
+        !npcTraffic.laneCentre ||
         !Number.isFinite(npcTraffic.distanceM) || npcTraffic.distanceM <= 0 ||
-        !Number.isFinite(npcTraffic.speedMps) || npcTraffic.speedMps < 0 ||
+        !Number.isFinite(npcTraffic.speedMps) || npcTraffic.speedMps < 0.5 ||
         !Number.isFinite(npcTraffic.minimumGapM) || npcTraffic.minimumGapM < 8) {
-      failures.push(target.name + ": headway-controlled NPC traffic did not spawn three separated cars and advance on the N1 corridor: " +
+      failures.push(target.name + ": six nearby NPC cars did not spawn separated and advance on the two Osu streets: " +
         JSON.stringify(npcTraffic));
     } else {
-      console.log(target.name + ": headway-controlled N1 traffic advanced " + JSON.stringify(npcTraffic));
+      console.log(target.name + ": nearby Osu NPC traffic advanced " + JSON.stringify(npcTraffic));
     }
 
     // Exercise a complete trotro journey, including the passenger camera control.
