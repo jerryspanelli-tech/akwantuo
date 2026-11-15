@@ -1,6 +1,7 @@
 import {
   Color3,
   Color4,
+  DynamicTexture,
   MeshBuilder,
   Scene,
   StandardMaterial,
@@ -52,8 +53,43 @@ export function createGreaterAccraPlayableWorld(
     (GREATER_ACCRA_MAP_EXTENT.minZ + GREATER_ACCRA_MAP_EXTENT.maxZ) / 2
   );
   const landMaterial = new StandardMaterial("greater-accra-playable-land-material", scene);
-  landMaterial.diffuseColor = new Color3(0.52, 0.55, 0.43);
-  landMaterial.specularColor = new Color3(0.02, 0.02, 0.02);
+  // A single small, repeatable texture gives the large map readable ground
+  // variation without adding thousands of terrain meshes or expensive passes.
+  const terrainTexture = new DynamicTexture(
+    "greater-accra-terrain-detail",
+    { width: 512, height: 512 },
+    scene,
+    false
+  );
+  const terrainContext = terrainTexture.getContext();
+  terrainContext.fillStyle = "#777b58";
+  terrainContext.fillRect(0, 0, 512, 512);
+  const terrainPatchColours = ["#69764f", "#85805a", "#9a8b63", "#626f50", "#8b9066"];
+  for (let index = 0; index < 460; index += 1) {
+    const x = (index * 73 + 29) % 512;
+    const z = (index * 191 + 47) % 512;
+    const radiusX = 3 + (index * 17) % 13;
+    const radiusZ = 2 + (index * 11) % 9;
+    terrainContext.globalAlpha = 0.12 + (index % 5) * 0.025;
+    terrainContext.fillStyle = terrainPatchColours[index % terrainPatchColours.length];
+    terrainContext.beginPath();
+    terrainContext.ellipse(x, z, radiusX, radiusZ, (index % 7) * 0.18, 0, Math.PI * 2);
+    terrainContext.fill();
+  }
+  terrainContext.globalAlpha = 0.16;
+  for (let index = 0; index < 2600; index += 1) {
+    const x = (index * 97 + 13) % 512;
+    const z = (index * 193 + 31) % 512;
+    terrainContext.fillStyle = index % 2 === 0 ? "#4f6048" : "#c0aa76";
+    terrainContext.fillRect(x, z, 1 + (index % 3), 1);
+  }
+  terrainContext.globalAlpha = 1;
+  terrainTexture.update(false);
+  terrainTexture.uScale = 90;
+  terrainTexture.vScale = 160;
+  landMaterial.diffuseTexture = terrainTexture;
+  landMaterial.diffuseColor = new Color3(0.96, 0.97, 0.9);
+  landMaterial.specularColor = new Color3(0.015, 0.015, 0.015);
   land.material = landMaterial;
   land.isPickable = false;
   land.checkCollisions = false;
@@ -65,8 +101,33 @@ export function createGreaterAccraPlayableWorld(
   }, scene);
   ocean.position.set(2500, -0.08, -6900);
   const oceanMaterial = new StandardMaterial("greater-accra-playable-gulf-material", scene);
-  oceanMaterial.diffuseColor = new Color3(0.12, 0.36, 0.46);
-  oceanMaterial.specularColor = new Color3(0.12, 0.16, 0.18);
+  const waterTexture = new DynamicTexture(
+    "greater-accra-gulf-detail",
+    { width: 256, height: 256 },
+    scene,
+    false
+  );
+  const waterContext = waterTexture.getContext();
+  waterContext.fillStyle = "#1c5261";
+  waterContext.fillRect(0, 0, 256, 256);
+  for (let index = 0; index < 170; index += 1) {
+    const x = (index * 47 + 19) % 256;
+    const z = (index * 83 + 11) % 256;
+    waterContext.globalAlpha = 0.08 + (index % 4) * 0.025;
+    waterContext.strokeStyle = index % 2 === 0 ? "#9bc0bd" : "#477f88";
+    waterContext.lineWidth = 1 + (index % 2);
+    waterContext.beginPath();
+    waterContext.moveTo(x, z);
+    waterContext.quadraticCurveTo(x + 9, z - 4, x + 20, z + 1);
+    waterContext.stroke();
+  }
+  waterContext.globalAlpha = 1;
+  waterTexture.update(false);
+  waterTexture.uScale = 42;
+  waterTexture.vScale = 16;
+  oceanMaterial.diffuseTexture = waterTexture;
+  oceanMaterial.diffuseColor = new Color3(0.9, 0.97, 1);
+  oceanMaterial.specularColor = new Color3(0.08, 0.12, 0.14);
   ocean.material = oceanMaterial;
   ocean.isPickable = false;
   ocean.checkCollisions = false;
