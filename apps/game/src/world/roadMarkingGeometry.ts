@@ -14,8 +14,8 @@ export type RoadMarkingGeometryOptions = Readonly<{
 
 type MarkingPath = Readonly<{ points: readonly Vector3[] }>;
 
-const WHITE = new Color3(0.92, 0.92, 0.86);
-const EDGE_WHITE = new Color3(0.78, 0.8, 0.77);
+const WHITE = new Color3(0.98, 0.98, 0.94);
+const EDGE_WHITE = new Color3(0.86, 0.87, 0.83);
 const CENTRE_YELLOW = new Color3(0.95, 0.72, 0.16);
 
 function distance(a: MapPoint, b: MapPoint): number {
@@ -165,7 +165,7 @@ function createLineMesh(
   if (lines.length === 0) return undefined;
   // Use shallow ribbon-like quads instead of one-pixel WebGL lines. This keeps
   // road paint readable at mobile render scale and avoids stair-stepped edges.
-  const width = color === EDGE_WHITE ? 0.16 : color === CENTRE_YELLOW ? 0.22 : 0.2;
+  const width = color === EDGE_WHITE ? 0.18 : color === CENTRE_YELLOW ? 0.22 : 0.24;
   const positions: number[] = [];
   const indices: number[] = [];
   for (const line of lines) {
