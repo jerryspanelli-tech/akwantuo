@@ -176,7 +176,11 @@ function advanceWatercraftElapsed(
   return next;
 }
 
-function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
+function createPlayer(
+  scene: Scene,
+  initialAppearance: CharacterAppearance,
+  options: { id?: string; pedestrian?: boolean } = {}
+): {
   root: TransformNode;
   leftArm: TransformNode;
   rightArm: TransformNode;
@@ -186,7 +190,7 @@ function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
   setMoving: (moving: boolean, movementStrength?: number) => void;
   setJumping: (phase: "jump-start" | "jump-air" | "jump-land" | null) => void;
 } {
-  const root = new TransformNode("player-root", scene);
+  const root = new TransformNode(options.id ?? "player-root", scene);
   root.position.set(WORLD_CONFIG.spawn.x, WORLD_CONFIG.spawn.y, WORLD_CONFIG.spawn.z);
   root.rotation.y = Math.PI;
 
@@ -366,10 +370,12 @@ function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
       const animationSpecs: readonly { file: string; name: string; remote?: boolean }[] = [
         ...(!embeddedIdle ? [{ file: "idle.glb", name: "idle" }] : []),
         ...(!embeddedWalk ? [{ file: "walk.glb", name: "walk" }] : []),
-        ...(!embeddedRun ? [{ file: "run-female.glb", name: "run", remote: true }] : []),
-        { file: "jump-start.glb", name: "jump-start", remote: true },
-        { file: "jump-air.glb", name: "jump-air", remote: true },
-        { file: "jump-land.glb", name: "jump-land", remote: true }
+        ...(!options.pedestrian && !embeddedRun ? [{ file: "run-female.glb", name: "run", remote: true }] : []),
+        ...(!options.pedestrian ? [
+          { file: "jump-start.glb", name: "jump-start", remote: true },
+          { file: "jump-air.glb", name: "jump-air", remote: true },
+          { file: "jump-land.glb", name: "jump-land", remote: true }
+        ] : [])
       ];
       const remoteAnimationBaseUrl = "https://cdn.jsdelivr.net/gh/Mesh2Motion/mesh2motion-app@5d6918ef67203e68c661b3e32e8e8f227bfd953e/static/assets/human/animations/";
       const retargetedGroups: import("@babylonjs/core").AnimationGroup[] = [];
@@ -424,13 +430,21 @@ function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
         ?? locomotionGroups.find((group) => group.name.toLowerCase() === "idle");
       if (selected) selected.start(true);
       const walk = locomotionGroups.find((group) => group.name.toLowerCase() === "walk");
-      if (!walk) showNotice("3D character loaded, but its walking animation could not be connected.");
-      document.documentElement.dataset.akwantuoCharacterModel = file;
-      document.documentElement.dataset.akwantuoCharacterAnimations = String(locomotionGroups.length);
+      if (!walk && !options.pedestrian) showNotice("3D character loaded, but its walking animation could not be connected.");
+      if (options.pedestrian) {
+        document.documentElement.dataset[options.id ?? "pedestrianModel"] = file;
+      } else {
+        document.documentElement.dataset.akwantuoCharacterModel = file;
+        document.documentElement.dataset.akwantuoCharacterAnimations = String(locomotionGroups.length);
+      }
     } catch (error) {
       console.error("AKWANTUO character GLB failed to load:", error);
-      document.documentElement.dataset.akwantuoCharacterModel = "fallback";
-      showNotice("The 3D character could not load. Check your connection and retry.");
+      if (!options.pedestrian) {
+        document.documentElement.dataset.akwantuoCharacterModel = "fallback";
+        showNotice("The 3D character could not load. Check your connection and retry.");
+      } else {
+        console.warn("AKWANTUO pedestrian model failed to load:", error);
+      }
     }
   };
   void loadCharacterModel(initialAppearance);
@@ -760,6 +774,29 @@ async function start(): Promise<void> {
     }
   }
   const player = createPlayer(scene, currentAppearance);
+  // Two skinned Ghanaian pedestrians use the same character/idle/walk assets as
+  // the player. They walk short, bounded sidewalk loops on the nearby Osu roads.
+  const pedestrianNpcs = [
+    {
+      id: "osu-pedestrian-male",
+      appearance: resolveAppearance({ ...DEFAULT_APPEARANCE, presentation: "masculine" }),
+      startX: 650, endX: 1700, z: -1044, distanceM: 350, direction: 1, walkedM: 0
+    },
+    {
+      id: "osu-pedestrian-female",
+      appearance: resolveAppearance({ ...DEFAULT_APPEARANCE, presentation: "feminine" }),
+      startX: 650, endX: 1700, z: -1594, distanceM: 350, direction: -1, walkedM: 0
+    }
+  ].map((pedestrian) => {
+    const actor = createPlayer(scene, pedestrian.appearance, {
+      id: pedestrian.id, pedestrian: true
+    });
+    actor.root.position.set(pedestrian.startX + pedestrian.distanceM, 0, pedestrian.z);
+    actor.root.rotation.y = pedestrian.direction > 0 ? Math.PI / 2 : -Math.PI / 2;
+    actor.setMoving(true, 0.28);
+    return { ...pedestrian, actor };
+  });
+  document.documentElement.dataset.npcPedestrianCount = String(pedestrianNpcs.length);
   const mainlandMarina = { x: 2700, z: -3380 };
   let activeInterior: { buildingId: string; roomId: string; exitX: number; exitZ: number } | null = null;
   // Shop checkout and premium asset ownership are committed server-side.
@@ -1273,6 +1310,28 @@ async function start(): Promise<void> {
     const delta = Math.min(rawDelta, 0.05);
 
     if (hasEnteredWorld) {
+      // Keep pedestrian motion bounded and deterministic on mobile frame rates.
+      let pedestrianWalkedM = 0;
+      for (const pedestrian of pedestrianNpcs) {
+        const step = Math.min(rawDelta, 0.1) * 1.05 * pedestrian.direction;
+        pedestrian.distanceM += step;
+        pedestrian.walkedM += Math.abs(step);
+        const routeLength = pedestrian.endX - pedestrian.startX;
+        if (pedestrian.distanceM >= routeLength) {
+          pedestrian.distanceM = routeLength;
+          pedestrian.direction = -1;
+        } else if (pedestrian.distanceM <= 0) {
+          pedestrian.distanceM = 0;
+          pedestrian.direction = 1;
+        }
+        pedestrian.actor.root.position.set(
+          pedestrian.startX + pedestrian.distanceM, 0, pedestrian.z
+        );
+        pedestrian.actor.root.rotation.y = pedestrian.direction > 0 ? Math.PI / 2 : -Math.PI / 2;
+        pedestrian.actor.setMoving(true, 0.28);
+        pedestrianWalkedM += pedestrian.walkedM;
+      }
+      document.documentElement.dataset.npcPedestrianWalkedM = pedestrianWalkedM.toFixed(2);
       chunkUpdateElapsed += delta;
       if (chunkUpdateElapsed >= 0.25) {
         chunkUpdateElapsed = 0;
