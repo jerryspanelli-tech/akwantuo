@@ -5,7 +5,8 @@ import {
   MeshBuilder,
   Scene,
   StandardMaterial,
-  Vector3
+  Vector3,
+  VertexData
 } from "@babylonjs/core";
 
 export type ElevatedRoadPoint = Readonly<{
@@ -133,27 +134,37 @@ function createRoadPaintLine(
     segments.push(path);
   }
   if (!segments.length) return undefined;
-  const paths = segments.map((segment) => {
-    const left: Vector3[] = [];
-    const right: Vector3[] = [];
-    for (let index = 0; index < segment.length; index += 1) {
-      const previous = segment[Math.max(0, index - 1)];
-      const next = segment[Math.min(segment.length - 1, index + 1)];
-      const dx = next.x - previous.x;
-      const dz = next.z - previous.z;
-      const magnitude = Math.hypot(dx, dz) || 1;
+  const positions: number[] = [];
+  const indices: number[] = [];
+  for (const segment of segments) {
+    for (let index = 1; index < segment.length; index += 1) {
+      const start = segment[index - 1];
+      const end = segment[index];
+      const dx = end.x - start.x;
+      const dz = end.z - start.z;
+      const magnitude = Math.hypot(dx, dz);
+      if (magnitude < 0.01) continue;
       const nx = (dz / magnitude) * widthM / 2;
       const nz = (-dx / magnitude) * widthM / 2;
-      left.push(new Vector3(segment[index].x + nx, segment[index].y, segment[index].z + nz));
-      right.push(new Vector3(segment[index].x - nx, segment[index].y, segment[index].z - nz));
+      const base = positions.length / 3;
+      positions.push(
+        start.x + nx, start.y, start.z + nz,
+        start.x - nx, start.y, start.z - nz,
+        end.x + nx, end.y, end.z + nz,
+        end.x - nx, end.y, end.z - nz
+      );
+      indices.push(base, base + 1, base + 2, base + 1, base + 3, base + 2);
     }
-    return [left, right];
-  });
-  const mesh = MeshBuilder.CreateRibbon(name, {
-    pathArray: paths.flat(),
-    sideOrientation: Mesh.DOUBLESIDE,
-    updatable: false
-  }, scene);
+  }
+  if (!indices.length) return undefined;
+  const normals: number[] = [];
+  VertexData.ComputeNormals(positions, indices, normals);
+  const vertexData = new VertexData();
+  vertexData.positions = positions;
+  vertexData.indices = indices;
+  vertexData.normals = normals;
+  const mesh = new Mesh(name, scene);
+  vertexData.applyToMesh(mesh, false);
   mesh.material = getRoadPaintMaterial(scene);
   mesh.isPickable = false;
   mesh.checkCollisions = false;
