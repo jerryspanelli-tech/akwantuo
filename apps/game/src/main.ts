@@ -585,6 +585,9 @@ async function start(): Promise<void> {
   engine.onContextRestoredObservable.add(() => {
     document.documentElement.dataset.akwantuoWebglContext = "restored";
   });
+  document.documentElement.dataset.akwantuoHardwareScaling = String(engine.getHardwareScalingLevel());
+  document.documentElement.dataset.akwantuoRenderSize =
+    engine.getRenderWidth() + "x" + engine.getRenderHeight();
   engine.resize();
   const scene = new Scene(engine);
   activeScene = scene;
@@ -1211,6 +1214,10 @@ async function start(): Promise<void> {
   let walkClock = 0;
 
   let chunkUpdateElapsed = 0;
+  let playDiagnosticFramesRemaining = 0;
+  let playDiagnosticFrameCount = 0;
+  let playDiagnosticFrameTimeTotal = 0;
+  let playDiagnosticFrameTimeMax = 0;
   const render = (): void => {
     const rawDelta = engine.getDeltaTime() / 1000;
     const delta = Math.min(rawDelta, 0.05);
@@ -1743,6 +1750,26 @@ async function start(): Promise<void> {
     }
 
     scene.render();
+
+    // Sample the first 120 gameplay frames without logging every frame.
+    // This records CPU-visible scene/render indicators, not actual GPU memory.
+    if (playDiagnosticFramesRemaining > 0) {
+      const frameTimeMs = engine.getDeltaTime();
+      playDiagnosticFrameCount += 1;
+      playDiagnosticFrameTimeTotal += frameTimeMs;
+      playDiagnosticFrameTimeMax = Math.max(playDiagnosticFrameTimeMax, frameTimeMs);
+      if (playDiagnosticFrameCount === 1 || playDiagnosticFrameCount % 30 === 0 ||
+          playDiagnosticFramesRemaining === 1) {
+        document.documentElement.dataset.akwantuoPlaySampleFrames = String(playDiagnosticFrameCount);
+        document.documentElement.dataset.akwantuoPlayFps = String(Math.round(engine.getFps()));
+        document.documentElement.dataset.akwantuoPlayActiveMeshes = String(scene.getActiveMeshes().length);
+        document.documentElement.dataset.akwantuoPlayTotalVertices = String(scene.getTotalVertices());
+        document.documentElement.dataset.akwantuoPlayAverageFrameMs =
+          (playDiagnosticFrameTimeTotal / playDiagnosticFrameCount).toFixed(2);
+        document.documentElement.dataset.akwantuoPlayMaxFrameMs = playDiagnosticFrameTimeMax.toFixed(2);
+      }
+      playDiagnosticFramesRemaining -= 1;
+    }
   };
 
   document.querySelector<HTMLButtonElement>("#vehicle-brake-button")?.addEventListener("pointerdown", (event) => {
@@ -1913,6 +1940,20 @@ async function start(): Promise<void> {
     document.documentElement.dataset.akwantuoPlayMaterialCount = String(scene.materials.length);
     document.documentElement.dataset.akwantuoPlayTextureCount = String(scene.textures.length);
     document.documentElement.dataset.akwantuoPlayActiveCamera = scene.activeCamera?.name ?? "none";
+    document.documentElement.dataset.akwantuoPlayTextures = JSON.stringify(
+      scene.textures.slice(0, 80).map((texture) => {
+        try {
+          const size = texture.getSize();
+          return { name: texture.name, width: size.width, height: size.height, ready: texture.isReady() };
+        } catch {
+          return { name: texture.name, width: null, height: null, ready: texture.isReady() };
+        }
+      })
+    );
+    playDiagnosticFramesRemaining = 120;
+    playDiagnosticFrameCount = 0;
+    playDiagnosticFrameTimeTotal = 0;
+    playDiagnosticFrameTimeMax = 0;
     closeCharacterCreator();
     hasEnteredWorld = true;
     mainMenu?.classList.add("is-hidden");
