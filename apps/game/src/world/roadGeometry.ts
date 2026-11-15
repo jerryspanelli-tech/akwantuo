@@ -13,7 +13,7 @@ import { getRoadCrossSectionProfile, ROAD_CROSS_SECTION_PROFILES, GREATER_ACCRA_
 import { GREATER_ACCRA_JUNCTION_LAYOUTS } from "./junctionLayouts";
 import { GREATER_ACCRA_ROAD_NETWORK } from "./roadNetwork";
 
-type RoadBandKind = "asphalt" | "sidewalk" | "median" | "drain";
+type RoadBandKind = "asphalt" | "sidewalk" | "median" | "drain" | "curb";
 
 type RoadBand = Readonly<{
   kind: RoadBandKind;
@@ -33,7 +33,8 @@ const ROAD_MATERIAL_COLORS: Record<RoadBandKind, Color3> = {
   asphalt: new Color3(0.105, 0.12, 0.125),
   sidewalk: new Color3(0.48, 0.47, 0.42),
   median: new Color3(0.62, 0.59, 0.48),
-  drain: new Color3(0.075, 0.09, 0.085)
+  drain: new Color3(0.075, 0.09, 0.085),
+  curb: new Color3(0.62, 0.62, 0.57)
 };
 
 function getMaterial(scene: Scene, kind: RoadBandKind): StandardMaterial {
@@ -262,9 +263,39 @@ export function createRoadSegmentGeometry(
   if (approachPath.length < 2) return [];
   const points = samplePolyline(approachPath, spacing);
   const normals = getNormals(points);
-  return createBands(profile).map((band, index) =>
+  const meshes = createBands(profile).map((band, index) =>
     createBandMesh(scene, `${roadSegmentId}-${band.kind}-${index}`, points, normals, band)
   );
+
+  // Raised kerb strips separate the asphalt shoulder from the pedestrian
+  // pavement. They sit inside the authored cross-section and do not widen it.
+  if (profile.sidewalkWidthM > 0) {
+    const carriageway = profile.lanesPerDirection * profile.laneWidthM;
+    const kerbCentre = profile.medianWidthM / 2 + carriageway + profile.shoulderWidthM;
+    const kerbMaterial = getMaterial(scene, "curb");
+    for (const side of [-1, 1] as const) {
+      const inner = points.map((point, index) => new Vector3(
+        point.x + normals[index].x * side * (kerbCentre - 0.08),
+        0.12,
+        point.z + normals[index].z * side * (kerbCentre - 0.08)
+      ));
+      const outer = points.map((point, index) => new Vector3(
+        point.x + normals[index].x * side * (kerbCentre + 0.08),
+        0.12,
+        point.z + normals[index].z * side * (kerbCentre + 0.08)
+      ));
+      const kerb = MeshBuilder.CreateRibbon(
+        `${roadSegmentId}-raised-kerb-${side === -1 ? "west" : "east"}`,
+        { pathArray: [inner, outer], sideOrientation: Mesh.DOUBLESIDE, updatable: false },
+        scene
+      );
+      kerb.material = kerbMaterial;
+      kerb.isPickable = false;
+      kerb.checkCollisions = false;
+      meshes.push(kerb);
+    }
+  }
+  return meshes;
 }
 
 /** Builds all first-release road ribbons from the approved layout catalogue. */
