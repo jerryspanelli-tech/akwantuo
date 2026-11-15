@@ -134,8 +134,15 @@ export function runTransportSmokeChecks(): void {
   assert(!!futureRoute && futureRoute.includesFutureExpansion &&
     isRoadRouteValid(futureRoute, { includeFutureExpansion: true }),
     "future expansion can be previewed when explicitly enabled");
-  assert(findShortestRoadRoute("achimota-interchange", "mallam-junction") === null,
-    "disconnected primary-road components do not invent a connecting route");
+  const circleToOfankor = findShortestRoadRoute("circle-junction", "ofankor-junction");
+  assert(!!circleToOfankor && isRoadRouteValid(circleToOfankor) &&
+    circleToOfankor.roadSegmentIds.includes("n6-circle-caprice") &&
+    circleToOfankor.roadSegmentIds.includes("n6-achimota-ofankor"),
+    "N6 connects Circle through Caprice, Alajo, Apenkwa and Achimota to Ofankor");
+  const achimotaToMallam = findShortestRoadRoute("achimota-interchange", "mallam-junction");
+  assert(!!achimotaToMallam && isRoadRouteValid(achimotaToMallam) &&
+    achimotaToMallam.roadSegmentIds.length > 0,
+    "the N6 and N1 form a connected Achimota-to-Mallam primary-road route");
 
   const firstRoad = GREATER_ACCRA_ROAD_PATHS.find((road) => road.roadSegmentId === "n1-west-approach");
   assert(!!firstRoad, "first-release N1 road path exists for road projection");
