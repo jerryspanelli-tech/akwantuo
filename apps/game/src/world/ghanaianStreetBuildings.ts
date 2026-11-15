@@ -89,8 +89,11 @@ export const DISTRICT_BUILDINGS: readonly DistrictBuilding[] = BUILDING_TEMPLATE
     ...template,
     districtId,
     side,
-    x: anchor.x + (template.anchorOffsetX ?? (side === "west" ? -(template.width / 2 + 6) : template.width / 2 + 6)),
-    z: anchor.z + (template.anchorOffsetZ ?? 0)
+    // Preserve each catalogue entry's block position around its district
+    // anchor. The old formula collapsed every storefront pair onto one Z row,
+    // discarding the authored street-block offsets and causing poor frontage.
+    x: anchor.x + (template.anchorOffsetX ?? template.x),
+    z: anchor.z + (template.anchorOffsetZ ?? template.z)
   };
 });
 
@@ -352,7 +355,7 @@ export function isBuildingCatalogueValid(): boolean {
   return ids.size === DISTRICT_BUILDINGS.length &&
     DISTRICT_BUILDINGS.length >= 20 &&
     coveredDistricts.size === 12 &&
-    DISTRICT_BUILDINGS.every((building) => {
+    DISTRICT_BUILDINGS.every((building, index) => {
       const anchor = GREATER_ACCRA_REGION_ANCHORS.find((item) => item.regionId === building.districtId);
       return building.id.length > 0 && building.name.length > 0 &&
         anchorIds.has(building.districtId) && !!anchor &&
@@ -360,7 +363,16 @@ export function isBuildingCatalogueValid(): boolean {
         Number.isFinite(building.x) && Number.isFinite(building.z) &&
         building.width >= 6 && building.depth >= 6 &&
         building.floors >= 1 && building.floors <= 5 &&
-        (building.interiorId === undefined || building.interiorId.length > 0);
+        (building.interiorId === undefined || building.interiorId.length > 0) &&
+        // Building footprints must not overlap another catalogue footprint.
+        DISTRICT_BUILDINGS.every((other, otherIndex) => {
+          if (otherIndex <= index) return true;
+          const overlapX = Math.abs(building.x - other.x) <
+            (building.width + other.width) / 2;
+          const overlapZ = Math.abs(building.z - other.z) <
+            (building.depth + other.depth) / 2;
+          return !overlapX || !overlapZ;
+        });
     }) &&
     ["provisions", "pharmacy", "salon", "food", "workshop", "office", "compound_house", "apartment", "market_stall", "guest_house", "clinic", "event_venue"]
       .every((use) => DISTRICT_BUILDINGS.some((building) => building.use === use));
