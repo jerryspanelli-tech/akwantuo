@@ -86,7 +86,7 @@ const gameHud = document.querySelector<HTMLElement>("#game-hud");
 const joystick = document.querySelector<HTMLElement>("#joystick");
 const joystickStick = document.querySelector<HTMLElement>("#joystick-stick");
 const jumpButton = document.querySelector<HTMLButtonElement>("#jump-button");
-const sprintButton = document.querySelector<HTMLButtonElement>("#sprint-button");
+const vehicleBrakeButton = document.querySelector<HTMLButtonElement>("#vehicle-brake-button");
 const interactButton = document.querySelector<HTMLButtonElement>("#interact-button");
 const vehicleViewButton = document.querySelector<HTMLButtonElement>("#vehicle-view-button");
 const notice = document.querySelector<HTMLElement>("#notice");
@@ -108,7 +108,6 @@ const accountDisplayName = document.querySelector<HTMLInputElement>("#account-di
 
 const pressedKeys = new Set<string>();
 const touchInput = { x: 0, z: 0 };
-let sprintHeld = false;
 let jumpRequested = false;
 let hasEnteredWorld = false;
 let vehicleActionRequested = false;
@@ -298,7 +297,7 @@ function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
   let locomotionGroups: import("@babylonjs/core").AnimationGroup[] = [];
   let currentLocomotion = "idle";
   let loadGeneration = 0;
-  const setMoving = (moving: boolean, sprinting = false): void => {
+  const setMoving = (moving: boolean, movementStrength = 1): void => {
     const next = moving ? "walk" : "idle";
     const selected = locomotionGroups.find((group) => group.name.toLowerCase() === next);
     if (next !== currentLocomotion) {
@@ -308,9 +307,8 @@ function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
         selected.start(true);
       }
     }
-    // Until a dedicated run clip is available, speed up the walk cycle while sprinting.
     const walk = locomotionGroups.find((group) => group.name.toLowerCase() === "walk");
-    if (walk) walk.speedRatio = sprinting && moving ? 1.45 : 1;
+    if (walk) walk.speedRatio = moving ? 0.65 + Math.max(0, Math.min(1, movementStrength)) * 0.75 : 1;
   };
   const loadCharacterModel = async (appearance: CharacterAppearance): Promise<void> => {
     const generation = ++loadGeneration;
@@ -1200,20 +1198,7 @@ async function start(): Promise<void> {
   window.addEventListener("keyup", (event: KeyboardEvent) => {
     pressedKeys.delete(event.key.toLowerCase());
   });
-  window.addEventListener("blur", () => { pressedKeys.clear(); vehicleBrake = false; sprintHeld = false; sprintButton?.classList.remove("is-active"); });
-  sprintButton?.addEventListener("pointerdown", (event: PointerEvent) => {
-    event.preventDefault();
-    sprintHeld = true;
-    sprintButton.setPointerCapture(event.pointerId);
-    sprintButton.classList.add("is-active");
-  });
-  const releaseSprint = (): void => {
-    sprintHeld = false;
-    sprintButton?.classList.remove("is-active");
-  };
-  for (const eventName of ["pointerup", "pointercancel", "lostpointercapture"] as const) {
-    sprintButton?.addEventListener(eventName, releaseSprint);
-  }
+  window.addEventListener("blur", () => { pressedKeys.clear(); vehicleBrake = false; });
   interactButton?.addEventListener("pointerdown", (event: PointerEvent) => {
     event.preventDefault();
     vehicleActionRequested = true;
@@ -1650,6 +1635,7 @@ async function start(): Promise<void> {
           interactButton.hidden = false;
           interactButton.textContent = passengerState.mode === "riding" ? "ALIGHT" : "EXIT";
           interactButton.setAttribute("aria-label", passengerState.mode === "riding" ? "Alight from public transport" : "Exit vehicle");
+          if (vehicleBrakeButton) vehicleBrakeButton.hidden = !(interactionState.mode === "inside_vehicle" || watercraftMode);
         }
         if (jumpButton) jumpButton.classList.add("is-hidden");
         if (vehicleViewButton) vehicleViewButton.classList.remove("is-hidden");
@@ -1677,6 +1663,7 @@ async function start(): Promise<void> {
           interactButton.textContent = activeInterior ? "EXIT" : nearMappedRail || nearPreviewRail ? "BOARD" : "ENTER";
           interactButton.setAttribute("aria-label", activeInterior ? "Exit building" : nearMappedRail || nearPreviewRail ? "Board public transport" : "Enter nearby vehicle or building");
         }
+        if (vehicleBrakeButton) vehicleBrakeButton.hidden = true;
         if (jumpButton) jumpButton.classList.remove("is-hidden");
         if (vehicleViewButton) vehicleViewButton.classList.add("is-hidden");
       }
@@ -1689,6 +1676,7 @@ async function start(): Promise<void> {
       if (interactionState.mode === "on_foot" && passengerState.mode !== "riding" && !watercraftMode && (pressedKeys.has("s") || pressedKeys.has("arrowdown"))) inputZ -= 1;
 
       const inputLength = Math.hypot(inputX, inputZ);
+      const movementStrength = Math.min(1, inputLength);
       if (inputLength > 1) {
         inputX /= inputLength;
         inputZ /= inputLength;
@@ -1708,8 +1696,7 @@ async function start(): Promise<void> {
 
       if (moving) {
         direction.normalize();
-        const sprinting = pressedKeys.has("shift") || sprintHeld;
-        const moveSpeed = sprinting ? WORLD_CONFIG.movement.sprintSpeed : WORLD_CONFIG.movement.walkSpeed;
+        const moveSpeed = WORLD_CONFIG.movement.maxSpeed * movementStrength;
         const stepX = direction.x * moveSpeed * delta;
         const stepZ = direction.z * moveSpeed * delta;
         const nextX = player.root.position.x + stepX;
@@ -1725,7 +1712,7 @@ async function start(): Promise<void> {
         if (onWalkableShore && !isBlocked(nextX, player.root.position.z, solidAreas, WORLD_CONFIG.movement.collisionRadius) && Math.hypot(nextX - vehicleState.x, player.root.position.z - vehicleState.z) >= 2.0 && Math.hypot(nextX - publicTaxiState.x, player.root.position.z - publicTaxiState.z) >= 2.0) player.root.position.x = nextX;
         if (onWalkableShore && !isBlocked(player.root.position.x, nextZ, solidAreas, WORLD_CONFIG.movement.collisionRadius) && Math.hypot(player.root.position.x - vehicleState.x, nextZ - vehicleState.z) >= 2.0 && Math.hypot(player.root.position.x - publicTaxiState.x, nextZ - publicTaxiState.z) >= 2.0) player.root.position.z = nextZ;
         player.root.rotation.y = Math.atan2(direction.x, direction.z);
-        walkClock += delta * (sprinting ? 13 : 9);
+        walkClock += delta * (6 + movementStrength * 7);
       }
 
       if (interactionState.mode === "on_foot" && passengerState.mode !== "riding" && !watercraftMode && jumpRequested && onGround) {
@@ -1743,7 +1730,7 @@ async function start(): Promise<void> {
         onGround = true;
       }
 
-      player.setMoving(moving && onGround, (pressedKeys.has("shift") || sprintHeld) && moving && onGround);
+      player.setMoving(moving && onGround, movementStrength);
 
       if (moving && onGround) {
         const swing = Math.sin(walkClock) * 0.48;
@@ -1795,11 +1782,12 @@ async function start(): Promise<void> {
     }
   };
 
-  document.querySelector<HTMLButtonElement>("#vehicle-brake-button")?.addEventListener("pointerdown", (event) => {
-    event.preventDefault(); vehicleBrake = true;
+  vehicleBrakeButton?.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
+    if (interactionState.mode === "inside_vehicle" || watercraftMode) vehicleBrake = true;
   });
   for (const eventName of ["pointerup", "pointercancel", "lostpointercapture"] as const) {
-    document.querySelector<HTMLButtonElement>("#vehicle-brake-button")?.addEventListener(eventName, () => { vehicleBrake = false; });
+    vehicleBrakeButton?.addEventListener(eventName, () => { vehicleBrake = false; });
   }
 
   // Reveal the game shell before starting the continuous render loop. This
