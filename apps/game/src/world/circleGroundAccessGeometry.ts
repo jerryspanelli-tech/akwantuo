@@ -8,6 +8,8 @@ import {
 } from "@babylonjs/core";
 import { getMapNodePosition } from "./greaterAccraLayout";
 import { CIRCLE_GROUND_ACCESS_ROUTES } from "./circleGroundAccess";
+import { CIRCLE_FEO_OYEO_RAMPS } from "./circleInterchangeElevatedLayout";
+import { CIRCLE_GROUND_ROUNDABOUT_LAYOUT } from "./circleInterchangeGroundLevel";
 
 export type CircleAccessPathPoint = Readonly<{
   name: string;
@@ -150,31 +152,41 @@ export function createCircleGroundAccessGeometry(
     createPathMesh(scene, layout, centre.x, centre.z)
   );
 
-  // Tie the two new ramp feet into the nearest authored ground-road surfaces.
-  // These short connectors close the visual gaps; vehicle navigation remains
-  // governed by the separate transport system.
-  const rampGroundConnectors: CircleAccessPathLayout[] = [
-    {
-      routeId: "circle-ramp-down-to-ring-road-connector",
-      widthM: 6.5,
-      surface: "asphalt",
-      points: [
-        { name: "Loop viaduct ramp foot", x: 145 + 323 / (10 * 2 * Math.sin(Math.PI / 20)) + Math.sqrt(141.5 * 141.5 - 8.5 * 8.5), z: -95 },
-        { name: "Ring Road Central tie-in", x: 338, z: -141 }
-      ],
-      designNote: "Short visual tie-in from the ramp foot to the Ring Road Central surface."
-    },
-    {
-      routeId: "circle-ramp-up-from-feo-oye-o-connector",
-      widthM: 6.5,
-      surface: "asphalt",
-      points: [
-        { name: "Feo Oyeo local-road tie-in", x: -76, z: -58 },
-        { name: "Loop viaduct ramp foot", x: 145 - 323 / (10 * 2 * Math.sin(Math.PI / 20)) - Math.sqrt(143 * 143 - 8.5 * 8.5), z: -95 }
-      ],
-      designNote: "Short visual tie-in from the Feo Oyeo local-road surface to the ramp foot."
+  // Join each ramp foot to the nearest actual ground-level approach arm.
+  // The connector endpoint is projected onto the authored approach centreline,
+  // so it overlaps the road surface instead of stopping short beside it.
+  const rampGroundConnectors: CircleAccessPathLayout[] = CIRCLE_FEO_OYEO_RAMPS.map((ramp) => {
+    const foot = ramp.points.reduce((lowest, point) => point.y < lowest.y ? point : lowest);
+    const candidates = CIRCLE_GROUND_ROUNDABOUT_LAYOUT.approaches.map((approach) => {
+      const directionX = Math.sin(approach.bearingRadians);
+      const directionZ = Math.cos(approach.bearingRadians);
+      const along = foot.x * directionX + foot.z * directionZ;
+      const projectedX = directionX * along;
+      const projectedZ = directionZ * along;
+      return {
+        approach,
+        projectedX,
+        projectedZ,
+        distanceM: Math.hypot(foot.x - projectedX, foot.z - projectedZ),
+        along
+      };
+    }).filter((candidate) => candidate.along >= 50)
+      .sort((a, b) => a.distanceM - b.distanceM);
+    const nearest = candidates[0];
+    if (!nearest || nearest.distanceM > 80) {
+      throw new Error(`Circle ramp ${ramp.id} has no nearby ground-road approach for a safe surface tie-in.`);
     }
-  ];
+    return {
+      routeId: ramp.id + "-ground-approach-connector",
+      widthM: Math.min(ramp.deckWidthM, nearest.approach.roadWidthM - 2),
+      surface: "asphalt" as const,
+      points: [
+        { name: "Ramp ground foot", x: foot.x, z: foot.z },
+        { name: nearest.approach.id + " road centreline", x: nearest.projectedX, z: nearest.projectedZ }
+      ],
+      designNote: "Ground-level connector joins the ramp foot to the nearest authored Circle approach surface."
+    };
+  });
   const connectorMeshes = rampGroundConnectors.map((layout) =>
     createPathMesh(scene, layout, centre.x, centre.z)
   );
