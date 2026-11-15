@@ -2,6 +2,7 @@ import {
   Color3,
   Color4,
   DynamicTexture,
+  Mesh,
   MeshBuilder,
   Scene,
   StandardMaterial,
@@ -83,7 +84,7 @@ function createN6TownSigns(scene: Scene): number {
     const board = MeshBuilder.CreatePlane("n6-town-sign-board-" + regionId, {
       width: 5.2,
       height: 2.1,
-      sideOrientation: MeshBuilder.DOUBLESIDE
+      sideOrientation: Mesh.DOUBLESIDE
     }, scene);
     board.position.set(signX, 4.1, anchor.z);
     board.material = signMaterial;
