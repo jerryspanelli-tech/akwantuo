@@ -112,14 +112,18 @@ try {
       laneCentre: document.documentElement.dataset.npcRoadTrafficLaneCenter === "true",
       distanceM: Number(document.documentElement.dataset.npcRoadTrafficDistanceM ?? 0),
       speedMps: Number(document.documentElement.dataset.npcRoadTrafficSpeedMps ?? 0),
-      minimumGapM: Number(document.documentElement.dataset.npcRoadTrafficMinimumGapM ?? 0)
+      minimumGapM: Number(document.documentElement.dataset.npcRoadTrafficMinimumGapM ?? 0),
+      pedestrians: Number(document.documentElement.dataset.npcPedestrianCount ?? 0),
+      pedestrianWalkedM: Number(document.documentElement.dataset.npcPedestrianWalkedM ?? 0)
     }));
     if (npcTraffic.count !== 6 ||
         npcTraffic.routes !== "osu-residential-street,osu-oxford-street-link" ||
         !npcTraffic.laneCentre ||
         !Number.isFinite(npcTraffic.distanceM) || npcTraffic.distanceM <= 0 ||
         !Number.isFinite(npcTraffic.speedMps) || npcTraffic.speedMps < 0.5 ||
-        !Number.isFinite(npcTraffic.minimumGapM) || npcTraffic.minimumGapM < 8) {
+        !Number.isFinite(npcTraffic.minimumGapM) || npcTraffic.minimumGapM < 8 ||
+        npcTraffic.pedestrians !== 2 || !Number.isFinite(npcTraffic.pedestrianWalkedM) ||
+        npcTraffic.pedestrianWalkedM <= 0) {
       failures.push(target.name + ": six nearby NPC cars did not spawn separated and advance on the two Osu streets: " +
         JSON.stringify(npcTraffic));
     } else {
