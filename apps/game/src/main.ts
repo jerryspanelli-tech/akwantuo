@@ -21,9 +21,7 @@ import { clampToWorld, isBlocked } from "./world/collision";
 import { createPreviewWorld } from "./world/previewWorld";
 import { createGreaterAccraPlayableWorld } from "./world/greaterAccraPlayableWorld";
 import { createGreaterAccraWorldDetail } from "./world/ghanaianWorldDetail";
-import { createGreaterAccraLandmarks } from "./world/greaterAccraLandmarks";
-import { getMapRoadPath } from "./world/greaterAccraLayout";
-import { findNearestRoadProjection, getRoadLaneCenterPoint } from "./world/roadNavigation";
+import { createGreaterAccraLandmarks, createOsuLocalRoads } from "./world/greaterAccraLandmarks";
 import { getRoadVehicleAutopilotControl } from "./vehicles/roadVehicleAutopilot";
 import { advanceRoadVehicleDynamics, type RoadVehicleDynamicsState } from "./vehicles/roadVehicleDynamics";
 import { createRoadVehicleGeometry } from "./vehicles/roadVehicleGeometry";
@@ -704,6 +702,10 @@ async function start(): Promise<void> {
   bootStatus.textContent = "Adding Accra landmarks and neighbourhood roads…";
   const greaterAccraLandmarkReport = await createGreaterAccraLandmarks(scene);
   solidAreas.push(...greaterAccraLandmarkReport.solidAreas);
+  // Add only the two Osu local links needed for nearby traffic. The full
+  // 35-road neighbourhood layer remains streamed into later map work.
+  const osuLocalRoadCount = createOsuLocalRoads(scene);
+  document.documentElement.dataset.playableLocalRoadCount = String(osuLocalRoadCount);
   document.documentElement.dataset.greaterAccraLandmarkCount = String(greaterAccraLandmarkReport.landmarkCount);
   document.documentElement.dataset.greaterAccraLandmarkLocalRoadCount = String(greaterAccraLandmarkReport.localRoadCount);
   if (!(await yieldToStartupFrame())) return;
@@ -1009,54 +1011,62 @@ async function start(): Promise<void> {
     document.documentElement.dataset.interiorTestMode = testBuilding.id;
   }
 
-  // First live NPC road vehicle: follows the authored N1 Tema corridor in the
-  // playable world. Speed tapers toward the route end so it stops safely rather
-  // than driving beyond the authored road. This is local prototype traffic;
-  // junction priority and multiplayer authority remain future work.
-  const npcTrafficPath = getMapRoadPath("n1-tema-corridor");
-  if (!npcTrafficPath || !npcTrafficPath.playableInFirstRelease || npcTrafficPath.points.length < 2) {
-    throw new Error("The first-release N1 NPC traffic route is unavailable.");
-  }
-  // NPC vehicles follow the authored first lane centre, not the road
-  // centreline. Restrict projection to this corridor so junction overlaps
-  // cannot silently snap the traffic onto a neighbouring road.
-  const npcTrafficRoute = npcTrafficPath.points.map((point) => {
-    const projection = findNearestRoadProjection(point.x, point.z, {
-      maxDistanceM: 1,
-      roadSegmentId: npcTrafficPath.roadSegmentId
-    });
-    if (!projection) throw new Error("N1 NPC route could not project onto its authored road segment.");
-    return getRoadLaneCenterPoint(projection, "forward", 0);
-  });
+  // Put ambient NPC traffic on the two Osu streets beside the player spawn,
+  // rather than hiding every car kilometres away on the N1 Tema corridor.
+  // Each route follows the authored local street centreline with a lane offset.
+  const npcTrafficRoutes = [
+    {
+      id: "osu-residential-street",
+      points: [
+        { x: 650, z: -1051.5 }, { x: 950, z: -1051.5 },
+        { x: 1300, z: -1051.5 }, { x: 1700, z: -1051.5 }
+      ]
+    },
+    {
+      id: "osu-oxford-street-link",
+      points: [
+        { x: 650, z: -1601.5 }, { x: 950, z: -1601.5 },
+        { x: 1300, z: -1601.5 }, { x: 1700, z: -1601.5 }
+      ]
+    }
+  ].map((route) => ({
+    ...route,
+    lengthM: route.points.slice(1).reduce((total, point, index) =>
+      total + Math.hypot(point.x - route.points[index].x, point.z - route.points[index].z), 0)
+  }));
+  const npcTraffic = npcTrafficRoutes.flatMap((route, routeIndex) =>
+    [400, 432, 464].map((startDistanceM, index) => {
+      const start = sampleRouteAtDistance(route.points, startDistanceM);
+      const origin = { x: start.x, y: 0, z: start.z };
+      const geometry = createRoadVehicleGeometry(scene, {
+        id: "npc-" + route.id + "-saloon-" + (index + 1),
+        centerX: origin.x,
+        centerZ: origin.z,
+        groundElevationM: 0,
+        bodyColour: ["#b47a32", "#315a78", "#687a54"][(index + routeIndex) % 3]
+      });
+      const rig = createRoadVehicleRig(scene, geometry, {
+        id: "npc-" + route.id + "-saloon-rig-" + (index + 1),
+        origin
+      });
+      return {
+        rig,
+        routeId: route.id,
+        route: route.points,
+        routeLengthM: route.lengthM,
+        state: {
+          ...origin,
+          headingRadians: start.headingRadians,
+          speedMps: 0
+        } as RoadVehicleDynamicsState,
+        distanceM: startDistanceM
+      };
+    })
+  );
   document.documentElement.dataset.npcRoadTrafficLaneCenter = "true";
-  const npcTrafficRouteLengthM = npcTrafficRoute.slice(1).reduce((total, point, index) =>
-    total + Math.hypot(point.x - npcTrafficRoute[index].x, point.z - npcTrafficRoute[index].z), 0);
-  const npcTraffic = [0, 32, 64].map((startDistanceM, index) => {
-    const start = sampleRouteAtDistance(npcTrafficRoute, startDistanceM);
-    const origin = { x: start.x, y: 0, z: start.z };
-    const geometry = createRoadVehicleGeometry(scene, {
-      id: "npc-n1-traffic-saloon-" + (index + 1),
-      centerX: origin.x,
-      centerZ: origin.z,
-      groundElevationM: 0,
-      bodyColour: ["#b47a32", "#315a78", "#687a54"][index]
-    });
-    const rig = createRoadVehicleRig(scene, geometry, {
-      id: "npc-n1-traffic-saloon-rig-" + (index + 1),
-      origin
-    });
-    return {
-      rig,
-      state: {
-        ...origin,
-        headingRadians: start.headingRadians,
-        speedMps: 0
-      } as RoadVehicleDynamicsState,
-      distanceM: startDistanceM
-    };
-  });
   document.documentElement.dataset.npcRoadTraffic = String(npcTraffic.length);
-  document.documentElement.dataset.npcRoadTrafficRoute = npcTrafficPath.roadSegmentId;
+  document.documentElement.dataset.npcRoadTrafficRoute = npcTrafficRoutes.map((route) => route.id).join(",");
+  document.documentElement.dataset.npcRoadTrafficRoutes = npcTrafficRoutes.map((route) => route.id).join(",");
 
 
   // First real in-world road vehicle: a nearby saloon that can be entered,
@@ -1284,43 +1294,50 @@ async function start(): Promise<void> {
       // Follow the same authored corridor with a conservative headway controller.
       // The nearest vehicle ahead limits target speed so the prototype convoy
       // does not simply stack several cars at one point on the route.
-      const trafficInRouteOrder = [...npcTraffic].sort((a, b) => b.distanceM - a.distanceM);
-      for (let index = 0; index < trafficInRouteOrder.length; index += 1) {
-        const traffic = trafficInRouteOrder[index];
-        const leader = trafficInRouteOrder[index - 1];
-        const gapM = leader ? Math.max(0, leader.distanceM - traffic.distanceM) : Number.POSITIVE_INFINITY;
-        const routeEndSpeed = Math.sqrt(2 * 1.6 * Math.max(0, npcTrafficRouteLengthM - traffic.distanceM));
-        const headwaySpeed = Number.isFinite(gapM) ? Math.sqrt(2 * 2.0 * Math.max(0, gapM - 12)) : 9;
-        const npcControl = getRoadVehicleAutopilotControl({
-          wheelbaseM: 2.65,
-          maximumSteeringAngleRadians: 0.48,
-          targetSpeedMps: Math.min(9, routeEndSpeed, headwaySpeed),
-          baseLookaheadM: 9,
-          speedLookaheadFactor: 0.65,
-          throttleGain: 0.32,
-          brakeGain: 0.55
-        }, traffic.state, npcTrafficRoute);
-        traffic.state = advanceRoadVehicleElapsed({
-          wheelbaseM: 2.65,
-          maximumForwardSpeedMps: 12,
-          maximumReverseSpeedMps: 0.1,
-          maximumAccelerationMps2: 2.2,
-          serviceBrakingMps2: 5.5,
-          maximumSteeringAngleRadians: 0.48,
-          rollingDragMps2: 0.28
-        }, traffic.state, {
-          throttle: npcControl.throttle,
-          brake: npcControl.brake,
-          steering: npcControl.steering
-        }, rawDelta);
-        traffic.rig.update(traffic.state);
-        traffic.distanceM = npcControl.routeDistanceM;
+      let minimumTrafficGapM = Number.POSITIVE_INFINITY;
+      for (const route of npcTrafficRoutes) {
+        const trafficInRouteOrder = npcTraffic
+          .filter((traffic) => traffic.routeId === route.id)
+          .sort((a, b) => b.distanceM - a.distanceM);
+        for (let index = 0; index < trafficInRouteOrder.length; index += 1) {
+          const traffic = trafficInRouteOrder[index];
+          const leader = trafficInRouteOrder[index - 1];
+          const gapM = leader ? Math.max(0, leader.distanceM - traffic.distanceM) : Number.POSITIVE_INFINITY;
+          const routeEndSpeed = Math.sqrt(2 * 1.6 * Math.max(0, traffic.routeLengthM - traffic.distanceM));
+          const headwaySpeed = Number.isFinite(gapM) ? Math.sqrt(2 * 2.0 * Math.max(0, gapM - 12)) : 9;
+          const npcControl = getRoadVehicleAutopilotControl({
+            wheelbaseM: 2.65,
+            maximumSteeringAngleRadians: 0.48,
+            targetSpeedMps: Math.min(9, routeEndSpeed, headwaySpeed),
+            baseLookaheadM: 9,
+            speedLookaheadFactor: 0.65,
+            throttleGain: 0.32,
+            brakeGain: 0.55
+          }, traffic.state, traffic.route);
+          traffic.state = advanceRoadVehicleElapsed({
+            wheelbaseM: 2.65,
+            maximumForwardSpeedMps: 12,
+            maximumReverseSpeedMps: 0.1,
+            maximumAccelerationMps2: 2.2,
+            serviceBrakingMps2: 5.5,
+            maximumSteeringAngleRadians: 0.48,
+            rollingDragMps2: 0.28
+          }, traffic.state, {
+            throttle: npcControl.throttle,
+            brake: npcControl.brake,
+            steering: npcControl.steering
+          }, rawDelta);
+          traffic.rig.update(traffic.state);
+          traffic.distanceM = npcControl.routeDistanceM;
+        }
+        const routeProgress = trafficInRouteOrder.slice().sort((a, b) => a.distanceM - b.distanceM);
+        const routeGap = routeProgress.slice(1).reduce(
+          (minimum, traffic, index) => Math.min(minimum, traffic.distanceM - routeProgress[index].distanceM),
+          Number.POSITIVE_INFINITY
+        );
+        minimumTrafficGapM = Math.min(minimumTrafficGapM, routeGap);
       }
       const trafficProgress = [...npcTraffic].sort((a, b) => a.distanceM - b.distanceM);
-      const minimumTrafficGapM = trafficProgress.slice(1).reduce(
-        (minimum, traffic, index) => Math.min(minimum, traffic.distanceM - trafficProgress[index].distanceM),
-        Number.POSITIVE_INFINITY
-      );
       document.documentElement.dataset.npcRoadTrafficDistanceM = trafficProgress[0].distanceM.toFixed(2);
       document.documentElement.dataset.npcRoadTrafficSpeedMps = npcTraffic.reduce(
         (total, traffic) => total + traffic.state.speedMps, 0
