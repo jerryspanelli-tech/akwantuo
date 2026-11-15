@@ -315,6 +315,28 @@ function yieldToNextFrame(): Promise<void> {
   return new Promise((resolve) => requestAnimationFrame(() => resolve()));
 }
 
+/**
+ * Builds the two Osu street links needed by the first visible local traffic
+ * prototype. Keeping this separate avoids loading all 35 neighbourhood roads
+ * and their ribbon meshes on mobile before the rest of the map is ready.
+ */
+export function createOsuLocalRoads(scene: Scene): number {
+  const firstMeshIndex = scene.meshes.length;
+  addRoad(scene, "osu-oxford-street-link", [
+    { x: 650, z: -1600 }, { x: 950, z: -1600 }, { x: 1300, z: -1600 }, { x: 1700, z: -1600 }
+  ], 12);
+  addRoad(scene, "osu-residential-street", [
+    { x: 650, z: -1050 }, { x: 950, z: -1050 }, { x: 1300, z: -1050 }, { x: 1700, z: -1050 }
+  ], 11);
+  const materials = new Set<Material>();
+  for (const mesh of scene.meshes.slice(firstMeshIndex)) {
+    mesh.freezeWorldMatrix();
+    if (mesh.material) materials.add(mesh.material);
+  }
+  for (const material of materials) material.freeze();
+  return 2;
+}
+
 export async function createGreaterAccraLandmarks(
   scene: Scene,
   options: { includeLocalRoads?: boolean } = {}
