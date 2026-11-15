@@ -232,6 +232,9 @@ export function createCircleInterchangeElevatedStructures(
       supportStationsM: layout.supportStationsM,
       supportWidthM: layout.level === "second_elevated" ? 2.2 : 1.6,
       supportDepthM: layout.level === "second_elevated" ? 2.2 : 1.6,
+      // Narrow first-level viaducts have no central median: move their piers
+      // beneath the outer shoulder rather than through the traffic lanes.
+      supportLateralOffsetM: layout.level === "second_elevated" ? 0 : 2.5,
       guardrailHeightM: 1.15,
       guardrailInsetM: 0.3
     });
