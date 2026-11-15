@@ -2,13 +2,13 @@ import { isValidRoadNetwork, type RoadNetwork } from "@akwantuo/shared";
 import { GREATER_ACCRA_REGIONS } from "./regions";
 
 /**
- * Topology-only road plan for the first Greater Accra world.
+ * Topology-only road plan for Greater Accra and the N6 Accra–Kumasi corridor.
  * Node order expresses intended connectivity, not surveyed geometry or distance.
  * Coordinates, lanes, carriageways, turn restrictions and exact alignments come later.
  */
 export const GREATER_ACCRA_ROAD_NETWORK: RoadNetwork = {
   id: "greater-accra-primary-roads",
-  name: "Greater Accra Primary Road Network",
+  name: "Greater Accra and Accra–Kumasi Primary Road Network",
   version: 2,
   nodes: [
     { id: "mallam-junction", name: "Mallam Junction", kind: "junction", regionId: "dansoman", status: "planned" },
