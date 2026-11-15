@@ -780,12 +780,12 @@ async function start(): Promise<void> {
     {
       id: "osu-pedestrian-male",
       appearance: resolveAppearance({ ...DEFAULT_APPEARANCE, presentation: "masculine" }),
-      startX: 650, endX: 1700, z: -1044, distanceM: 350, direction: 1, walkedM: 0
+      startX: 650, endX: 1700, z: -1194, distanceM: 350, direction: 1, walkedM: 0
     },
     {
       id: "osu-pedestrian-female",
       appearance: resolveAppearance({ ...DEFAULT_APPEARANCE, presentation: "feminine" }),
-      startX: 650, endX: 1700, z: -1594, distanceM: 350, direction: -1, walkedM: 0
+      startX: 650, endX: 1700, z: -1294, distanceM: 450, direction: -1, walkedM: 0
     }
   ].map((pedestrian) => {
     const actor = createPlayer(scene, pedestrian.appearance, {
@@ -1054,16 +1054,29 @@ async function start(): Promise<void> {
   const npcTrafficRoutes = [
     {
       id: "osu-residential-street",
+      // Clockwise lane: east on the north street, south on the east link,
+      // west on the south street, then north on the west link.
       points: [
-        { x: 650, z: -1051.5 }, { x: 950, z: -1051.5 },
-        { x: 1300, z: -1051.5 }, { x: 1700, z: -1051.5 }
+        { x: 900, z: -1201.5 }, { x: 1400, z: -1201.5 }, { x: 1650, z: -1201.5 },
+        { x: 1670, z: -1207 }, { x: 1688, z: -1220 }, { x: 1698.5, z: -1240 },
+        { x: 1698.5, z: -1260 }, { x: 1688, z: -1280 }, { x: 1670, z: -1293 },
+        { x: 1650, z: -1298.5 }, { x: 1200, z: -1298.5 }, { x: 700, z: -1298.5 },
+        { x: 680, z: -1293 }, { x: 662, z: -1280 }, { x: 651.5, z: -1260 },
+        { x: 651.5, z: -1240 }, { x: 662, z: -1220 }, { x: 680, z: -1207 },
+        { x: 700, z: -1201.5 }, { x: 900, z: -1201.5 }
       ]
     },
     {
       id: "osu-oxford-street-link",
+      // Counter-clockwise lane on the opposite side of the same street loop.
       points: [
-        { x: 650, z: -1601.5 }, { x: 950, z: -1601.5 },
-        { x: 1300, z: -1601.5 }, { x: 1700, z: -1601.5 }
+        { x: 1600, z: -1198.5 }, { x: 1100, z: -1198.5 }, { x: 700, z: -1198.5 },
+        { x: 680, z: -1204 }, { x: 662, z: -1220 }, { x: 648.5, z: -1240 },
+        { x: 648.5, z: -1260 }, { x: 662, z: -1280 }, { x: 680, z: -1296 },
+        { x: 700, z: -1301.5 }, { x: 1150, z: -1301.5 }, { x: 1650, z: -1301.5 },
+        { x: 1670, z: -1296 }, { x: 1688, z: -1280 }, { x: 1701.5, z: -1260 },
+        { x: 1701.5, z: -1240 }, { x: 1688, z: -1220 }, { x: 1670, z: -1204 },
+        { x: 1650, z: -1198.5 }, { x: 1600, z: -1198.5 }
       ]
     }
   ].map((route) => ({
@@ -1072,7 +1085,7 @@ async function start(): Promise<void> {
       total + Math.hypot(point.x - route.points[index].x, point.z - route.points[index].z), 0)
   }));
   const npcTraffic = npcTrafficRoutes.flatMap((route, routeIndex) =>
-    [400, 432, 464].map((startDistanceM, index) => {
+    (routeIndex === 0 ? [200, 850, 1500] : [500, 1150, 1800]).map((startDistanceM, index) => {
       const start = sampleRouteAtDistance(route.points, startDistanceM);
       const origin = { x: start.x, y: 0, z: start.z };
       const geometry = createRoadVehicleGeometry(scene, {
@@ -1357,17 +1370,21 @@ async function start(): Promise<void> {
       for (const route of npcTrafficRoutes) {
         const trafficInRouteOrder = npcTraffic
           .filter((traffic) => traffic.routeId === route.id)
-          .sort((a, b) => b.distanceM - a.distanceM);
+          .sort((a, b) => a.distanceM - b.distanceM);
         for (let index = 0; index < trafficInRouteOrder.length; index += 1) {
           const traffic = trafficInRouteOrder[index];
-          const leader = trafficInRouteOrder[index - 1];
-          const gapM = leader ? Math.max(0, leader.distanceM - traffic.distanceM) : Number.POSITIVE_INFINITY;
-          const routeEndSpeed = Math.sqrt(2 * 1.6 * Math.max(0, traffic.routeLengthM - traffic.distanceM));
+          const leader = trafficInRouteOrder[(index + 1) % trafficInRouteOrder.length];
+          // Treat the road as a closed loop: the last car's leader is the
+          // first car on the next lap, so no vehicle brakes permanently at an end.
+          const gapM = trafficInRouteOrder.length > 1
+            ? leader.distanceM - traffic.distanceM +
+              (index === trafficInRouteOrder.length - 1 ? route.lengthM : 0)
+            : Number.POSITIVE_INFINITY;
           const headwaySpeed = Number.isFinite(gapM) ? Math.sqrt(2 * 2.0 * Math.max(0, gapM - 12)) : 9;
           const npcControl = getRoadVehicleAutopilotControl({
             wheelbaseM: 2.65,
             maximumSteeringAngleRadians: 0.48,
-            targetSpeedMps: Math.min(9, routeEndSpeed, headwaySpeed),
+            targetSpeedMps: Math.min(9, headwaySpeed),
             baseLookaheadM: 9,
             speedLookaheadFactor: 0.65,
             throttleGain: 0.32,
@@ -1390,10 +1407,14 @@ async function start(): Promise<void> {
           traffic.distanceM = npcControl.routeDistanceM;
         }
         const routeProgress = trafficInRouteOrder.slice().sort((a, b) => a.distanceM - b.distanceM);
-        const routeGap = routeProgress.slice(1).reduce(
-          (minimum, traffic, index) => Math.min(minimum, traffic.distanceM - routeProgress[index].distanceM),
-          Number.POSITIVE_INFINITY
-        );
+        const routeGap = routeProgress.length > 1
+          ? routeProgress.reduce((minimum, traffic, index) => {
+              const next = routeProgress[(index + 1) % routeProgress.length];
+              const gap = next.distanceM - traffic.distanceM +
+                (index === routeProgress.length - 1 ? route.lengthM : 0);
+              return Math.min(minimum, gap);
+            }, Number.POSITIVE_INFINITY)
+          : Number.POSITIVE_INFINITY;
         minimumTrafficGapM = Math.min(minimumTrafficGapM, routeGap);
       }
       const trafficProgress = [...npcTraffic].sort((a, b) => a.distanceM - b.distanceM);
