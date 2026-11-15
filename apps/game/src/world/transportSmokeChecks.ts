@@ -186,7 +186,7 @@ export function runTransportSmokeChecks(): void {
     "future road stubs are excluded from normal road projection");
   const futureProjection = findNearestRoadProjection(futurePoint.x, futurePoint.z,
     { maxDistanceM: 1, includeFutureExpansion: true });
-  assert(!!futureProjection && futureProjection.roadSegmentId === "n6-nsawam-expansion" &&
+  assert(!!futureProjection && futureProjection.roadSegmentId === "n2-prampram-expansion" &&
     !futureProjection.playableInFirstRelease,
     "future road stubs can be projected only when explicitly enabled");
 
