@@ -232,10 +232,9 @@ export function createCircleGroundGeometry(
     laneMarkings.push(centreLine);
 
     const stopDistance = options.outerRadiusM + 3;
-    const halfWidth = approach.roadWidthM * 0.42;
     const stopLine = MeshBuilder.CreateBox(
       `${options.id}-approach-give-way-line-${approach.id}`,
-      { width: 0.28, height: 0.035, depth: approach.roadWidthM * 0.84 },
+      { width: approach.roadWidthM * 0.84, height: 0.035, depth: 0.28 },
       scene
     );
     stopLine.rotation.y = bearing;
