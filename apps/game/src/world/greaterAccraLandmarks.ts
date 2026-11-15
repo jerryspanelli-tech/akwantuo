@@ -316,7 +316,7 @@ function yieldToNextFrame(): Promise<void> {
 }
 
 /**
- * Builds the two Osu street links needed by the first visible local traffic
+ * Builds the connected Osu street loop needed by the first visible local traffic
  * prototype. Keeping this separate avoids loading all 35 neighbourhood roads
  * and their ribbon meshes on mobile before the rest of the map is ready.
  */
