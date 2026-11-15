@@ -14,6 +14,9 @@ export const GREATER_ACCRA_ROAD_NETWORK: RoadNetwork = {
     { id: "mallam-junction", name: "Mallam Junction", kind: "junction", regionId: "dansoman", status: "planned" },
     { id: "kaneshie-interchange", name: "Kaneshie Interchange", kind: "interchange", regionId: "kaneshie", status: "planned" },
     { id: "circle-junction", name: "Kwame Nkrumah Circle", kind: "interchange", regionId: "accra-central-makola", status: "planned" },
+    { id: "caprice-junction", name: "Caprice Junction", kind: "junction", regionId: "accra-central-makola", status: "planned" },
+    { id: "alajo-junction", name: "Alajo Junction", kind: "junction", regionId: "accra-central-makola", status: "planned" },
+    { id: "apenkwa-junction", name: "Apenkwa Junction", kind: "junction", regionId: "achimota", status: "planned" },
     { id: "37-junction", name: "37 / Ridge Junction", kind: "junction", regionId: "airport-city", status: "planned" },
     { id: "airport-city-anchor", name: "Airport City Connection", kind: "area_anchor", regionId: "airport-city", status: "planned" },
     { id: "tetteh-quarshie-interchange", name: "Tetteh Quarshie Interchange", kind: "interchange", regionId: "east-legon", status: "planned" },
@@ -54,6 +57,42 @@ export const GREATER_ACCRA_ROAD_NETWORK: RoadNetwork = {
       fromNodeId: "circle-junction",
       toNodeId: "tema-motorway-junction",
       regionIds: ["greater-accra", "accra-central-makola", "tema"],
+      status: "planned"
+    },
+    {
+      id: "n6-circle-caprice",
+      name: "N6 Circle–Caprice Corridor",
+      roadClass: "major_road",
+      fromNodeId: "circle-junction",
+      toNodeId: "caprice-junction",
+      regionIds: ["greater-accra", "accra-central-makola"],
+      status: "planned"
+    },
+    {
+      id: "n6-caprice-alajo",
+      name: "N6 Caprice–Alajo Corridor",
+      roadClass: "major_road",
+      fromNodeId: "caprice-junction",
+      toNodeId: "alajo-junction",
+      regionIds: ["greater-accra", "accra-central-makola"],
+      status: "planned"
+    },
+    {
+      id: "n6-alajo-apenkwa",
+      name: "N6 Alajo–Apenkwa Corridor",
+      roadClass: "major_road",
+      fromNodeId: "alajo-junction",
+      toNodeId: "apenkwa-junction",
+      regionIds: ["greater-accra", "accra-central-makola", "achimota"],
+      status: "planned"
+    },
+    {
+      id: "n6-apenkwa-achimota",
+      name: "N6 Apenkwa–Achimota Corridor",
+      roadClass: "major_road",
+      fromNodeId: "apenkwa-junction",
+      toNodeId: "achimota-interchange",
+      regionIds: ["greater-accra", "achimota"],
       status: "planned"
     },
     {
