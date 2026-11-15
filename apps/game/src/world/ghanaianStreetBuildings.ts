@@ -48,25 +48,25 @@ const BUILDING_TEMPLATES: readonly DistrictBuildingTemplate[] = [
   { id: "community-pharmacy", name: "Community Pharmacy", use: "pharmacy", side: "east", x: 18, z: -72, width: 10, depth: 11, floors: 1, exteriorStyle: "modern", signText: "PHARMACY", interiorId: "shop-small" },
   { id: "ama-salon", name: "Ama's Hair Studio", use: "salon", side: "west", x: -23, z: -59, width: 10, depth: 9, floors: 1, exteriorStyle: "coastal", signText: "HAIR STUDIO", interiorId: "salon" },
   { id: "chop-bar", name: "Auntie Esi Chop Bar", use: "food", side: "east", x: 23, z: -59, width: 11, depth: 10, floors: 1, exteriorStyle: "market", signText: "CHOP BAR", interiorId: "restaurant" },
-  { id: "adom-compound", name: "Adom Family Compound", use: "compound_house", side: "west", x: -18, z: -46, width: 12, depth: 10, floors: 1, exteriorStyle: "compound", interiorId: "compound-house" },
-  { id: "coastal-guest-house", name: "Coastal Guest House", use: "guest_house", side: "east", x: 19, z: -46, width: 12, depth: 11, floors: 2, exteriorStyle: "coastal", signText: "GUEST HOUSE", interiorId: "guest-house" },
-  { id: "kwame-auto-works", name: "Kwame Auto Works", use: "workshop", side: "west", x: -23, z: -33, width: 11, depth: 10, floors: 1, exteriorStyle: "market", signText: "AUTO WORKS", interiorId: "workshop" },
-  { id: "district-office", name: "District Services Office", use: "office", side: "east", x: 23, z: -33, width: 12, depth: 11, floors: 3, exteriorStyle: "modern", signText: "DISTRICT OFFICE", interiorId: "office" },
+  { id: "adom-compound", name: "Adom Family Compound", use: "compound_house", side: "west", x: -18, z: -46, width: 12, depth: 10, floors: 1, exteriorStyle: "compound", interiorId: "compound-house", anchorOffsetZ: -180 },
+  { id: "coastal-guest-house", name: "Coastal Guest House", use: "guest_house", side: "east", x: 19, z: -46, width: 12, depth: 11, floors: 2, exteriorStyle: "coastal", signText: "GUEST HOUSE", interiorId: "guest-house", anchorOffsetZ: -180 },
+  { id: "kwame-auto-works", name: "Kwame Auto Works", use: "workshop", side: "west", x: -23, z: -33, width: 11, depth: 10, floors: 1, exteriorStyle: "market", signText: "AUTO WORKS", interiorId: "workshop", anchorOffsetZ: 67 },
+  { id: "district-office", name: "District Services Office", use: "office", side: "east", x: 23, z: -33, width: 12, depth: 11, floors: 3, exteriorStyle: "modern", signText: "DISTRICT OFFICE", interiorId: "office", anchorOffsetZ: 67 },
   { id: "makola-stall-row-a", name: "Makola Market Stall A", use: "market_stall", side: "west", x: -18, z: -20, width: 8, depth: 8, floors: 1, exteriorStyle: "market", signText: "MARKET", interiorId: "shop-small" },
   { id: "makola-stall-row-b", name: "Makola Market Stall B", use: "market_stall", side: "east", x: 18, z: -20, width: 8, depth: 8, floors: 1, exteriorStyle: "market", signText: "MARKET", interiorId: "shop-small" },
   { id: "ridge-clinic", name: "Ridge Community Clinic", use: "clinic", side: "west", x: -23, z: -7, width: 12, depth: 11, floors: 2, exteriorStyle: "modern", signText: "COMMUNITY CLINIC", interiorId: "clinic" },
   { id: "east-legon-apartments", name: "Palm Court Apartments", use: "apartment", side: "east", x: 23, z: -7, width: 13, depth: 12, floors: 3, exteriorStyle: "modern", signText: "PALM COURT", interiorId: "apartment" },
   { id: "old-town-house", name: "Old Town Family House", use: "compound_house", side: "west", x: -18, z: 7, width: 12, depth: 10, floors: 1, exteriorStyle: "compound", interiorId: "compound-house" },
   { id: "harbour-foods", name: "Harbour Foods", use: "food", side: "east", x: 18, z: 7, width: 10, depth: 10, floors: 1, exteriorStyle: "coastal", signText: "HARBOUR FOODS", interiorId: "restaurant" },
-  { id: "akwaaba-provisions", name: "Akwaaba Provisions", use: "provisions", side: "west", x: -23, z: 20, width: 12, depth: 13, floors: 1, exteriorStyle: "convenience", signText: "AKWAABA EXPRESS", interiorId: "convenience-store" },
-  { id: "labadi-lodge", name: "Labadi Lodge", use: "guest_house", side: "east", x: 23, z: 20, width: 12, depth: 11, floors: 2, exteriorStyle: "coastal", signText: "LABADI LODGE", interiorId: "guest-house" },
+  { id: "akwaaba-provisions", name: "Akwaaba Provisions", use: "provisions", side: "west", x: -23, z: 20, width: 12, depth: 13, floors: 1, exteriorStyle: "convenience", signText: "AKWAABA EXPRESS", interiorId: "convenience-store", anchorOffsetZ: -130 },
+  { id: "labadi-lodge", name: "Labadi Lodge", use: "guest_house", side: "east", x: 23, z: 20, width: 12, depth: 11, floors: 2, exteriorStyle: "coastal", signText: "LABADI LODGE", interiorId: "guest-house", anchorOffsetZ: -130 },
   { id: "family-compound-north", name: "Northside Compound", use: "compound_house", side: "west", x: -18, z: 33, width: 12, depth: 10, floors: 1, exteriorStyle: "compound", interiorId: "compound-house" },
   { id: "digital-office", name: "Coastline Digital Hub", use: "office", side: "east", x: 18, z: 33, width: 11, depth: 10, floors: 2, exteriorStyle: "modern", signText: "DIGITAL HUB", interiorId: "office" },
   { id: "market-kiosk", name: "Street Market Kiosk", use: "market_stall", side: "west", x: -23, z: 46, width: 8, depth: 8, floors: 1, exteriorStyle: "market", signText: "KIOSK", interiorId: "shop-small" },
   { id: "northside-workshop", name: "Northside Repairs", use: "workshop", side: "east", x: 23, z: 46, width: 10, depth: 10, floors: 1, exteriorStyle: "market", signText: "REPAIRS", interiorId: "workshop" },
   { id: "heritage-house", name: "Heritage Family House", use: "compound_house", side: "west", x: -18, z: 59, width: 12, depth: 10, floors: 1, exteriorStyle: "compound", interiorId: "compound-house" },
-  { id: "city-view-apartments", name: "City View Apartments", use: "apartment", side: "east", x: 18, z: 59, width: 12, depth: 10, floors: 3, exteriorStyle: "modern", interiorId: "apartment" },
-  { id: "akwaaba-creative-arts-centre", name: "Akwaaba Creative Arts & Events Centre", use: "event_venue", side: "east", x: 70, z: 100, width: 68, depth: 58, floors: 2, exteriorStyle: "modern", signText: "AKWAABA CREATIVE ARTS", interiorId: "creative-arts-centre", anchorOffsetX: 70, anchorOffsetZ: 100 }
+  { id: "city-view-apartments", name: "City View Apartments", use: "apartment", side: "east", x: 18, z: 59, width: 12, depth: 10, floors: 3, exteriorStyle: "modern", interiorId: "apartment", anchorOffsetZ: -41 },
+  { id: "akwaaba-creative-arts-centre", name: "Akwaaba Creative Arts & Events Centre", use: "event_venue", side: "east", x: 70, z: 100, width: 68, depth: 58, floors: 2, exteriorStyle: "modern", signText: "AKWAABA CREATIVE ARTS", interiorId: "creative-arts-centre", anchorOffsetX: 170, anchorOffsetZ: 100 }
 ] as const;
 
 /**
