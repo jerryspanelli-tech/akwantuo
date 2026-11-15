@@ -296,19 +296,45 @@ function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
   let activeModelSkeletons: import("@babylonjs/core").Skeleton[] = [];
   let locomotionGroups: import("@babylonjs/core").AnimationGroup[] = [];
   let currentLocomotion = "idle";
+  let currentJumpPhase: string | null = null;
   let loadGeneration = 0;
   const setMoving = (moving: boolean, movementStrength = 1): void => {
-    const next = moving ? "walk" : "idle";
-    const selected = locomotionGroups.find((group) => group.name.toLowerCase() === next);
+    if (currentJumpPhase) return;
+    const requested = moving ? (movementStrength >= 0.68 ? "run" : "walk") : "idle";
+    const selected = locomotionGroups.find((group) => group.name.toLowerCase() === requested)
+      ?? (requested === "run" ? locomotionGroups.find((group) => group.name.toLowerCase() === "walk") : undefined);
+    const next = selected?.name.toLowerCase() ?? requested;
     if (next !== currentLocomotion) {
       currentLocomotion = next;
-      if (selected) {
-        for (const group of locomotionGroups) group.stop();
-        selected.start(true);
-      }
+      for (const group of locomotionGroups) group.stop();
+      selected?.start(true);
     }
-    const walk = locomotionGroups.find((group) => group.name.toLowerCase() === "walk");
-    if (walk) walk.speedRatio = moving ? 0.65 + Math.max(0, Math.min(1, movementStrength)) * 0.75 : 1;
+    if (selected) selected.speedRatio = moving
+      ? 0.85 + Math.max(0, Math.min(1, movementStrength)) * 0.35
+      : 1;
+  };
+  const setJumping = (phase: "jump-start" | "jump-air" | "jump-land" | null): void => {
+    if (phase === currentJumpPhase) return;
+    if (phase === null) {
+      currentJumpPhase = null;
+      for (const group of locomotionGroups) group.stop();
+      locomotionGroups.find((group) => group.name.toLowerCase() === currentLocomotion)?.start(true);
+      return;
+    }
+    const selected = locomotionGroups.find((group) => group.name.toLowerCase() === phase);
+    if (!selected) {
+      currentJumpPhase = null;
+      return;
+    }
+    currentJumpPhase = phase;
+    for (const group of locomotionGroups) group.stop();
+    selected.start(phase === "jump-air");
+    if (phase !== "jump-air") {
+      selected.onAnimationGroupEndObservable.addOnce(() => {
+        if (currentJumpPhase !== phase) return;
+        setJumping(phase === "jump-start" ? "jump-air" : null);
+      });
+    }
   };
   const loadCharacterModel = async (appearance: CharacterAppearance): Promise<void> => {
     const generation = ++loadGeneration;
@@ -337,14 +363,21 @@ function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
       // no cross-file retargeting. Keep the older separate-GLB path as a fallback.
       const embeddedIdle = imported.animationGroups.some((group) => group.name.toLowerCase() === "idle");
       const embeddedWalk = imported.animationGroups.some((group) => group.name.toLowerCase() === "walk");
-      const animationSpecs = [
+      const embeddedRun = imported.animationGroups.some((group) => group.name.toLowerCase() === "run");
+      const animationSpecs: readonly { file: string; name: string; remote?: boolean }[] = [
         ...(!embeddedIdle ? [{ file: "idle.glb", name: "idle" }] : []),
-        ...(!embeddedWalk ? [{ file: "walk.glb", name: "walk" }] : [])
-      ] as const;
+        ...(!embeddedWalk ? [{ file: "walk.glb", name: "walk" }] : []),
+        ...(!embeddedRun ? [{ file: "run-female.glb", name: "run", remote: true }] : []),
+        { file: "jump-start.glb", name: "jump-start", remote: true },
+        { file: "jump-air.glb", name: "jump-air", remote: true },
+        { file: "jump-land.glb", name: "jump-land", remote: true }
+      ];
+      const remoteAnimationBaseUrl = "https://cdn.jsdelivr.net/gh/Mesh2Motion/mesh2motion-app@5d6918ef67203e68c661b3e32e8e8f227bfd953e/static/assets/human/animations/";
       const retargetedGroups: import("@babylonjs/core").AnimationGroup[] = [];
       for (const spec of animationSpecs) {
         try {
-          const source = await SceneLoader.ImportMeshAsync("", baseUrl, spec.file, scene);
+          const animationBaseUrl = spec.remote ? remoteAnimationBaseUrl : baseUrl;
+          const source = await SceneLoader.ImportMeshAsync("", animationBaseUrl, spec.file, scene);
           const sourceGroup = source.animationGroups[0];
           if (sourceGroup) {
             const cloned = sourceGroup.clone(
@@ -408,7 +441,7 @@ function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
     const expected = appearance.presentation === "feminine" ? "akwantuo-female.glb" : "akwantuo-male.glb";
     if (document.documentElement.dataset.akwantuoCharacterModel !== expected) void loadCharacterModel(appearance);
   };
-  return { root, leftArm, rightArm, leftLeg, rightLeg, applyAppearance: applyModelAppearance, setMoving };
+  return { root, leftArm, rightArm, leftLeg, rightLeg, applyAppearance: applyModelAppearance, setMoving, setJumping };
 }
 
 function installTouchControls(): void {
@@ -1734,6 +1767,7 @@ async function start(): Promise<void> {
       if (interactionState.mode === "on_foot" && passengerState.mode !== "riding" && !watercraftMode && jumpRequested && onGround) {
         verticalVelocity = WORLD_CONFIG.movement.jumpVelocity;
         onGround = false;
+        player.setJumping("jump-start");
       }
       jumpRequested = false;
       if (interactionState.mode === "on_foot" && passengerState.mode !== "riding") {
@@ -1741,9 +1775,11 @@ async function start(): Promise<void> {
         player.root.position.y += verticalVelocity * delta;
       }
       if (interactionState.mode === "on_foot" && passengerState.mode !== "riding" && !watercraftMode && player.root.position.y <= 0) {
+        const justLanded = !onGround;
         player.root.position.y = 0;
         verticalVelocity = 0;
         onGround = true;
+        if (justLanded) player.setJumping("jump-land");
       }
 
       player.setMoving(moving && onGround, movementStrength);
@@ -1983,6 +2019,7 @@ async function start(): Promise<void> {
     playDiagnosticFrameTimeMax = 0;
     closeCharacterCreator();
     hasEnteredWorld = true;
+    gameShell?.classList.add("is-playing");
     mainMenu?.classList.add("is-hidden");
     footerBar?.classList.add("is-hidden");
     gameHud?.classList.remove("is-hidden");
