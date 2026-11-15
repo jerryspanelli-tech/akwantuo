@@ -90,6 +90,8 @@ button { font: inherit; }
 .touch-controls { display: none; position: absolute; inset: auto 0 max(22px, env(safe-area-inset-bottom)); align-items: end; justify-content: space-between; padding: 0 24px; pointer-events: none; }
 .joystick { width: 116px; height: 116px; border: 1px solid rgba(255,255,255,.38); border-radius: 50%; background: rgba(13,22,22,.3); box-shadow: inset 0 0 22px rgba(0,0,0,.2); display: grid; place-items: center; pointer-events: auto; touch-action: none; }
 .joystick-stick { width: 48px; height: 48px; border: 1px solid rgba(255,255,255,.45); border-radius: 50%; background: rgba(213,180,119,.75); box-shadow: 0 3px 12px rgba(0,0,0,.3); }
+.sprint-button { min-width: 55px; height: 45px; padding: 0 10px; border: 1px solid rgba(255,255,255,.5); border-radius: 24px; background: rgba(31,91,71,.92); color: #fff; font-size: 9px; font-weight: 850; letter-spacing: .08em; pointer-events: auto; touch-action: none; }
+.sprint-button.is-active, .sprint-button:active { background: var(--gold); color: #17201d; transform: scale(.95); }
 .jump-button { width: 66px; height: 66px; margin: 0 3px 13px 0; border: 1px solid rgba(255,255,255,.5); border-radius: 50%; background: rgba(213,180,119,.88); color: #17201d; font-size: 10px; font-weight: 850; letter-spacing: .08em; pointer-events: auto; touch-action: none; }
 .jump-button:active { transform: scale(.94); background: #ead09b; }
 
@@ -137,7 +139,7 @@ button { font: inherit; }
 @media (max-width: 700px), (pointer: coarse) {
   .touch-controls { align-items: end; }
   .hud-actions { gap: 7px; }
-  .interact-button, .vehicle-view-button, .vehicle-brake-button { min-width: 55px; height: 45px; font-size: 8px; }
+  .interact-button, .vehicle-view-button, .vehicle-brake-button, .sprint-button { min-width: 55px; height: 45px; font-size: 8px; }
 }
 
 /* Keep the boot overlay dismissible: its base display rule must not override the hidden state. */
