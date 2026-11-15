@@ -109,6 +109,7 @@ try {
       count: Number(document.documentElement.dataset.npcRoadTraffic ?? 0),
       route: document.documentElement.dataset.npcRoadTrafficRoute ?? "",
       routes: document.documentElement.dataset.npcRoadTrafficRoutes ?? "",
+      loop: document.documentElement.dataset.npcRoadTrafficLoop === "true",
       laneCentre: document.documentElement.dataset.npcRoadTrafficLaneCenter === "true",
       distanceM: Number(document.documentElement.dataset.npcRoadTrafficDistanceM ?? 0),
       speedMps: Number(document.documentElement.dataset.npcRoadTrafficSpeedMps ?? 0),
@@ -118,6 +119,7 @@ try {
     }));
     if (npcTraffic.count !== 6 ||
         npcTraffic.routes !== "osu-residential-street,osu-oxford-street-link" ||
+        !npcTraffic.loop ||
         !npcTraffic.laneCentre ||
         !Number.isFinite(npcTraffic.distanceM) || npcTraffic.distanceM <= 0 ||
         !Number.isFinite(npcTraffic.speedMps) || npcTraffic.speedMps < 0.5 ||
