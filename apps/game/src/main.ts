@@ -1858,9 +1858,9 @@ async function start(): Promise<void> {
           steering = Math.max(-1, Math.min(1, steering));
           throttle = Math.max(-1, Math.min(1, throttle));
           const next = advanceRoadVehicleElapsed({
-            wheelbaseM: 2.65, maximumForwardSpeedMps: 16, maximumReverseSpeedMps: 4,
-            maximumAccelerationMps2: 3.2, serviceBrakingMps2: 7,
-            maximumSteeringAngleRadians: 0.48, rollingDragMps2: 0.45
+            wheelbaseM: 2.65, maximumForwardSpeedMps: 28, maximumReverseSpeedMps: 5,
+            maximumAccelerationMps2: 5.2, serviceBrakingMps2: 9,
+            maximumSteeringAngleRadians: 0.44, rollingDragMps2: 0.55
           }, vehicleState, {
             throttle, brake: vehicleBrake || pressedKeys.has(" ") ? 1 : 0, steering
           }, rawDelta);
