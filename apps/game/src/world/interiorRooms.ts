@@ -318,7 +318,7 @@ export function createInteriorRoom(scene: Scene, roomId: string): InteriorRoomIn
         });
       }
     }
-  return {
+  const room: InteriorRoomInstance = {
     id: blueprint.id,
     root,
     spawn: { x: centreX, z: centreZ + halfD - 1.4 },
