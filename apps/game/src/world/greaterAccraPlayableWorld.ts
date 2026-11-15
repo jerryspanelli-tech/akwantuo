@@ -9,7 +9,8 @@ import {
 } from "@babylonjs/core";
 import {
   GREATER_ACCRA_COASTLINE,
-  GREATER_ACCRA_MAP_EXTENT
+  GREATER_ACCRA_MAP_EXTENT,
+  GREATER_ACCRA_REGION_ANCHORS
 } from "./greaterAccraLayout";
 import { createGreaterAccraRoadGeometry } from "./roadGeometry";
 import { createGreaterAccraRoadMarkings } from "./roadMarkingGeometry";
@@ -28,7 +29,80 @@ export type GreaterAccraPlayableWorldReport = Readonly<{
   circleElevatedStructureCount: number;
   railRoadCrossingCandidateCount: number;
   publicTransportCorridorCount: number;
+  n6TownSignCount: number;
 }>;
+
+const N6_TOWN_SIGN_LABELS = [
+  ["pokuase", "POKUASE"],
+  ["amasaman", "AMASAMAN"],
+  ["nsawam", "NSAWAM"],
+  ["suhum", "SUHUM"],
+  ["bunso", "BUNSO"],
+  ["anyinam", "ANYINAM"],
+  ["nkawkaw", "NKAWKAW"],
+  ["konongo", "KONONGO"],
+  ["ejisu", "EJISU"],
+  ["kumasi", "KUMASI"]
+] as const;
+
+/** Small roadside wayfinding signs make the intercity corridor readable in play. */
+function createN6TownSigns(scene: Scene): number {
+  const postMaterial = new StandardMaterial("n6-town-sign-post-material", scene);
+  postMaterial.diffuseColor = new Color3(0.22, 0.25, 0.23);
+  const labels = new Map(GREATER_ACCRA_REGION_ANCHORS.map((anchor) => [anchor.regionId, anchor]));
+  for (const [regionId, label] of N6_TOWN_SIGN_LABELS) {
+    const anchor = labels.get(regionId);
+    if (!anchor) throw new Error("Missing N6 town sign anchor for " + regionId);
+    const texture = new DynamicTexture(
+      "n6-town-sign-texture-" + regionId,
+      { width: 256, height: 96 },
+      scene,
+      false
+    );
+    const context = texture.getContext();
+    context.fillStyle = "#174b3b";
+    context.fillRect(0, 0, 256, 96);
+    context.strokeStyle = "#f1e8c9";
+    context.lineWidth = 6;
+    context.strokeRect(4, 4, 248, 88);
+    context.fillStyle = "#f1e8c9";
+    context.font = "bold 24px Arial";
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    context.fillText("N6", 42, 48);
+    context.fillRect(76, 20, 2, 56);
+    context.font = "bold 25px Arial";
+    context.fillText(label, 165, 48, 166);
+    texture.update(false);
+
+    const signMaterial = new StandardMaterial("n6-town-sign-material-" + regionId, scene);
+    signMaterial.diffuseTexture = texture;
+    signMaterial.emissiveColor = new Color3(0.12, 0.12, 0.1);
+    signMaterial.backFaceCulling = false;
+    const signX = anchor.x + 30;
+    const board = MeshBuilder.CreatePlane("n6-town-sign-board-" + regionId, {
+      width: 5.2,
+      height: 2.1,
+      sideOrientation: MeshBuilder.DOUBLESIDE
+    }, scene);
+    board.position.set(signX, 4.1, anchor.z);
+    board.material = signMaterial;
+    board.isPickable = false;
+    board.checkCollisions = false;
+    for (const side of [-1, 1]) {
+      const post = MeshBuilder.CreateCylinder("n6-town-sign-post-" + regionId + "-" + side, {
+        height: 3.4,
+        diameter: 0.14,
+        tessellation: 8
+      }, scene);
+      post.position.set(signX + side * 2.15, 1.7, anchor.z);
+      post.material = postMaterial;
+      post.isPickable = false;
+      post.checkCollisions = false;
+    }
+  }
+  return N6_TOWN_SIGN_LABELS.length;
+}
 
 /**
  * Adds the first Greater Accra transport corridors to the main playable scene.
@@ -145,6 +219,7 @@ export function createGreaterAccraPlayableWorld(
 
   const roadMeshes = createGreaterAccraRoadGeometry(scene, { sampleSpacingM: 90 });
   const roadMarkingMeshes = createGreaterAccraRoadMarkings(scene, { sampleSpacingM: 35 });
+  const n6TownSignCount = createN6TownSigns(scene);
   const circle = createCircleInterchangeGeometry(scene);
   const railTracks = createGreaterAccraRailTrackGeometry(scene, { sleeperSpacingM: 1.2 });
   const railCrossingCandidates = deriveRailRoadCrossingCandidates();
@@ -194,6 +269,7 @@ export function createGreaterAccraPlayableWorld(
     plannedStationAnchorCount: GREATER_ACCRA_RAIL_STATIONS.filter((item) => item.status === "planned").length,
     circleElevatedStructureCount: Object.keys(circle.elevatedStructures).length,
     railRoadCrossingCandidateCount: railCrossingCandidates.length,
-    publicTransportCorridorCount: GREATER_ACCRA_PUBLIC_TRANSPORT_ROUTE_PLANS.length
+    publicTransportCorridorCount: GREATER_ACCRA_PUBLIC_TRANSPORT_ROUTE_PLANS.length,
+    n6TownSignCount
   };
 }
