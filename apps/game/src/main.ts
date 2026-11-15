@@ -95,7 +95,9 @@ const refreshHudLocation = (x: number, z: number): void => {
   }
   if (!nearestRegionId || nearestRegionId === lastDisplayedRegionId) return;
   const region = GREATER_ACCRA_REGIONS.find((item) => item.id === nearestRegionId);
-  const label = region?.name ?? (nearestDistanceSquared > 2200 * 2200 ? "N6 INTERCITY ROUTE" : "GHANA");
+  const label = nearestDistanceSquared > 1400 * 1400
+    ? "N6 INTERCITY ROUTE"
+    : region?.name ?? "GHANA";
   hudLocation.textContent = "AKWANTUO · " + label.toUpperCase();
   hudLocation.dataset.regionId = nearestRegionId;
   lastDisplayedRegionId = nearestRegionId;
