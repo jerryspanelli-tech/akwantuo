@@ -179,68 +179,86 @@ export const CIRCLE_FEO_OYEO_RAMPS: readonly CircleFeoOyeoRampLayout[] = [
  * The vehicle controller is kinematic, so it must explicitly follow the ramp
  * profile rather than relying on Babylon mesh collisions.
  */
+/**
+ * Samples Circle elevated road decks and their connecting Feo Oyeo ramps.
+ *
+ * The vehicle controller is kinematic, so it must explicitly follow the
+ * authored vertical profile. The vehicle's current elevation is used to
+ * disambiguate grade-separated roads that overlap in the X/Z plane: a car
+ * underneath a viaduct must remain on the ground, not snap onto the deck.
+ */
 export function getCircleRampElevationAtPosition(
   x: number,
   z: number,
+  preferredElevationM = 0,
   maximumLateralErrorM = 2.6
 ): number | null {
-  if (![x, z, maximumLateralErrorM].every(Number.isFinite) || maximumLateralErrorM <= 0) {
+  if (![x, z, preferredElevationM, maximumLateralErrorM].every(Number.isFinite) ||
+      preferredElevationM < 0 || maximumLateralErrorM <= 0) {
     return null;
   }
   const centre = getMapNodePosition("circle-junction");
   if (!centre) return null;
-  let nearest: { distanceM: number; elevationM: number } | null = null;
 
-  // The two ramps meet the semicircular loop at its endpoints. Include the
-  // loop deck itself so a vehicle does not drop back to ground height after
-  // reaching the top of a ramp.
-  const loopLayout = CIRCLE_ELEVATED_STRUCTURE_LAYOUTS.find(
-    (layout) => layout.id === "circle-loop-viaduct-3d"
-  );
-  if (loopLayout) {
-    for (let index = 1; index < loopLayout.points.length; index += 1) {
-      const a = loopLayout.points[index - 1];
-      const b = loopLayout.points[index];
-      const ax = centre.x + a.x;
-      const az = centre.z + a.z;
-      const bx = centre.x + b.x;
-      const bz = centre.z + b.z;
-      const dx = bx - ax;
-      const dz = bz - az;
-      const lengthSquared = dx * dx + dz * dz;
-      if (lengthSquared <= 1e-8) continue;
-      const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / lengthSquared));
-      const closestX = ax + dx * t;
-      const closestZ = az + dz * t;
-      const distanceM = Math.hypot(x - closestX, z - closestZ);
-      if (!nearest || distanceM < nearest.distanceM) {
-        nearest = { distanceM, elevationM: loopLayout.deckElevationM };
-      }
+  let nearest: { distanceM: number; elevationM: number } | null = null;
+  const considerSegment = (
+    a: ElevatedRoadPoint,
+    b: ElevatedRoadPoint,
+    halfWidthM: number
+  ): void => {
+    const ax = centre.x + a.x;
+    const az = centre.z + a.z;
+    const bx = centre.x + b.x;
+    const bz = centre.z + b.z;
+    const dx = bx - ax;
+    const dz = bz - az;
+    const lengthSquared = dx * dx + dz * dz;
+    if (lengthSquared <= 1e-8) return;
+
+    const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / lengthSquared));
+    const closestX = ax + dx * t;
+    const closestZ = az + dz * t;
+    const distanceM = Math.hypot(x - closestX, z - closestZ);
+    const elevationM = a.y + (b.y - a.y) * t;
+    const allowedDistanceM = Math.min(maximumLateralErrorM, halfWidthM);
+    if (distanceM > allowedDistanceM) return;
+
+    // At ground level only accept the low end of a ramp. Once a vehicle is
+    // elevated, only decks close to its current height can become candidates.
+    // This prevents a ground vehicle beneath a bridge from snapping upward.
+    if (preferredElevationM <= 0.5) {
+      if (elevationM > 1) return;
+    } else if (Math.abs(elevationM - preferredElevationM) > 1.5) {
+      return;
+    }
+
+    if (!nearest || distanceM < nearest.distanceM) {
+      nearest = { distanceM, elevationM };
+    }
+  };
+
+  for (const layout of CIRCLE_ELEVATED_STRUCTURE_LAYOUTS) {
+    const reference = CIRCLE_STRUCTURE_REFERENCES.find((item) => item.id === layout.referenceId);
+    if (!reference) continue;
+    const halfWidthM = Math.max(1, reference.deckWidthM / 2 - 0.35);
+    for (let index = 1; index < layout.points.length; index += 1) {
+      const a = layout.points[index - 1];
+      const b = layout.points[index];
+      considerSegment(
+        { x: a.x, y: layout.deckElevationM, z: a.z },
+        { x: b.x, y: layout.deckElevationM, z: b.z },
+        halfWidthM
+      );
     }
   }
 
   for (const ramp of CIRCLE_FEO_OYEO_RAMPS) {
     for (let index = 1; index < ramp.points.length; index += 1) {
-      const a = ramp.points[index - 1];
-      const b = ramp.points[index];
-      const ax = centre.x + a.x;
-      const az = centre.z + a.z;
-      const bx = centre.x + b.x;
-      const bz = centre.z + b.z;
-      const dx = bx - ax;
-      const dz = bz - az;
-      const lengthSquared = dx * dx + dz * dz;
-      if (lengthSquared <= 1e-8) continue;
-      const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / lengthSquared));
-      const closestX = ax + dx * t;
-      const closestZ = az + dz * t;
-      const distanceM = Math.hypot(x - closestX, z - closestZ);
-      if (!nearest || distanceM < nearest.distanceM) {
-        nearest = { distanceM, elevationM: a.y + (b.y - a.y) * t };
-      }
+      considerSegment(ramp.points[index - 1], ramp.points[index], ramp.deckWidthM / 2 - 0.35);
     }
   }
-  return nearest && nearest.distanceM <= maximumLateralErrorM ? nearest.elevationM : null;
+
+  return nearest?.elevationM ?? null;
 }
 
 export function isCircleFeoOyeoRampLayoutValid(): boolean {
