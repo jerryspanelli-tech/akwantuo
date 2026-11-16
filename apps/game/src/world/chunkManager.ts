@@ -141,13 +141,14 @@ export class WorldChunkManager {
     }
 
     this.desired = nextDesired;
+    // Rebuild queue order from the latest player position on every update.
+    // Retaining old Map insertion order can make a single-worker mobile queue
+    // finish stale, farther-away chunks before the chunks now nearest the player.
+    this.queued.clear();
     for (const record of nextDesired.values()) {
       if (!this.loaded.has(record.key) && !this.pending.has(record.key)) {
         this.queued.set(record.key, record);
       }
-    }
-    for (const key of this.queued.keys()) {
-      if (!nextDesired.has(key)) this.queued.delete(key);
     }
     this.pumpQueue();
   }
