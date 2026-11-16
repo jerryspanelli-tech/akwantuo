@@ -200,7 +200,7 @@ export function getCircleRampElevationAtPosition(
   const centre = getMapNodePosition("circle-junction");
   if (!centre) return null;
 
-  let nearest: { distanceM: number; elevationM: number } | null = null;
+  const candidates: { distanceM: number; elevationM: number }[] = [];
   const considerSegment = (
     a: ElevatedRoadPoint,
     b: ElevatedRoadPoint,
@@ -232,9 +232,7 @@ export function getCircleRampElevationAtPosition(
       return;
     }
 
-    if (!nearest || distanceM < nearest.distanceM) {
-      nearest = { distanceM, elevationM };
-    }
+    candidates.push({ distanceM, elevationM });
   };
 
   for (const layout of CIRCLE_ELEVATED_STRUCTURE_LAYOUTS) {
@@ -258,7 +256,8 @@ export function getCircleRampElevationAtPosition(
     }
   }
 
-  return nearest?.elevationM ?? null;
+  candidates.sort((a, b) => a.distanceM - b.distanceM);
+  return candidates[0]?.elevationM ?? null;
 }
 
 export function isCircleFeoOyeoRampLayoutValid(): boolean {
