@@ -68,7 +68,7 @@ function buildRoadPiece(scene: Scene, id: string, points: readonly RoadPoint[], 
       );
     }
     const addQuad = (a: number, b: number, c: number, d: number): void => {
-      indices.push(a, b, c, a, c, d, c, b, a, d, c, a);
+      indices.push(a, b, c, a, c, d);
     };
     for (let index = 0; index < inner.length - 1; index += 1) {
       const current = index * 4, next = (index + 1) * 4;
@@ -85,6 +85,7 @@ function buildRoadPiece(scene: Scene, id: string, points: readonly RoadPoint[], 
     const mesh = new Mesh(name, scene);
     vertexData.applyToMesh(mesh, false);
     mesh.material = material;
+    mesh.material.backFaceCulling = false;
     mesh.isPickable = false;
     mesh.checkCollisions = false;
     if (material === materials.asphalt || material === materials.sidewalk) enableAkwantuoShadowReceiver(mesh);
