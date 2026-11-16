@@ -12,7 +12,8 @@ import {
 import {
   GREATER_ACCRA_COASTLINE,
   GREATER_ACCRA_MAP_EXTENT,
-  GREATER_ACCRA_REGION_ANCHORS
+  GREATER_ACCRA_REGION_ANCHORS,
+  GREATER_ACCRA_ROAD_PATHS
 } from "./greaterAccraLayout";
 import { createGreaterAccraRoadGeometry } from "./roadGeometry";
 import { enableAkwantuoShadowReceiver } from "./lighting";
