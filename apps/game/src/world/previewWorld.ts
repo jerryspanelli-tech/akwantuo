@@ -3,14 +3,14 @@ import {
   Color4,
   MeshBuilder,
   Scene,
-  StandardMaterial,
+  StandardMaterial
 } from "@babylonjs/core";
 import { WORLD_CONFIG } from "./config";
 import type { SolidArea } from "./collision";
 import { createGhanaianStreetBuildings } from "./ghanaianStreetBuildings";
 
 /**
- * Shared lighting and district building population for the playable world.
+ * Optional ground and district building population for the playable world.
  *
  * The former centre-road, skyline and single-landmark scene was a temporary
  * prototype. It is deliberately not created here: Greater Accra transport,
