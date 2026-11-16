@@ -114,7 +114,7 @@ function buildRoadPiece(scene: Scene, id: string, points: readonly RoadPoint[], 
   edgePaint.alpha = 1;
   edgePaint.isPickable = false;
   edgePaint.checkCollisions = false;
-  edgePaint.renderingGroupId = 1;
+  edgePaint.renderingGroupId = 0;
 
   const centrePaint = MeshBuilder.CreateLines(id + "-road-centre-marking", {
     points: offsetPath(0),
@@ -124,7 +124,7 @@ function buildRoadPiece(scene: Scene, id: string, points: readonly RoadPoint[], 
   centrePaint.alpha = 1;
   centrePaint.isPickable = false;
   centrePaint.checkCollisions = false;
-  centrePaint.renderingGroupId = 1;
+  centrePaint.renderingGroupId = 0;
 }
 
 /** Builds only road segments whose centreline intersects this chunk. */
