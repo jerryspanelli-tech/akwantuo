@@ -227,7 +227,7 @@ export function getCircleRampElevationAtPosition(
     // elevated, only decks close to its current height can become candidates.
     // This prevents a ground vehicle beneath a bridge from snapping upward.
     if (preferredElevationM <= 0.5) {
-      if (elevationM > 1) return;
+      if (elevationM > 1.5) return;
     } else if (Math.abs(elevationM - preferredElevationM) > 1.5) {
       return;
     }
