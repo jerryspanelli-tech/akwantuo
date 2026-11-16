@@ -1,4 +1,4 @@
-import { Color3, Mesh, MeshBuilder, Scene, StandardMaterial, Vector3 } from "@babylonjs/core";
+import { Color3, DynamicTexture, Mesh, MeshBuilder, Scene, StandardMaterial, Vector3 } from "@babylonjs/core";
 import type { ChunkBounds, ChunkHandle } from "../chunkManager";
 import type { ChunkBuildResult, ChunkGenerator } from "../chunkRegistry";
 import { GREATER_ACCRA_LOCAL_ROADS } from "../greaterAccraRoadData";
@@ -10,7 +10,37 @@ function sharedMaterial(scene: Scene, name: string, color: Color3): StandardMate
   if (existing instanceof StandardMaterial) return existing;
   const material = new StandardMaterial(name, scene);
   material.diffuseColor = color;
-  material.specularColor = new Color3(0.08, 0.08, 0.08);
+  material.specularColor = name === "akwantuo-road-asphalt"
+    ? new Color3(0.025, 0.025, 0.025)
+    : new Color3(0.08, 0.08, 0.08);
+
+  // The spawn chunk is built before the arterial-road layer. Give the shared
+  // asphalt material its grain here so the later highway meshes cannot inherit
+  // a flat material merely because the chunk generator created it first.
+  if (name === "akwantuo-road-asphalt") {
+    const texture = new DynamicTexture(
+      "akwantuo-road-asphalt-grain",
+      { width: 256, height: 256 },
+      scene,
+      false
+    );
+    const context = texture.getContext();
+    context.fillStyle = "#343a3b";
+    context.fillRect(0, 0, 256, 256);
+    for (let index = 0; index < 5200; index += 1) {
+      const x = (index * 73 + 19) % 256;
+      const y = (index * 151 + 47) % 256;
+      const shade = index % 3 === 0 ? 75 : index % 3 === 1 ? 105 : 135;
+      context.fillStyle = "rgba(" + shade + "," + shade + "," + shade + "," + (0.08 + (index % 4) * 0.025) + ")";
+      context.fillRect(x, y, 1 + (index % 2), 1);
+    }
+    texture.update(false);
+    texture.uScale = 3;
+    texture.vScale = 72;
+    texture.anisotropicFilteringLevel = Math.min(8, scene.getEngine().getCaps().maxAnisotropy || 1);
+    material.diffuseTexture = texture;
+    material.diffuseColor = new Color3(0.9, 0.92, 0.92);
+  }
   return material;
 }
 
