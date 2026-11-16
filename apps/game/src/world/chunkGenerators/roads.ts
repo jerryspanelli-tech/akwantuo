@@ -3,6 +3,7 @@ import type { ChunkBounds, ChunkHandle } from "../chunkManager";
 import type { ChunkBuildResult, ChunkGenerator } from "../chunkRegistry";
 import { GREATER_ACCRA_LOCAL_ROADS } from "../greaterAccraRoadData";
 import { clipRoadPath, type RoadPoint } from "../roadClipping";
+import { enableAkwantuoShadowReceiver } from "../lighting";
 
 function sharedMaterial(scene: Scene, name: string, color: Color3): StandardMaterial {
   const existing = scene.getMaterialByName(name);
@@ -26,6 +27,7 @@ function buildRoadPiece(scene: Scene, id: string, points: readonly RoadPoint[], 
     });
     const mesh = MeshBuilder.CreateRibbon(name, { pathArray: [inner, outer], sideOrientation: Mesh.DOUBLESIDE }, scene);
     mesh.material = material; mesh.isPickable = false; mesh.checkCollisions = false;
+    if (material === materials.asphalt || material === materials.sidewalk) enableAkwantuoShadowReceiver(mesh);
   };
   band(id + "-asphalt", -3.75, 3.75, materials.asphalt);
   band(id + "-shoulder-west", 3.75, 4.25, materials.asphalt);
