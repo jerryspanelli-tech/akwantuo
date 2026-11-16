@@ -14,6 +14,7 @@ import {
   GREATER_ACCRA_REGION_ANCHORS
 } from "./greaterAccraLayout";
 import { createGreaterAccraRoadGeometry } from "./roadGeometry";
+import { enableAkwantuoShadowReceiver } from "./lighting";
 import { createGreaterAccraRoadMarkings } from "./roadMarkingGeometry";
 import { createCircleInterchangeGeometry } from "./circleInterchangeGeometry";
 import { createGreaterAccraRailTrackGeometry } from "./railTrackGeometry";
@@ -172,6 +173,7 @@ export function createGreaterAccraPlayableWorld(
   landMaterial.diffuseColor = new Color3(0.96, 0.97, 0.9);
   landMaterial.specularColor = new Color3(0.015, 0.015, 0.015);
   land.material = landMaterial;
+  enableAkwantuoShadowReceiver(land);
   land.isPickable = false;
   land.checkCollisions = false;
 
@@ -225,6 +227,7 @@ export function createGreaterAccraPlayableWorld(
   coast.checkCollisions = false;
 
   const roadMeshes = createGreaterAccraRoadGeometry(scene, { sampleSpacingM: 90 });
+  roadMeshes.forEach(enableAkwantuoShadowReceiver);
   const roadMarkingMeshes = createGreaterAccraRoadMarkings(scene, { sampleSpacingM: 18, dashLengthM: 4.5, dashGapM: 5.5, lineHeightM: 0.095 });
   const n6TownSignCount = createN6TownSigns(scene);
   const circle = createCircleInterchangeGeometry(scene);
