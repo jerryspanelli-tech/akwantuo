@@ -103,7 +103,7 @@ function addRoad(
   paint.alpha = 1;
   paint.isPickable = false;
   paint.checkCollisions = false;
-  paint.renderingGroupId = 1;
+  paint.renderingGroupId = 0;
 }
 
 export function createVillaggio(scene: Scene, solids: SolidArea[]): void {
