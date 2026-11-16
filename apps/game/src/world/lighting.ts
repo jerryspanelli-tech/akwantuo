@@ -3,7 +3,10 @@ import {
   HemisphericLight,
   Scene,
   Vector3,
-  DirectionalLight
+  DirectionalLight,
+  Mesh,
+  ShadowGenerator,
+  TransformNode
 } from "@babylonjs/core";
 
 export type AkwantuoLightingReport = Readonly<{
@@ -50,4 +53,47 @@ export function createAkwantuoDaylight(scene: Scene): AkwantuoLightingReport {
     ambientIntensity: ambient.intensity,
     sunIntensity: sun.intensity
   };
+}
+
+
+const akwantuoShadowGenerators = new WeakMap<Scene, ShadowGenerator>();
+const akwantuoShadowCasters = new WeakMap<Scene, WeakSet<Mesh>>();
+
+/**
+ * Adds a focused, mobile-safe shadow map for the player and nearby pedestrians.
+ * The map is deliberately small on touch devices to avoid excessive GPU memory.
+ */
+export function registerAkwantuoShadowCaster(scene: Scene, root: TransformNode): void {
+  const sun = scene.getLightByName("akwantuo-daylight-sun");
+  if (!(sun instanceof DirectionalLight)) return;
+
+  let generator = akwantuoShadowGenerators.get(scene);
+  if (!generator) {
+    const mobile = typeof window !== "undefined" && (
+      window.matchMedia("(pointer: coarse)").matches ||
+      Math.min(window.innerWidth, window.innerHeight) <= 820
+    );
+    generator = new ShadowGenerator(mobile ? 512 : 1024, sun);
+    generator.usePercentageCloserFiltering = true;
+    generator.filteringQuality = ShadowGenerator.QUALITY_LOW;
+    generator.bias = 0.0005;
+    generator.normalBias = 0.02;
+    generator.darkness = 0.28;
+    scene.shadowsEnabled = true;
+    akwantuoShadowGenerators.set(scene, generator);
+    akwantuoShadowCasters.set(scene, new WeakSet<Mesh>());
+  }
+
+  const registered = akwantuoShadowCasters.get(scene);
+  if (!registered) return;
+  for (const mesh of root.getChildMeshes(false)) {
+    if (mesh.isDisposed() || registered.has(mesh)) continue;
+    generator.addShadowCaster(mesh, false);
+    registered.add(mesh);
+  }
+}
+
+/** Marks a ground or road mesh as a receiver for the focused character shadows. */
+export function enableAkwantuoShadowReceiver(mesh: Mesh): void {
+  mesh.receiveShadows = true;
 }
