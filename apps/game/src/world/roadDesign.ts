@@ -27,6 +27,20 @@ export const ROAD_CROSS_SECTION_PROFILES: readonly RoadCrossSectionProfile[] = [
     designNote: "Separated carriageways, wide outer shoulders, central median and controlled access. Pedestrian access is kept off the main carriageway."
   },
   {
+    id: "six-lane-divided-expressway",
+    name: "Six-lane divided expressway",
+    surface: "asphalt",
+    sidewalkSurface: "concrete",
+    drainageStyle: "covered_channel",
+    lanesPerDirection: 3,
+    laneWidthM: 3.5,
+    shoulderWidthM: 2.5,
+    medianWidthM: 4,
+    sidewalkWidthM: 0,
+    drainageWidthM: 0.75,
+    designNote: "Three main lanes in each direction with a physical median. Used for the Ofankor–Nsawam N6 upgrade corridor; service roads are separate assets and must not be mistaken for extra main-carriageway lanes."
+  },
+  {
     id: "major-urban-arterial",
     name: "Major urban arterial",
     surface: "asphalt",
@@ -108,9 +122,9 @@ export const GREATER_ACCRA_ROAD_DESIGNS: readonly RoadSegmentDesign[] = [
   { roadSegmentId: "n6-alajo-apenkwa", crossSectionProfileId: "urban-expressway", status: "planned" },
   { roadSegmentId: "n6-apenkwa-achimota", crossSectionProfileId: "urban-expressway", status: "planned" },
   { roadSegmentId: "n6-achimota-ofankor", crossSectionProfileId: "urban-expressway", status: "planned" },
-  { roadSegmentId: "n6-ofankor-pokuase", crossSectionProfileId: "urban-expressway", status: "planned" },
-  { roadSegmentId: "n6-pokuase-amasaman", crossSectionProfileId: "urban-expressway", status: "planned" },
-  { roadSegmentId: "n6-amasaman-nsawam", crossSectionProfileId: "urban-expressway", status: "planned" },
+  { roadSegmentId: "n6-ofankor-pokuase", crossSectionProfileId: "six-lane-divided-expressway", status: "planned" },
+  { roadSegmentId: "n6-pokuase-amasaman", crossSectionProfileId: "six-lane-divided-expressway", status: "planned" },
+  { roadSegmentId: "n6-amasaman-nsawam", crossSectionProfileId: "six-lane-divided-expressway", status: "planned" },
   { roadSegmentId: "n6-nsawam-suhum", crossSectionProfileId: "rural-connector", status: "planned" },
   { roadSegmentId: "n6-suhum-bunso", crossSectionProfileId: "rural-connector", status: "planned" },
   { roadSegmentId: "n6-bunso-anyinam", crossSectionProfileId: "rural-connector", status: "planned" },
@@ -177,7 +191,8 @@ const REQUIRED_DIVIDED_CORRIDORS = new Set([
   "n6-apenkwa-achimota",
   "n6-achimota-ofankor",
   "n6-ofankor-pokuase",
-  "n6-pokuase-amasaman"
+  "n6-pokuase-amasaman",
+  "n6-amasaman-nsawam"
 ]);
 
 export function isGreaterAccraRoadDesignCatalogueValid(): boolean {
