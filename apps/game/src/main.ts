@@ -15,7 +15,7 @@ import { COMPLEXIONS, DEFAULT_APPEARANCE, OUTFITS, resolveAppearance, type Chara
 import { loadAppearance, saveAppearance } from "./character/appearanceStore";
 import { getHairstyle } from "./character/hairstyles";
 import { WORLD_CONFIG } from "./world/config";
-import { createAkwantuoDaylight } from "./world/lighting";
+import { createAkwantuoDaylight, registerAkwantuoShadowCaster } from "./world/lighting";
 import { GREATER_ACCRA_REGION_ANCHORS } from "./world/greaterAccraLayout";
 import { getCircleRampElevationAtPosition } from "./world/circleInterchangeElevatedLayout";
 import { getRoadSurfaceHeightAtPosition } from "./world/roadSurface";
@@ -449,6 +449,7 @@ function createPlayer(
       const importedNodes = [...(imported.transformNodes ?? []), ...imported.meshes];
       activeModelRoots = importedNodes.filter((node) => !node.parent);
       activeModelRoots.forEach((node) => { node.parent = root; });
+      registerAkwantuoShadowCaster(scene, root);
       for (const mesh of imported.meshes) {
         mesh.isPickable = false;
         mesh.receiveShadows = true;
@@ -478,6 +479,7 @@ function createPlayer(
       }
     }
   };
+  registerAkwantuoShadowCaster(scene, root);
   void loadCharacterModel(initialAppearance);
   const originalApplyAppearance = applyAppearance;
   const applyModelAppearance = (appearance: CharacterAppearance): void => {
