@@ -22,6 +22,7 @@ import { GREATER_ACCRA_RAIL_NODES } from "./railNetwork";
 import { GREATER_ACCRA_RAIL_STATIONS } from "./railStations";
 import { deriveRailRoadCrossingCandidates } from "./railRoadCrossings";
 import { GREATER_ACCRA_PUBLIC_TRANSPORT_ROUTE_PLANS } from "./publicTransportRoutes";
+import { createGhanaN6SpeedLimitSigns } from "./ghanaRoadSignage";
 
 export type GreaterAccraPlayableWorldReport = Readonly<{
   roadSurfaceMeshCount: number;
@@ -32,6 +33,7 @@ export type GreaterAccraPlayableWorldReport = Readonly<{
   railRoadCrossingCandidateCount: number;
   publicTransportCorridorCount: number;
   n6TownSignCount: number;
+  n6SpeedLimitSignCount: number;
 }>;
 
 const N6_TOWN_SIGN_LABELS = [
@@ -230,6 +232,7 @@ export function createGreaterAccraPlayableWorld(
   roadMeshes.forEach(enableAkwantuoShadowReceiver);
   const roadMarkingMeshes = createGreaterAccraRoadMarkings(scene, { sampleSpacingM: 18, dashLengthM: 4.5, dashGapM: 5.5, lineHeightM: 0.095 });
   const n6TownSignCount = createN6TownSigns(scene);
+  const n6SpeedLimitSignCount = createGhanaN6SpeedLimitSigns(scene);
   const circle = createCircleInterchangeGeometry(scene);
   const railTracks = createGreaterAccraRailTrackGeometry(scene, { sleeperSpacingM: 1.2 });
   const railCrossingCandidates = deriveRailRoadCrossingCandidates();
