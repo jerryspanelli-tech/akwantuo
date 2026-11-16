@@ -1875,7 +1875,7 @@ async function start(): Promise<void> {
             minX: WORLD_CONFIG.bounds.minX + 2.5, maxX: WORLD_CONFIG.bounds.maxX - 2.5,
             minZ: WORLD_CONFIG.bounds.minZ + 2.5, maxZ: WORLD_CONFIG.bounds.maxZ - 2.5
           });
-          const proposedRampElevationM = getCircleRampElevationAtPosition(bounded.x, bounded.z);
+          const proposedRampElevationM = getCircleRampElevationAtPosition(bounded.x, bounded.z, vehicleRig.root.position.y);
           // The vehicle controller is kinematic, so Babylon collision flags do
           // not keep a car on an elevated deck. Once the car is on the authored
           // Circle ramp/loop surface, reject steps that leave its supported
@@ -1891,7 +1891,7 @@ async function start(): Promise<void> {
           } else {
             vehicleState = { ...vehicleState, speedMps: 0 };
           }
-          const rampElevationM = getCircleRampElevationAtPosition(vehicleState.x, vehicleState.z);
+          const rampElevationM = getCircleRampElevationAtPosition(vehicleState.x, vehicleState.z, vehicleRig.root.position.y);
           const roadSurfaceElevationM = getRoadSurfaceHeightAtPosition(vehicleState.x, vehicleState.z);
           vehicleRig.update(vehicleState, rampElevationM ?? roadSurfaceElevationM ?? 0);
           camera.target = Vector3.Lerp(camera.target, new Vector3(vehicleState.x, 1.4, vehicleState.z), Math.min(1, delta * 8));
