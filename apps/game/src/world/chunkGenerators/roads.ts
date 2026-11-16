@@ -66,16 +66,33 @@ function buildRoadPiece(scene: Scene, id: string, points: readonly RoadPoint[], 
       kerb.checkCollisions = false;
     }
   }
-  const lines: Vector3[][] = [];
-  for (const offset of [0, 3.25 * scale, -3.25 * scale]) {
-    lines.push(points.map((point, index) => {
-      const before = points[Math.max(0, index - 1)], after = points[Math.min(points.length - 1, index + 1)];
-      const dx = after.x - before.x, dz = after.z - before.z, length = Math.hypot(dx, dz) || 1;
-      return new Vector3(point.x + dz / length * offset, 0.085, point.z - dx / length * offset);
-    }));
-  }
-  const paint = MeshBuilder.CreateLineSystem(id + "-road-markings", { lines, updatable: false }, scene);
-  paint.color = new Color3(0.78, 0.8, 0.77); paint.alpha = 1; paint.isPickable = false; paint.checkCollisions = false; paint.renderingGroupId = 1;
+  const offsetPath = (offset: number): Vector3[] => points.map((point, index) => {
+    const before = points[Math.max(0, index - 1)], after = points[Math.min(points.length - 1, index + 1)];
+    const dx = after.x - before.x, dz = after.z - before.z, length = Math.hypot(dx, dz) || 1;
+    return new Vector3(point.x + dz / length * offset, 0.088, point.z - dx / length * offset);
+  });
+  // Local streets are undivided two-way roads: white edge lines and a yellow
+  // centre line. Divided national/arterial roads use their own cross-section
+  // builder and never inherit this single-carriageway marking pattern.
+  const edgePaint = MeshBuilder.CreateLineSystem(id + "-road-edge-markings", {
+    lines: [offsetPath(3.25 * scale), offsetPath(-3.25 * scale)],
+    updatable: false
+  }, scene);
+  edgePaint.color = new Color3(0.9, 0.91, 0.87);
+  edgePaint.alpha = 1;
+  edgePaint.isPickable = false;
+  edgePaint.checkCollisions = false;
+  edgePaint.renderingGroupId = 1;
+
+  const centrePaint = MeshBuilder.CreateLines(id + "-road-centre-marking", {
+    points: offsetPath(0),
+    updatable: false
+  }, scene);
+  centrePaint.color = new Color3(0.95, 0.72, 0.16);
+  centrePaint.alpha = 1;
+  centrePaint.isPickable = false;
+  centrePaint.checkCollisions = false;
+  centrePaint.renderingGroupId = 1;
 }
 
 /** Builds only road segments whose centreline intersects this chunk. */
