@@ -233,7 +233,11 @@ export function createGreaterAccraPlayableWorld(
     false
   );
   const terrainContext = terrainTexture.getContext();
-  // Use an earthy fallback colour as well as the detail texture. If a mobile\n  // WebGL context fails to upload the dynamic texture, the land must never\n  // fall back to the engine default white material.\n  terrainContext.fillStyle = "#85845f";\n  terrainContext.fillRect(0, 0, 512, 512);
+  // Use an earthy fallback colour as well as the detail texture. If a mobile
+  // WebGL context fails to upload the dynamic texture, the land must never
+  // fall back to the engine default white material.
+  terrainContext.fillStyle = "#85845f";
+  terrainContext.fillRect(0, 0, 512, 512);
   const terrainPatchColours = ["#69764f", "#85805a", "#9a8b63", "#626f50", "#8b9066"];
   for (let index = 0; index < 460; index += 1) {
     const x = (index * 73 + 29) % 512;
@@ -258,7 +262,8 @@ export function createGreaterAccraPlayableWorld(
   terrainTexture.uScale = 90;
   terrainTexture.vScale = 160;
   landMaterial.diffuseTexture = terrainTexture;
-  // Slightly warm olive tint keeps the ground natural under Ghanaian daylight.\n  landMaterial.diffuseColor = new Color3(0.82, 0.81, 0.68);
+  // Slightly warm olive tint keeps the ground natural under Ghanaian daylight.
+  landMaterial.diffuseColor = new Color3(0.82, 0.81, 0.68);
   landMaterial.specularColor = new Color3(0.015, 0.015, 0.015);
   land.material = landMaterial;
   enableAkwantuoShadowReceiver(land);
