@@ -687,9 +687,10 @@ async function start(): Promise<void> {
   const chunkRegistry = new ChunkRegistry();
   const chunkManager = new WorldChunkManager({
     chunkSize: 600,
-    // Keep the live mobile scene tightly local; expand it as the player moves.
-    loadRadius: 500,
-    unloadRadius: 800,
+    // Keep the established 850m load / 1250m unload hysteresis so adjacent
+    // 600m chunks are requested before the player reaches a visible boundary.
+    loadRadius: 850,
+    unloadRadius: 1250,
     maxConcurrentLoads: 1,
     loadChunk: (key, bounds) => {
       const result = chunkRegistry.loadChunk(scene, key, bounds);
