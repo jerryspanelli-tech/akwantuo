@@ -204,38 +204,60 @@ function createBands(profile: RoadCrossSectionProfile): RoadBand[] {
   return bands;
 }
 
-function createBandMesh(
+/**
+ * Builds a closed, extruded road band rather than a zero-thickness surface.
+ * The top stays at the established road elevation so existing vehicle height
+ * sampling and route coordinates are not silently shifted. Side walls and an
+ * underside give the road a real 3D deck; thickness varies by band type.
+ */
+function createBandMeshes(
   scene: Scene,
   name: string,
   points: readonly MapPoint[],
   normals: readonly MapPoint[],
   band: RoadBand
-): Mesh {
-  const inner: Vector3[] = [];
-  const outer: Vector3[] = [];
+): Mesh[] {
+  const innerTop: Vector3[] = [];
+  const outerTop: Vector3[] = [];
   points.forEach((point, index) => {
     const normal = normals[index];
-    inner.push(new Vector3(
+    innerTop.push(new Vector3(
       point.x + normal.x * band.innerOffsetM,
       band.y,
       point.z + normal.z * band.innerOffsetM
     ));
-    outer.push(new Vector3(
+    outerTop.push(new Vector3(
       point.x + normal.x * band.outerOffsetM,
       band.y,
       point.z + normal.z * band.outerOffsetM
     ));
   });
 
-  const mesh = MeshBuilder.CreateRibbon(name, {
-    pathArray: [inner, outer],
-    sideOrientation: Mesh.DOUBLESIDE,
-    updatable: false
-  }, scene);
-  mesh.material = getMaterial(scene, band.kind);
-  mesh.isPickable = false;
-  mesh.checkCollisions = false;
-  return mesh;
+  const thickness = band.kind === "asphalt" ? 0.42
+    : band.kind === "sidewalk" ? 0.22
+    : band.kind === "median" ? 0.28
+    : 0.16;
+  const innerBottom = innerTop.map((point) => new Vector3(point.x, point.y - thickness, point.z));
+  const outerBottom = outerTop.map((point) => new Vector3(point.x, point.y - thickness, point.z));
+  const material = getMaterial(scene, band.kind);
+  const makeSurface = (surfaceName: string, paths: Vector3[][]): Mesh => {
+    const mesh = MeshBuilder.CreateRibbon(surfaceName, {
+      pathArray: paths,
+      sideOrientation: Mesh.DOUBLESIDE,
+      updatable: false
+    }, scene);
+    mesh.material = material;
+    mesh.isPickable = false;
+    mesh.checkCollisions = false;
+    return mesh;
+  };
+
+  return [
+    makeSurface(name, [innerTop, outerTop]),
+    makeSurface(name + "-underside", [innerBottom, outerBottom]),
+    makeSurface(name + "-inner-wall", [innerTop, innerBottom]),
+    makeSurface(name + "-outer-wall", [outerTop, outerBottom])
+  ];
 }
 
 /**
@@ -263,8 +285,8 @@ export function createRoadSegmentGeometry(
   if (approachPath.length < 2) return [];
   const points = samplePolyline(approachPath, spacing);
   const normals = getNormals(points);
-  const meshes = createBands(profile).map((band, index) =>
-    createBandMesh(scene, `${roadSegmentId}-${band.kind}-${index}`, points, normals, band)
+  const meshes = createBands(profile).flatMap((band, index) =>
+    createBandMeshes(scene, `${roadSegmentId}-${band.kind}-${index}`, points, normals, band)
   );
 
   // Raised kerb strips separate the asphalt shoulder from the pedestrian
