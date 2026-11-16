@@ -55,9 +55,24 @@ function buildRoadPiece(scene: Scene, id: string, points: readonly RoadPoint[], 
       inner.push(new Vector3(point.x + nx * innerOffset * scale, 0.05, point.z + nz * innerOffset * scale));
       outer.push(new Vector3(point.x + nx * outerOffset * scale, 0.05, point.z + nz * outerOffset * scale));
     });
-    const mesh = MeshBuilder.CreateRibbon(name, { pathArray: [inner, outer], sideOrientation: Mesh.DOUBLESIDE }, scene);
-    mesh.material = material; mesh.isPickable = false; mesh.checkCollisions = false;
-    if (material === materials.asphalt || material === materials.sidewalk) enableAkwantuoShadowReceiver(mesh);
+    const thickness = material === materials.asphalt ? 0.42
+      : material === materials.sidewalk ? 0.22 : 0.16;
+    const innerBottom = inner.map((point) => new Vector3(point.x, point.y - thickness, point.z));
+    const outerBottom = outer.map((point) => new Vector3(point.x, point.y - thickness, point.z));
+    const makeSurface = (surfaceName: string, paths: Vector3[][]): Mesh => {
+      const mesh = MeshBuilder.CreateRibbon(surfaceName, {
+        pathArray: paths, sideOrientation: Mesh.DOUBLESIDE, updatable: false
+      }, scene);
+      mesh.material = material;
+      mesh.isPickable = false;
+      mesh.checkCollisions = false;
+      if (material === materials.asphalt || material === materials.sidewalk) enableAkwantuoShadowReceiver(mesh);
+      return mesh;
+    };
+    makeSurface(name, [inner, outer]);
+    makeSurface(name + "-underside", [innerBottom, outerBottom]);
+    makeSurface(name + "-inner-wall", [inner, innerBottom]);
+    makeSurface(name + "-outer-wall", [outer, outerBottom]);
   };
   band(id + "-asphalt", -3.75, 3.75, materials.asphalt);
   band(id + "-shoulder-west", 3.75, 4.25, materials.asphalt);
