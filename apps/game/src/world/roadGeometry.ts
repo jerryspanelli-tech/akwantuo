@@ -5,7 +5,8 @@ import {
   MeshBuilder,
   Scene,
   StandardMaterial,
-  Vector3
+  Vector3,
+  VertexData
 } from "@babylonjs/core";
 import type { RoadCrossSectionProfile } from "@akwantuo/shared";
 import { getMapRoadPath, GREATER_ACCRA_ROAD_PATHS, type MapPoint } from "./greaterAccraLayout";
@@ -210,54 +211,57 @@ function createBands(profile: RoadCrossSectionProfile): RoadBand[] {
  * sampling and route coordinates are not silently shifted. Side walls and an
  * underside give the road a real 3D deck; thickness varies by band type.
  */
-function createBandMeshes(
+function createBandMesh(
   scene: Scene,
   name: string,
   points: readonly MapPoint[],
   normals: readonly MapPoint[],
   band: RoadBand
-): Mesh[] {
-  const innerTop: Vector3[] = [];
-  const outerTop: Vector3[] = [];
-  points.forEach((point, index) => {
-    const normal = normals[index];
-    innerTop.push(new Vector3(
-      point.x + normal.x * band.innerOffsetM,
-      band.y,
-      point.z + normal.z * band.innerOffsetM
-    ));
-    outerTop.push(new Vector3(
-      point.x + normal.x * band.outerOffsetM,
-      band.y,
-      point.z + normal.z * band.outerOffsetM
-    ));
-  });
-
+): Mesh {
+  const positions: number[] = [];
+  const indices: number[] = [];
   const thickness = band.kind === "asphalt" ? 0.42
     : band.kind === "sidewalk" ? 0.22
     : band.kind === "median" ? 0.28
     : 0.16;
-  const innerBottom = innerTop.map((point) => new Vector3(point.x, point.y - thickness, point.z));
-  const outerBottom = outerTop.map((point) => new Vector3(point.x, point.y - thickness, point.z));
-  const material = getMaterial(scene, band.kind);
-  const makeSurface = (surfaceName: string, paths: Vector3[][]): Mesh => {
-    const mesh = MeshBuilder.CreateRibbon(surfaceName, {
-      pathArray: paths,
-      sideOrientation: Mesh.DOUBLESIDE,
-      updatable: false
-    }, scene);
-    mesh.material = material;
-    mesh.isPickable = false;
-    mesh.checkCollisions = false;
-    return mesh;
-  };
 
-  return [
-    makeSurface(name, [innerTop, outerTop]),
-    makeSurface(name + "-underside", [innerBottom, outerBottom]),
-    makeSurface(name + "-inner-wall", [innerTop, innerBottom]),
-    makeSurface(name + "-outer-wall", [outerTop, outerBottom])
-  ];
+  points.forEach((point, index) => {
+    const normal = normals[index];
+    const innerX = point.x + normal.x * band.innerOffsetM;
+    const innerZ = point.z + normal.z * band.innerOffsetM;
+    const outerX = point.x + normal.x * band.outerOffsetM;
+    const outerZ = point.z + normal.z * band.outerOffsetM;
+    positions.push(
+      innerX, band.y, innerZ,
+      outerX, band.y, outerZ,
+      innerX, band.y - thickness, innerZ,
+      outerX, band.y - thickness, outerZ
+    );
+  });
+
+  const addDoubleSidedQuad = (a: number, b: number, c: number, d: number): void => {
+    indices.push(a, b, c, a, c, d, c, b, a, d, c, a);
+  };
+  for (let index = 0; index < points.length - 1; index += 1) {
+    const current = index * 4;
+    const next = (index + 1) * 4;
+    addDoubleSidedQuad(current, next, next + 1, current + 1);
+    addDoubleSidedQuad(current + 2, current + 3, next + 3, next + 2);
+    addDoubleSidedQuad(current, current + 2, next + 2, next);
+    addDoubleSidedQuad(current + 1, next + 1, next + 3, current + 3);
+  }
+
+  const vertexData = new VertexData();
+  vertexData.positions = positions;
+  vertexData.indices = indices;
+  vertexData.normals = [];
+  VertexData.ComputeNormals(positions, indices, vertexData.normals);
+  const mesh = new Mesh(name, scene);
+  vertexData.applyToMesh(mesh, false);
+  mesh.material = getMaterial(scene, band.kind);
+  mesh.isPickable = false;
+  mesh.checkCollisions = false;
+  return mesh;
 }
 
 /**
@@ -285,8 +289,8 @@ export function createRoadSegmentGeometry(
   if (approachPath.length < 2) return [];
   const points = samplePolyline(approachPath, spacing);
   const normals = getNormals(points);
-  const meshes = createBands(profile).flatMap((band, index) =>
-    createBandMeshes(scene, `${roadSegmentId}-${band.kind}-${index}`, points, normals, band)
+  const meshes = createBands(profile).map((band, index) =>
+    createBandMesh(scene, `${roadSegmentId}-${band.kind}-${index}`, points, normals, band)
   );
 
   // Raised kerb strips separate the asphalt shoulder from the pedestrian
