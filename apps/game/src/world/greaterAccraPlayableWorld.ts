@@ -124,8 +124,11 @@ function createN6TownSigns(scene: Scene): number {
  * corridors are smoothly flattened to the established road datum.
  */
 function createGreaterAccraTerrainMesh(scene: Scene): Mesh {
-  const columns = 85;
-  const rows = 151;
+  // A 150m sampling interval replaces the former ~250m cells. This keeps
+  // broad Ghanaian terrain relief visibly 3D at medium distance without
+  // allocating a dense per-frame terrain system on mobile.
+  const columns = 140;
+  const rows = 250;
   const minX = GREATER_ACCRA_MAP_EXTENT.minX;
   const maxX = GREATER_ACCRA_MAP_EXTENT.maxX;
   const minZ = GREATER_ACCRA_MAP_EXTENT.minZ;
@@ -213,11 +216,11 @@ export function createGreaterAccraPlayableWorld(
 ): GreaterAccraPlayableWorldReport {
   const firstNewMeshIndex = scene.meshes.length;
   scene.clearColor = new Color4(0.66, 0.76, 0.79, 1);
-  // Light distance haze softens the hard horizon while preserving visibility
-  // along the long Accra–Kumasi corridor.
+  // A restrained coastal distance haze softens the horizon without hiding
+  // the road network or compressing distant Accra landmarks into a fog wall.
   scene.fogMode = Scene.FOGMODE_EXP2;
   scene.fogColor = new Color3(0.66, 0.76, 0.79);
-  scene.fogDensity = 0.00007;
+  scene.fogDensity = 0.000035;
 
   const land = createGreaterAccraTerrainMesh(scene);
   const landMaterial = new StandardMaterial("greater-accra-playable-land-material", scene);
