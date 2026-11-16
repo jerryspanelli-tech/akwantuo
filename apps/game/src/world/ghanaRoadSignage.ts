@@ -1,4 +1,4 @@
-import { Color3, DynamicTexture, MeshBuilder, Scene, StandardMaterial } from "@babylonjs/core";
+import { Color3, DynamicTexture, Mesh, MeshBuilder, Scene, StandardMaterial } from "@babylonjs/core";
 import { getMapRoadPath } from "./greaterAccraLayout";
 
 type SpeedLimitPlacement = Readonly<{
@@ -130,7 +130,7 @@ function createSpeedLimitSign(
   const board = MeshBuilder.CreatePlane("ghana-speed-limit-board-" + id, {
     width: 1.35,
     height: 1.35,
-    sideOrientation: 2
+    sideOrientation: Mesh.DOUBLESIDE
   }, scene);
   board.position.set(x, 2.65, z);
   board.rotation.y = Math.atan2(facingX, facingZ);
