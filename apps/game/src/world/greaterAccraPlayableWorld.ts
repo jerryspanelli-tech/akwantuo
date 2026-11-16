@@ -6,7 +6,8 @@ import {
   MeshBuilder,
   Scene,
   StandardMaterial,
-  Vector3
+  Vector3,
+  VertexData
 } from "@babylonjs/core";
 import {
   GREATER_ACCRA_COASTLINE,
@@ -115,6 +116,97 @@ function createN6TownSigns(scene: Scene): number {
  * Geometry is visual-only at this stage: road/rail collision, traffic control,
  * lane navigation and operational railway safety remain separate work.
  */
+
+/**
+ * Low-density procedural relief for the playable Greater Accra map.
+ * This is a visual approximation, not surveyed elevation data. Main road
+ * corridors are smoothly flattened to the established road datum.
+ */
+function createGreaterAccraTerrainMesh(scene: Scene): Mesh {
+  const columns = 85;
+  const rows = 151;
+  const minX = GREATER_ACCRA_MAP_EXTENT.minX;
+  const maxX = GREATER_ACCRA_MAP_EXTENT.maxX;
+  const minZ = GREATER_ACCRA_MAP_EXTENT.minZ;
+  const maxZ = GREATER_ACCRA_MAP_EXTENT.maxZ;
+  const width = maxX - minX;
+  const depth = maxZ - minZ;
+
+  const distanceToSegment = (x: number, z: number, a: { x: number; z: number }, b: { x: number; z: number }): number => {
+    const dx = b.x - a.x;
+    const dz = b.z - a.z;
+    const lengthSquared = dx * dx + dz * dz;
+    const t = lengthSquared > 0
+      ? Math.max(0, Math.min(1, ((x - a.x) * dx + (z - a.z) * dz) / lengthSquared))
+      : 0;
+    return Math.hypot(x - (a.x + dx * t), z - (a.z + dz * t));
+  };
+
+  const distanceToRoad = (x: number, z: number): number => {
+    let nearest = Number.POSITIVE_INFINITY;
+    for (const road of GREATER_ACCRA_ROAD_PATHS) {
+      if (!road.playableInFirstRelease) continue;
+      for (let index = 1; index < road.points.length; index += 1) {
+        nearest = Math.min(nearest, distanceToSegment(x, z, road.points[index - 1], road.points[index]));
+      }
+    }
+    return nearest;
+  };
+
+  const gaussian = (x: number, z: number, cx: number, cz: number, sx: number, sz: number): number => {
+    const nx = (x - cx) / sx;
+    const nz = (z - cz) / sz;
+    return Math.exp(-0.5 * (nx * nx + nz * nz));
+  };
+
+  const terrainHeight = (x: number, z: number): number => {
+    const uplands =
+      24 * gaussian(x, z, 3300, 3400, 1700, 1500) +
+      19 * gaussian(x, z, -2300, 5000, 1900, 1700) +
+      14 * gaussian(x, z, -1800, 2200, 1500, 1200) +
+      12 * gaussian(x, z, 5700, 1700, 1900, 1300);
+    const broadRelief = 2.8 * Math.sin(x / 2100) * Math.cos(z / 2800) +
+      1.4 * Math.sin((x + z) / 1250);
+    const coastalLowland = z < -1700 ? Math.max(-2.5, (z + 1700) * 0.0012) : 0;
+    const raw = Math.max(-2, uplands + broadRelief + coastalLowland);
+    const roadDistance = distanceToRoad(x, z);
+    const blend = Math.max(0, Math.min(1, (roadDistance - 90) / 170));
+    const smoothBlend = blend * blend * (3 - 2 * blend);
+    return raw * smoothBlend;
+  };
+
+  const positions: number[] = [];
+  const indices: number[] = [];
+  for (let row = 0; row <= rows; row += 1) {
+    const z = minZ + (depth * row) / rows;
+    for (let column = 0; column <= columns; column += 1) {
+      const x = minX + (width * column) / columns;
+      positions.push(x, terrainHeight(x, z) - 0.12, z);
+    }
+  }
+  const stride = columns + 1;
+  for (let row = 0; row < rows; row += 1) {
+    for (let column = 0; column < columns; column += 1) {
+      const a = row * stride + column;
+      const b = a + 1;
+      const c = a + stride;
+      const d = c + 1;
+      indices.push(a, c, b, b, c, d);
+    }
+  }
+  const normals: number[] = [];
+  VertexData.ComputeNormals(positions, indices, normals);
+  const vertexData = new VertexData();
+  vertexData.positions = positions;
+  vertexData.indices = indices;
+  vertexData.normals = normals;
+  const terrain = new Mesh("greater-accra-playable-land-3d", scene);
+  vertexData.applyToMesh(terrain, false);
+  terrain.isPickable = false;
+  terrain.checkCollisions = false;
+  return terrain;
+}
+
 export function createGreaterAccraPlayableWorld(
   scene: Scene
 ): GreaterAccraPlayableWorldReport {
@@ -126,16 +218,7 @@ export function createGreaterAccraPlayableWorld(
   scene.fogColor = new Color3(0.66, 0.76, 0.79);
   scene.fogDensity = 0.00007;
 
-  const land = MeshBuilder.CreateGround("greater-accra-playable-land", {
-    width: GREATER_ACCRA_MAP_EXTENT.widthM,
-    height: GREATER_ACCRA_MAP_EXTENT.depthM,
-    subdivisions: 2
-  }, scene);
-  land.position.set(
-    (GREATER_ACCRA_MAP_EXTENT.minX + GREATER_ACCRA_MAP_EXTENT.maxX) / 2,
-    -0.12,
-    (GREATER_ACCRA_MAP_EXTENT.minZ + GREATER_ACCRA_MAP_EXTENT.maxZ) / 2
-  );
+  const land = createGreaterAccraTerrainMesh(scene);
   const landMaterial = new StandardMaterial("greater-accra-playable-land-material", scene);
   // A single small, repeatable texture gives the large map readable ground
   // variation without adding thousands of terrain meshes or expensive passes.
