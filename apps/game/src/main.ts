@@ -18,6 +18,7 @@ import { WORLD_CONFIG } from "./world/config";
 import { createAkwantuoDaylight } from "./world/lighting";
 import { GREATER_ACCRA_REGION_ANCHORS } from "./world/greaterAccraLayout";
 import { getCircleRampElevationAtPosition } from "./world/circleInterchangeElevatedLayout";
+import { getRoadSurfaceHeightAtPosition } from "./world/roadSurface";
 import { GREATER_ACCRA_REGIONS } from "./world/regions";
 import { WorldChunkManager } from "./world/chunkManager";
 import { ChunkRegistry } from "./world/chunkRegistry";
@@ -1890,7 +1891,8 @@ async function start(): Promise<void> {
             vehicleState = { ...vehicleState, speedMps: 0 };
           }
           const rampElevationM = getCircleRampElevationAtPosition(vehicleState.x, vehicleState.z);
-          vehicleRig.update(vehicleState, rampElevationM ?? 0);
+          const roadSurfaceElevationM = getRoadSurfaceHeightAtPosition(vehicleState.x, vehicleState.z);
+          vehicleRig.update(vehicleState, rampElevationM ?? roadSurfaceElevationM ?? 0);
           camera.target = Vector3.Lerp(camera.target, new Vector3(vehicleState.x, 1.4, vehicleState.z), Math.min(1, delta * 8));
           camera.alpha = -Math.PI / 2 - vehicleState.headingRadians;
           camera.radius = 9;
