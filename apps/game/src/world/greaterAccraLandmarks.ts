@@ -5,7 +5,8 @@ import {
   MeshBuilder,
   Scene,
   StandardMaterial,
-  Vector3
+  Vector3,
+  VertexData
 } from "@babylonjs/core";
 import type { SolidArea } from "./collision";
 
@@ -64,20 +65,36 @@ function addRoad(
     });
     const thickness = material === asphalt ? 0.42
       : material === sidewalk ? 0.22 : 0.16;
-    const innerBottom = inner.map((point) => new Vector3(point.x, point.y - thickness, point.z));
-    const outerBottom = outer.map((point) => new Vector3(point.x, point.y - thickness, point.z));
-    const makeSurface = (surfaceName: string, paths: Vector3[][]): void => {
-      const mesh = MeshBuilder.CreateRibbon(surfaceName, {
-        pathArray: paths, sideOrientation: Mesh.DOUBLESIDE, updatable: false
-      }, scene);
-      mesh.material = material;
-      mesh.isPickable = false;
-      mesh.checkCollisions = false;
+    const positions: number[] = [];
+    const indices: number[] = [];
+    for (let index = 0; index < inner.length; index += 1) {
+      positions.push(
+        inner[index].x, inner[index].y, inner[index].z,
+        outer[index].x, outer[index].y, outer[index].z,
+        inner[index].x, inner[index].y - thickness, inner[index].z,
+        outer[index].x, outer[index].y - thickness, outer[index].z
+      );
+    }
+    const addQuad = (a: number, b: number, c: number, d: number): void => {
+      indices.push(a, b, c, a, c, d, c, b, a, d, c, a);
     };
-    makeSurface(name, [inner, outer]);
-    makeSurface(name + "-underside", [innerBottom, outerBottom]);
-    makeSurface(name + "-inner-wall", [inner, innerBottom]);
-    makeSurface(name + "-outer-wall", [outer, outerBottom]);
+    for (let index = 0; index < inner.length - 1; index += 1) {
+      const current = index * 4, next = (index + 1) * 4;
+      addQuad(current, next, next + 1, current + 1);
+      addQuad(current + 2, current + 3, next + 3, next + 2);
+      addQuad(current, current + 2, next + 2, next);
+      addQuad(current + 1, next + 1, next + 3, current + 3);
+    }
+    const vertexData = new VertexData();
+    vertexData.positions = positions;
+    vertexData.indices = indices;
+    vertexData.normals = [];
+    VertexData.ComputeNormals(positions, indices, vertexData.normals);
+    const mesh = new Mesh(name, scene);
+    vertexData.applyToMesh(mesh, false);
+    mesh.material = material;
+    mesh.isPickable = false;
+    mesh.checkCollisions = false;
   };
 
   // Match the existing local-street cross-section: 6.5m carriageway,
