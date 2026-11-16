@@ -1,4 +1,5 @@
 import { getMapRoadPath, GREATER_ACCRA_ROAD_PATHS } from "./greaterAccraLayout";
+import { GREATER_ACCRA_LOCAL_ROADS } from "./greaterAccraRoadData";
 import { getRoadCrossSectionProfile, GREATER_ACCRA_ROAD_DESIGNS } from "./roadDesign";
 
 /** Road ribbons are authored 5 cm above the ground plane. */
@@ -67,6 +68,24 @@ export function getRoadSurfaceHeightAtPosition(x: number, z: number): number | n
         : lateral <= carriagewayHalfWidth;
       if (!insideCarriageway) continue;
 
+      closestRoadDistance = projection.distanceM;
+      onRoad = true;
+    }
+  }
+
+  // Streamed neighbourhood streets use a separate local-road catalogue rather
+  // than the arterial road network. Their asphalt plus narrow shoulders spans
+  // 8.5/12 of the authored total cross-section width on either side.
+  // Include them in the same kinematic height sampler so cars do not drop to
+  // ground height when driving along a streamed local street.
+  for (const road of GREATER_ACCRA_LOCAL_ROADS) {
+    if (road.points.length < 2 || !Number.isFinite(road.width) || road.width <= 0) continue;
+    const carriagewayHalfWidth = 4.25 * (road.width / 12);
+    for (let index = 1; index < road.points.length; index += 1) {
+      const start = road.points[index - 1];
+      const end = road.points[index];
+      const projection = projectToSegment(x, z, start.x, start.z, end.x, end.z);
+      if (projection.distanceM >= closestRoadDistance || projection.distanceM > carriagewayHalfWidth) continue;
       closestRoadDistance = projection.distanceM;
       onRoad = true;
     }
