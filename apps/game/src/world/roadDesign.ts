@@ -139,6 +139,47 @@ export function getRoadDesignWidth(roadSegmentId: string): number | undefined {
   return profile ? getRoadCrossSectionWidth(profile) : undefined;
 }
 
+export type RoadCarriagewayLayout = Readonly<{
+  roadSegmentId: string;
+  layout: "divided" | "undivided";
+  lanesPerDirection: number;
+  medianWidthM: number;
+  carriagewayWidthM: number;
+}>;
+
+/**
+ * Returns the authored physical carriageway arrangement for a route.
+ * A divided route has two separately marked directional carriageways and a
+ * physical median; an undivided route has opposing traffic on one surface.
+ */
+export function getRoadCarriagewayLayout(roadSegmentId: string): RoadCarriagewayLayout | undefined {
+  const design = GREATER_ACCRA_ROAD_DESIGNS.find((item) => item.roadSegmentId === roadSegmentId);
+  const profile = design && getRoadCrossSectionProfile(design.crossSectionProfileId);
+  if (!profile) return undefined;
+  return {
+    roadSegmentId,
+    layout: profile.medianWidthM > 0 ? "divided" : "undivided",
+    lanesPerDirection: profile.lanesPerDirection,
+    medianWidthM: profile.medianWidthM,
+    carriagewayWidthM: profile.lanesPerDirection * profile.laneWidthM
+  };
+}
+
+const REQUIRED_DIVIDED_CORRIDORS = new Set([
+  "n1-west-approach",
+  "n1-central-approach",
+  "n1-tema-corridor",
+  "n4-madina-approach",
+  "n4-adenta-corridor",
+  "n6-circle-caprice",
+  "n6-caprice-alajo",
+  "n6-alajo-apenkwa",
+  "n6-apenkwa-achimota",
+  "n6-achimota-ofankor",
+  "n6-ofankor-pokuase",
+  "n6-pokuase-amasaman"
+]);
+
 export function isGreaterAccraRoadDesignCatalogueValid(): boolean {
   const profilesValid = ROAD_CROSS_SECTION_PROFILES.every(isValidRoadCrossSectionProfile);
   const profileIds = new Set(ROAD_CROSS_SECTION_PROFILES.map((profile) => profile.id));
@@ -148,5 +189,11 @@ export function isGreaterAccraRoadDesignCatalogueValid(): boolean {
     assignedSegments.size === GREATER_ACCRA_ROAD_DESIGNS.length &&
     GREATER_ACCRA_ROAD_DESIGNS.every((design) =>
       isValidRoadSegmentDesign(design, GREATER_ACCRA_ROAD_NETWORK, ROAD_CROSS_SECTION_PROFILES)
-    );
+    ) &&
+    [...REQUIRED_DIVIDED_CORRIDORS].every((roadId) => {
+      const layout = getRoadCarriagewayLayout(roadId);
+      return layout?.layout === "divided" &&
+        layout.lanesPerDirection >= 2 &&
+        layout.medianWidthM > 0;
+    });
 }
