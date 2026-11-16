@@ -34,6 +34,38 @@ function buildRoadPiece(scene: Scene, id: string, points: readonly RoadPoint[], 
   band(id + "-shoulder-east", -4.25, -3.75, materials.asphalt);
   band(id + "-sidewalk-east", -6.05, -4.25, materials.sidewalk);
   band(id + "-drain-east", -6.5, -6.05, materials.drain);
+
+  // Raised kerbs give the pavement a real 3D edge instead of leaving every
+  // roadside layer as a flat ribbon. Segment-local boxes follow curved paths
+  // without creating one oversized straight kerb across a bend.
+  const kerbMaterial = sharedMaterial(scene, "akwantuo-road-raised-kerb", new Color3(0.64, 0.64, 0.59));
+  for (const side of [-1, 1] as const) {
+    for (let index = 1; index < points.length; index += 1) {
+      const previous = points[index - 1];
+      const current = points[index];
+      const dx = current.x - previous.x;
+      const dz = current.z - previous.z;
+      const length = Math.hypot(dx, dz);
+      if (length < 0.05) continue;
+      const nx = dz / length;
+      const nz = -dx / length;
+      const offset = side * 6.05 * scale;
+      const kerb = MeshBuilder.CreateBox(id + "-raised-kerb-" + side + "-" + index, {
+        width: 0.16 * scale,
+        height: 0.18,
+        depth: length + 0.04
+      }, scene);
+      kerb.position.set(
+        (previous.x + current.x) / 2 + nx * offset,
+        0.12,
+        (previous.z + current.z) / 2 + nz * offset
+      );
+      kerb.rotation.y = Math.atan2(dx, dz);
+      kerb.material = kerbMaterial;
+      kerb.isPickable = false;
+      kerb.checkCollisions = false;
+    }
+  }
   const lines: Vector3[][] = [];
   for (const offset of [0, 3.25 * scale, -3.25 * scale]) {
     lines.push(points.map((point, index) => {
