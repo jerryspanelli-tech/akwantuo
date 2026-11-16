@@ -24,7 +24,7 @@ export function createAkwantuoDaylight(scene: Scene): AkwantuoLightingReport {
     new Vector3(-0.22, 1, 0.18),
     scene
   );
-  ambient.intensity = 0.82;
+  ambient.intensity = 0.62;
   ambient.diffuse = new Color3(0.94, 0.92, 0.86);
   ambient.groundColor = new Color3(0.31, 0.34, 0.29);
   ambient.specular = new Color3(0.16, 0.16, 0.14);
@@ -35,14 +35,14 @@ export function createAkwantuoDaylight(scene: Scene): AkwantuoLightingReport {
     scene
   );
   sun.position = new Vector3(180, 260, -120);
-  sun.intensity = 1.35;
+  sun.intensity = 1.15;
   sun.diffuse = new Color3(1, 0.94, 0.82);
   sun.specular = new Color3(0.42, 0.4, 0.35);
 
-  scene.ambientColor = new Color3(0.22, 0.23, 0.21);
+  scene.ambientColor = new Color3(0.1, 0.11, 0.1);
   scene.imageProcessingConfiguration.toneMappingEnabled = true;
-  scene.imageProcessingConfiguration.exposure = 1.08;
-  scene.imageProcessingConfiguration.contrast = 1.12;
+  scene.imageProcessingConfiguration.exposure = 1.02;
+  scene.imageProcessingConfiguration.contrast = 1.16;
 
   return {
     ambientLightName: ambient.name,
