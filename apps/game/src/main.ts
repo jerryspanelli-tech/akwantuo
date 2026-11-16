@@ -1873,7 +1873,14 @@ async function start(): Promise<void> {
             minX: WORLD_CONFIG.bounds.minX + 2.5, maxX: WORLD_CONFIG.bounds.maxX - 2.5,
             minZ: WORLD_CONFIG.bounds.minZ + 2.5, maxZ: WORLD_CONFIG.bounds.maxZ - 2.5
           });
-          if (!isBlocked(bounded.x, bounded.z, solidAreas, 2.35) && isVehiclePathClear(
+          const proposedRampElevationM = getCircleRampElevationAtPosition(bounded.x, bounded.z);
+          // The vehicle controller is kinematic, so Babylon collision flags do
+          // not keep a car on an elevated deck. Once the car is on the authored
+          // Circle ramp/loop surface, reject steps that leave its supported
+          // corridor instead of silently snapping the vehicle back to ground.
+          const remainsOnElevatedDeck = vehicleRig.root.position.y <= 0.5 || proposedRampElevationM !== null;
+          if (remainsOnElevatedDeck &&
+              !isBlocked(bounded.x, bounded.z, solidAreas, 2.35) && isVehiclePathClear(
             { x: vehicleState.x, z: vehicleState.z, radiusM: 2.25 },
             { x: bounded.x, z: bounded.z, radiusM: 2.25 },
             { x: publicTaxiState.x, z: publicTaxiState.z, radiusM: 2.35 }
