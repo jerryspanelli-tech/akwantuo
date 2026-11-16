@@ -283,6 +283,7 @@ export function createGreaterAccraPlayableWorld(
     circleElevatedStructureCount: Object.keys(circle.elevatedStructures).length,
     railRoadCrossingCandidateCount: railCrossingCandidates.length,
     publicTransportCorridorCount: GREATER_ACCRA_PUBLIC_TRANSPORT_ROUTE_PLANS.length,
-    n6TownSignCount
+    n6TownSignCount,
+    n6SpeedLimitSignCount
   };
 }
