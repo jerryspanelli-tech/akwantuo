@@ -39,7 +39,7 @@ The current branch uses metre-labelled world coordinates and a saloon-car presen
 | Feo Oyeo ramp deck | 6.5 m | Reference width copied. |
 | Ground roundabout outer diameter | 116 m | Current prototype value (58 m radius), explicitly provisional and not measured from the real site. |
 | Central island diameter | 36 m | Current prototype value (18 m radius), explicitly provisional and not measured from the real site. |
-| Ground approach arms | 24.5 m wide | Current game-design value, not a surveyed local measurement. Only four arms are authored in this prototype. |
+| Ground approach arms | 24.5 m wide | Current game-design value, not a surveyed local measurement. Only four arms are authored in this prototype. |\n| Bridge 1 / 2 / 3 | Reference only | Their published lengths and widths are in `circleInterchange.ts`, but the current Circle geometry builder does not create these three bridge meshes. |
 
 Relevant source files:
 - `apps/game/src/world/circleInterchangeGroundLevel.ts`
@@ -137,4 +137,4 @@ Therefore a road can look 3D and still not be a continuous drivable route. Befor
 
 The public structural reference does not establish the roundabout outer diameter, central-island diameter, detailed horizontal curves, exact ramp termini, elevations, pier positions, approach geometry, or the present-day surrounding site footprints. Those must be measured from suitable mapped/aerial or engineering references before replacing the provisional game values.
 
-Do not describe the current Circle layout as a 1:1 surveyed reconstruction. It is a visual prototype that uses several published structure dimensions but still has provisional placement and missing driving integration.
+Do not describe the current Circle layout as a 1:1 surveyed reconstruction. It is a visual prototype that uses several published structure dimensions but still has provisional placement and missing driving integration. It also omits the three separately listed single-span bridges (Bridge 1, Bridge 2 and Bridge 3) from the current visual build; their dimensions are catalogue references only. The FHECOR PDF's headline describes seven viaducts in total, while its detailed list names the main viaduct, two Feo Oyeo ramps, Loop, Akasanoma and Nsawam, plus three single-span bridges. Keep this source wording visible rather than silently guessing how the headline count is reconciled.
