@@ -142,15 +142,17 @@ export async function loadPlayerProfile(session: AkwantuoSession): Promise<Playe
 export async function savePlayerProfile(
   session: AkwantuoSession,
   appearance: CharacterAppearance,
-  displayName?: string
+  displayName?: string,
+  gameSave?: Record<string, unknown>
 ): Promise<void> {
+  const previousProfile = gameSave ? null : await loadPlayerProfile(session).catch(() => null);
   const payload = {
     id: session.user.id,
     display_name: displayName?.trim() || String(session.user.user_metadata?.display_name || session.user.email?.split("@")[0] || "Citizen"),
     gender: appearance.presentation === "feminine" ? "female" : "male",
     age: appearance.age,
     look: appearance,
-    game_save: { schema_version: 1, last_saved_at: new Date().toISOString() }
+    game_save: { ...(previousProfile?.game_save ?? {}), ...(gameSave ?? {}), schema_version: 1, last_saved_at: new Date().toISOString() }
   };
   await request<unknown>(
     "/rest/v1/player_profiles?on_conflict=id",
