@@ -63,51 +63,7 @@ function drawRoad(points:readonly {x:number;z:number}[],width:number,highway=fal
 }
 for(const path of GREATER_ACCRA_ROAD_PATHS){if(!path.playableInFirstRelease)continue;const width=path.roadSegmentId.startsWith("n1-")||path.roadSegmentId.startsWith("n6-")?30:path.roadSegmentId.startsWith("n4-")||path.roadSegmentId.includes("spintex")?22:path.roadSegmentId==="la-beach-road"?15:18;drawRoad(path.points,width,width>=28);}
 for(const path of GREATER_ACCRA_LOCAL_ROADS)drawRoad(path.points,path.width,false);
-const ballast=mat("#6d6a62",.98),steel=mat("#6f7778",.32,.72),sleeperMat=mat("#4c4941",.95);
-function railCurve(points:readonly {x:number;z:number}[]){return new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(p.x,terrainHeight(p.x,p.z)+.16,p.z)),false,"catmullrom",.12);}
-function drawRailRoute(points:readonly {x:number;z:number}[]){
- const curve=railCurve(points),length=curve.getLength(),sleeperCount=Math.max(2,Math.floor(length/GREATER_ACCRA_TRACK_PROFILE.sleeperSpacingM));
- ribbon(points,GREATER_ACCRA_TRACK_PROFILE.ballastWidthM,ballast,.08);
- const sleepers=new THREE.InstancedMesh(new THREE.BoxGeometry(GREATER_ACCRA_TRACK_PROFILE.sleeperLengthM,GREATER_ACCRA_TRACK_PROFILE.sleeperHeightM,GREATER_ACCRA_TRACK_PROFILE.sleeperWidthM),sleeperMat,sleeperCount);
- const dummy=new THREE.Object3D();
- for(let i=0;i<sleeperCount;i++){const t=i/sleeperCount,p=curve.getPointAt(t),tan=curve.getTangentAt(t);dummy.position.set(p.x,p.y+.08,p.z);dummy.rotation.set(0,Math.atan2(tan.x,tan.z),0);dummy.updateMatrix();sleepers.setMatrixAt(i,dummy.matrix);}
- sleepers.instanceMatrix.needsUpdate=true;sleepers.castShadow=true;scene.add(sleepers);
- const railSegments=Math.max(24,Math.ceil(length/4));
- for(const offset of [-GREATER_ACCRA_TRACK_PROFILE.gaugeM/2,GREATER_ACCRA_TRACK_PROFILE.gaugeM/2]){
-  const pointsOnRail=curve.getPoints(railSegments).map((p,i)=>{const tangent=curve.getTangent(i/railSegments),side=new THREE.Vector3(-tangent.z,0,tangent.x);return p.addScaledVector(side,offset);});
-  const railPath=new THREE.CatmullRomCurve3(pointsOnRail,false,"catmullrom",.08);
-  const mesh=new THREE.Mesh(new THREE.TubeGeometry(railPath,railSegments,GREATER_ACCRA_TRACK_PROFILE.railRadiusM,6,false),steel);mesh.castShadow=true;scene.add(mesh);
- }
- return curve;
-}
-const firstReleaseRailRoutes=GREATER_ACCRA_RAIL_ROUTES.filter(route=>route.firstRelease);
-const railCurves=firstReleaseRailRoutes.map(route=>drawRailRoute(route.points));
-function createRailStation(nodeId:string,label:string,routeIndex:number,atEnd:boolean){
- const node=GREATER_ACCRA_RAIL_NODES.find(item=>item.id===nodeId);if(!node)return;
- const curve=railCurves[routeIndex],tangent=curve.getTangentAt(atEnd?1:0),angle=Math.atan2(tangent.x,tangent.z);
- const g=new THREE.Group();g.position.set(node.position.x,terrainHeight(node.position.x,node.position.z),node.position.z);g.rotation.y=angle;scene.add(g);
- box(g,16,.7,112,0,0,0,concrete);box(g,27,10,38,0,.7,-27,mat("#b8c2bd",.4,.08));box(g,29,.8,40,0,10.7,-27,roof);
- box(g,21,1,94,0,12,5,roof);for(const x of [-10,10])for(const z of [-38,5,48])box(g,.35,12,.35,x,0,z,frame,false);
- box(g,17,.25,94,0,.9,5,yellow,false);box(g,17,.25,94,0,.9,-5,yellow,false);
- sign(g,label,"GHANA CAPE GAUGE · 1,067 MM",23,0,12.4,-6);
- box(g,8,1,.45,0,11.5,-6,mat("#b13d32"),false);box(g,8,1,.45,0,12.5,-6,yellow,false);box(g,8,1,.45,0,13.5,-6,green,false);
-}
-createRailStation("accra-central-rail-station","ACCRA CENTRAL",0,false);
-createRailStation("achimota-rail-junction","ACHIMOTA INTERCHANGE",1,false);
-createRailStation("tema-rail-station","TEMA STATION",1,true);
-const trainRoutePoints=[...firstReleaseRailRoutes[0].points,...firstReleaseRailRoutes[1].points.slice(1)];
-const trainCurve=railCurve(trainRoutePoints),trainLength=trainCurve.getLength();
-function createTrainCar(){
- const g=new THREE.Group(),body=mat("#e1e0d8",.48),windowMat=mat("#263f4a",.22,.12);
- box(g,3.2,3.3,18,0,.6,0,body);box(g,3.25,.24,18.2,0,.6,0,dark,false);box(g,3,.28,17.6,0,3.9,0,roof,false);
- const windows=new THREE.InstancedMesh(new THREE.BoxGeometry(.08,1.15,1.45),windowMat,12),dummy=new THREE.Object3D();let idx=0;
- for(const side of [-1,1])for(let i=0;i<6;i++){dummy.position.set(side*1.63,2.35,-7.2+i*2.85);dummy.updateMatrix();windows.setMatrixAt(idx++,dummy.matrix);}
- windows.instanceMatrix.needsUpdate=true;g.add(windows);
- for(const side of [-1,1]){box(g,.12,.24,17.4,side*1.64,1.25,0,mat("#b43d32"),false);box(g,.12,.22,17.4,side*1.65,1.48,0,yellow,false);box(g,.12,.22,17.4,side*1.66,1.7,0,green,false);}
- for(const side of [-1,1])for(const z of [-5.8,5.8]){const wheel=new THREE.Mesh(new THREE.CylinderGeometry(.48,.48,.24,12),dark);wheel.rotation.z=Math.PI/2;wheel.position.set(side*1.55,.48,z);g.add(wheel);}
- return g;
-}
-const trainCars=[createTrainCar(),createTrainCar()];trainCars.forEach(car=>scene.add(car));let railClock=0;
+
 GREATER_ACCRA_COASTLINE.map(p=>({x:p.x,z:p.z+55}));ribbon(beachPoints,100,sand,.11);
 
 function box(p:THREE.Object3D,w:number,h:number,d:number,x:number,y:number,z:number,m:THREE.Material,shadow=true){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y+h/2,z);o.castShadow=shadow;o.receiveShadow=true;p.add(o);return o;}
@@ -209,6 +165,51 @@ for(const anchor of GREATER_ACCRA_REGION_ANCHORS){
  districtSign(lx,lz+52,name,"GREATER ACCRA · GHANA");
 }
 function addLandmarkSolid(x:number,z:number,w:number,d:number){solidAreas.push({minX:x-w/2,maxX:x+w/2,minZ:z-d/2,maxZ:z+d/2});}
+const ballast=mat("#6d6a62",.98),steel=mat("#6f7778",.32,.72),sleeperMat=mat("#4c4941",.95);
+function railCurve(points:readonly {x:number;z:number}[]){return new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(p.x,terrainHeight(p.x,p.z)+.38,p.z)),false,"catmullrom",.12);}
+function drawRailRoute(points:readonly {x:number;z:number}[]){
+ const curve=railCurve(points),length=curve.getLength(),sleeperCount=Math.max(2,Math.floor(length/GREATER_ACCRA_TRACK_PROFILE.sleeperSpacingM));
+ ribbon(points,GREATER_ACCRA_TRACK_PROFILE.ballastWidthM,ballast,.08);
+ const sleepers=new THREE.InstancedMesh(new THREE.BoxGeometry(GREATER_ACCRA_TRACK_PROFILE.sleeperLengthM,GREATER_ACCRA_TRACK_PROFILE.sleeperHeightM,GREATER_ACCRA_TRACK_PROFILE.sleeperWidthM),sleeperMat,sleeperCount);
+ const dummy=new THREE.Object3D();
+ for(let i=0;i<sleeperCount;i++){const t=i/sleeperCount,p=curve.getPointAt(t),tan=curve.getTangentAt(t);dummy.position.set(p.x,p.y-.14,p.z);dummy.rotation.set(0,Math.atan2(tan.x,tan.z),0);dummy.updateMatrix();sleepers.setMatrixAt(i,dummy.matrix);}
+ sleepers.instanceMatrix.needsUpdate=true;sleepers.castShadow=true;scene.add(sleepers);
+ const railSegments=Math.max(24,Math.ceil(length/4));
+ for(const offset of [-GREATER_ACCRA_TRACK_PROFILE.gaugeM/2,GREATER_ACCRA_TRACK_PROFILE.gaugeM/2]){
+  const pointsOnRail=curve.getPoints(railSegments).map((p,i)=>{const tangent=curve.getTangent(i/railSegments),side=new THREE.Vector3(-tangent.z,0,tangent.x);return p.addScaledVector(side,offset);});
+  const railPath=new THREE.CatmullRomCurve3(pointsOnRail,false,"catmullrom",.08);
+  const mesh=new THREE.Mesh(new THREE.TubeGeometry(railPath,railSegments,GREATER_ACCRA_TRACK_PROFILE.railRadiusM,6,false),steel);mesh.castShadow=true;scene.add(mesh);
+ }
+ return curve;
+}
+const firstReleaseRailRoutes=GREATER_ACCRA_RAIL_ROUTES.filter(route=>route.firstRelease);
+const railCurves=firstReleaseRailRoutes.map(route=>drawRailRoute(route.points));
+function createRailStation(nodeId:string,label:string,routeIndex:number,atEnd:boolean){
+ const node=GREATER_ACCRA_RAIL_NODES.find(item=>item.id===nodeId);if(!node)return;
+ const curve=railCurves[routeIndex],tangent=curve.getTangentAt(atEnd?1:0),angle=Math.atan2(tangent.x,tangent.z);
+ const g=new THREE.Group();g.position.set(node.position.x,terrainHeight(node.position.x,node.position.z),node.position.z);g.rotation.y=angle;scene.add(g);addLandmarkSolid(node.position.x,node.position.z,54,118);
+ box(g,16,.7,112,0,0,0,concrete);box(g,27,10,38,0,.7,-27,mat("#b8c2bd",.4,.08));box(g,29,.8,40,0,10.7,-27,roof);
+ box(g,21,1,94,0,12,5,roof);for(const x of [-10,10])for(const z of [-38,5,48])box(g,.35,12,.35,x,0,z,frame,false);
+ box(g,17,.25,94,0,.9,5,yellow,false);box(g,17,.25,94,0,.9,-5,yellow,false);
+ sign(g,label,"GHANA CAPE GAUGE · 1,067 MM",23,0,12.4,-6);
+ box(g,8,1,.45,0,11.5,-6,mat("#b13d32"),false);box(g,8,1,.45,0,12.5,-6,yellow,false);box(g,8,1,.45,0,13.5,-6,green,false);
+}
+createRailStation("accra-central-rail-station","ACCRA CENTRAL",0,false);
+createRailStation("achimota-rail-junction","ACHIMOTA INTERCHANGE",1,false);
+createRailStation("tema-rail-station","TEMA STATION",1,true);
+const trainRoutePoints=[...firstReleaseRailRoutes[0].points,...firstReleaseRailRoutes[1].points.slice(1)];
+const trainCurve=railCurve(trainRoutePoints),trainLength=trainCurve.getLength();
+function createTrainCar(){
+ const g=new THREE.Group(),body=mat("#e1e0d8",.48),windowMat=mat("#263f4a",.22,.12);
+ box(g,3.2,3.3,18,0,.6,0,body);box(g,3.25,.24,18.2,0,.6,0,dark,false);box(g,3,.28,17.6,0,3.9,0,roof,false);
+ const windows=new THREE.InstancedMesh(new THREE.BoxGeometry(.08,1.15,1.45),windowMat,12),dummy=new THREE.Object3D();let idx=0;
+ for(const side of [-1,1])for(let i=0;i<6;i++){dummy.position.set(side*1.63,2.35,-7.2+i*2.85);dummy.updateMatrix();windows.setMatrixAt(idx++,dummy.matrix);}
+ windows.instanceMatrix.needsUpdate=true;g.add(windows);
+ for(const side of [-1,1]){box(g,.12,.24,17.4,side*1.64,1.25,0,mat("#b43d32"),false);box(g,.12,.22,17.4,side*1.65,1.48,0,yellow,false);box(g,.12,.22,17.4,side*1.66,1.7,0,green,false);}
+ for(const side of [-1,1])for(const z of [-5.8,5.8]){const wheel=new THREE.Mesh(new THREE.CylinderGeometry(.48,.48,.24,12),dark);wheel.rotation.z=Math.PI/2;wheel.position.set(side*1.55,.48,z);g.add(wheel);}
+ return g;
+}
+const trainCars=[createTrainCar(),createTrainCar()];trainCars.forEach(car=>scene.add(car));let railClock=0;
 function landmarkTower(x:number,z:number,w:number,d:number,floors:number,name:string,color:string){
  const g=new THREE.Group();g.position.set(x,0,z);scene.add(g);addLandmarkSolid(x,z,w+5,d+5);
  const h=floors*3.5,glassMat=mat(color,.28,.16),fin=mat("#d7d3c6",.48,.25);
