@@ -1,5 +1,4 @@
 import * as THREE from "three";
-import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { GREATER_ACCRA_ROAD_PATHS, GREATER_ACCRA_MAP_NODES, GREATER_ACCRA_COASTLINE, GREATER_ACCRA_REGION_ANCHORS } from "./world/greaterAccraLayout";
 import { GREATER_ACCRA_LOCAL_ROADS } from "./world/greaterAccraRoadData";
 import { GREATER_ACCRA_RAIL_ROUTES, GREATER_ACCRA_RAIL_NODES } from "./world/railNetwork";
@@ -283,11 +282,12 @@ const torso=new THREE.Mesh(new THREE.CapsuleGeometry(.34,.72,4,8),shirt);torso.p
 for(const side of [-1,1]){const leg=new THREE.Mesh(new THREE.CapsuleGeometry(.13,.68,3,7),trousers);leg.position.set(side*.16,.55,0);fallback.add(leg);const arm=new THREE.Mesh(new THREE.CapsuleGeometry(.11,.65,3,7),skin);arm.position.set(side*.43,1.28,0);fallback.add(arm);}
 let activeModel:THREE.Object3D|null=null,modelRequest=0;
 let playerMixer:THREE.AnimationMixer|null=null,idleAction:THREE.AnimationAction|null=null,walkAction:THREE.AnimationAction|null=null,isWalking=false;
-function loadCharacterModel(presentation:"masculine"|"feminine"){
+async function loadCharacterModel(presentation:"masculine"|"feminine"){
  const request=++modelRequest;fallback.visible=true;
- const path=presentation==="feminine"?"/assets/characters/akwantuo-female.glb":"/assets/characters/akwantuo-male.glb";
- new GLTFLoader().load(path,gltf=>{
-  if(request!==modelRequest)return;
+ try{
+  const {GLTFLoader}=await import("three/addons/loaders/GLTFLoader.js");
+  const loader=new GLTFLoader(),path=presentation==="feminine"?"/assets/characters/akwantuo-female.glb":"/assets/characters/akwantuo-male.glb";
+  const gltf=await loader.loadAsync(path);if(request!==modelRequest)return;
   if(playerMixer&&activeModel){playerMixer.stopAllAction();playerMixer.uncacheRoot(activeModel);}
   playerMixer=null;idleAction=null;walkAction=null;isWalking=false;
   if(activeModel){player.remove(activeModel);activeModel=null;}
@@ -295,19 +295,16 @@ function loadCharacterModel(presentation:"masculine"|"feminine"){
   model.scale.set(scale*widthScale,scale*heightScale,scale*widthScale);model.position.y=-bounds.min.y*scale*heightScale;
   model.traverse(o=>{if((o as THREE.Mesh).isMesh){(o as THREE.Mesh).castShadow=true;(o as THREE.Mesh).receiveShadow=true;}});
   player.add(model);activeModel=model;fallback.visible=false;
-  void (async()=>{
-   try{
-    const loader=new GLTFLoader();
-    const [idle,walk]=await Promise.all([loader.loadAsync("/assets/characters/idle.glb"),loader.loadAsync("/assets/characters/walk.glb")]);
-    if(request!==modelRequest)return;
-    playerMixer=new THREE.AnimationMixer(model);
-    const idleClip=idle.animations[0]?.clone(),walkClip=walk.animations[0]?.clone();
-    if(idleClip)idleAction=playerMixer.clipAction(idleClip);
-    if(walkClip)walkAction=playerMixer.clipAction(walkClip);
-    idleAction?.play();
-   }catch(error){console.warn("AKWANTUO character animations could not load",error);}
-  })();
- },undefined,e=>console.warn("Character model fallback",e));
+  try{
+   const [idle,walk]=await Promise.all([loader.loadAsync("/assets/characters/idle.glb"),loader.loadAsync("/assets/characters/walk.glb")]);
+   if(request!==modelRequest)return;
+   playerMixer=new THREE.AnimationMixer(model);
+   const idleClip=idle.animations[0]?.clone(),walkClip=walk.animations[0]?.clone();
+   if(idleClip)idleAction=playerMixer.clipAction(idleClip);
+   if(walkClip)walkAction=playerMixer.clipAction(walkClip);
+   idleAction?.play();
+  }catch(error){console.warn("AKWANTUO character animations could not load",error);}
+ }catch(error){console.warn("Character model fallback",error);}
 }
 type Appearance={presentation:"masculine"|"feminine";age:number;complexion:string;build:string;hairstyle:string;outfit:string};
 let appearance:Appearance={presentation:"masculine",age:25,complexion:"dark",build:"average",hairstyle:"short-natural",outfit:"street-green"};
