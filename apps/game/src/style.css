@@ -1,147 +1,183 @@
-:root {
-  color-scheme: dark;
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #101a1b;
-  color: #f5f1e8;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  --gold: #d5b477;
-  --muted: rgba(245, 241, 232, .64);
+/* Ghana-first opening: real game scene, clear motivation and truthful feature previews. */
+.menu-panel {
+  top: 50%; left: 5vw; right: 5vw; width: auto; max-width: 1440px; margin: 0 auto;
+  transform: translateY(-46%); display: grid; grid-template-columns: minmax(320px, .88fr) minmax(420px, 1.12fr);
+  align-items: center; gap: clamp(28px, 5vw, 76px); max-height: calc(100dvh - 150px);
+  overflow-y: auto; padding: clamp(18px, 2.5vw, 34px) 0; scrollbar-width: thin;
+}
+.menu-story { min-width: 0; }
+.menu-story .eyebrow { display: inline-flex; align-items: center; gap: 10px; }
+.menu-story .eyebrow::before { content: ""; width: 26px; height: 2px; background: #ce3434; box-shadow: 9px 0 #e0c14d, 18px 0 #218653; }
+.menu-panel h1 { margin: 16px 0 0; font-size: clamp(48px, 6.5vw, 88px); letter-spacing: .1em; line-height: .94; text-shadow: 0 5px 28px rgba(0,0,0,.32); }
+.menu-subtitle { margin: 18px 0 17px; color: #f0d9a8; font: italic clamp(18px, 2vw, 23px) Georgia, serif; }
+.menu-intro { max-width: 510px; margin: 0 0 19px; color: rgba(255,255,255,.83); font-size: clamp(12px, 1.1vw, 14px); line-height: 1.8; }
+.menu-promise { max-width: 480px; margin: 0 0 23px; padding-left: 13px; border-left: 2px solid var(--gold); color: #f4d79e; font-size: 9px; line-height: 1.6; font-weight: 800; letter-spacing: .14em; }
+.menu-actions { width: min(330px, 100%); gap: 9px; }
+.menu-actions button { min-height: 47px; }
+.build-note { margin-top: 21px; line-height: 1.6; }
+.world-preparation-status { margin: 7px 0 0; color: #e7d29e; font-size: 9px; line-height: 1.5; }
+.ghana-showcase { min-width: 0; padding: clamp(16px, 2vw, 25px); background: linear-gradient(145deg, rgba(18,31,30,.88), rgba(10,17,17,.82)); border: 1px solid rgba(238,214,169,.23); box-shadow: 0 22px 65px rgba(0,0,0,.3); backdrop-filter: blur(9px); }
+.showcase-heading { display: flex; justify-content: space-between; gap: 10px; margin: 0 0 12px; color: #f2d69f; font-size: 8px; font-weight: 800; letter-spacing: .15em; }
+.showcase-heading span:last-child { color: rgba(255,255,255,.58); text-align: right; }
+.world-preview-panel {
+  min-height: clamp(190px, 29vh, 310px); padding: clamp(18px, 3vw, 32px); display: flex; flex-direction: column;
+  justify-content: flex-end; align-items: flex-start; gap: 13px; position: relative; overflow: hidden;
+  background: linear-gradient(120deg, rgba(9,18,18,.38), rgba(9,18,18,.9)),
+    radial-gradient(ellipse at 72% 18%, rgba(216,177,94,.3), transparent 42%),
+    linear-gradient(145deg, #38574d, #172c2b 58%, #101918);
+  border: 1px solid rgba(238,214,169,.2);
+}
+.world-preview-panel::before, .world-preview-panel::after { content: ""; position: absolute; pointer-events: none; transform: rotate(-19deg); border: 1px solid rgba(240,215,164,.17); }
+.world-preview-panel::before { width: 140%; height: 44%; left: -20%; top: 17%; background: linear-gradient(90deg, transparent 48%, rgba(241,215,164,.22) 49%, rgba(241,215,164,.22) 51%, transparent 52%); }
+.world-preview-panel::after { width: 115%; height: 20%; left: -8%; top: 58%; border-color: rgba(255,255,255,.13); }
+.preview-live { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 7px; color: #f0d9a8; font-size: 8px; font-weight: 800; letter-spacing: .16em; }
+.preview-live i { width: 7px; height: 7px; border-radius: 50%; background: #68c58b; box-shadow: 0 0 12px rgba(104,197,139,.7); }
+.world-preview-panel strong { position: relative; z-index: 1; color: #fff4dd; font-size: clamp(25px, 4vw, 46px); line-height: .98; letter-spacing: .04em; text-shadow: 0 4px 20px rgba(0,0,0,.4); }
+.preview-caption { position: relative; z-index: 1; max-width: 360px; color: rgba(255,255,255,.78); font-size: 11px; line-height: 1.6; }
+.world-feature-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; margin-top: 9px; }
+.world-feature { min-width: 0; padding: 12px 10px; display: flex; flex-direction: column; gap: 7px; background: rgba(255,255,255,.045); border: 1px solid rgba(238,214,169,.13); }
+.feature-index { color: #e5c67f; font-size: 8px; letter-spacing: .12em; }
+.world-feature strong { color: #fff0d0; font-size: 8px; line-height: 1.4; letter-spacing: .08em; }
+.world-feature small { color: rgba(255,255,255,.62); font-size: 8px; line-height: 1.5; }
+.gallery-credit { margin: 10px 0 0; color: rgba(255,255,255,.48); font-size: 8px; line-height: 1.55; }
+.boot-caption { max-width: 90vw; text-align: center; }
+@media (max-width: 900px) {
+  .menu-panel { left: 4vw; right: 4vw; grid-template-columns: minmax(260px, .82fr) minmax(320px, 1.18fr); gap: 22px; }
+  .menu-panel h1 { font-size: clamp(42px, 7vw, 65px); }
+  .menu-subtitle { margin-bottom: 13px; }
+  .menu-intro { font-size: 11px; }
+}
+@media (max-width: 650px) {
+  html, body, #app { overflow: hidden; }
+  .menu-panel {
+    top: 76px; bottom: 56px; left: 18px; right: 18px; width: auto; max-height: none;
+    transform: none; display: flex; flex-direction: column; align-items: stretch; gap: 17px;
+    padding: 12px 0 22px; overflow-y: auto; overscroll-behavior: contain;
+  }
+  .menu-story { flex: 0 0 auto; }
+  .menu-panel h1 { margin-top: 9px; font-size: clamp(42px, 12vw, 58px); }
+  .menu-subtitle { margin: 10px 0; font-size: 17px; }
+  .menu-intro { max-width: none; margin-bottom: 11px; font-size: 11px; line-height: 1.6; }
+  .menu-promise { margin-bottom: 13px; font-size: 8px; }
+  .menu-actions { width: 100%; grid-template-columns: 1fr 1fr; gap: 7px; }
+  .menu-actions button { min-height: 43px; padding: 0 11px; font-size: 8px; }
+  .menu-actions button:first-child { grid-column: 1 / -1; }
+  .menu-actions button small { font-size: 7px; }
+  .build-note { margin-top: 11px; font-size: 7px; }
+  .ghana-showcase { padding: 11px; }
+  .showcase-heading { font-size: 7px; }
+  .world-preview-panel { min-height: 190px; }
+  .world-feature-grid { grid-template-columns: 1fr; }
+  .world-feature { padding: 10px; display: grid; grid-template-columns: 24px 1fr; column-gap: 8px; }
+  .world-feature small { grid-column: 2; }
+  .gallery-credit { font-size: 7px; }
+  .footer-bar { z-index: 3; background: linear-gradient(0deg, rgba(9,15,15,.9), transparent); padding-top: 10px; }
+}
+@media (max-height: 720px) and (min-width: 651px) {
+  .menu-panel { max-height: calc(100dvh - 115px); gap: 22px; }
+  .world-preview-panel { min-height: 175px; }
+  .menu-panel h1 { font-size: clamp(43px, 5vw, 66px); }
+  .menu-subtitle { margin: 10px 0 12px; }
+  .menu-intro { line-height: 1.55; }
 }
 
-* { box-sizing: border-box; }
-html, body, #app { width: 100%; height: 100%; margin: 0; overflow: hidden; }
-body { min-width: 320px; background: #101a1b; }
-button { font: inherit; }
-.is-hidden { display: none !important; }
-
+/* Ghanaian identity carried through the first loading moment. */
 .boot-screen {
-  position: fixed; inset: 0; z-index: 10; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; padding: 24px;
-  background: radial-gradient(ellipse at 50% 42%, #253637 0%, #152324 45%, #0d1516 100%);
-  animation: fade-in .8s ease both;
+  background:
+    radial-gradient(ellipse at 50% 42%, rgba(38,61,55,.96) 0%, rgba(18,32,30,.98) 48%, #0b1212 100%);
 }
-.boot-mark {
-  display: grid; place-items: center; width: 64px; height: 64px; margin-bottom: 25px;
-  border: 1px solid rgba(213,180,119,.75); color: var(--gold); font-family: Georgia, serif;
-  font-size: 38px; transform: rotate(45deg);
+.boot-screen::before {
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, #ce3434 0 33.33%, #e0c14d 33.33% 66.66%, #218653 66.66% 100%);
 }
-.boot-mark::first-letter { transform: rotate(-45deg); }
-.eyebrow { color: var(--gold); font-size: 10px; letter-spacing: .25em; font-weight: 700; }
-.boot-screen h1 { margin: 13px 0 3px; font-size: clamp(32px, 8vw, 54px); letter-spacing: .19em; font-weight: 500; }
-.boot-caption { margin: 0; color: var(--muted); letter-spacing: .12em; font-family: Georgia, serif; font-style: italic; }
-.boot-track { width: min(230px, 65vw); height: 2px; margin-top: 48px; background: rgba(255,255,255,.14); overflow: hidden; }
-.boot-track span { display: block; width: 40%; height: 100%; background: var(--gold); animation: loading 1.6s ease-in-out infinite; }
-.boot-status { margin-top: 14px; color: var(--muted); font-size: 11px; letter-spacing: .08em; }
-
-.game-shell { position: fixed; inset: 0; isolation: isolate; background: #263b3b; }
-#world-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; outline: none; }
-.world-vignette { position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(90deg, rgba(9,16,17,.83) 0%, rgba(9,16,17,.57) 42%, rgba(9,13,14,.06) 100%), linear-gradient(0deg, rgba(7,13,14,.55), transparent 38%, rgba(7,13,14,.22)); }
-.game-shell.is-playing .world-vignette { background: linear-gradient(0deg, rgba(7,13,14,.16), transparent 34%, rgba(7,13,14,.04)); }
-.topbar, .footer-bar { position: absolute; z-index: 2; left: 5vw; right: 5vw; display: flex; align-items: center; justify-content: space-between; }
-.topbar { top: 34px; }
-.wordmark { color: #fff; text-decoration: none; font-weight: 750; letter-spacing: .16em; font-size: 17px; }
-.wordmark span { color: var(--gold); }
-.online-label, .footer-bar { color: rgba(255,255,255,.66); font-size: 9px; letter-spacing: .16em; }
-.online-label { display: flex; align-items: center; gap: 9px; }
-.online-label i { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 12px var(--gold); }
-.menu-panel { position: absolute; z-index: 2; top: 50%; left: clamp(25px, 10vw, 150px); width: min(440px, 80vw); transform: translateY(-43%); }
-.menu-panel h1 { margin: 12px 0 0; font-size: clamp(43px, 8vw, 76px); line-height: .98; letter-spacing: .12em; font-weight: 550; }
-.menu-subtitle { margin: 15px 0 38px; color: rgba(255,255,255,.75); font: italic 20px Georgia, serif; }
-.menu-actions { display: grid; gap: 10px; width: min(300px, 100%); }
-.menu-actions button { min-height: 49px; padding: 0 18px; text-align: left; letter-spacing: .12em; font-size: 10px; }
-.primary-action { display: flex; justify-content: space-between; align-items: center; border: 0; background: var(--gold); color: #1b2422; font-weight: 800; cursor: pointer; transition: background .2s, transform .2s; }
-.primary-action:hover { background: #e6ca94; transform: translateX(4px); }
-.primary-action span { font-size: 19px; }
-.secondary-action { display: flex; justify-content: space-between; align-items: center; color: rgba(255,255,255,.88); border: 1px solid rgba(255,255,255,.24); background: rgba(10,18,18,.22); }
-.secondary-action:disabled { opacity: .65; cursor: not-allowed; }
-.secondary-action small { color: var(--gold); font-size: 8px; letter-spacing: .1em; }
-.build-note { margin-top: 29px; color: rgba(255,255,255,.5); font-size: 8px; letter-spacing: .16em; }
-.build-note span { color: var(--gold); padding: 0 5px; }
-.footer-bar { bottom: 25px; font-size: 8px; }
-.notice { position: absolute; z-index: 4; left: 50%; bottom: 65px; width: min(440px, 88vw); padding: 13px 16px; transform: translate(-50%, 12px); opacity: 0; pointer-events: none; background: rgba(13,22,22,.92); border: 1px solid rgba(213,180,119,.45); color: #f5f1e8; font-size: 12px; line-height: 1.5; transition: opacity .25s, transform .25s; }
-.notice.is-visible { opacity: 1; transform: translate(-50%, 0); }
-
-@keyframes loading { from { transform: translateX(-110%); } to { transform: translateX(260%); } }
-@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-
-@media (max-width: 600px) {
-  .topbar { top: max(22px, env(safe-area-inset-top)); }
-  .online-label { font-size: 7px; }
-  .world-vignette { background: linear-gradient(90deg, rgba(9,16,17,.78), rgba(9,16,17,.3)), linear-gradient(0deg, rgba(7,13,14,.56), transparent 50%); }
-  .menu-panel { top: 48%; left: 25px; width: calc(100vw - 50px); }
-  .menu-panel h1 { font-size: clamp(39px, 12vw, 58px); letter-spacing: .09em; }
-  .menu-subtitle { margin-bottom: 27px; font-size: 17px; }
-  .menu-actions { width: min(290px, 100%); }
-  .footer-bar { bottom: max(16px, env(safe-area-inset-bottom)); gap: 12px; font-size: 6px; }
-}
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+.boot-mark { position: relative; border-color: rgba(224,193,77,.72); }
+.boot-mark::after {
+  content: ""; position: absolute; left: -15px; right: -15px; bottom: -11px; height: 2px;
+  background: linear-gradient(90deg, #ce3434 0 33.33%, #e0c14d 33.33% 66.66%, #218653 66.66% 100%);
+  transform: rotate(-45deg);
 }
 
 
-/* In-world HUD and touch controls */
-.game-hud { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
-.hud-top { position: absolute; top: 78px; left: 5vw; right: 5vw; display: flex; justify-content: space-between; color: rgba(255,255,255,.78); font-size: 9px; letter-spacing: .16em; text-shadow: 0 2px 8px rgba(0,0,0,.5); }
-.hud-location { font-weight: 750; }
-.hud-location i { color: var(--gold); font-style: normal; padding: 0 5px; }
-.hud-mode { color: var(--gold); }
-.control-hint { position: absolute; right: 5vw; bottom: 28px; color: rgba(255,255,255,.7); font-size: 8px; letter-spacing: .13em; text-shadow: 0 2px 8px #000; }
-.touch-controls { display: none; position: absolute; inset: auto 0 max(22px, env(safe-area-inset-bottom)); align-items: end; justify-content: space-between; padding: 0 24px; pointer-events: none; }
-.joystick { width: 116px; height: 116px; border: 1px solid rgba(255,255,255,.5); border-radius: 50%; background: rgba(0,0,0,.08); box-shadow: inset 0 0 18px rgba(0,0,0,.08); display: grid; place-items: center; pointer-events: auto; touch-action: none; }
-.joystick-stick { width: 48px; height: 48px; border: 1px solid rgba(255,255,255,.72); border-radius: 50%; background: rgba(255,255,255,.10); box-shadow: 0 2px 8px rgba(0,0,0,.16); }
-.jump-button { width: 66px; height: 66px; margin: 0 3px 13px 0; border: 1px solid rgba(255,255,255,.72); border-radius: 50%; background: rgba(0,0,0,.12); color: #fff; text-shadow: 0 1px 4px #000; font-size: 10px; font-weight: 850; letter-spacing: .08em; pointer-events: auto; touch-action: none; }
-.jump-button:active { transform: scale(.94); background: rgba(255,255,255,.2); }
-
-@media (max-width: 700px), (pointer: coarse) {
-  .hud-top { top: max(65px, env(safe-area-inset-top)); left: 22px; right: 22px; font-size: 7px; }
-  .touch-controls { display: flex; }
-  .control-hint { right: 0; left: 0; bottom: calc(max(22px, env(safe-area-inset-bottom)) + 126px); text-align: center; font-size: 7px; }
-  .topbar { pointer-events: none; }
-  .online-label { opacity: .7; }
+/* Distinct Ghanaian visual language: woven kente geometry, flag colours and Adinkra-inspired forms. */
+.topbar { border-bottom: 1px solid rgba(235,205,132,.12); }
+.topbar::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -2px; height: 2px;
+  background: linear-gradient(90deg, #c83a35 0 33.33%, #e4bd45 33.33% 66.66%, #258454 66.66% 100%);
+  opacity: .9;
+}
+.wordmark { position: relative; }
+.wordmark::after {
+  content: "★"; display: inline-grid; place-items: center; margin-left: 9px;
+  width: 15px; height: 15px; color: #111; background: #e4bd45;
+  font-size: 10px; line-height: 1; vertical-align: 2px; transform: rotate(45deg);
+}
+.menu-story { position: relative; }
+.menu-story::before {
+  content: ""; display: block; width: 74px; height: 8px; margin-bottom: 16px;
+  background: repeating-linear-gradient(90deg,
+    #c83a35 0 8px, #e4bd45 8px 16px, #258454 16px 24px, #171717 24px 32px);
+  box-shadow: 0 3px 0 rgba(255,255,255,.12);
+}
+.menu-story .eyebrow { color: #e8c979; }
+.menu-subtitle { color: #f0d9a8; }
+.ghana-showcase {
+  position: relative; border-top: 3px solid transparent;
+  border-image: linear-gradient(90deg,#c83a35 0 33.33%,#e4bd45 33.33% 66.66%,#258454 66.66% 100%) 1;
+}
+.ghana-showcase::after {
+  content: ""; position: absolute; top: 0; right: 0; width: 92px; height: 92px;
+  opacity: .12; pointer-events: none;
+  background:
+    repeating-linear-gradient(45deg, transparent 0 7px, #e4bd45 7px 9px, transparent 9px 16px),
+    repeating-linear-gradient(-45deg, transparent 0 7px, #e4bd45 7px 9px, transparent 9px 16px);
+  mask-image: linear-gradient(135deg,#000,transparent 78%);
+}
+.world-preview-panel {
+  background:
+    repeating-linear-gradient(45deg, rgba(225,190,92,.08) 0 2px, transparent 2px 13px),
+    repeating-linear-gradient(-45deg, rgba(202,59,51,.06) 0 2px, transparent 2px 13px),
+    linear-gradient(120deg, rgba(9,18,18,.38), rgba(9,18,18,.9)),
+    radial-gradient(ellipse at 72% 18%, rgba(216,177,94,.3), transparent 42%),
+    linear-gradient(145deg, #38574d, #172c2b 58%, #101918);
+}
+.world-feature { border-bottom: 2px solid rgba(228,189,69,.35); }
+.build-note { color: #e8d9b8; }
+@media (max-width: 650px) {
+  .menu-story::before { margin-bottom: 10px; }
+  .wordmark::after { width: 12px; height: 12px; font-size: 8px; }
 }
 
-
-/* Character creation panel */
-.character-panel { position: absolute; z-index: 6; inset: 0; display: grid; place-items: center; padding: 22px; background: rgba(5, 11, 12, .78); backdrop-filter: blur(10px); overflow-y: auto; }
-.character-card { width: min(520px, 100%); max-height: min(92dvh, 780px); overflow-y: auto; padding: clamp(20px, 4vw, 32px); background: linear-gradient(145deg, #1d302e, #111c1c); border: 1px solid rgba(213,180,119,.42); box-shadow: 0 24px 80px rgba(0,0,0,.45); }
-.character-heading { display: flex; justify-content: space-between; align-items: start; gap: 18px; margin-bottom: 22px; }
-.character-heading h2 { margin: 8px 0 0; font-size: clamp(24px, 6vw, 32px); font-weight: 550; }
-.character-close { width: 38px; height: 38px; border: 1px solid rgba(255,255,255,.22); background: transparent; color: white; font-size: 25px; cursor: pointer; }
-#character-form { display: grid; grid-template-columns: 1fr 1fr; gap: 15px 12px; }
-#account-form { display: grid; gap: 14px; }
-#account-form label { display: grid; gap: 7px; color: rgba(255,255,255,.78); font-size: 10px; letter-spacing: .08em; }
-#account-form input { width: 100%; min-height: 43px; padding: 0 11px; border: 1px solid rgba(255,255,255,.19); background: #101a19; color: #f5f1e8; font: inherit; font-size: 13px; box-sizing: border-box; }
-#account-form input:focus { outline: 1px solid var(--gold); border-color: var(--gold); }
-#account-form .menu-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-#account-form #account-signout { grid-column: 1 / -1; }
-#account-form button:disabled { opacity: .55; cursor: wait; }
-#character-form label { display: grid; gap: 7px; color: rgba(255,255,255,.78); font-size: 10px; letter-spacing: .08em; }
-#character-form input, #character-form select { width: 100%; min-height: 43px; padding: 0 11px; border: 1px solid rgba(255,255,255,.19); border-radius: 0; background: #101a19; color: #f5f1e8; font: inherit; font-size: 13px; }
-#character-form input:focus, #character-form select:focus { outline: 1px solid var(--gold); border-color: var(--gold); }
-.field-note { color: var(--gold); font-size: 8px; letter-spacing: .03em; }
-.character-footnote { grid-column: 1 / -1; margin: 2px 0; color: rgba(255,255,255,.53); font-size: 10px; line-height: 1.6; }
-.character-save { grid-column: 1 / -1; min-height: 48px; padding: 0 15px; cursor: pointer; }
-@media (max-width: 480px) { .character-panel { padding: 12px; align-items: start; } .character-card { margin: auto 0; max-height: 94dvh; padding: 19px; } #character-form { grid-template-columns: 1fr; gap: 12px; } #character-form label { gap: 5px; } #character-form input, #character-form select { min-height: 42px; } }
-
-
-/* Playable vehicle interaction controls */
-.hud-actions { display: flex; align-items: end; gap: 9px; pointer-events: none; }
-.interact-button, .vehicle-view-button, .vehicle-brake-button {
-  min-width: 62px; height: 48px; padding: 0 12px; border: 1px solid rgba(255,255,255,.72);
-  background: rgba(0,0,0,.12); color: #fff; text-shadow: 0 1px 4px #000; font-size: 9px; font-weight: 800;
-  letter-spacing: .08em; pointer-events: auto; touch-action: none;
+.ghana-identity-line {
+  display: flex; align-items: center; gap: 9px; margin: 0 0 9px;
+  color: rgba(255,242,214,.72); font-size: 8px; font-weight: 900; letter-spacing: .22em;
 }
-.interact-button:active, .vehicle-view-button:active, .vehicle-brake-button:active { transform: scale(.95); }
-@media (max-width: 700px), (pointer: coarse) {
-  .touch-controls { align-items: end; }
-  .hud-actions { gap: 7px; }
-  .interact-button, .vehicle-view-button, .vehicle-brake-button { min-width: 55px; height: 45px; font-size: 8px; }
+.ghana-identity-line span:first-child { color: #e9c44f; }
+.ghana-identity-line i { color: #c94a3d; font-style: normal; font-size: 10px; }
+
+
+/* Adinkra symbols are treated as named cultural marks, not anonymous decoration. */
+.adinkra-strip {
+  display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px;
+  max-width: 510px; margin: 0 0 20px;
 }
-
-/* Keep the boot overlay dismissible: its base display rule must not override the hidden state. */
-.boot-screen.is-hidden { display: none !important; }
-
-/* Native hidden state must win over component display declarations. */
-[hidden] { display: none !important; }
+.adinkra-mark {
+  min-width: 0; min-height: 92px; padding: 9px 6px 8px; display: flex;
+  flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  text-align: center; color: #e8c979; background: rgba(224,193,77,.055);
+  border: 1px solid rgba(224,193,77,.24); position: relative;
+}
+.adinkra-mark::before, .adinkra-mark::after {
+  content: ""; position: absolute; width: 7px; height: 7px; border: 1px solid #b88d43;
+  transform: rotate(45deg); opacity: .75;
+}
+.adinkra-mark::before { top: 4px; left: 4px; }
+.adinkra-mark::after { right: 4px; bottom: 4px; }
+.adinkra-mark svg { width: 31px; height: 31px; color: #f0d69a; }
+.adinkra-mark span { font-size: 8px; font-weight: 900; letter-spacing: .1em; }
+.adinkra-mark small { color: rgba(255,255,255,.72); font-size: 8px; line-height: 1.35; }
+@media (max-width: 650px) {
+  .adinkra-strip { gap: 5px; margin-bottom: 12px; }
+  .adinkra-mark { min-height: 88px; padding: 8px 4px; }
+  .adinkra-mark svg { width: 27px; height: 27px; }
+  .adinkra-mark span { font-size: 8px; }\n  .adinkra-mark small { font-size: 7px; }
+}

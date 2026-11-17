@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#101a1b" />
     <meta name="description" content="AKWANTUO — A realistic Ghanaian open-world life simulation." />
-    <title>AKWANTUO — A World of Your Own</title>
+    <title>AKWANTUO — A Ghanaian world. Your own journey.</title>
   </head>
   <body>
     <main id="app">
@@ -14,7 +14,7 @@
         <p class="eyebrow">A GHANAIAN OPEN-WORLD EXPERIENCE</p>
         <h1>AKWANTUO</h1>
         <p class="boot-caption">A World of Your Own</p>
-        <div class="boot-track"><span></span></div>
+        <div class="boot-track" id="boot-track" role="progressbar" aria-label="Loading AKWANTUO" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="boot-progress"></span></div>
         <p class="boot-status" id="boot-status">Preparing your world…</p>
       </section>
       <section class="game-shell is-hidden" id="game-shell">
@@ -32,17 +32,52 @@
           <a class="wordmark" href="#" aria-label="AKWANTUO home">AKWANTUO<span>.</span></a>
           <span class="online-label"><i></i> WORLD PREVIEW</span>
         </header>
-        <section class="menu-panel" id="main-menu">
-          <p class="eyebrow">YOUR STORY STARTS HERE</p>
-          <h1>AKWANTUO</h1>
-          <p class="menu-subtitle">A World of Your Own.</p>
-          <div class="menu-actions">
-            <button class="primary-action" id="play-button" type="button">ENTER WORLD <span>↗</span></button>
-            <button class="secondary-action" id="character-button" type="button">CHARACTER <small>CREATE / EDIT</small></button>
-            <button class="secondary-action" id="account-button" type="button">ACCOUNT <small>ONLINE SAVE</small></button>
-            <button class="secondary-action" type="button" disabled>SETTINGS <small>COMING SOON</small></button>
+        <section class="menu-panel" id="main-menu" aria-labelledby="main-menu-title">
+          <div class="menu-story">
+            <p class="ghana-identity-line"><span>GHANA</span><i>✦</i><span>CULTURE</span><i>✦</i><span>COMMUNITY</span></p>
+            <p class="eyebrow">GHANA IS YOUR WORLD</p>
+            <h1 id="main-menu-title">AKWANTUO</h1>
+            <p class="menu-subtitle">Your life. Your journey. Your Ghana.</p>
+            <p class="menu-intro">Step into a Ghana-inspired open world. Create your character, explore a growing city, take to the roads, discover new places and pursue opportunities. Build your own path through a world shaped by Ghanaian life, culture and ambition.</p>
+            <p class="menu-promise">EXPLORE THE STREETS. BUILD YOUR STORY. LIVE YOUR AKWANTUO.</p>
+            <!-- Adinkra heritage marks: each symbol is named and its meaning is shown. -->
+            <div class="adinkra-strip" aria-label="Ghanaian Adinkra symbols">
+              <div class="adinkra-mark">
+                <svg viewBox="0 0 64 64" role="img" aria-label="Gye Nyame symbol"><path d="M39 7c-13 0-22 8-22 18 0 7 5 11 13 11h10c7 0 11 4 11 10 0 7-7 12-17 12" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><path d="M27 8v12m10-12v12M27 44v12m10-12v12M9 27h14m18 0h14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+                <span>GYE NYAME</span><small>Faith &amp; divine supremacy</small>
+              </div>
+              <div class="adinkra-mark">
+                <svg viewBox="0 0 64 64" role="img" aria-label="Sankofa bird symbol"><path d="M13 39c8-2 12-8 15-16 3 7 9 11 18 10l8-7-2 13-10 5-8-3-7 12-6-2 3-11-11 1z" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linejoin="round"/><path d="M28 23c-2-8 3-13 10-13 5 0 8 3 9 7l-7-2-4 6m-14 20 11 1m-4 6 7 5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><circle cx="43" cy="15" r="1.8" fill="currentColor"/></svg>
+                <span>SANKOFA</span><small>Learn from the past</small>
+              </div>
+              <div class="adinkra-mark">
+                <svg viewBox="0 0 64 64" role="img" aria-label="Dwennimmen ram horns symbol"><path d="M32 31C17 31 9 23 12 13c2-7 12-8 15-1 2 5-1 9-5 9-3 0-5-3-3-5M32 31c15 0 23-8 20-18-2-7-12-8-15-1-2 5 1 9 5 9 3 0 5-3 3-5M32 33C17 33 9 41 12 51c2 7 12 8 15 1 2-5-1-9-5-9-3 0-5 3-3 5M32 33c15 0 23 8 20 18-2 7-12 8-15 1-2-5 1-9 5-9 3 0 5 3 3 5" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span>DWENNIMMEN</span><small>Humility &amp; strength</small>
+              </div>
+            </div>
+            <div class="menu-actions">
+              <button class="primary-action" id="play-button" type="button">ENTER WORLD <span>↗</span></button>
+              <button class="secondary-action" id="character-button" type="button">CHARACTER <small>CREATE / EDIT</small></button>
+              <button class="secondary-action" id="account-button" type="button">ACCOUNT <small>ONLINE SAVE</small></button>
+              <button class="secondary-action" type="button" disabled>SETTINGS <small>COMING SOON</small></button>
+            </div>
+            <p class="build-note">AN OPEN-WORLD LIFE SIMULATION IN DEVELOPMENT <span>•</span> GHANA</p>
+            <p class="world-preparation-status" id="world-preparation-status" role="status">Preparing Greater Accra landmarks and scenery…</p>
           </div>
-          <p class="build-note">EARLY DEVELOPMENT BUILD <span>•</span> GHANA</p>
+          <aside class="ghana-showcase" aria-label="AKWANTUO in-game world preview">
+            <div class="showcase-heading"><span>THE WORLD INSIDE AKWANTUO</span><span>WORLD IN DEVELOPMENT</span></div>
+            <div class="world-preview-panel">
+              <span class="preview-live"><i></i> AKWANTUO WORLD CONCEPT</span>
+              <strong>ONE WORLD.<br />YOUR OWN STORY.</strong>
+              <span class="preview-caption">Explore the roads, neighbourhoods and places being built inside AKWANTUO.</span>
+            </div>
+            <div class="world-feature-grid">
+              <div class="world-feature"><span class="feature-index">01</span><strong>ROADS &amp; INTERCHANGES</strong><small>Explore the growing road network, from local streets to major interchanges.</small></div>
+              <div class="world-feature"><span class="feature-index">02</span><strong>NEIGHBOURHOODS</strong><small>Discover the neighbourhoods and landmarks being created for this world.</small></div>
+              <div class="world-feature"><span class="feature-index">03</span><strong>YOUR LIFE</strong><small>Choose who you become and shape your own journey.</small></div>
+            </div>
+            <p class="gallery-credit">This panel is a design introduction, not a location screenshot. Genuine AKWANTUO in-game location images will appear here after those places are built and captured.</p>
+          </aside>
         </section>
         <section class="character-panel is-hidden" id="character-panel" aria-hidden="true" aria-labelledby="character-title">
           <div class="character-card">

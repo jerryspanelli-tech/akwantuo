@@ -15,16 +15,16 @@ import { COMPLEXIONS, DEFAULT_APPEARANCE, OUTFITS, resolveAppearance, type Chara
 import { loadAppearance, saveAppearance } from "./character/appearanceStore";
 import { getHairstyle } from "./character/hairstyles";
 import { WORLD_CONFIG } from "./world/config";
-import { createAkwantuoDaylight } from "./world/lighting";
+import { createAkwantuoDaylight, registerAkwantuoShadowCaster } from "./world/lighting";
 import { GREATER_ACCRA_REGION_ANCHORS } from "./world/greaterAccraLayout";
 import { getCircleRampElevationAtPosition } from "./world/circleInterchangeElevatedLayout";
+import { getRoadSurfaceHeightAtPosition } from "./world/roadSurface";
 import { GREATER_ACCRA_REGIONS } from "./world/regions";
 import { WorldChunkManager } from "./world/chunkManager";
 import { ChunkRegistry } from "./world/chunkRegistry";
 import { clampToWorld, isBlocked } from "./world/collision";
 import { createPreviewWorld } from "./world/previewWorld";
 import { createGreaterAccraPlayableWorld } from "./world/greaterAccraPlayableWorld";
-import { createGreaterAccraWorldDetail } from "./world/ghanaianWorldDetail";
 import { createGreaterAccraLandmarks, createOsuLocalRoads } from "./world/greaterAccraLandmarks";
 import { getRoadVehicleAutopilotControl } from "./vehicles/roadVehicleAutopilot";
 import { advanceRoadVehicleDynamics, type RoadVehicleDynamicsState } from "./vehicles/roadVehicleDynamics";
@@ -79,6 +79,16 @@ if (import.meta.hot) {
 const bootScreen = document.querySelector<HTMLElement>("#boot-screen");
 const gameShell = document.querySelector<HTMLElement>("#game-shell");
 const bootStatus = document.querySelector<HTMLElement>("#boot-status");
+const bootProgress = document.querySelector<HTMLElement>("#boot-progress");
+const setBootProgress = (value: number, message: string): void => {
+  const progress = Math.max(0, Math.min(100, Math.round(value)));
+  if (bootStatus) bootStatus.textContent = message;
+  if (bootProgress) {
+    bootProgress.style.width = progress + "%";
+    bootProgress.setAttribute("aria-valuenow", String(progress));
+  }
+  document.documentElement.dataset.akwantuoStartupProgress = String(progress);
+};
 const hudLocation = document.querySelector<HTMLElement>(".hud-location");
 let locationRefreshElapsed = 0;
 let lastDisplayedRegionId = "";
@@ -448,6 +458,7 @@ function createPlayer(
       const importedNodes = [...(imported.transformNodes ?? []), ...imported.meshes];
       activeModelRoots = importedNodes.filter((node) => !node.parent);
       activeModelRoots.forEach((node) => { node.parent = root; });
+      registerAkwantuoShadowCaster(scene, root);
       for (const mesh of imported.meshes) {
         mesh.isPickable = false;
         mesh.receiveShadows = true;
@@ -477,6 +488,7 @@ function createPlayer(
       }
     }
   };
+  registerAkwantuoShadowCaster(scene, root);
   void loadCharacterModel(initialAppearance);
   const originalApplyAppearance = applyAppearance;
   const applyModelAppearance = (appearance: CharacterAppearance): void => {
@@ -608,7 +620,7 @@ async function start(): Promise<void> {
   document.documentElement.dataset.akwantuoStage6Checks = "passed";
   document.documentElement.dataset.akwantuoBuildingInteriorLinkCount = String(DISTRICT_BUILDINGS.filter((building) => building.interiorId).length);
 
-  bootStatus.textContent = "Preparing the 3D display…";
+  setBootProgress(3, "Preparing the 3D display…");
 
   // The game shell starts hidden behind the boot screen. Give the canvas a real
   // layout box before Babylon creates its rendering engine; some mobile browsers
@@ -633,13 +645,12 @@ async function start(): Promise<void> {
       "). The game display did not finish mounting.");
   }
 
-  bootStatus.textContent = "Starting the 3D world…";
+  setBootProgress(10, "Starting the 3D world…");
   let engine: Engine;
   try {
-    // Keep MSAA disabled for older mobile GPUs, but avoid the visibly soft
-    // half-resolution image previously used on every touch-first device.
-    // A 1.5 scaling factor is a middle ground between native resolution and
-    // the former 2x downscale while retaining the low-power WebGL profile.
+    // Keep MSAA disabled for older mobile GPUs, but render mobile gameplay
+    // at the canvas's full CSS-pixel resolution. A 1.5 hardware scaling level
+    // reduced each render dimension to two-thirds and made the world visibly soft.
     const mobileGraphicsProfile =
       window.matchMedia("(pointer: coarse)").matches ||
       Math.min(window.innerWidth, window.innerHeight) <= 820;
@@ -649,7 +660,7 @@ async function start(): Promise<void> {
       powerPreference: "low-power",
       adaptToDeviceRatio: false
     });
-    engine.setHardwareScalingLevel(mobileGraphicsProfile ? 1.5 : 1);
+    engine.setHardwareScalingLevel(1);
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
     document.documentElement.dataset.akwantuoWebglInitError = detail.slice(0, 240);
@@ -680,7 +691,7 @@ async function start(): Promise<void> {
     return generation === startupGeneration;
   };
 
-  bootStatus.textContent = "Preparing Accra streets…";
+  setBootProgress(18, "Preparing Accra streets…");
   const solidAreas = createPreviewWorld(scene, { includeGround: false, includeBuildings: false });
   const chunkRegistry = new ChunkRegistry();
   const chunkManager = new WorldChunkManager({
@@ -723,7 +734,7 @@ async function start(): Promise<void> {
   document.documentElement.dataset.akwantuoSpawnChunk = "1:-3";
   document.documentElement.dataset.akwantuoChunkGenerators = chunkRegistry.getGeneratorIds().join(",");
   if (!(await yieldToStartupFrame())) return;
-  bootStatus.textContent = "Building interiors…";
+  setBootProgress(25, "Preparing building access…");
   // Interior geometry is created on first entry and cached for later visits.
   // Blueprints and building links remain available without allocating room meshes.
   const interiorRooms = new Map<string, NonNullable<ReturnType<typeof createInteriorRoom>>>();
@@ -739,25 +750,14 @@ async function start(): Promise<void> {
   );
   document.documentElement.dataset.akwantuoStoreShopkeeperRig = "false";
   if (!(await yieldToStartupFrame())) return;
-  bootStatus.textContent = "Preparing the coastline and island…";
-  const privateIslandMeshCount = createAkwantuoPrivateIsland(scene);
-  document.documentElement.dataset.akwantuoPrivateIslandMeshCount = String(privateIslandMeshCount);
-  if (!(await yieldToStartupFrame())) return;
-  bootStatus.textContent = "Building Greater Accra roads and rail…";
+  setBootProgress(32, "Building Greater Accra roads and rail…");
   const greaterAccraTransportReport = createGreaterAccraPlayableWorld(scene);
   if (!(await yieldToStartupFrame())) return;
-  bootStatus.textContent = "Adding Accra landmarks and neighbourhood roads…";
-  const greaterAccraLandmarkReport = await createGreaterAccraLandmarks(scene);
-  solidAreas.push(...greaterAccraLandmarkReport.solidAreas);
-  // Add the four connected Osu local streets needed for nearby traffic. The full
-  // 35-road neighbourhood layer remains streamed into later map work.
+  setBootProgress(62, "Preparing nearby Accra streets…");
+  // Keep the connected Osu streets needed by the first traffic prototype in
+  // the essential scene. Larger landmarks are prepared after the menu appears.
   const osuLocalRoadCount = createOsuLocalRoads(scene);
   document.documentElement.dataset.playableLocalRoadCount = String(osuLocalRoadCount);
-  document.documentElement.dataset.greaterAccraLandmarkCount = String(greaterAccraLandmarkReport.landmarkCount);
-  document.documentElement.dataset.greaterAccraLandmarkLocalRoadCount = String(greaterAccraLandmarkReport.localRoadCount);
-  if (!(await yieldToStartupFrame())) return;
-  bootStatus.textContent = "Finishing Ghanaian scenery…";
-  createGreaterAccraWorldDetail(scene);
   if (!(await yieldToStartupFrame())) return;
   document.documentElement.dataset.playableRoadSurfaceMeshes = String(greaterAccraTransportReport.roadSurfaceMeshCount);
   document.documentElement.dataset.playableRoadMarkingMeshes = String(greaterAccraTransportReport.roadMarkingMeshCount);
@@ -767,46 +767,20 @@ async function start(): Promise<void> {
   document.documentElement.dataset.playableN6TownSigns = String(greaterAccraTransportReport.n6TownSignCount);
   document.documentElement.dataset.playableRailRoadCrossingCandidates = String(greaterAccraTransportReport.railRoadCrossingCandidateCount);
   document.documentElement.dataset.playablePublicTransportCorridors = String(greaterAccraTransportReport.publicTransportCorridorCount);
-  bootStatus.textContent = "Preparing public transport…";
+  setBootProgress(86, "Preparing public transport…");
   const playableRailDemo = createPlayableRailDemo(scene);
   if (!(await yieldToStartupFrame())) return;
   const greaterAccraMappedRailService = createGreaterAccraMappedRailService(scene);
   document.documentElement.dataset.playableMappedRailService = "true";
   document.documentElement.dataset.playableMappedRailBoardingOpen = String(greaterAccraMappedRailService.isBoardingOpen());
-  let activeAccountSession: AkwantuoSession | null;
-  try {
-    activeAccountSession = await getAkwantuoSession();
-  } catch (error) {
-    if (generation !== startupGeneration) return;
-    throw error;
-  }
-  if (generation !== startupGeneration) return;
+  // Local appearance is enough to construct the first playable scene. Cloud
+  // session refresh, profile and economy hydration run after the menu is ready.
+  let activeAccountSession: AkwantuoSession | null = null;
   let currentAppearance = loadAppearance(window.localStorage);
+  let hasEditedAppearance = false;
   let walletBalancePesewas = 0;
   let ownedGameAssetIds = new Set<string>();
   let shopStockById = new Map<string, number>();
-  if (activeAccountSession) {
-    try {
-      const cloudProfile = await loadPlayerProfile(activeAccountSession);
-      if (generation !== startupGeneration) return;
-      if (cloudProfile?.look) currentAppearance = resolveAppearance(cloudProfile.look);
-      const economy = await loadEconomyState(activeAccountSession);
-      if (generation !== startupGeneration) return;
-      walletBalancePesewas = economy.wallet?.balance_pesewas ?? 0;
-      ownedGameAssetIds = new Set(economy.owned_assets.map((asset) => asset.asset_id));
-      document.documentElement.dataset.akwantuoWalletPesewas = String(walletBalancePesewas);
-      document.documentElement.dataset.akwantuoOwnedAssetCount = String(ownedGameAssetIds.size);
-      const shopProducts = await loadShopProducts(activeAccountSession);
-      if (generation !== startupGeneration) return;
-      shopStockById = new Map(shopProducts.map((item) => [item.product_id, item.stock_quantity]));
-      if (accountStatus) accountStatus.textContent = `Signed in as ${activeAccountSession.user.email || "AKWANTUO player"}. Cloud saves are enabled.`;
-      if (accountSignOut) accountSignOut.classList.remove("is-hidden");
-      if (accountButton) accountButton.innerHTML = "ACCOUNT <small>CONNECTED</small>";
-    } catch (error) {
-      if (generation !== startupGeneration) return;
-      console.warn("AKWANTUO cloud profile could not be loaded:", error);
-    }
-  }
   const player = createPlayer(scene, currentAppearance);
   // Two skinned Ghanaian pedestrians use the same character/idle/walk assets as
   // the player. They walk short, bounded sidewalk loops on the nearby Osu roads.
@@ -910,6 +884,33 @@ async function start(): Promise<void> {
     document.documentElement.dataset.akwantuoWalletPesewas = String(walletBalancePesewas);
     document.documentElement.dataset.akwantuoOwnedAssetCount = String(ownedGameAssetIds.size);
     document.documentElement.dataset.akwantuoInventoryItemCount = String(economy.inventory.reduce((sum, item) => sum + item.quantity, 0));
+  };
+
+  const hydrateSavedPlayer = async (): Promise<void> => {
+    try {
+      const session = await getAkwantuoSession();
+      if (generation !== startupGeneration || activeAccountSession) return;
+      activeAccountSession = session;
+      if (!session) return;
+      const cloudProfile = await loadPlayerProfile(session);
+      if (generation !== startupGeneration || activeAccountSession !== session) return;
+      if (cloudProfile?.look && !hasEditedAppearance) {
+        currentAppearance = resolveAppearance(cloudProfile.look);
+        player.applyAppearance(currentAppearance);
+        if (characterForm) fillAppearanceForm(characterForm, currentAppearance);
+      }
+      await refreshPlayerEconomy();
+      if (generation !== startupGeneration || activeAccountSession !== session) return;
+      if (accountStatus) accountStatus.textContent = `Signed in as ${session.user.email || "AKWANTUO player"}. Cloud saves are enabled. Wallet: GH₵${(walletBalancePesewas / 100).toFixed(2)}.`;
+      if (accountSignOut) accountSignOut.classList.remove("is-hidden");
+      if (accountButton) accountButton.innerHTML = "ACCOUNT <small>CONNECTED</small>";
+      document.documentElement.dataset.akwantuoCloudHydration = "complete";
+    } catch (error) {
+      if (generation !== startupGeneration) return;
+      document.documentElement.dataset.akwantuoCloudHydration = "failed";
+      console.warn("AKWANTUO saved-player data will load when you sign in:", error);
+      if (accountStatus) accountStatus.textContent = "Your local world is ready. Cloud save details could not be refreshed; you can retry by signing in.";
+    }
   };
   retailBrowseButton.addEventListener("click", () => {
     if (activeInterior?.roomId !== "convenience-store") return;
@@ -1873,7 +1874,14 @@ async function start(): Promise<void> {
             minX: WORLD_CONFIG.bounds.minX + 2.5, maxX: WORLD_CONFIG.bounds.maxX - 2.5,
             minZ: WORLD_CONFIG.bounds.minZ + 2.5, maxZ: WORLD_CONFIG.bounds.maxZ - 2.5
           });
-          if (!isBlocked(bounded.x, bounded.z, solidAreas, 2.35) && isVehiclePathClear(
+          const proposedRampElevationM = getCircleRampElevationAtPosition(bounded.x, bounded.z, vehicleRig.root.position.y);
+          // The vehicle controller is kinematic, so Babylon collision flags do
+          // not keep a car on an elevated deck. Once the car is on the authored
+          // Circle ramp/loop surface, reject steps that leave its supported
+          // corridor instead of silently snapping the vehicle back to ground.
+          const remainsOnElevatedDeck = vehicleRig.root.position.y <= 0.5 || proposedRampElevationM !== null;
+          if (remainsOnElevatedDeck &&
+              !isBlocked(bounded.x, bounded.z, solidAreas, 2.35) && isVehiclePathClear(
             { x: vehicleState.x, z: vehicleState.z, radiusM: 2.25 },
             { x: bounded.x, z: bounded.z, radiusM: 2.25 },
             { x: publicTaxiState.x, z: publicTaxiState.z, radiusM: 2.35 }
@@ -1882,8 +1890,9 @@ async function start(): Promise<void> {
           } else {
             vehicleState = { ...vehicleState, speedMps: 0 };
           }
-          const rampElevationM = getCircleRampElevationAtPosition(vehicleState.x, vehicleState.z);
-          vehicleRig.update(vehicleState, rampElevationM ?? 0);
+          const rampElevationM = getCircleRampElevationAtPosition(vehicleState.x, vehicleState.z, vehicleRig.root.position.y);
+          const roadSurfaceElevationM = getRoadSurfaceHeightAtPosition(vehicleState.x, vehicleState.z);
+          vehicleRig.update(vehicleState, rampElevationM ?? roadSurfaceElevationM ?? 0);
           camera.target = Vector3.Lerp(camera.target, new Vector3(vehicleState.x, 1.4, vehicleState.z), Math.min(1, delta * 8));
           camera.alpha = -Math.PI / 2 - vehicleState.headingRadians;
           camera.radius = 9;
@@ -2053,7 +2062,7 @@ async function start(): Promise<void> {
   // Reveal the game shell before starting the continuous render loop. This
   // keeps the boot-to-menu handoff independent of frame scheduling on slower devices.
   startupHandoffStage = "show_ready_status";
-  bootStatus.textContent = "Your world is ready.";
+  setBootProgress(100, "Opening AKWANTUO…");
   startupHandoffStage = "hide_boot_screen";
   bootScreen.hidden = true;
   startupHandoffStage = "reveal_game_shell";
@@ -2065,6 +2074,47 @@ async function start(): Promise<void> {
   startupHandoffStage = "start_render_loop";
   engine.runRenderLoop(render);
   startupHandoffStage = "startup_complete";
+  // Island props and decorative vegetation are not needed to show the opening
+  // menu or to establish the Greater Accra road/transport systems. Build them
+  // after the first menu frame so optional scenery cannot delay the handoff.
+  let optionalWorldSceneryPromise: Promise<void> | null = null;
+  const prepareOptionalWorldScenery = (): Promise<void> => {
+    if (optionalWorldSceneryPromise) return optionalWorldSceneryPromise;
+    document.documentElement.dataset.akwantuoOptionalWorldScenery = "loading";
+    const preparationStatus = document.querySelector<HTMLElement>("#world-preparation-status");
+    if (preparationStatus) preparationStatus.textContent = "Preparing Greater Accra landmarks and scenery…";
+    optionalWorldSceneryPromise = (async (): Promise<void> => {
+      if (!(await yieldToStartupFrame())) return;
+      // Landmark solids join the live collision list before the player enters.
+      const landmarkReport = await createGreaterAccraLandmarks(scene);
+      solidAreas.push(...landmarkReport.solidAreas);
+      document.documentElement.dataset.greaterAccraLandmarkCount = String(landmarkReport.landmarkCount);
+      document.documentElement.dataset.greaterAccraLandmarkLocalRoadCount = String(landmarkReport.localRoadCount);
+      if (!(await yieldToStartupFrame())) return;
+      const islandMeshCount = createAkwantuoPrivateIsland(scene);
+      document.documentElement.dataset.akwantuoPrivateIslandMeshCount = String(islandMeshCount);
+      if (!(await yieldToStartupFrame())) return;
+      const { createGreaterAccraWorldDetail } = await import("./world/ghanaianWorldDetail");
+      createGreaterAccraWorldDetail(scene);
+      document.documentElement.dataset.akwantuoOptionalWorldScenery = "ready";
+      if (preparationStatus) preparationStatus.textContent = "Greater Accra landmarks and scenery are ready.";
+    })().catch((error: unknown) => {
+      const detail = error instanceof Error ? error.message : String(error);
+      document.documentElement.dataset.akwantuoOptionalWorldScenery = "failed";
+      document.documentElement.dataset.akwantuoOptionalWorldSceneryError = detail.slice(0, 180);
+      const preparationStatus = document.querySelector<HTMLElement>("#world-preparation-status");
+      if (preparationStatus) preparationStatus.textContent = "Main roads are ready; some optional scenery could not be loaded.";
+      console.error("AKWANTUO optional world scenery failed:", error);
+      showNotice("The main world is ready. Some optional scenery could not be loaded.");
+      window.setTimeout(() => notice?.classList.remove("is-visible"), 4200);
+    });
+    return optionalWorldSceneryPromise;
+  };
+  // Start optional scenery in the background after the opening menu has had
+  // time to paint. Enter World waits for this one-time task if it is still busy.
+  window.setTimeout(() => { void prepareOptionalWorldScenery(); }, 900);
+  // Authentication and cloud saves must never hold the opening menu hostage.
+  void hydrateSavedPlayer();
   window.addEventListener("resize", () => engine.resize());
 
   const openCharacterCreator = (): void => {
@@ -2082,6 +2132,7 @@ async function start(): Promise<void> {
   const updateCharacterPreview = (): void => {
     if (!characterForm) return;
     currentAppearance = readAppearanceForm(characterForm);
+    hasEditedAppearance = true;
     player.applyAppearance(currentAppearance);
   };
   characterForm?.addEventListener("input", updateCharacterPreview);
@@ -2204,7 +2255,12 @@ async function start(): Promise<void> {
     }
   });
 
-  playButton?.addEventListener("click", () => {
+  playButton?.addEventListener("click", async () => {
+    playButton.disabled = true;
+    playButton.textContent = "PREPARING WORLD…";
+    await prepareOptionalWorldScenery();
+    playButton.disabled = false;
+    playButton.innerHTML = "ENTER WORLD <span>↗</span>";
     // Capture the exact scene footprint at the menu-to-gameplay handoff.
     document.documentElement.dataset.akwantuoPlayClickedAt = new Date().toISOString();
     document.documentElement.dataset.akwantuoPlayMeshCount = String(scene.meshes.length);
@@ -2237,6 +2293,8 @@ async function start(): Promise<void> {
     window.setTimeout(() => notice?.classList.remove("is-visible"), 4200);
   });
 
+  // If the player enters before the background task starts, the click handler
+  // below starts it on demand and waits for the same one-time promise.
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) {
       engine.stopRenderLoop();

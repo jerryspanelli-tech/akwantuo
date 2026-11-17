@@ -5,7 +5,8 @@ import {
   MeshBuilder,
   Scene,
   StandardMaterial,
-  Vector3
+  Vector3,
+  VertexData
 } from "@babylonjs/core";
 import type { RoadCrossSectionProfile } from "@akwantuo/shared";
 import { getMapRoadPath, GREATER_ACCRA_ROAD_PATHS, type MapPoint } from "./greaterAccraLayout";
@@ -204,6 +205,12 @@ function createBands(profile: RoadCrossSectionProfile): RoadBand[] {
   return bands;
 }
 
+/**
+ * Builds a closed, extruded road band rather than a zero-thickness surface.
+ * The top stays at the established road elevation so existing vehicle height
+ * sampling and route coordinates are not silently shifted. Side walls and an
+ * underside give the road a real 3D deck; thickness varies by band type.
+ */
 function createBandMesh(
   scene: Scene,
   name: string,
@@ -211,28 +218,48 @@ function createBandMesh(
   normals: readonly MapPoint[],
   band: RoadBand
 ): Mesh {
-  const inner: Vector3[] = [];
-  const outer: Vector3[] = [];
+  const positions: number[] = [];
+  const indices: number[] = [];
+  const thickness = band.kind === "asphalt" ? 0.42
+    : band.kind === "sidewalk" ? 0.22
+    : band.kind === "median" ? 0.28
+    : 0.16;
+
   points.forEach((point, index) => {
     const normal = normals[index];
-    inner.push(new Vector3(
-      point.x + normal.x * band.innerOffsetM,
-      band.y,
-      point.z + normal.z * band.innerOffsetM
-    ));
-    outer.push(new Vector3(
-      point.x + normal.x * band.outerOffsetM,
-      band.y,
-      point.z + normal.z * band.outerOffsetM
-    ));
+    const innerX = point.x + normal.x * band.innerOffsetM;
+    const innerZ = point.z + normal.z * band.innerOffsetM;
+    const outerX = point.x + normal.x * band.outerOffsetM;
+    const outerZ = point.z + normal.z * band.outerOffsetM;
+    positions.push(
+      innerX, band.y, innerZ,
+      outerX, band.y, outerZ,
+      innerX, band.y - thickness, innerZ,
+      outerX, band.y - thickness, outerZ
+    );
   });
 
-  const mesh = MeshBuilder.CreateRibbon(name, {
-    pathArray: [inner, outer],
-    sideOrientation: Mesh.DOUBLESIDE,
-    updatable: false
-  }, scene);
+  const addDoubleSidedQuad = (a: number, b: number, c: number, d: number): void => {
+    indices.push(a, b, c, a, c, d);
+  };
+  for (let index = 0; index < points.length - 1; index += 1) {
+    const current = index * 4;
+    const next = (index + 1) * 4;
+    addDoubleSidedQuad(current, next, next + 1, current + 1);
+    addDoubleSidedQuad(current + 2, current + 3, next + 3, next + 2);
+    addDoubleSidedQuad(current, current + 2, next + 2, next);
+    addDoubleSidedQuad(current + 1, next + 1, next + 3, current + 3);
+  }
+
+  const vertexData = new VertexData();
+  vertexData.positions = positions;
+  vertexData.indices = indices;
+  vertexData.normals = [];
+  VertexData.ComputeNormals(positions, indices, vertexData.normals);
+  const mesh = new Mesh(name, scene);
+  vertexData.applyToMesh(mesh, false);
   mesh.material = getMaterial(scene, band.kind);
+  mesh.material.backFaceCulling = false;
   mesh.isPickable = false;
   mesh.checkCollisions = false;
   return mesh;

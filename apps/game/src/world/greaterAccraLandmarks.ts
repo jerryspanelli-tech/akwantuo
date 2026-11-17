@@ -5,7 +5,8 @@ import {
   MeshBuilder,
   Scene,
   StandardMaterial,
-  Vector3
+  Vector3,
+  VertexData
 } from "@babylonjs/core";
 import type { SolidArea } from "./collision";
 
@@ -62,8 +63,37 @@ function addRoad(
       inner.push(new Vector3(point.x + nx * innerOffset * scale, 0.05, point.z + nz * innerOffset * scale));
       outer.push(new Vector3(point.x + nx * outerOffset * scale, 0.05, point.z + nz * outerOffset * scale));
     });
-    const mesh = MeshBuilder.CreateRibbon(name, { pathArray: [inner, outer], sideOrientation: Mesh.DOUBLESIDE }, scene);
+    const thickness = material === asphalt ? 0.42
+      : material === sidewalk ? 0.22 : 0.16;
+    const positions: number[] = [];
+    const indices: number[] = [];
+    for (let index = 0; index < inner.length; index += 1) {
+      positions.push(
+        inner[index].x, inner[index].y, inner[index].z,
+        outer[index].x, outer[index].y, outer[index].z,
+        inner[index].x, inner[index].y - thickness, inner[index].z,
+        outer[index].x, outer[index].y - thickness, outer[index].z
+      );
+    }
+    const addQuad = (a: number, b: number, c: number, d: number): void => {
+      indices.push(a, b, c, a, c, d);
+    };
+    for (let index = 0; index < inner.length - 1; index += 1) {
+      const current = index * 4, next = (index + 1) * 4;
+      addQuad(current, next, next + 1, current + 1);
+      addQuad(current + 2, current + 3, next + 3, next + 2);
+      addQuad(current, current + 2, next + 2, next);
+      addQuad(current + 1, next + 1, next + 3, current + 3);
+    }
+    const vertexData = new VertexData();
+    vertexData.positions = positions;
+    vertexData.indices = indices;
+    vertexData.normals = [];
+    VertexData.ComputeNormals(positions, indices, vertexData.normals);
+    const mesh = new Mesh(name, scene);
+    vertexData.applyToMesh(mesh, false);
     mesh.material = material;
+    mesh.material.backFaceCulling = false;
     mesh.isPickable = false;
     mesh.checkCollisions = false;
   };
@@ -103,7 +133,7 @@ function addRoad(
   paint.alpha = 1;
   paint.isPickable = false;
   paint.checkCollisions = false;
-  paint.renderingGroupId = 1;
+  paint.renderingGroupId = 0;
 }
 
 export function createVillaggio(scene: Scene, solids: SolidArea[]): void {
