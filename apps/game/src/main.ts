@@ -25,7 +25,6 @@ import { ChunkRegistry } from "./world/chunkRegistry";
 import { clampToWorld, isBlocked } from "./world/collision";
 import { createPreviewWorld } from "./world/previewWorld";
 import { createGreaterAccraPlayableWorld } from "./world/greaterAccraPlayableWorld";
-import { createGreaterAccraWorldDetail } from "./world/ghanaianWorldDetail";
 import { createGreaterAccraLandmarks, createOsuLocalRoads } from "./world/greaterAccraLandmarks";
 import { getRoadVehicleAutopilotControl } from "./vehicles/roadVehicleAutopilot";
 import { advanceRoadVehicleDynamics, type RoadVehicleDynamicsState } from "./vehicles/roadVehicleDynamics";
@@ -2095,6 +2094,7 @@ async function start(): Promise<void> {
       const islandMeshCount = createAkwantuoPrivateIsland(scene);
       document.documentElement.dataset.akwantuoPrivateIslandMeshCount = String(islandMeshCount);
       if (!(await yieldToStartupFrame())) return;
+      const { createGreaterAccraWorldDetail } = await import("./world/ghanaianWorldDetail");
       createGreaterAccraWorldDetail(scene);
       document.documentElement.dataset.akwantuoOptionalWorldScenery = "ready";
       if (preparationStatus) preparationStatus.textContent = "Greater Accra landmarks and scenery are ready.";
