@@ -9,12 +9,12 @@ import { getAkwantuoSession, signInAkwantuo, signUpAkwantuo, signOutAkwantuo, lo
 const WORLD_ORIGIN_X=1100,WORLD_ORIGIN_Z=-1250;
 const canvas=document.querySelector<HTMLCanvasElement>("#world")!;
 const renderer=new THREE.WebGLRenderer({canvas,antialias:innerWidth>700,powerPreference:"high-performance",stencil:false});
-renderer.setPixelRatio(Math.min(devicePixelRatio,innerWidth<700?1.2:1.6));renderer.setSize(innerWidth,innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.2));renderer.setSize(innerWidth,innerHeight);
 renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;
 const scene=new THREE.Scene();scene.background=new THREE.Color("#9bb8c3");scene.fog=new THREE.FogExp2("#bac8bd",.00125);
 const camera=new THREE.PerspectiveCamera(62,innerWidth/innerHeight,.1,1100);camera.position.set(WORLD_ORIGIN_X,7,WORLD_ORIGIN_Z+32);
 scene.add(new THREE.HemisphereLight("#e4f2ff","#746044",1.8));
-const sun=new THREE.DirectionalLight("#fff0d6",3.1);sun.position.set(WORLD_ORIGIN_X-100,150,WORLD_ORIGIN_Z+80);sun.target.position.set(WORLD_ORIGIN_X,0,WORLD_ORIGIN_Z);scene.add(sun.target);sun.castShadow=true;sun.shadow.mapSize.set(innerWidth<700?1024:2048,innerWidth<700?1024:2048);sun.shadow.camera.left=-160;sun.shadow.camera.right=160;sun.shadow.camera.top=160;sun.shadow.camera.bottom=-160;sun.shadow.normalBias=.035;scene.add(sun);
+const sun=new THREE.DirectionalLight("#fff0d6",3.1);sun.position.set(WORLD_ORIGIN_X-100,150,WORLD_ORIGIN_Z+80);sun.target.position.set(WORLD_ORIGIN_X,0,WORLD_ORIGIN_Z);scene.add(sun.target);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-160;sun.shadow.camera.right=160;sun.shadow.camera.top=160;sun.shadow.camera.bottom=-160;sun.shadow.normalBias=.035;scene.add(sun);
 const sky=new THREE.Mesh(new THREE.SphereGeometry(20000,24,16),new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,vertexShader:"varying vec3 v;void main(){v=(modelMatrix*vec4(position,1.)).xyz;gl_Position=projectionMatrix*viewMatrix*vec4(v,1.);}",fragmentShader:"varying vec3 v;void main(){float h=normalize(v).y;vec3 a=vec3(.78,.79,.72),b=vec3(.54,.70,.76),c=vec3(.22,.43,.58);gl_FragColor=vec4(mix(mix(a,b,smoothstep(-.08,.22,h)),c,smoothstep(.22,.78,h)),1.);}"}));scene.add(sky);
 
 const cloudMaterial=new THREE.MeshBasicMaterial({color:"#eef0eb",transparent:true,opacity:.78,depthWrite:false});
