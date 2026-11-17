@@ -15,6 +15,15 @@ const camera=new THREE.PerspectiveCamera(62,innerWidth/innerHeight,.1,1100);came
 scene.add(new THREE.HemisphereLight("#e4f2ff","#746044",1.8));
 const sun=new THREE.DirectionalLight("#fff0d6",3.1);sun.position.set(WORLD_ORIGIN_X-100,150,WORLD_ORIGIN_Z+80);sun.target.position.set(WORLD_ORIGIN_X,0,WORLD_ORIGIN_Z);scene.add(sun.target);sun.castShadow=true;sun.shadow.mapSize.set(innerWidth<700?1024:2048,innerWidth<700?1024:2048);sun.shadow.camera.left=-160;sun.shadow.camera.right=160;sun.shadow.camera.top=160;sun.shadow.camera.bottom=-160;sun.shadow.normalBias=.035;scene.add(sun);
 const sky=new THREE.Mesh(new THREE.SphereGeometry(20000,24,16),new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,vertexShader:"varying vec3 v;void main(){v=(modelMatrix*vec4(position,1.)).xyz;gl_Position=projectionMatrix*viewMatrix*vec4(v,1.);}",fragmentShader:"varying vec3 v;void main(){float h=normalize(v).y;vec3 a=vec3(.78,.79,.72),b=vec3(.54,.70,.76),c=vec3(.22,.43,.58);gl_FragColor=vec4(mix(mix(a,b,smoothstep(-.08,.22,h)),c,smoothstep(.22,.78,h)),1.);}"}));scene.add(sky);
+
+const cloudMaterial=new THREE.MeshBasicMaterial({color:"#eef0eb",transparent:true,opacity:.78,depthWrite:false});
+const cloudMesh=new THREE.InstancedMesh(new THREE.SphereGeometry(1,10,7),cloudMaterial,72);
+const cloudDummy=new THREE.Object3D();let cloudIndex=0;
+for(let c=0;c<12;c++){const cx=WORLD_ORIGIN_X+(c%4-1.5)*430,cz=WORLD_ORIGIN_Z+(Math.floor(c/4)-1)*520,cy=145+(c%3)*28;
+ for(let p=0;p<6;p++){cloudDummy.position.set(cx+Math.sin(p*2.4)*48,cy+Math.cos(p*1.8)*10,cz+Math.cos(p*2.4)*38);cloudDummy.scale.set(45+(p%3)*18,12+(p%2)*7,28+(p%3)*9);cloudDummy.updateMatrix();cloudMesh.setMatrixAt(cloudIndex++,cloudDummy.matrix);}
+}
+cloudMesh.count=cloudIndex;cloudMesh.instanceMatrix.needsUpdate=true;scene.add(cloudMesh);
+
 function mat(c:string,r=.85,m=0){return new THREE.MeshStandardMaterial({color:c,roughness:r,metalness:m});}
 function tex(draw:(c:CanvasRenderingContext2D,w:number,h:number)=>void,w=512,h=512){const el=document.createElement("canvas");el.width=w;el.height=h;const c=el.getContext("2d")!;draw(c,w,h);const t=new THREE.CanvasTexture(el);t.colorSpace=THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());return t;}
 const soilTex=tex((c,w,h)=>{c.fillStyle="#a99b75";c.fillRect(0,0,w,h);for(let i=0;i<14000;i++){const a=.02+Math.random()*.08;c.fillStyle=Math.random()>.5?"rgba(55,73,44,"+a+")":"rgba(240,216,163,"+a+")";c.fillRect(Math.random()*w,Math.random()*h,1+Math.random()*3,1+Math.random()*2);}});
@@ -122,6 +131,26 @@ function districtSign(x:number,z:number,title:string,sub:string){const g=new THR
 districtSign(-16,-120,"OSU","ACCRA · SOUTH");districtSign(16,120,"LABADI ROAD","COASTAL DISTRICT");
 const osuNode=GREATER_ACCRA_MAP_NODES.find(node=>node.nodeId==="osu-junction");if(osuNode)districtSign(osuNode.x-WORLD_ORIGIN_X,osuNode.z-WORLD_ORIGIN_Z,"OSU JUNCTION","RING ROAD · SOUTH");
 const ridgeNode=GREATER_ACCRA_MAP_NODES.find(node=>node.nodeId==="37-junction");if(ridgeNode)districtSign(ridgeNode.x-WORLD_ORIGIN_X,ridgeNode.z-WORLD_ORIGIN_Z,"37 / RIDGE","RING ROAD · NORTH");
+
+function roadInfoSign(x:number,z:number,title:string,sub:string){
+ const g=new THREE.Group();g.position.set(x,0,z);scene.add(g);
+ const post=new THREE.Mesh(new THREE.CylinderGeometry(.07,.1,3.8,8),pole);post.position.y=1.9;g.add(post);
+ box(g,4.6,1.15,.18,0,3.65,0,green);sign(g,title,sub,4.35,0,3.78,.11);
+}
+roadInfoSign(1100,-1450,"OSU OXFORD STREET","SPEED LIMIT 50");
+roadInfoSign(-450,450,"CIRCLE / CENTRAL ACCRA","SPEED LIMIT 50");
+roadInfoSign(1250,-350,"37 / RIDGE JUNCTION","SPEED LIMIT 70");
+roadInfoSign(3650,1750,"N4 / N6 INTERCHANGE","SPEED LIMIT 80");
+roadInfoSign(9000,-750,"TEMA MOTORWAY","SPEED LIMIT 100");
+function addGhanaFlag(x:number,z:number){
+ const g=new THREE.Group();g.position.set(x,0,z);scene.add(g);
+ const flagTex=tex((c,w,h)=>{c.fillStyle="#ce3c34";c.fillRect(0,0,w,h/3);c.fillStyle="#e8c34f";c.fillRect(0,h/3,w,h/3);c.fillStyle="#28794b";c.fillRect(0,2*h/3,w,h/3);c.fillStyle="#171717";c.font="bold 92px Arial";c.textAlign="center";c.textBaseline="middle";c.fillText("★",w/2,h/2+3);},256,160);
+ const poleMesh=new THREE.Mesh(new THREE.CylinderGeometry(.045,.07,5.8,8),pole);poleMesh.position.y=2.9;g.add(poleMesh);
+ const flagMesh=new THREE.Mesh(new THREE.PlaneGeometry(2.8,1.75),new THREE.MeshBasicMaterial({map:flagTex,side:THREE.DoubleSide}));flagMesh.position.set(1.38,4.75,0);g.add(flagMesh);
+}
+addGhanaFlag(WORLD_ORIGIN_X+285,WORLD_ORIGIN_Z+265);
+addGhanaFlag(-150,-900);
+
 
 const districtNames:Record<string,string>={"airport-city":"AIRPORT CITY","east-legon":"EAST LEGON","legon":"LEGON","madina-adenta":"MADINA / ADENTA","achimota":"ACHIMOTA","accra-central-makola":"ACCRA CENTRAL","labadi":"LABADI","dansoman":"DANSOMAN","kaneshie":"KANESHIE","spintex":"SPINTEX","tema":"TEMA"};
 for(const anchor of GREATER_ACCRA_REGION_ANCHORS){
