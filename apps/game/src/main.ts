@@ -242,8 +242,8 @@ function loadCharacterModel(presentation:"masculine"|"feminine"){
   if(playerMixer&&activeModel){playerMixer.stopAllAction();playerMixer.uncacheRoot(activeModel);}
   playerMixer=null;idleAction=null;walkAction=null;isWalking=false;
   if(activeModel){player.remove(activeModel);activeModel=null;}
-  const model=gltf.scene,bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),scale=1.82/Math.max(size.y,.001);
-  model.scale.setScalar(scale);model.position.y=-bounds.min.y*scale;
+  const model=gltf.scene,bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),scale=1.82/Math.max(size.y,.001),widthScale=appearance.build==="broad"?1.08:appearance.build==="slim"?.94:1,heightScale=appearance.age>=60?.96:1;
+  model.scale.set(scale*widthScale,scale*heightScale,scale*widthScale);model.position.y=-bounds.min.y*scale*heightScale;
   model.traverse(o=>{if((o as THREE.Mesh).isMesh){(o as THREE.Mesh).castShadow=true;(o as THREE.Mesh).receiveShadow=true;}});
   player.add(model);activeModel=model;fallback.visible=false;
   void (async()=>{
