@@ -84,8 +84,8 @@ const firstReleaseRailRoutes=GREATER_ACCRA_RAIL_ROUTES.filter(route=>route.first
 const railCurves=firstReleaseRailRoutes.map(route=>drawRailRoute(route.points));
 function createRailStation(nodeId:string,label:string,routeIndex:number,atEnd:boolean){
  const node=GREATER_ACCRA_RAIL_NODES.find(item=>item.id===nodeId);if(!node)return;
- const route=firstReleaseRailRoutes[routeIndex],curve=railCurves[routeIndex],tangent=curve.getTangentAt(atEnd?1:0),angle=Math.atan2(tangent.x,tangent.z);
- const g=new THREE.Group();g.position.set(node.position.x,terrainHeight(node.position.x,node.position.z),node.position.z);g.rotation.y=angle;scene.add(g);addLandmarkSolid(node.position.x,node.position.z,54,118);
+ const curve=railCurves[routeIndex],tangent=curve.getTangentAt(atEnd?1:0),angle=Math.atan2(tangent.x,tangent.z);
+ const g=new THREE.Group();g.position.set(node.position.x,terrainHeight(node.position.x,node.position.z),node.position.z);g.rotation.y=angle;scene.add(g);
  box(g,16,.7,112,0,0,0,concrete);box(g,27,10,38,0,.7,-27,mat("#b8c2bd",.4,.08));box(g,29,.8,40,0,10.7,-27,roof);
  box(g,21,1,94,0,12,5,roof);for(const x of [-10,10])for(const z of [-38,5,48])box(g,.35,12,.35,x,0,z,frame,false);
  box(g,17,.25,94,0,.9,5,yellow,false);box(g,17,.25,94,0,.9,-5,yellow,false);
