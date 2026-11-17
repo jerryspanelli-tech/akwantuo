@@ -2063,7 +2063,7 @@ async function start(): Promise<void> {
   // Reveal the game shell before starting the continuous render loop. This
   // keeps the boot-to-menu handoff independent of frame scheduling on slower devices.
   startupHandoffStage = "show_ready_status";
-  setBootProgress(100, "Your world is ready.");
+  setBootProgress(100, "Opening AKWANTUO…");
   startupHandoffStage = "hide_boot_screen";
   bootScreen.hidden = true;
   startupHandoffStage = "reveal_game_shell";
@@ -2082,6 +2082,8 @@ async function start(): Promise<void> {
   const prepareOptionalWorldScenery = (): Promise<void> => {
     if (optionalWorldSceneryPromise) return optionalWorldSceneryPromise;
     document.documentElement.dataset.akwantuoOptionalWorldScenery = "loading";
+    const preparationStatus = document.querySelector<HTMLElement>("#world-preparation-status");
+    if (preparationStatus) preparationStatus.textContent = "Preparing Greater Accra landmarks and scenery…";
     optionalWorldSceneryPromise = (async (): Promise<void> => {
       if (!(await yieldToStartupFrame())) return;
       // Landmark solids join the live collision list before the player enters.
@@ -2095,10 +2097,13 @@ async function start(): Promise<void> {
       if (!(await yieldToStartupFrame())) return;
       createGreaterAccraWorldDetail(scene);
       document.documentElement.dataset.akwantuoOptionalWorldScenery = "ready";
+      if (preparationStatus) preparationStatus.textContent = "Greater Accra landmarks and scenery are ready.";
     })().catch((error: unknown) => {
       const detail = error instanceof Error ? error.message : String(error);
       document.documentElement.dataset.akwantuoOptionalWorldScenery = "failed";
       document.documentElement.dataset.akwantuoOptionalWorldSceneryError = detail.slice(0, 180);
+      const preparationStatus = document.querySelector<HTMLElement>("#world-preparation-status");
+      if (preparationStatus) preparationStatus.textContent = "Main roads are ready; some optional scenery could not be loaded.";
       console.error("AKWANTUO optional world scenery failed:", error);
       showNotice("The main world is ready. Some optional scenery could not be loaded.");
       window.setTimeout(() => notice?.classList.remove("is-visible"), 4200);
