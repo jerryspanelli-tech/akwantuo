@@ -32,7 +32,7 @@ button { font: inherit; }
 .boot-screen h1 { margin: 13px 0 3px; font-size: clamp(32px, 8vw, 54px); letter-spacing: .19em; font-weight: 500; }
 .boot-caption { margin: 0; color: var(--muted); letter-spacing: .12em; font-family: Georgia, serif; font-style: italic; }
 .boot-track { width: min(230px, 65vw); height: 2px; margin-top: 48px; background: rgba(255,255,255,.14); overflow: hidden; }
-.boot-track span { display: block; width: 40%; height: 100%; background: var(--gold); animation: loading 1.6s ease-in-out infinite; }
+.boot-track span { display: block; width: 0%; height: 100%; background: var(--gold); transition: width .28s ease; }
 .boot-status { margin-top: 14px; color: var(--muted); font-size: 11px; letter-spacing: .08em; }
 
 .game-shell { position: fixed; inset: 0; isolation: isolate; background: #263b3b; }
