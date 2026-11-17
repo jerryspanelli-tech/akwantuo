@@ -64,7 +64,7 @@ function drawRoad(points:readonly {x:number;z:number}[],width:number,highway=fal
 for(const path of GREATER_ACCRA_ROAD_PATHS){if(!path.playableInFirstRelease)continue;const width=path.roadSegmentId.startsWith("n1-")||path.roadSegmentId.startsWith("n6-")?30:path.roadSegmentId.startsWith("n4-")||path.roadSegmentId.includes("spintex")?22:path.roadSegmentId==="la-beach-road"?15:18;drawRoad(path.points,width,width>=28);}
 for(const path of GREATER_ACCRA_LOCAL_ROADS)drawRoad(path.points,path.width,false);
 
-GREATER_ACCRA_COASTLINE.map(p=>({x:p.x,z:p.z+55}));ribbon(beachPoints,100,sand,.11);
+const beachPoints=GREATER_ACCRA_COASTLINE.map(p=>({x:p.x,z:p.z+55}));ribbon(beachPoints,100,sand,.11);
 
 function box(p:THREE.Object3D,w:number,h:number,d:number,x:number,y:number,z:number,m:THREE.Material,shadow=true){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y+h/2,z);o.castShadow=shadow;o.receiveShadow=true;p.add(o);return o;}
 function road(w:number,d:number,x:number,z:number){const g=new THREE.Group();g.position.set(x+WORLD_ORIGIN_X,.05,z+WORLD_ORIGIN_Z);scene.add(g);const s=new THREE.Mesh(new THREE.BoxGeometry(w,.12,d),asphalt);s.receiveShadow=true;g.add(s);return g;}
