@@ -15,6 +15,7 @@
 .menu-actions { width: min(330px, 100%); gap: 9px; }
 .menu-actions button { min-height: 47px; }
 .build-note { margin-top: 21px; line-height: 1.6; }
+.world-preparation-status { margin: 7px 0 0; color: #e7d29e; font-size: 9px; line-height: 1.5; }
 .ghana-showcase { min-width: 0; padding: clamp(16px, 2vw, 25px); background: linear-gradient(145deg, rgba(18,31,30,.88), rgba(10,17,17,.82)); border: 1px solid rgba(238,214,169,.23); box-shadow: 0 22px 65px rgba(0,0,0,.3); backdrop-filter: blur(9px); }
 .showcase-heading { display: flex; justify-content: space-between; gap: 10px; margin: 0 0 12px; color: #f2d69f; font-size: 8px; font-weight: 800; letter-spacing: .15em; }
 .showcase-heading span:last-child { color: rgba(255,255,255,.58); text-align: right; }
