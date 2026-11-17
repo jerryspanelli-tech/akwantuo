@@ -219,3 +219,19 @@ button { font: inherit; }
   .menu-subtitle { margin: 10px 0 12px; }
   .menu-intro { line-height: 1.55; }
 }
+
+/* Ghanaian identity carried through the first loading moment. */
+.boot-screen {
+  background:
+    radial-gradient(ellipse at 50% 42%, rgba(38,61,55,.96) 0%, rgba(18,32,30,.98) 48%, #0b1212 100%);
+}
+.boot-screen::before {
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, #ce3434 0 33.33%, #e0c14d 33.33% 66.66%, #218653 66.66% 100%);
+}
+.boot-mark { position: relative; border-color: rgba(224,193,77,.72); }
+.boot-mark::after {
+  content: ""; position: absolute; left: -15px; right: -15px; bottom: -11px; height: 2px;
+  background: linear-gradient(90deg, #ce3434 0 33.33%, #e0c14d 33.33% 66.66%, #218653 66.66% 100%);
+  transform: rotate(-45deg);
+}
