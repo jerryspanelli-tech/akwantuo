@@ -70,11 +70,28 @@ const facade=["#c9b99c","#d5c7ad","#b8b3a4","#d1b18d","#b6bda9","#d9d1bd"],glass
 function signTex(title:string,sub:string){return tex((c,w,h)=>{c.fillStyle="#eadfc5";c.fillRect(0,0,w,h);c.fillStyle="#174c3a";c.fillRect(0,0,w,18);c.fillStyle="#173b2e";c.font="bold 42px Arial";c.textAlign="center";c.fillText(title,w/2,92);c.fillStyle="#705c3c";c.font="bold 18px Arial";c.fillText(sub.toUpperCase(),w/2,128);c.fillStyle="#c59d4b";c.fillRect(0,h-8,w,8);},512,160);}
 function sign(p:THREE.Object3D,title:string,sub:string,w:number,x:number,y:number,z:number){const m=new THREE.Mesh(new THREE.PlaneGeometry(w,w*.31),new THREE.MeshStandardMaterial({map:signTex(title,sub)}));m.position.set(x,y,z);p.add(m);}
 function building(x:number,z:number,w:number,d:number,floors:number,kind:"shop"|"flat"|"office",name:string){
- const g=new THREE.Group();g.position.set(x+WORLD_ORIGIN_X,0,z+WORLD_ORIGIN_Z);scene.add(g);solidAreas.push({minX:x+WORLD_ORIGIN_X-w/2-0.8,maxX:x+WORLD_ORIGIN_X+w/2+0.8,minZ:z+WORLD_ORIGIN_Z-d/2-0.8,maxZ:z+WORLD_ORIGIN_Z+d/2+0.8});const h=floors*3.1;
- box(g,w,h,d,0,h/2,0,mat(facade[Math.floor(Math.random()*facade.length)]));box(g,w+.4,.28,d+.4,0,h,0,roof);
- const count=Math.max(2,Math.floor(w/3.2));
- for(let f=0;f<floors;f++){for(let i=0;i<count;i++){const wx=-w/2+(i+.5)*w/count,wy=.9+f*3.1,ww=Math.min(1.55,w/count*.58);box(g,ww,1.55,.12,wx,wy,d/2+.08,glass,false);box(g,ww+.16,.1,.18,wx,wy-.1,d/2+.13,frame,false);if(kind==="flat"&&f>0){box(g,ww+.35,.12,.7,wx,wy-.12,d/2+.4,roof,false);box(g,ww+.35,.72,.07,wx,wy+.18,d/2+.72,frame,false);}}if(f>0)box(g,w+.1,.14,.3,0,f*3.1,d/2+.16,frame,false);}
- if(kind==="shop"){box(g,w*.9,1.35,.15,0,.25,d/2+.12,glass,false);box(g,w+.15,.58,.3,0,2,d/2+.2,green,false);sign(g,name,"PROVISIONS · COLD DRINKS",w*.9,0,2.1,d/2+.37);box(g,w,.14,1.2,0,2.85,d/2+.55,yellow,false);}else sign(g,name,kind==="office"?"BUSINESS CENTRE":"RESIDENTIAL COURT",w*.78,0,h-.65,d/2+.08);
+ const g=new THREE.Group();g.position.set(x+WORLD_ORIGIN_X,0,z+WORLD_ORIGIN_Z);scene.add(g);
+ solidAreas.push({minX:x+WORLD_ORIGIN_X-w/2-.8,maxX:x+WORLD_ORIGIN_X+w/2+.8,minZ:z+WORLD_ORIGIN_Z-d/2-.8,maxZ:z+WORLD_ORIGIN_Z+d/2+.8});
+ const h=floors*3.1;box(g,w,h,d,0,h/2,0,mat(facade[Math.floor(Math.random()*facade.length)]));box(g,w+.4,.28,d+.4,0,h,0,roof);
+ const count=Math.max(2,Math.floor(w/3.2)),windowTotal=count*floors,balconyTotal=kind==="flat"?count*Math.max(0,floors-1):0,ww=Math.min(1.55,w/count*.58),dummy=new THREE.Object3D();
+ const windows=new THREE.InstancedMesh(new THREE.BoxGeometry(ww,1.55,.12),glass,windowTotal);
+ const frames=new THREE.InstancedMesh(new THREE.BoxGeometry(ww+.16,.1,.18),frame,windowTotal);
+ const decks=balconyTotal?new THREE.InstancedMesh(new THREE.BoxGeometry(ww+.35,.12,.7),roof,balconyTotal):null;
+ const rails=balconyTotal?new THREE.InstancedMesh(new THREE.BoxGeometry(ww+.35,.72,.07),frame,balconyTotal):null;
+ let wi=0,bi=0;
+ for(let f=0;f<floors;f++){
+  for(let i=0;i<count;i++){
+   const wx=-w/2+(i+.5)*w/count,wy=.9+f*3.1;
+   dummy.position.set(wx,wy+.775,d/2+.08);dummy.updateMatrix();windows.setMatrixAt(wi,dummy.matrix);
+   dummy.position.set(wx,wy+.05,d/2+.13);dummy.updateMatrix();frames.setMatrixAt(wi,dummy.matrix);wi++;
+   if(f>0&&decks&&rails){dummy.position.set(wx,wy-.06,d/2+.4);dummy.updateMatrix();decks.setMatrixAt(bi,dummy.matrix);dummy.position.set(wx,wy+.54,d/2+.72);dummy.updateMatrix();rails.setMatrixAt(bi,dummy.matrix);bi++;}
+  }
+  if(f>0)box(g,w+.1,.14,.3,0,f*3.1,d/2+.16,frame,false);
+ }
+ windows.instanceMatrix.needsUpdate=true;frames.instanceMatrix.needsUpdate=true;windows.receiveShadow=true;frames.receiveShadow=true;g.add(windows,frames);
+ if(decks&&rails){decks.instanceMatrix.needsUpdate=true;rails.instanceMatrix.needsUpdate=true;g.add(decks,rails);}
+ if(kind==="shop"){box(g,w*.9,1.35,.15,0,.25,d/2+.12,glass,false);box(g,w+.15,.58,.3,0,2,d/2+.2,green,false);sign(g,name,"PROVISIONS · COLD DRINKS",w*.9,0,2.1,d/2+.37);box(g,w,.14,1.2,0,2.85,d/2+.55,yellow,false);}
+ else sign(g,name,kind==="office"?"BUSINESS CENTRE":"RESIDENTIAL COURT",w*.78,0,h-.65,d/2+.08);
  if(floors>=2){const tank=new THREE.Mesh(new THREE.CylinderGeometry(.68,.68,1.25,12),mat("#526c70",.55));tank.position.set(w*.22,h+.8,-d*.18);tank.castShadow=true;g.add(tank);box(g,1.8,.12,1.8,w*.22,h+.12,-d*.18,roof,false);}
 }
 const blocks=[
@@ -84,8 +101,18 @@ for(const [x,z,w] of [[-62,-72,48],[62,-72,48],[-65,45,45],[65,45,45]] as const)
 function kiosk(x:number,z:number,title:string){const g=new THREE.Group();g.position.set(x+WORLD_ORIGIN_X,0,z+WORLD_ORIGIN_Z);scene.add(g);solidAreas.push({minX:x+WORLD_ORIGIN_X-2.4,maxX:x+WORLD_ORIGIN_X+2.4,minZ:z+WORLD_ORIGIN_Z-2,maxZ:z+WORLD_ORIGIN_Z+2});box(g,4,2.5,3,0,1.25,0,mat("#c49a61"));box(g,4.3,.2,3.4,0,2.6,0,green);box(g,3.1,1.1,.12,0,.8,1.58,dark);sign(g,title,"CHOP BAR",3.8,0,2.35,1.7);}
 kiosk(-18,-25,"SWEET MOTHER");kiosk(19,20,"WAKE & EAT");
 const trunk=mat("#654832"),leaves=[mat("#526d42"),mat("#607a49"),mat("#71844c")];
-function tree(x:number,z:number,s=1){const g=new THREE.Group();g.position.set(x+WORLD_ORIGIN_X,0,z+WORLD_ORIGIN_Z);g.scale.setScalar(s);scene.add(g);const t=new THREE.Mesh(new THREE.CylinderGeometry(.2,.3,3.6,7),trunk);t.position.y=1.8;t.castShadow=true;g.add(t);for(let i=0;i<5;i++){const c=new THREE.Mesh(new THREE.SphereGeometry(1.4+(i%2)*.2,9,7),leaves[i%3]);c.position.set(Math.sin(i*2.4),3.4+(i%3)*.45,Math.cos(i*2.4));c.scale.set(1.1,.8,1);c.castShadow=true;g.add(c);}}
+const treePositions:Array<{x:number;z:number;s:number}>=[];
+function tree(x:number,z:number,s=1){treePositions.push({x,z,s});}
 for(let z=-230;z<=230;z+=30){tree(-18,z,.8);tree(18,z,.85);}for(let x=-220;x<=220;x+=42){tree(x,-56,.85);tree(x,106,.9);}
+const treeDummy=new THREE.Object3D(),trunkInstances=new THREE.InstancedMesh(new THREE.CylinderGeometry(.2,.3,3.6,7),trunk,treePositions.length);
+const leafInstances=leaves.map(material=>new THREE.InstancedMesh(new THREE.SphereGeometry(1.4,9,7),material,treePositions.length*2));
+const leafCounts=[0,0,0];
+treePositions.forEach((p,index)=>{
+ treeDummy.position.set(p.x+WORLD_ORIGIN_X,1.8*p.s,p.z+WORLD_ORIGIN_Z);treeDummy.scale.setScalar(p.s);treeDummy.updateMatrix();trunkInstances.setMatrixAt(index,treeDummy.matrix);
+ for(let i=0;i<5;i++){const materialIndex=i%3;treeDummy.position.set(p.x+WORLD_ORIGIN_X+Math.sin(i*2.4)*p.s,(3.4+(i%3)*.45)*p.s,p.z+WORLD_ORIGIN_Z+Math.cos(i*2.4)*p.s);treeDummy.scale.set(1.1*p.s,.8*p.s,p.s);treeDummy.updateMatrix();leafInstances[materialIndex].setMatrixAt(leafCounts[materialIndex]++,treeDummy.matrix);}
+});
+trunkInstances.instanceMatrix.needsUpdate=true;trunkInstances.castShadow=true;scene.add(trunkInstances);
+leafInstances.forEach((mesh,index)=>{mesh.count=leafCounts[index];mesh.instanceMatrix.needsUpdate=true;mesh.castShadow=true;scene.add(mesh);});
 const pole=mat("#4a5050",.55,.3),lamp=mat("#fff0c9",.3);
 function streetLight(x:number,z:number){const g=new THREE.Group();g.position.set(x+WORLD_ORIGIN_X,0,z+WORLD_ORIGIN_Z);scene.add(g);const p=new THREE.Mesh(new THREE.CylinderGeometry(.09,.14,7,8),pole);p.position.y=3.5;g.add(p);box(g,2.2,.12,.12,.95,6.8,0,pole);const l=new THREE.Mesh(new THREE.BoxGeometry(.65,.18,.42),lamp);l.position.set(1.9,6.7,0);g.add(l);}
 for(let z=-200;z<=200;z+=65){streetLight(-14,z);streetLight(14,z);}
