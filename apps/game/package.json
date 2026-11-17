@@ -1,7 +1,7 @@
 {
   "name": "@akwantuo/game",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
@@ -9,11 +9,11 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@babylonjs/core": "^8.56.2",
     "@akwantuo/shared": "0.1.0",
-    "@babylonjs/loaders": "^8.56.2"
+    "three": "^0.180.0"
   },
   "devDependencies": {
+    "@types/three": "^0.180.0",
     "typescript": "^6.0.3",
     "vite": "^8.3.5"
   }

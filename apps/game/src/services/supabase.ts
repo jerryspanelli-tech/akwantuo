@@ -1,4 +1,4 @@
-import type { CharacterAppearance } from "../character/appearance";
+type CharacterAppearance = { presentation: "masculine" | "feminine"; age: number; complexion: string; build: string; hairstyle: string; outfit: string };
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://ugiysogfkclbcryhtkyn.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "sb_publishable__WFhhKIwP7yxOqaMNsy9pA_ZHY9xE3m";
