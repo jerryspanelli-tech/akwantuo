@@ -173,11 +173,11 @@
 .adinkra-mark::before { top: 4px; left: 4px; }
 .adinkra-mark::after { right: 4px; bottom: 4px; }
 .adinkra-mark svg { width: 31px; height: 31px; color: #f0d69a; }
-.adinkra-mark span { font-size: 7px; font-weight: 900; letter-spacing: .1em; }
-.adinkra-mark small { color: rgba(255,255,255,.58); font-size: 7px; line-height: 1.35; }
+.adinkra-mark span { font-size: 8px; font-weight: 900; letter-spacing: .1em; }
+.adinkra-mark small { color: rgba(255,255,255,.72); font-size: 8px; line-height: 1.35; }
 @media (max-width: 650px) {
   .adinkra-strip { gap: 5px; margin-bottom: 12px; }
-  .adinkra-mark { min-height: 78px; padding: 7px 3px; }
-  .adinkra-mark svg { width: 25px; height: 25px; }
-  .adinkra-mark span, .adinkra-mark small { font-size: 6px; }
+  .adinkra-mark { min-height: 88px; padding: 8px 4px; }
+  .adinkra-mark svg { width: 27px; height: 27px; }
+  .adinkra-mark span { font-size: 8px; }\n  .adinkra-mark small { font-size: 7px; }
 }
