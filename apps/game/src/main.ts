@@ -751,11 +751,7 @@ async function start(): Promise<void> {
   );
   document.documentElement.dataset.akwantuoStoreShopkeeperRig = "false";
   if (!(await yieldToStartupFrame())) return;
-  setBootProgress(32, "Preparing the coastline and island…");
-  const privateIslandMeshCount = createAkwantuoPrivateIsland(scene);
-  document.documentElement.dataset.akwantuoPrivateIslandMeshCount = String(privateIslandMeshCount);
-  if (!(await yieldToStartupFrame())) return;
-  setBootProgress(45, "Building Greater Accra roads and rail…");
+  setBootProgress(32, "Building Greater Accra roads and rail…");
   const greaterAccraTransportReport = createGreaterAccraPlayableWorld(scene);
   if (!(await yieldToStartupFrame())) return;
   setBootProgress(62, "Adding Accra landmarks and neighbourhood roads…");
@@ -767,9 +763,6 @@ async function start(): Promise<void> {
   document.documentElement.dataset.playableLocalRoadCount = String(osuLocalRoadCount);
   document.documentElement.dataset.greaterAccraLandmarkCount = String(greaterAccraLandmarkReport.landmarkCount);
   document.documentElement.dataset.greaterAccraLandmarkLocalRoadCount = String(greaterAccraLandmarkReport.localRoadCount);
-  if (!(await yieldToStartupFrame())) return;
-  setBootProgress(76, "Finishing Ghanaian scenery…");
-  createGreaterAccraWorldDetail(scene);
   if (!(await yieldToStartupFrame())) return;
   document.documentElement.dataset.playableRoadSurfaceMeshes = String(greaterAccraTransportReport.roadSurfaceMeshCount);
   document.documentElement.dataset.playableRoadMarkingMeshes = String(greaterAccraTransportReport.roadMarkingMeshCount);
@@ -2086,6 +2079,33 @@ async function start(): Promise<void> {
   startupHandoffStage = "start_render_loop";
   engine.runRenderLoop(render);
   startupHandoffStage = "startup_complete";
+  // Island props and decorative vegetation are not needed to show the opening
+  // menu or to establish the Greater Accra road/transport systems. Build them
+  // after the first menu frame so optional scenery cannot delay the handoff.
+  let optionalWorldSceneryPromise: Promise<void> | null = null;
+  const prepareOptionalWorldScenery = (): Promise<void> => {
+    if (optionalWorldSceneryPromise) return optionalWorldSceneryPromise;
+    document.documentElement.dataset.akwantuoOptionalWorldScenery = "loading";
+    optionalWorldSceneryPromise = (async (): Promise<void> => {
+      if (!(await yieldToStartupFrame())) return;
+      const islandMeshCount = createAkwantuoPrivateIsland(scene);
+      document.documentElement.dataset.akwantuoPrivateIslandMeshCount = String(islandMeshCount);
+      if (!(await yieldToStartupFrame())) return;
+      createGreaterAccraWorldDetail(scene);
+      document.documentElement.dataset.akwantuoOptionalWorldScenery = "ready";
+    })().catch((error: unknown) => {
+      const detail = error instanceof Error ? error.message : String(error);
+      document.documentElement.dataset.akwantuoOptionalWorldScenery = "failed";
+      document.documentElement.dataset.akwantuoOptionalWorldSceneryError = detail.slice(0, 180);
+      console.error("AKWANTUO optional world scenery failed:", error);
+      showNotice("The main world is ready. Some optional scenery could not be loaded.");
+      window.setTimeout(() => notice?.classList.remove("is-visible"), 4200);
+    });
+    return optionalWorldSceneryPromise;
+  };
+  // Start optional scenery in the background after the opening menu has had
+  // time to paint. Enter World waits for this one-time task if it is still busy.
+  window.setTimeout(() => { void prepareOptionalWorldScenery(); }, 900);
   // Authentication and cloud saves must never hold the opening menu hostage.
   void hydrateSavedPlayer();
   window.addEventListener("resize", () => engine.resize());
@@ -2228,7 +2248,14 @@ async function start(): Promise<void> {
     }
   });
 
-  playButton?.addEventListener("click", () => {
+  playButton?.addEventListener("click", async () => {
+    if (optionalWorldSceneryPromise) {
+      playButton.disabled = true;
+      playButton.textContent = "PREPARING WORLD…";
+      await optionalWorldSceneryPromise;
+      playButton.disabled = false;
+      playButton.innerHTML = "ENTER WORLD <span>↗</span>";
+    }
     // Capture the exact scene footprint at the menu-to-gameplay handoff.
     document.documentElement.dataset.akwantuoPlayClickedAt = new Date().toISOString();
     document.documentElement.dataset.akwantuoPlayMeshCount = String(scene.meshes.length);
@@ -2261,6 +2288,8 @@ async function start(): Promise<void> {
     window.setTimeout(() => notice?.classList.remove("is-visible"), 4200);
   });
 
+  // If the player enters before the background task starts, the click handler
+  // below starts it on demand and waits for the same one-time promise.
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) {
       engine.stopRenderLoop();
