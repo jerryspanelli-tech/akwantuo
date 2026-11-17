@@ -36,7 +36,7 @@ function ribbon(points:readonly {x:number;z:number}[],width:number,material:THRE
  const curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(p.x,terrainHeight(p.x,p.z)+y,p.z)),false,"catmullrom",.12);
  const length=points.reduce((sum,p,i)=>i?sum+Math.hypot(p.x-points[i-1].x,p.z-points[i-1].z):0,0);
  const segments=Math.max(16,Math.ceil(length/24)),positions:number[]=[],uvs:number[]=[],indices:number[]=[];
- for(let i=0;i<=segments;i++){const t=i/segments,p=curve.getPointAt(t),tan=curve.getTangentAt(t).normalize(),side=new THREE.Vector3(-tan.z,0,tan.x);const l=p.clone().addScaledVector(side,width/2),r=p.clone().addScaledVector(side,-width/2);positions.push(l.x,l.y,l.z,r.x,r.y,r.z);uvs.push(t*length/18,0,t*length/18,1);if(i<segments){const n=i*2;indices.push(n,n+1,n+2,n+1,n+3,n+2);}}
+ for(let i=0;i<=segments;i++){const t=i/segments,p=curve.getPointAt(t),tan=curve.getTangentAt(t).normalize(),side=new THREE.Vector3(-tan.z,0,tan.x);const l=p.clone().addScaledVector(side,width/2),r=p.clone().addScaledVector(side,-width/2);positions.push(l.x,l.y,l.z,r.x,r.y,r.z);uvs.push(t*length/18,0,t*length/18,1);if(i<segments){const n=i*2;indices.push(n,n+2,n+1,n+1,n+2,n+3);}}
  const geo=new THREE.BufferGeometry();geo.setAttribute("position",new THREE.Float32BufferAttribute(positions,3));geo.setAttribute("uv",new THREE.Float32BufferAttribute(uvs,2));geo.setIndex(indices);geo.computeVertexNormals();const mesh=new THREE.Mesh(geo,material);mesh.receiveShadow=true;scene.add(mesh);return mesh;
 }
 function roadMarking(points:readonly {x:number;z:number}[],offset:number,material:THREE.LineDashedMaterial|THREE.LineBasicMaterial){
