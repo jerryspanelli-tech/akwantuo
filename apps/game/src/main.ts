@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import "./style.css";
+import { getAkwantuoSession, signInAkwantuo, signUpAkwantuo, signOutAkwantuo, loadPlayerProfile, savePlayerProfile, type AkwantuoSession } from "./services/supabase";
 
 const canvas=document.querySelector<HTMLCanvasElement>("#world")!;
 const renderer=new THREE.WebGLRenderer({canvas,antialias:innerWidth>700,powerPreference:"high-performance",stencil:false});
@@ -63,11 +64,60 @@ const player=new THREE.Group();player.position.set(0,0,12);scene.add(player);
 const fallback=new THREE.Group();player.add(fallback);const skin=mat("#754a35"),shirt=mat("#285d48"),trousers=mat("#292f35");
 const torso=new THREE.Mesh(new THREE.CapsuleGeometry(.34,.72,4,8),shirt);torso.position.y=1.28;fallback.add(torso);const head=new THREE.Mesh(new THREE.SphereGeometry(.26,16,12),skin);head.position.y=2.05;fallback.add(head);
 for(const side of [-1,1]){const leg=new THREE.Mesh(new THREE.CapsuleGeometry(.13,.68,3,7),trousers);leg.position.set(side*.16,.55,0);fallback.add(leg);const arm=new THREE.Mesh(new THREE.CapsuleGeometry(.11,.65,3,7),skin);arm.position.set(side*.43,1.28,0);fallback.add(arm);}
-new GLTFLoader().load("/assets/characters/akwantuo-male.glb",gltf=>{const model=gltf.scene,bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),scale=1.82/Math.max(size.y,.001);model.scale.setScalar(scale);model.position.y=-bounds.min.y*scale;model.traverse(o=>{if((o as THREE.Mesh).isMesh){(o as THREE.Mesh).castShadow=true;(o as THREE.Mesh).receiveShadow=true;}});player.add(model);fallback.visible=false;},undefined,e=>console.warn("Character model fallback",e));
+let activeModel:THREE.Object3D|null=null,modelRequest=0;
+function loadCharacterModel(presentation:"masculine"|"feminine"){
+ const request=++modelRequest;fallback.visible=true;
+ const path=presentation==="feminine"?"/assets/characters/akwantuo-female.glb":"/assets/characters/akwantuo-male.glb";
+ new GLTFLoader().load(path,gltf=>{
+  if(request!==modelRequest)return;
+  if(activeModel){player.remove(activeModel);activeModel=null;}
+  const model=gltf.scene,bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3()),scale=1.82/Math.max(size.y,.001);
+  model.scale.setScalar(scale);model.position.y=-bounds.min.y*scale;
+  model.traverse(o=>{if((o as THREE.Mesh).isMesh){(o as THREE.Mesh).castShadow=true;(o as THREE.Mesh).receiveShadow=true;}});
+  player.add(model);activeModel=model;fallback.visible=false;
+ },undefined,e=>console.warn("Character model fallback",e));
+}
+type Appearance={presentation:"masculine"|"feminine";age:number;complexion:string;build:string;hairstyle:string;outfit:string};
+let appearance:Appearance={presentation:"masculine",age:25,complexion:"dark",build:"average",hairstyle:"short-natural",outfit:"street-green"};
+function applyAppearance(next:Appearance){appearance=next;const form=document.querySelector<HTMLFormElement>("#character-form");if(form){for(const [key,value] of Object.entries(next)){const field=form.elements.namedItem(key) as HTMLInputElement|HTMLSelectElement|null;if(field)field.value=String(value);}}loadCharacterModel(next.presentation);}
+function readAppearance():Appearance{const f=document.querySelector<HTMLFormElement>("#character-form")!;const d=new FormData(f);return{presentation:(d.get("presentation")==="feminine"?"feminine":"masculine"),age:Number(d.get("age")||25),complexion:String(d.get("complexion")||"dark"),build:String(d.get("build")||"average"),hairstyle:String(d.get("hairstyle")||"short-natural"),outfit:String(d.get("outfit")||"street-green")};}
+loadCharacterModel(appearance.presentation);
+
 const keys=new Set<string>(),touch=new Set<string>();window.addEventListener("keydown",e=>{keys.add(e.key.toLowerCase());if(e.key.startsWith("Arrow"))e.preventDefault();},{passive:false});window.addEventListener("keyup",e=>keys.delete(e.key.toLowerCase()));
 document.querySelectorAll<HTMLButtonElement>("[data-move]").forEach(b=>{const m=b.dataset.move!;b.addEventListener("pointerdown",e=>{e.preventDefault();touch.add(m);b.setPointerCapture(e.pointerId);});for(const ev of ["pointerup","pointercancel","lostpointercapture"])b.addEventListener(ev,()=>touch.delete(m));});
 let yaw=0,pitch=.2,drag=false,lx=0,ly=0,playing=false;canvas.addEventListener("pointerdown",e=>{drag=true;lx=e.clientX;ly=e.clientY;canvas.setPointerCapture(e.pointerId);});canvas.addEventListener("pointerup",()=>drag=false);canvas.addEventListener("pointercancel",()=>drag=false);canvas.addEventListener("pointermove",e=>{if(!drag)return;yaw-=(e.clientX-lx)*.004;pitch=THREE.MathUtils.clamp(pitch+(e.clientY-ly)*.002,-.15,.7);lx=e.clientX;ly=e.clientY;});
 document.querySelector<HTMLButtonElement>("#enter")!.addEventListener("click",()=>{playing=true;document.querySelector("#intro")!.classList.add("hidden");document.querySelector("#hud")!.classList.add("visible");document.querySelector("#mobile-controls")!.classList.add("visible");});
+
+const characterPanel=document.querySelector("#character-panel")!,accountPanel=document.querySelector("#account-panel")!;
+function showPanel(panel:Element){characterPanel.classList.remove("visible");accountPanel.classList.remove("visible");panel.classList.add("visible");}
+document.querySelector("#character-open")?.addEventListener("click",()=>showPanel(characterPanel));
+document.querySelector("#account-open")?.addEventListener("click",()=>showPanel(accountPanel));
+document.querySelectorAll<HTMLButtonElement>("[data-close]").forEach(b=>b.addEventListener("click",()=>document.getElementById(b.dataset.close!)?.classList.remove("visible")));
+let currentSession:AkwantuoSession|null=null;
+const accountStatus=document.querySelector<HTMLElement>("#account-status")!;
+async function syncProfile(){if(!currentSession)return;const profile=await loadPlayerProfile(currentSession);if(profile?.look){applyAppearance(profile.look as Appearance);const name=document.querySelector<HTMLInputElement>("#account-name");if(name)name.value=profile.display_name;}}
+void getAkwantuoSession().then(async session=>{currentSession=session;if(session){accountStatus.textContent="Signed in. Loading your saved player…";await syncProfile();accountStatus.textContent="Signed in. Your player profile is connected.";document.querySelector("#account-signout")?.classList.remove("hidden");}}).catch(error=>{console.warn("Account restore",error);});
+document.querySelector<HTMLFormElement>("#account-form")!.addEventListener("submit",async e=>{
+ e.preventDefault();const email=document.querySelector<HTMLInputElement>("#account-email")!.value,password=document.querySelector<HTMLInputElement>("#account-password")!.value;
+ accountStatus.textContent="Signing in…";
+ try{currentSession=await signInAkwantuo(email,password);await syncProfile();accountStatus.textContent="Signed in. Player profile synced.";document.querySelector("#account-signout")?.classList.remove("hidden");}
+ catch(error){accountStatus.textContent=error instanceof Error?error.message:"Sign-in failed. Please try again.";}
+});
+document.querySelector<HTMLButtonElement>("#account-signup")!.addEventListener("click",async()=>{
+ const email=document.querySelector<HTMLInputElement>("#account-email")!.value,password=document.querySelector<HTMLInputElement>("#account-password")!.value,name=document.querySelector<HTMLInputElement>("#account-name")!.value;
+ if(!email||password.length<8||!name.trim()){accountStatus.textContent="Enter your email, a password of at least 8 characters, and your player name.";return;}
+ accountStatus.textContent="Creating your account…";
+ try{const result=await signUpAkwantuo(email,password,name);currentSession=result.session;if(result.session){await savePlayerProfile(result.session,appearance,name);accountStatus.textContent="Account created. Your player is ready.";document.querySelector("#account-signout")?.classList.remove("hidden");}else accountStatus.textContent="Check your email to confirm your account, then sign in here.";}
+ catch(error){accountStatus.textContent=error instanceof Error?error.message:"Account creation failed.";}
+});
+document.querySelector<HTMLButtonElement>("#account-signout")!.addEventListener("click",async()=>{await signOutAkwantuo();currentSession=null;accountStatus.textContent="Signed out. Your local character remains on this device.";document.querySelector("#account-signout")?.classList.add("hidden");});
+document.querySelector<HTMLFormElement>("#character-form")!.addEventListener("submit",async e=>{
+ e.preventDefault();const next=readAppearance();if(!Number.isFinite(next.age)||next.age<18||next.age>80){document.querySelector("#character-status")!.textContent="Choose an age between 18 and 80.";return;}
+ applyAppearance(next);try{localStorage.setItem("akwantuo.character.appearance",JSON.stringify(next));if(currentSession){await savePlayerProfile(currentSession,next,document.querySelector<HTMLInputElement>("#account-name")?.value);document.querySelector("#character-status")!.textContent="Character saved and synced to your AKWANTUO account.";}else document.querySelector("#character-status")!.textContent="Character saved on this device. Sign in to sync it to your account.";}
+ catch(error){document.querySelector("#character-status")!.textContent=error instanceof Error?error.message:"Character save failed.";}
+});
+try{const saved=localStorage.getItem("akwantuo.character.appearance");if(saved)applyAppearance(JSON.parse(saved) as Appearance);}catch{/* local appearance is optional */}
+
 const clock=new THREE.Clock();function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.04);if(playing){const f=keys.has("w")||keys.has("arrowup")||touch.has("forward"),b=keys.has("s")||keys.has("arrowdown")||touch.has("back"),l=keys.has("a")||keys.has("arrowleft")||touch.has("left"),r=keys.has("d")||keys.has("arrowright")||touch.has("right");const v=new THREE.Vector3(Number(r)-Number(l),0,Number(b)-Number(f));if(v.lengthSq()){v.normalize().applyAxisAngle(new THREE.Vector3(0,1,0),yaw);player.position.addScaledVector(v,dt*7.2);player.rotation.y=Math.atan2(v.x,v.z);}}traffic.position.z-=dt*5.5;if(traffic.position.z< -175)traffic.position.z=175;const target=new THREE.Vector3(player.position.x,player.position.y+1.6,player.position.z),offset=new THREE.Vector3(Math.sin(yaw)*8.5,3.7+pitch*5,Math.cos(yaw)*8.5);camera.position.lerp(target.clone().add(offset),.09);camera.lookAt(target);renderer.render(scene,camera);}animate();
 addEventListener("resize",()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,innerWidth<700?1.2:1.6));});
 document.querySelector("#loading")?.remove();
