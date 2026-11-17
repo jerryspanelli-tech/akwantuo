@@ -754,15 +754,11 @@ async function start(): Promise<void> {
   setBootProgress(32, "Building Greater Accra roads and rail…");
   const greaterAccraTransportReport = createGreaterAccraPlayableWorld(scene);
   if (!(await yieldToStartupFrame())) return;
-  setBootProgress(62, "Adding Accra landmarks and neighbourhood roads…");
-  const greaterAccraLandmarkReport = await createGreaterAccraLandmarks(scene);
-  solidAreas.push(...greaterAccraLandmarkReport.solidAreas);
-  // Add the four connected Osu local streets needed for nearby traffic. The full
-  // 35-road neighbourhood layer remains streamed into later map work.
+  setBootProgress(62, "Preparing nearby Accra streets…");
+  // Keep the connected Osu streets needed by the first traffic prototype in
+  // the essential scene. Larger landmarks are prepared after the menu appears.
   const osuLocalRoadCount = createOsuLocalRoads(scene);
   document.documentElement.dataset.playableLocalRoadCount = String(osuLocalRoadCount);
-  document.documentElement.dataset.greaterAccraLandmarkCount = String(greaterAccraLandmarkReport.landmarkCount);
-  document.documentElement.dataset.greaterAccraLandmarkLocalRoadCount = String(greaterAccraLandmarkReport.localRoadCount);
   if (!(await yieldToStartupFrame())) return;
   document.documentElement.dataset.playableRoadSurfaceMeshes = String(greaterAccraTransportReport.roadSurfaceMeshCount);
   document.documentElement.dataset.playableRoadMarkingMeshes = String(greaterAccraTransportReport.roadMarkingMeshCount);
@@ -2087,6 +2083,12 @@ async function start(): Promise<void> {
     if (optionalWorldSceneryPromise) return optionalWorldSceneryPromise;
     document.documentElement.dataset.akwantuoOptionalWorldScenery = "loading";
     optionalWorldSceneryPromise = (async (): Promise<void> => {
+      if (!(await yieldToStartupFrame())) return;
+      // Landmark solids join the live collision list before the player enters.
+      const landmarkReport = await createGreaterAccraLandmarks(scene);
+      solidAreas.push(...landmarkReport.solidAreas);
+      document.documentElement.dataset.greaterAccraLandmarkCount = String(landmarkReport.landmarkCount);
+      document.documentElement.dataset.greaterAccraLandmarkLocalRoadCount = String(landmarkReport.localRoadCount);
       if (!(await yieldToStartupFrame())) return;
       const islandMeshCount = createAkwantuoPrivateIsland(scene);
       document.documentElement.dataset.akwantuoPrivateIslandMeshCount = String(islandMeshCount);
