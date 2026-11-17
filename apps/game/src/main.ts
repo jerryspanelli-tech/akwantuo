@@ -107,7 +107,7 @@ const blocks=[
 [-34,-68,18,18,3,"shop","Auntie Ama's"],[34,-68,22,18,4,"flat","Adom Court"],[-43,-12,19,22,2,"shop","Nkran Mart"],[42,-10,22,20,5,"office","Cedar House"],[-38,36,24,19,3,"flat","Palm Court"],[38,35,21,20,3,"shop","Kojo Stores"],[-54,118,28,22,4,"flat","Sunrise Court"],[54,118,30,22,5,"office","Meridian House"],[-88,-95,30,24,3,"flat","Garden View"],[88,-95,26,22,4,"flat","Hilltop Court"],[-90,48,28,23,3,"shop","Market Square"],[90,50,28,24,3,"flat","Cocoa Residence"],[-120,140,34,28,6,"office","Nkran Finance"],[120,140,32,26,5,"office","Atlantic Point"]
 ] as const;for(const b of blocks)building(b[0],b[1],b[2],b[3],b[4],b[5],b[6]);
 for(const [x,z,w] of [[-62,-72,48],[62,-72,48],[-65,45,45],[65,45,45]] as const){box(scene,w,1.2,.45,x+WORLD_ORIGIN_X,.14,z+WORLD_ORIGIN_Z,mat("#b7a68c"));for(let i=-w/2+2;i<w/2;i+=5)box(scene,.24,1.45,.6,x+WORLD_ORIGIN_X+i,.14,z+WORLD_ORIGIN_Z,mat("#8d806e"));}
-function kiosk(x:number,z:number,title:string){const g=new THREE.Group();g.position.set(x+WORLD_ORIGIN_X,0,z+WORLD_ORIGIN_Z);scene.add(g);solidAreas.push({minX:x+WORLD_ORIGIN_X-2.4,maxX:x+WORLD_ORIGIN_X+2.4,minZ:z+WORLD_ORIGIN_Z-2,maxZ:z+WORLD_ORIGIN_Z+2});box(g,4,2.5,3,0,1.25,0,mat("#c49a61"));box(g,4.3,.2,3.4,0,2.6,0,green);box(g,3.1,1.1,.12,0,.8,1.58,dark);sign(g,title,"CHOP BAR",3.8,0,2.35,1.7);}
+function kiosk(x:number,z:number,title:string){const g=new THREE.Group();g.position.set(x+WORLD_ORIGIN_X,0,z+WORLD_ORIGIN_Z);scene.add(g);solidAreas.push({minX:x+WORLD_ORIGIN_X-2.4,maxX:x+WORLD_ORIGIN_X+2.4,minZ:z+WORLD_ORIGIN_Z-2,maxZ:z+WORLD_ORIGIN_Z+2});box(g,4,2.5,3,0,0,0,mat("#c49a61"));box(g,4.3,.2,3.4,0,2.6,0,green);box(g,3.1,1.1,.12,0,.8,1.58,dark);sign(g,title,"CHOP BAR",3.8,0,2.35,1.7);}
 kiosk(-18,-25,"SWEET MOTHER");kiosk(19,20,"WAKE & EAT");
 const trunk=mat("#654832"),leaves=[mat("#526d42"),mat("#607a49"),mat("#71844c")];
 const treePositions:Array<{x:number;z:number;s:number}>=[];
@@ -181,7 +181,7 @@ function createAirport(x:number,z:number){
  const g=new THREE.Group();g.position.set(x,0,z);scene.add(g);addLandmarkSolid(x,z,230,110);
  box(g,210,22,70,0,0,0,mat("#c7c9c3"));box(g,190,13,.55,0,4,35.4,glass,false);box(g,214,1,74,0,22,0,roof);
  sign(g,"KOTOKA INTERNATIONAL","ARRIVALS · DEPARTURES",68,0,23,35.8);
- box(g,18,52,18,92,26,-15,mat("#aeb9b7",.35,.12));box(g,20,2,20,92,52,-15,roof);
+ box(g,18,52,18,92,0,-15,mat("#aeb9b7",.35,.12));box(g,20,2,20,92,52,-15,roof);
 }
 function createStadium(x:number,z:number){
  const g=new THREE.Group();g.position.set(x,0,z);scene.add(g);addLandmarkSolid(x,z,190,150);
