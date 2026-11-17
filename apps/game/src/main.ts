@@ -2249,13 +2249,11 @@ async function start(): Promise<void> {
   });
 
   playButton?.addEventListener("click", async () => {
-    if (optionalWorldSceneryPromise) {
-      playButton.disabled = true;
-      playButton.textContent = "PREPARING WORLD…";
-      await optionalWorldSceneryPromise;
-      playButton.disabled = false;
-      playButton.innerHTML = "ENTER WORLD <span>↗</span>";
-    }
+    playButton.disabled = true;
+    playButton.textContent = "PREPARING WORLD…";
+    await prepareOptionalWorldScenery();
+    playButton.disabled = false;
+    playButton.innerHTML = "ENTER WORLD <span>↗</span>";
     // Capture the exact scene footprint at the menu-to-gameplay handoff.
     document.documentElement.dataset.akwantuoPlayClickedAt = new Date().toISOString();
     document.documentElement.dataset.akwantuoPlayMeshCount = String(scene.meshes.length);
