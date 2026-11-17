@@ -1,0 +1,109 @@
+name: Build Ghanaian player characters
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feat/ghanaian-character-assets
+    paths:
+      - ".github/workflows/build-character-assets.yml"
+      - "character-build/**"
+      - "!apps/game/public/assets/characters/**"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: akwantuo-character-assets
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    name: Generate, validate and save both GLB characters
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - name: Check out AKWANTUO asset branch
+        uses: actions/checkout@v4
+        with:
+          ref: feat/ghanaian-character-assets
+          fetch-depth: 1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Get Ara 3D Gen
+        run: git clone --depth 1 https://github.com/olatunde85/3d-gen.git character-build/generator
+
+      - name: Install character generator dependencies
+        working-directory: character-build/generator
+        run: npm ci --no-audit --no-fund
+
+      - name: Prepare CC0 character data
+        working-directory: character-build/generator
+        run: npm run setup-assets
+
+      - name: Export both Ghanaian characters with embedded Idle and Walk clips
+        working-directory: character-build/generator
+        run: npx tsx ../export-characters.ts
+
+      - name: Validate both GLB files and embedded animation clips
+        env:
+          WORKSPACE: ${{ github.workspace }}
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import path from 'node:path';
+          const files = [
+            ['male', path.join(process.env.WORKSPACE, 'apps/game/public/assets/characters/akwantuo-male.glb')],
+            ['female', path.join(process.env.WORKSPACE, 'apps/game/public/assets/characters/akwantuo-female.glb')],
+          ];
+          for (const [label, file] of files) {
+            if (!fs.existsSync(file)) throw new Error(label + ': expected export not found: ' + file);
+            const b = fs.readFileSync(file);
+            if (b.subarray(0, 4).toString() !== 'glTF') throw new Error(label + ': invalid GLB magic');
+            if (b.readUInt32LE(4) !== 2) throw new Error(label + ': expected glTF 2.0');
+            if (b.readUInt32LE(8) !== b.length) throw new Error(label + ': GLB length header mismatch');
+            const jsonLength = b.readUInt32LE(12);
+            const doc = JSON.parse(b.subarray(20, 20 + jsonLength).toString('utf8').trim());
+            if (!doc.meshes?.length || !doc.skins?.length || !doc.animations?.length) {
+              throw new Error(label + ': expected mesh, skinned rig and embedded animation clips');
+            }
+            if (!doc.nodes?.length || !doc.buffers?.length) throw new Error(label + ': incomplete GLB scene/buffer');
+            console.log(label + ': ' + (b.length / 1024 / 1024).toFixed(2) + ' MB; meshes=' + doc.meshes.length + '; skins=' + doc.skins.length + '; clips=' + doc.animations.length);
+          }
+          NODE
+
+      - name: Record character asset provenance
+        run: |
+          mkdir -p apps/game/public/assets/characters
+          cat > apps/game/public/assets/characters/README.md <<'EOF'
+          # AKWANTUO player character assets
+
+          Separate adult Ghanaian-inspired male and female player models generated
+          from the recipes in `character-build/` using Ara 3D Gen.
+
+          Each GLB must contain a skinned mesh, game rig and embedded animation clips.
+          Coordinate convention: metres, +Y up, character faces +Z, feet at y=0.
+
+          Keep these assets isolated until Babylon.js loading, retargeting, locomotion,
+          mobile performance and character selection have all been tested.
+
+          ## Third-party asset notices
+
+          - Ara 3D Gen source: https://github.com/olatunde85/3d-gen (MIT).
+          - MakeHuman base data: CC0 1.0.
+          - Motion-capture clips derive from the CMU Graphics Lab Motion Capture Database.
+            Commercial and non-commercial product use is permitted; the motion data itself
+            must not be resold on its own.
+          EOF
+
+      - name: Commit generated models to the isolated branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/game/public/assets/characters/akwantuo-male.glb apps/game/public/assets/characters/akwantuo-female.glb apps/game/public/assets/characters/README.md
+          git commit -m "Add generated Ghanaian male and female player characters"
+          git push origin HEAD:feat/ghanaian-character-assets
