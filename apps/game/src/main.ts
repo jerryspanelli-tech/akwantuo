@@ -80,6 +80,16 @@ if (import.meta.hot) {
 const bootScreen = document.querySelector<HTMLElement>("#boot-screen");
 const gameShell = document.querySelector<HTMLElement>("#game-shell");
 const bootStatus = document.querySelector<HTMLElement>("#boot-status");
+const bootProgress = document.querySelector<HTMLElement>("#boot-progress");
+const setBootProgress = (value: number, message: string): void => {
+  const progress = Math.max(0, Math.min(100, Math.round(value)));
+  if (bootStatus) bootStatus.textContent = message;
+  if (bootProgress) {
+    bootProgress.style.width = progress + "%";
+    bootProgress.setAttribute("aria-valuenow", String(progress));
+  }
+  document.documentElement.dataset.akwantuoStartupProgress = String(progress);
+};
 const hudLocation = document.querySelector<HTMLElement>(".hud-location");
 let locationRefreshElapsed = 0;
 let lastDisplayedRegionId = "";
@@ -611,7 +621,7 @@ async function start(): Promise<void> {
   document.documentElement.dataset.akwantuoStage6Checks = "passed";
   document.documentElement.dataset.akwantuoBuildingInteriorLinkCount = String(DISTRICT_BUILDINGS.filter((building) => building.interiorId).length);
 
-  bootStatus.textContent = "Preparing the 3D display…";
+  setBootProgress(3, "Preparing the 3D display…");
 
   // The game shell starts hidden behind the boot screen. Give the canvas a real
   // layout box before Babylon creates its rendering engine; some mobile browsers
@@ -636,7 +646,7 @@ async function start(): Promise<void> {
       "). The game display did not finish mounting.");
   }
 
-  bootStatus.textContent = "Starting the 3D world…";
+  setBootProgress(10, "Starting the 3D world…");
   let engine: Engine;
   try {
     // Keep MSAA disabled for older mobile GPUs, but render mobile gameplay
@@ -682,7 +692,7 @@ async function start(): Promise<void> {
     return generation === startupGeneration;
   };
 
-  bootStatus.textContent = "Preparing Accra streets…";
+  setBootProgress(18, "Preparing Accra streets…");
   const solidAreas = createPreviewWorld(scene, { includeGround: false, includeBuildings: false });
   const chunkRegistry = new ChunkRegistry();
   const chunkManager = new WorldChunkManager({
@@ -725,7 +735,7 @@ async function start(): Promise<void> {
   document.documentElement.dataset.akwantuoSpawnChunk = "1:-3";
   document.documentElement.dataset.akwantuoChunkGenerators = chunkRegistry.getGeneratorIds().join(",");
   if (!(await yieldToStartupFrame())) return;
-  bootStatus.textContent = "Building interiors…";
+  setBootProgress(25, "Preparing building access…");
   // Interior geometry is created on first entry and cached for later visits.
   // Blueprints and building links remain available without allocating room meshes.
   const interiorRooms = new Map<string, NonNullable<ReturnType<typeof createInteriorRoom>>>();
@@ -741,14 +751,14 @@ async function start(): Promise<void> {
   );
   document.documentElement.dataset.akwantuoStoreShopkeeperRig = "false";
   if (!(await yieldToStartupFrame())) return;
-  bootStatus.textContent = "Preparing the coastline and island…";
+  setBootProgress(32, "Preparing the coastline and island…");
   const privateIslandMeshCount = createAkwantuoPrivateIsland(scene);
   document.documentElement.dataset.akwantuoPrivateIslandMeshCount = String(privateIslandMeshCount);
   if (!(await yieldToStartupFrame())) return;
-  bootStatus.textContent = "Building Greater Accra roads and rail…";
+  setBootProgress(45, "Building Greater Accra roads and rail…");
   const greaterAccraTransportReport = createGreaterAccraPlayableWorld(scene);
   if (!(await yieldToStartupFrame())) return;
-  bootStatus.textContent = "Adding Accra landmarks and neighbourhood roads…";
+  setBootProgress(62, "Adding Accra landmarks and neighbourhood roads…");
   const greaterAccraLandmarkReport = await createGreaterAccraLandmarks(scene);
   solidAreas.push(...greaterAccraLandmarkReport.solidAreas);
   // Add the four connected Osu local streets needed for nearby traffic. The full
@@ -758,7 +768,7 @@ async function start(): Promise<void> {
   document.documentElement.dataset.greaterAccraLandmarkCount = String(greaterAccraLandmarkReport.landmarkCount);
   document.documentElement.dataset.greaterAccraLandmarkLocalRoadCount = String(greaterAccraLandmarkReport.localRoadCount);
   if (!(await yieldToStartupFrame())) return;
-  bootStatus.textContent = "Finishing Ghanaian scenery…";
+  setBootProgress(76, "Finishing Ghanaian scenery…");
   createGreaterAccraWorldDetail(scene);
   if (!(await yieldToStartupFrame())) return;
   document.documentElement.dataset.playableRoadSurfaceMeshes = String(greaterAccraTransportReport.roadSurfaceMeshCount);
@@ -769,46 +779,20 @@ async function start(): Promise<void> {
   document.documentElement.dataset.playableN6TownSigns = String(greaterAccraTransportReport.n6TownSignCount);
   document.documentElement.dataset.playableRailRoadCrossingCandidates = String(greaterAccraTransportReport.railRoadCrossingCandidateCount);
   document.documentElement.dataset.playablePublicTransportCorridors = String(greaterAccraTransportReport.publicTransportCorridorCount);
-  bootStatus.textContent = "Preparing public transport…";
+  setBootProgress(86, "Preparing public transport…");
   const playableRailDemo = createPlayableRailDemo(scene);
   if (!(await yieldToStartupFrame())) return;
   const greaterAccraMappedRailService = createGreaterAccraMappedRailService(scene);
   document.documentElement.dataset.playableMappedRailService = "true";
   document.documentElement.dataset.playableMappedRailBoardingOpen = String(greaterAccraMappedRailService.isBoardingOpen());
-  let activeAccountSession: AkwantuoSession | null;
-  try {
-    activeAccountSession = await getAkwantuoSession();
-  } catch (error) {
-    if (generation !== startupGeneration) return;
-    throw error;
-  }
-  if (generation !== startupGeneration) return;
+  // Local appearance is enough to construct the first playable scene. Cloud
+  // session refresh, profile and economy hydration run after the menu is ready.
+  let activeAccountSession: AkwantuoSession | null = null;
   let currentAppearance = loadAppearance(window.localStorage);
+  let hasEditedAppearance = false;
   let walletBalancePesewas = 0;
   let ownedGameAssetIds = new Set<string>();
   let shopStockById = new Map<string, number>();
-  if (activeAccountSession) {
-    try {
-      const cloudProfile = await loadPlayerProfile(activeAccountSession);
-      if (generation !== startupGeneration) return;
-      if (cloudProfile?.look) currentAppearance = resolveAppearance(cloudProfile.look);
-      const economy = await loadEconomyState(activeAccountSession);
-      if (generation !== startupGeneration) return;
-      walletBalancePesewas = economy.wallet?.balance_pesewas ?? 0;
-      ownedGameAssetIds = new Set(economy.owned_assets.map((asset) => asset.asset_id));
-      document.documentElement.dataset.akwantuoWalletPesewas = String(walletBalancePesewas);
-      document.documentElement.dataset.akwantuoOwnedAssetCount = String(ownedGameAssetIds.size);
-      const shopProducts = await loadShopProducts(activeAccountSession);
-      if (generation !== startupGeneration) return;
-      shopStockById = new Map(shopProducts.map((item) => [item.product_id, item.stock_quantity]));
-      if (accountStatus) accountStatus.textContent = `Signed in as ${activeAccountSession.user.email || "AKWANTUO player"}. Cloud saves are enabled.`;
-      if (accountSignOut) accountSignOut.classList.remove("is-hidden");
-      if (accountButton) accountButton.innerHTML = "ACCOUNT <small>CONNECTED</small>";
-    } catch (error) {
-      if (generation !== startupGeneration) return;
-      console.warn("AKWANTUO cloud profile could not be loaded:", error);
-    }
-  }
   const player = createPlayer(scene, currentAppearance);
   // Two skinned Ghanaian pedestrians use the same character/idle/walk assets as
   // the player. They walk short, bounded sidewalk loops on the nearby Osu roads.
@@ -912,6 +896,33 @@ async function start(): Promise<void> {
     document.documentElement.dataset.akwantuoWalletPesewas = String(walletBalancePesewas);
     document.documentElement.dataset.akwantuoOwnedAssetCount = String(ownedGameAssetIds.size);
     document.documentElement.dataset.akwantuoInventoryItemCount = String(economy.inventory.reduce((sum, item) => sum + item.quantity, 0));
+  };
+
+  const hydrateSavedPlayer = async (): Promise<void> => {
+    try {
+      const session = await getAkwantuoSession();
+      if (generation !== startupGeneration || activeAccountSession) return;
+      activeAccountSession = session;
+      if (!session) return;
+      const cloudProfile = await loadPlayerProfile(session);
+      if (generation !== startupGeneration || activeAccountSession !== session) return;
+      if (cloudProfile?.look && !hasEditedAppearance) {
+        currentAppearance = resolveAppearance(cloudProfile.look);
+        player.applyAppearance(currentAppearance);
+        if (characterForm) fillAppearanceForm(characterForm, currentAppearance);
+      }
+      await refreshPlayerEconomy();
+      if (generation !== startupGeneration || activeAccountSession !== session) return;
+      if (accountStatus) accountStatus.textContent = `Signed in as ${session.user.email || "AKWANTUO player"}. Cloud saves are enabled. Wallet: GH₵${(walletBalancePesewas / 100).toFixed(2)}.`;
+      if (accountSignOut) accountSignOut.classList.remove("is-hidden");
+      if (accountButton) accountButton.innerHTML = "ACCOUNT <small>CONNECTED</small>";
+      document.documentElement.dataset.akwantuoCloudHydration = "complete";
+    } catch (error) {
+      if (generation !== startupGeneration) return;
+      document.documentElement.dataset.akwantuoCloudHydration = "failed";
+      console.warn("AKWANTUO saved-player data will load when you sign in:", error);
+      if (accountStatus) accountStatus.textContent = "Your local world is ready. Cloud save details could not be refreshed; you can retry by signing in.";
+    }
   };
   retailBrowseButton.addEventListener("click", () => {
     if (activeInterior?.roomId !== "convenience-store") return;
@@ -2063,7 +2074,7 @@ async function start(): Promise<void> {
   // Reveal the game shell before starting the continuous render loop. This
   // keeps the boot-to-menu handoff independent of frame scheduling on slower devices.
   startupHandoffStage = "show_ready_status";
-  bootStatus.textContent = "Your world is ready.";
+  setBootProgress(100, "Your world is ready.");
   startupHandoffStage = "hide_boot_screen";
   bootScreen.hidden = true;
   startupHandoffStage = "reveal_game_shell";
@@ -2075,6 +2086,8 @@ async function start(): Promise<void> {
   startupHandoffStage = "start_render_loop";
   engine.runRenderLoop(render);
   startupHandoffStage = "startup_complete";
+  // Authentication and cloud saves must never hold the opening menu hostage.
+  void hydrateSavedPlayer();
   window.addEventListener("resize", () => engine.resize());
 
   const openCharacterCreator = (): void => {
@@ -2092,6 +2105,7 @@ async function start(): Promise<void> {
   const updateCharacterPreview = (): void => {
     if (!characterForm) return;
     currentAppearance = readAppearanceForm(characterForm);
+    hasEditedAppearance = true;
     player.applyAppearance(currentAppearance);
   };
   characterForm?.addEventListener("input", updateCharacterPreview);
