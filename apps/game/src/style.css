@@ -8,3 +8,5 @@
 .news-item{padding:12px 0;border-bottom:1px solid #c9bda4}.news-item b{font-size:12px;color:#245d43;letter-spacing:.06em}.news-item p{font-size:13px;line-height:1.55;margin:7px 0 0;color:#596052}.panel-card input[type=range]{accent-color:#245d43;padding:0}
 
 .minimap{position:absolute;top:24px;right:24px;width:144px;height:144px;border:2px solid #d8b96e;border-radius:50%;background:#17231d;box-shadow:0 8px 28px #0008;display:none;z-index:3}.minimap.visible{display:block}@media(max-width:650px){.minimap{top:68px;right:14px;width:112px;height:112px}}
+
+.mission{position:absolute;left:28px;bottom:76px;width:min(310px,72vw);padding:13px 16px;background:rgba(17,31,25,.86);border-left:3px solid #d9b66d;box-shadow:0 8px 24px #0004;display:none;gap:5px}.mission.visible{display:grid}.mission span{font-size:9px;letter-spacing:.16em;color:#e4c77d;font-weight:800}.mission b{font-family:Georgia,serif;font-size:15px;color:#f2ead9;font-weight:600}.mission small{font-size:11px;color:#c6d0c3}@media(max-width:650px){.mission{left:14px;bottom:185px;width:min(260px,66vw);padding:10px 12px}.mission b{font-size:13px}}
