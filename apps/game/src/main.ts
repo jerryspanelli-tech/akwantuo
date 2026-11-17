@@ -81,7 +81,7 @@ function sign(p:THREE.Object3D,title:string,sub:string,w:number,x:number,y:numbe
 function building(x:number,z:number,w:number,d:number,floors:number,kind:"shop"|"flat"|"office",name:string){
  const g=new THREE.Group();g.position.set(x+WORLD_ORIGIN_X,0,z+WORLD_ORIGIN_Z);scene.add(g);
  solidAreas.push({minX:x+WORLD_ORIGIN_X-w/2-.8,maxX:x+WORLD_ORIGIN_X+w/2+.8,minZ:z+WORLD_ORIGIN_Z-d/2-.8,maxZ:z+WORLD_ORIGIN_Z+d/2+.8});
- const h=floors*3.1;box(g,w,h,d,0,h/2,0,mat(facade[Math.floor(Math.random()*facade.length)]));box(g,w+.4,.28,d+.4,0,h,0,roof);
+ const h=floors*3.1;box(g,w,h,d,0,0,0,mat(facade[Math.floor(Math.random()*facade.length)]));box(g,w+.4,.28,d+.4,0,h,0,roof);
  const count=Math.max(2,Math.floor(w/3.2)),windowTotal=count*floors,balconyTotal=kind==="flat"?count*Math.max(0,floors-1):0,ww=Math.min(1.55,w/count*.58),dummy=new THREE.Object3D();
  const windows=new THREE.InstancedMesh(new THREE.BoxGeometry(ww,1.55,.12),glass,windowTotal);
  const frames=new THREE.InstancedMesh(new THREE.BoxGeometry(ww+.16,.1,.18),frame,windowTotal);
@@ -165,21 +165,21 @@ function addLandmarkSolid(x:number,z:number,w:number,d:number){solidAreas.push({
 function landmarkTower(x:number,z:number,w:number,d:number,floors:number,name:string,color:string){
  const g=new THREE.Group();g.position.set(x,0,z);scene.add(g);addLandmarkSolid(x,z,w+5,d+5);
  const h=floors*3.5,glassMat=mat(color,.28,.16),fin=mat("#d7d3c6",.48,.25);
- box(g,w,h,d,0,h/2,0,glassMat);box(g,w+1,.55,d+1,0,h,0,fin);
+ box(g,w,h,d,0,0,0,glassMat);box(g,w+1,.55,d+1,0,h,0,fin);
  for(let f=1;f<floors;f++)box(g,w+.35,.13,d+.35,0,f*3.5,0,fin,false);
  for(const side of [-1,1])for(let i=-1;i<=1;i++)box(g,.24,h,d+.25,side*(w/2-.25),0,i*d*.28,fin,false);
  sign(g,name,"GREATER ACCRA",w*.82,0,h-.7,d/2+.18);
 }
 function createMall(x:number,z:number){
  const g=new THREE.Group();g.position.set(x,0,z);scene.add(g);addLandmarkSolid(x,z,190,120);
- box(g,180,20,105,0,10,0,mat("#c8c1ad"));box(g,184,1.1,109,0,20,0,roof);
+ box(g,180,20,105,0,0,0,mat("#c8c1ad"));box(g,184,1.1,109,0,20,0,roof);
  box(g,165,12,.45,0,3.5,52.8,glass,false);box(g,180,2,1.5,0,21,53,green,false);
  sign(g,"ACCRA MALL","SHOPPING · DINING · LIFESTYLE",55,0,22.2,53.9);
  for(let xw=-70;xw<=70;xw+=28)box(g,1.2,13,.8,xw,3,53.4,frame,false);
 }
 function createAirport(x:number,z:number){
  const g=new THREE.Group();g.position.set(x,0,z);scene.add(g);addLandmarkSolid(x,z,230,110);
- box(g,210,22,70,0,11,0,mat("#c7c9c3"));box(g,190,13,.55,0,4,35.4,glass,false);box(g,214,1,74,0,22,0,roof);
+ box(g,210,22,70,0,0,0,mat("#c7c9c3"));box(g,190,13,.55,0,4,35.4,glass,false);box(g,214,1,74,0,22,0,roof);
  sign(g,"KOTOKA INTERNATIONAL","ARRIVALS · DEPARTURES",68,0,23,35.8);
  box(g,18,52,18,92,26,-15,mat("#aeb9b7",.35,.12));box(g,20,2,20,92,52,-15,roof);
 }
@@ -193,7 +193,7 @@ function createStadium(x:number,z:number){
 }
 function createTheatre(x:number,z:number){
  const g=new THREE.Group();g.position.set(x,0,z);scene.add(g);addLandmarkSolid(x,z,110,95);
- box(g,88,13,68,0,6.5,0,mat("#b9b7a8"));
+ box(g,88,13,68,0,0,0,mat("#b9b7a8"));
  const shellGeo=new THREE.SphereGeometry(1,32,20,0,Math.PI*2,0,Math.PI/2),shellMat=mat("#ded8c8",.65);
  for(const [sx,sy,sz,px,pz] of [[48,21,35,-12,0],[39,17,29,18,-7],[30,14,23,0,13]] as const){const s=new THREE.Mesh(shellGeo,shellMat);s.scale.set(sx,sy,sz);s.position.set(px,13,pz);s.castShadow=true;g.add(s);}
  sign(g,"NATIONAL THEATRE","ARTS · CULTURE · PERFORMANCE",48,0,14,35);
@@ -207,7 +207,7 @@ function createMemorial(x:number,z:number){
 }
 function createArtsCentre(x:number,z:number){
  const g=new THREE.Group();g.position.set(x,0,z);scene.add(g);addLandmarkSolid(x,z,112,92);
- box(g,100,12,78,0,6,0,mat("#b9b5a7"));box(g,92,9,.45,0,5,39.2,glass,false);
+ box(g,100,12,78,0,0,0,mat("#b9b5a7"));box(g,92,9,.45,0,0,39.2,glass,false);
  const domeGeo=new THREE.SphereGeometry(1,40,24,0,Math.PI*2,0,Math.PI/2),dome=new THREE.Mesh(domeGeo,mat("#e3dfd2",.55));
  dome.scale.set(54,22,42);dome.position.y=12;dome.castShadow=true;g.add(dome);
  const ring=new THREE.Mesh(new THREE.TorusGeometry(48,1.5,10,64),yellow);ring.rotation.x=Math.PI/2;ring.scale.z=.78;ring.position.y=12;g.add(ring);
