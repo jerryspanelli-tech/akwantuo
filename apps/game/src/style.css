@@ -146,3 +146,10 @@
   .menu-story::before { margin-bottom: 10px; }
   .wordmark::after { width: 12px; height: 12px; font-size: 8px; }
 }
+
+.ghana-identity-line {
+  display: flex; align-items: center; gap: 9px; margin: 0 0 9px;
+  color: rgba(255,242,214,.72); font-size: 8px; font-weight: 900; letter-spacing: .22em;
+}
+.ghana-identity-line span:first-child { color: #e9c44f; }
+.ghana-identity-line i { color: #c94a3d; font-style: normal; font-size: 10px; }
