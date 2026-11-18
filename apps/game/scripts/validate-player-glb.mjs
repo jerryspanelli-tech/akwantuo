@@ -20,7 +20,7 @@ while (offset + 8 <= bytes.length) {
   const end = start + chunkLength;
   if (end > bytes.length) throw new Error("Player GLB contains a truncated chunk.");
   if (chunkType === 0x4e4f534a) {
-    document = JSON.parse(bytes.subarray(start, end).toString("utf8").replace(/\\0+$/g, "").trim());
+    document = JSON.parse(bytes.subarray(start, end).toString("utf8").trim());
     break;
   }
   offset = end;
