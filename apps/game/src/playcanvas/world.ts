@@ -274,6 +274,29 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     cylinder("Accra trotro wheel", x, 0.55, z, 0.42, 0.24, mats.roof);
   }
 
+  // Ghanaian roadside service station and street lighting.
+  box("Spintex fuel station forecourt", 5650, 0.03, -1040, 52, 0.12, 38, mats.lightConcrete);
+  box("Spintex fuel station canopy", 5650, 5.2, -1040, 42, 0.55, 24, mats.red);
+  box("Spintex fuel station fascia", 5650, 5.65, -1040, 42, 0.45, 1.2, makeSignMaterial("FUEL STATION"));
+  for (const x of [5635, 5650, 5665]) {
+    box("Fuel dispenser", x, 1.25, -1040, 1.25, 2.5, 1.2, mats.white, 0, true);
+    box("Fuel dispenser display", x, 1.7, -1039.35, 0.7, 0.48, 0.08, mats.glass);
+  }
+  for (let i = 0; i < 12; i++) {
+    const x = 950 + i * 34;
+    box("Osu streetlight pole", x, 4.5, -1320, 0.18, 9, 0.18, mats.roof);
+    box("Osu streetlight arm", x + 1.8, 8.8, -1320, 3.6, 0.12, 0.12, mats.roof);
+    box("Osu streetlight lamp", x + 3.4, 8.65, -1320, 0.8, 0.22, 0.5, mats.gold);
+  }
+
+  // Labadi marina watercraft props: a speedboat and a personal watercraft.
+  box("Labadi speedboat hull", 2820, 0.65, -3960, 3.2, 0.85, 9.5, mats.white);
+  box("Labadi speedboat deck", 2820, 1.15, -3960, 2.7, 0.22, 7.2, mats.red);
+  box("Labadi speedboat windscreen", 2820, 1.75, -3958.5, 1.9, 0.85, 0.18, mats.glass);
+  box("Labadi speedboat outboard motor", 2820, 0.95, -3965, 0.8, 1.2, 0.8, mats.roof);
+  box("Labadi jet ski hull", 2840, 0.48, -3925, 1.1, 0.75, 2.8, mats.gold);
+  box("Labadi jet ski seat", 2840, 0.95, -3924.8, 0.55, 0.55, 1.35, mats.roof);
+
   // Coastal vegetation and a playable Labadi beach / marina approach.
   for (let i = 0; i < 26; i++) {
     const x = 1450 + i * 48;
