@@ -57,8 +57,6 @@ async function boot() {
   app.setCanvasResolution(RESOLUTION_AUTO);
   app.scene.ambientLight = new Color(0.48, 0.49, 0.46);
   // Warm Accra daylight with a soft ambient fill, avoiding harsh flat lighting.
-  app.scene.gammaCorrection = 1;
-  app.scene.toneMapping = 1;
   app.start();
 
   const addBox = (name: string, x: number, y: number, z: number, sx: number, sy: number, sz: number, material: StandardMaterial, blocker = false) => {
