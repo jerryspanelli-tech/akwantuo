@@ -211,9 +211,14 @@ async function boot() {
   window.addEventListener("pointermove", (event) => { if (dragPointer !== event.pointerId) return; cameraYaw -= (event.clientX - lastX) * 0.22; cameraPitch = clamp(cameraPitch + (event.clientY - lastY) * 0.12, -2, 30); lastX = event.clientX; lastY = event.clientY; });
   window.addEventListener("pointerup", (event) => { if (dragPointer === event.pointerId) dragPointer = null; });
 
-  let inVehicle = false, vehicleSpeed = 0, vehicleYaw = 0, gaitTime = 0;
   const playerSpeed = 5.1;
-  const overlaps = (x: number, z: number) => blockers.some((b) => Math.abs(x - b.x) < b.hx + 0.38 && Math.abs(z - b.z) < b.hz + 0.38);
+  let inVehicle = false, vehicleSpeed = 0, vehicleYaw = 0, gaitTime = 0;
+  const overlaps = (x: number, z: number) => {
+    const buildingCollision = blockers.some((b) => Math.abs(x - b.x) < b.hx + 0.38 && Math.abs(z - b.z) < b.hz + 0.38);
+    const vehiclePosition = vehicle.getPosition();
+    const vehicleCollision = !inVehicle && Math.abs(x - vehiclePosition.x) < 1.55 && Math.abs(z - vehiclePosition.z) < 2.45;
+    return buildingCollision || vehicleCollision;
+  };
   const canEnter = () => Math.hypot(player.getPosition().x - vehicle.getPosition().x, player.getPosition().z - vehicle.getPosition().z) < 4.3;
   const updateButtons = () => {
     if (interactButton) { interactButton.hidden = !inVehicle && !canEnter(); interactButton.textContent = inVehicle ? "DRIVE" : "ENTER TAXI"; }
