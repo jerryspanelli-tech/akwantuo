@@ -325,7 +325,7 @@ async function boot() {
       }
       const steer = Number(steerRight) - Number(steerLeft);
       const steeringGrip = 0.3 + Math.min(Math.abs(vehicleSpeed) / 8, 1) * 0.7;
-      vehicleYaw -= steer * steeringGrip * (vehicleSpeed >= 0 ? 1 : -1) * step * 1.75;
+      vehicleYaw += steer * steeringGrip * (vehicleSpeed >= 0 ? 1 : -1) * step * 1.75;
       const nextX = vehicle.getPosition().x + Math.sin(vehicleYaw) * vehicleSpeed * step;
       const nextZ = vehicle.getPosition().z + Math.cos(vehicleYaw) * vehicleSpeed * step;
       if (!overlaps(nextX, nextZ) && nextX > -8000 && nextX < 13000 && nextZ > -4050 && nextZ < 8500) vehicle.setPosition(nextX, 0, nextZ);
@@ -409,7 +409,7 @@ async function boot() {
     }
     if (status) status.textContent = inVehicle ? "TAXI · DRIVING" : "OSU · EXPLORATION";
     if (objective) objective.textContent = inVehicle ? "Drive towards Labadi Beach" : "Explore Osu and find the taxi";
-    if (hint) hint.textContent = inVehicle ? "Joystick: steer and accelerate · EXIT to leave" : "Push fully to sprint · Tap ↑ to jump · Drag to look";
+    if (hint) hint.textContent = inVehicle ? "Steer with left/right · Hold ACCELERATE or REVERSE · Door to exit" : "Push fully to sprint · Tap ↑ to jump · Drag to look";
     if (healthFill) healthFill.style.width = "100%";
     if (healthValue) healthValue.textContent = "100";
   });
