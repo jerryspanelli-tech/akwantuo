@@ -1,0 +1,231 @@
+import { AppBase, Color, Entity, StandardMaterial } from "playcanvas";
+import { GREATER_ACCRA_COASTLINE, GREATER_ACCRA_MAP_EXTENT, GREATER_ACCRA_REGION_ANCHORS, GREATER_ACCRA_ROAD_PATHS } from "../world/greaterAccraLayout";
+import { GREATER_ACCRA_LANDMARK_FOOTPRINTS } from "../world/greaterAccraLandmarkData";
+import { GREATER_ACCRA_RAIL_NODES, GREATER_ACCRA_RAIL_ROUTES } from "../world/railNetwork";
+
+export type WorldBlocker = { x: number; z: number; hx: number; hz: number };
+export type GreaterAccraWorld = {
+  blockers: WorldBlocker[];
+  spawn: { x: number; z: number };
+  taxiSpawn: { x: number; z: number };
+};
+
+const material = (r: number, g: number, b: number): StandardMaterial => {
+  const value = new StandardMaterial();
+  value.diffuse = new Color(r, g, b);
+  value.specular = new Color(0.035, 0.035, 0.035);
+  value.update();
+  return value;
+};
+
+export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
+  const blockers: WorldBlocker[] = [];
+  const mats = {
+    earth: material(0.43, 0.37, 0.27), grass: material(0.19, 0.30, 0.19),
+    road: material(0.105, 0.12, 0.125), roadFuture: material(0.19, 0.20, 0.19),
+    yellow: material(0.92, 0.70, 0.22), white: material(0.82, 0.82, 0.75),
+    kerb: material(0.62, 0.60, 0.53), median: material(0.43, 0.44, 0.40),
+    sand: material(0.76, 0.66, 0.48), sea: material(0.035, 0.20, 0.29),
+    deepSea: material(0.018, 0.12, 0.21), green: material(0.07, 0.27, 0.18),
+    gold: material(0.76, 0.52, 0.20), red: material(0.50, 0.14, 0.12),
+    glass: material(0.12, 0.25, 0.28), concrete: material(0.54, 0.52, 0.46),
+    lightConcrete: material(0.69, 0.66, 0.58), roof: material(0.29, 0.21, 0.16),
+    market: material(0.63, 0.35, 0.19), industrial: material(0.38, 0.42, 0.39),
+    modern: material(0.35, 0.43, 0.45), residential: material(0.68, 0.55, 0.39),
+    palm: material(0.23, 0.31, 0.17)
+  };
+
+  const box = (name: string, x: number, y: number, z: number, sx: number, sy: number, sz: number, mat: StandardMaterial, yaw = 0, solid = false) => {
+    const entity = new Entity(name);
+    entity.addComponent("render", { type: "box", material: mat, castShadows: true, receiveShadows: true });
+    entity.setPosition(x, y, z);
+    entity.setLocalScale(sx, sy, sz);
+    if (yaw) entity.setEulerAngles(0, yaw, 0);
+    app.root.addChild(entity);
+    if (solid) blockers.push({ x, z, hx: sx * 0.52, hz: sz * 0.52 });
+    return entity;
+  };
+  const plane = (name: string, x: number, y: number, z: number, width: number, depth: number, mat: StandardMaterial) => {
+    const entity = new Entity(name);
+    entity.addComponent("render", { type: "plane", material: mat, castShadows: false, receiveShadows: true });
+    entity.setPosition(x, y, z);
+    entity.setLocalScale(width, 1, depth);
+    app.root.addChild(entity);
+    return entity;
+  };
+  const cylinder = (name: string, x: number, y: number, z: number, radius: number, height: number, mat: StandardMaterial) => {
+    const entity = new Entity(name);
+    entity.addComponent("render", { type: "cylinder", material: mat, castShadows: true, receiveShadows: true });
+    entity.setPosition(x, y, z);
+    entity.setLocalScale(radius * 2, height, radius * 2);
+    app.root.addChild(entity);
+    return entity;
+  };
+
+  const centerX = (GREATER_ACCRA_MAP_EXTENT.minX + GREATER_ACCRA_MAP_EXTENT.maxX) / 2;
+  const centerZ = (GREATER_ACCRA_MAP_EXTENT.minZ + GREATER_ACCRA_MAP_EXTENT.maxZ) / 2;
+  plane("Greater Accra landmass", centerX, -0.22, centerZ, GREATER_ACCRA_MAP_EXTENT.widthM, GREATER_ACCRA_MAP_EXTENT.depthM, mats.earth);
+  plane("Gulf of Guinea", centerX, -0.12, -7000, GREATER_ACCRA_MAP_EXTENT.widthM + 1200, 7200, mats.sea);
+  plane("Open ocean horizon", centerX, -0.16, -12500, GREATER_ACCRA_MAP_EXTENT.widthM + 4000, 5200, mats.deepSea);
+  plane("Greater Accra sandy coastline", centerX, -0.035, -3350, GREATER_ACCRA_MAP_EXTENT.widthM, 520, mats.sand);
+
+  // Road geometry is generated from the shared, validated Greater Accra map data.
+  // Main N1/N4/N6 corridors are divided; urban connectors remain single carriageway.
+  for (const path of GREATER_ACCRA_ROAD_PATHS) {
+    if (!path.playableInFirstRelease) continue;
+    const isMotorway = /^(n1|n4|n6)-/.test(path.roadSegmentId);
+    const roadWidth = path.roadSegmentId.startsWith("n1-tema") ? 23 :
+      path.roadSegmentId.startsWith("n1") ? 19 :
+      path.roadSegmentId.startsWith("n6") ? 19 :
+      path.roadSegmentId.startsWith("n4") ? 17 :
+      path.roadSegmentId.includes("spintex") ? 14 :
+      path.roadSegmentId.includes("ring-road") ? 13 :
+      path.roadSegmentId === "la-beach-road" ? 10 : 12;
+    for (let index = 0; index < path.points.length - 1; index++) {
+      const a = path.points[index], b = path.points[index + 1];
+      const dx = b.x - a.x, dz = b.z - a.z, length = Math.hypot(dx, dz);
+      if (length < 1) continue;
+      const yaw = Math.atan2(dx, dz) * 180 / Math.PI;
+      const mx = (a.x + b.x) / 2, mz = (a.z + b.z) / 2;
+      if (isMotorway) {
+        const carriageWidth = roadWidth * 0.42;
+        const offset = roadWidth * 0.255;
+        const nx = Math.cos(yaw * Math.PI / 180) * offset;
+        const nz = -Math.sin(yaw * Math.PI / 180) * offset;
+        box(path.roadSegmentId + " west carriageway", mx - nx, 0.045, mz - nz, carriageWidth, 0.18, length + 1, mats.road, yaw);
+        box(path.roadSegmentId + " east carriageway", mx + nx, 0.045, mz + nz, carriageWidth, 0.18, length + 1, mats.road, yaw);
+        box(path.roadSegmentId + " planted median", mx, 0.12, mz, 2.3, 0.34, length + 1, mats.median, yaw);
+        for (const side of [-1, 1]) {
+          const edgeOffset = offset + carriageWidth / 2 - 0.35;
+          box("Motorway edge marking", mx + nx * side + Math.sin(yaw * Math.PI / 180) * edgeOffset, 0.15, mz + nz * side - Math.cos(yaw * Math.PI / 180) * edgeOffset, 0.22, 0.025, length, mats.white, yaw);
+        }
+      } else {
+        box(path.roadSegmentId + " road surface", mx, 0.04, mz, roadWidth, 0.16, length + 1, mats.road, yaw);
+        box(path.roadSegmentId + " yellow centre line", mx, 0.13, mz, 0.16, 0.025, length * 0.42, mats.yellow, yaw);
+        for (const side of [-1, 1]) {
+          const offset = side * (roadWidth / 2 - 0.28);
+          const nx = Math.cos(yaw * Math.PI / 180) * offset;
+          const nz = -Math.sin(yaw * Math.PI / 180) * offset;
+          box("Urban road edge marking", mx + nx, 0.14, mz + nz, 0.12, 0.025, length, mats.white, yaw);
+        }
+      }
+      // Raised kerbs at major urban links, with shared materials and no per-frame work.
+      if (!isMotorway && roadWidth <= 14) {
+        for (const side of [-1, 1]) {
+          const offset = side * (roadWidth / 2 + 0.18);
+          const nx = Math.cos(yaw * Math.PI / 180) * offset;
+          const nz = -Math.sin(yaw * Math.PI / 180) * offset;
+          box("Roadside kerb", mx + nx, 0.13, mz + nz, 0.3, 0.24, length, mats.kerb, yaw);
+        }
+      }
+    }
+  }
+
+  // The 1067 mm Cape-gauge corridor is a schematic game route, not surveyed track.
+  for (const route of GREATER_ACCRA_RAIL_ROUTES.filter((item) => item.firstRelease)) {
+    for (let i = 0; i < route.points.length - 1; i++) {
+      const a = route.points[i], b = route.points[i + 1];
+      const dx = b.x - a.x, dz = b.z - a.z, length = Math.hypot(dx, dz);
+      if (length < 1) continue;
+      const yaw = Math.atan2(dx, dz) * 180 / Math.PI;
+      const nx = Math.cos(yaw * Math.PI / 180), nz = -Math.sin(yaw * Math.PI / 180);
+      const mx = (a.x + b.x) / 2, mz = (a.z + b.z) / 2;
+      for (const side of [-1, 1]) {
+        box("Cape gauge rail", mx + nx * side * 0.72, 0.24, mz + nz * side * 0.72, 0.16, 0.18, length + 1, mats.lightConcrete, yaw);
+      }
+      const sleepers = Math.max(1, Math.floor(length / 85));
+      for (let s = 0; s <= sleepers; s++) {
+        const t = s / sleepers;
+        const px = a.x + dx * t, pz = a.z + dz * t;
+        box("Rail sleeper", px, 0.14, pz, 2.1, 0.16, 0.34, mats.roof, yaw);
+      }
+    }
+  }
+  for (const node of GREATER_ACCRA_RAIL_NODES.filter((item) => item.firstRelease && item.kind === "station")) {
+    box(node.name + " platform", node.position.x, 0.32, node.position.z, 85, 0.65, 12, mats.lightConcrete);
+    box(node.name + " canopy", node.position.x, 5.2, node.position.z, 48, 0.35, 8, mats.green);
+  }
+
+  // Coastline guide follows the shared map points. The coastline is a game-scale approximation.
+  const coast = GREATER_ACCRA_COASTLINE.slice().sort((a, b) => a.order - b.order);
+  for (let i = 0; i < coast.length - 1; i++) {
+    const a = coast[i], b = coast[i + 1];
+    const dx = b.x - a.x, dz = b.z - a.z, length = Math.hypot(dx, dz);
+    if (length < 1) continue;
+    box("Coastal sand berm", (a.x + b.x) / 2, 0.08, (a.z + b.z) / 2, 7, 0.16, length, mats.sand, Math.atan2(dx, dz) * 180 / Math.PI);
+  }
+
+  // District identity: sign structures and distinctive building clusters around real place anchors.
+  const districtNames: Record<string, string> = {
+    "accra-central-makola": "ACCRA CENTRAL · MAKOLA", "airport-city": "AIRPORT CITY",
+    "east-legon": "EAST LEGON", "legon": "LEGON", "madina-adenta": "MADINA · ADENTA",
+    "achimota": "ACHIMOTA", "osu": "OSU", "labadi": "LABADI",
+    "dansoman": "DANSOMAN", "kaneshie": "KANESHIE", "spintex": "SPINTEX", "tema": "TEMA"
+  };
+  for (const anchor of GREATER_ACCRA_REGION_ANCHORS) {
+    if (anchor.regionId === "greater-accra") continue;
+    const isMarket = anchor.regionId === "accra-central-makola" || anchor.regionId === "kaneshie";
+    const isModern = anchor.regionId === "airport-city" || anchor.regionId === "east-legon" || anchor.regionId === "tema";
+    const facade = isMarket ? mats.market : isModern ? mats.modern : mats.residential;
+    const name = districtNames[anchor.regionId] ?? anchor.regionId.toUpperCase();
+    box(name + " sign post", anchor.x - 35, 3.1, anchor.z + 65, 0.55, 6.2, 0.55, mats.roof);
+    box(name + " green sign", anchor.x - 35, 5.4, anchor.z + 65, 13, 2.1, 0.42, mats.green);
+    box(name + " gold sign band", anchor.x - 35, 4.45, anchor.z + 65, 12.6, 0.12, 0.48, mats.gold);
+    for (let i = 0; i < 9; i++) {
+      const angle = (i / 9) * Math.PI * 2;
+      const radius = 115 + (i % 3) * 28;
+      const x = anchor.x + Math.cos(angle) * radius;
+      const z = anchor.z + Math.sin(angle) * radius;
+      const width = isMarket ? 22 + (i % 3) * 5 : isModern ? 30 + (i % 3) * 7 : 18 + (i % 4) * 6;
+      const depth = isMarket ? 18 + (i % 2) * 5 : 20 + (i % 3) * 6;
+      const floors = isModern ? 5 + (i % 4) : isMarket ? 1 + (i % 2) : 2 + (i % 3);
+      const height = floors * 3.2;
+      box(name + " district building", x, height / 2, z, width, height, depth, facade, (i * 23) % 360, true);
+      box(name + " roof parapet", x, height + 0.18, z, width + 0.6, 0.36, depth + 0.6, mats.roof, (i * 23) % 360);
+      if (isMarket) {
+        box(name + " market awning", x, 2.4, z + depth / 2 + 0.5, width * 0.82, 0.28, 2.4, i % 2 ? mats.red : mats.gold);
+      }
+    }
+  }
+
+  // Landmark footprints preserve the existing Greater Accra spatial catalogue.
+  for (const landmark of GREATER_ACCRA_LANDMARK_FOOTPRINTS) {
+    const width = landmark.maxX - landmark.minX;
+    const depth = landmark.maxZ - landmark.minZ;
+    const height = landmark.id === "kotoka-airport" ? 16 :
+      landmark.id === "accra-sports-stadium" ? 22 :
+      landmark.id === "the-signature" ? 52 :
+      landmark.id === "villaggio-vista" ? 36 : 18;
+    const base = landmark.id === "accra-sports-stadium" ? mats.green :
+      landmark.id === "kotoka-airport" ? mats.lightConcrete :
+      landmark.id === "the-signature" || landmark.id === "villaggio-vista" ? mats.modern : mats.concrete;
+    if (landmark.id === "accra-sports-stadium") {
+      const stadium = new Entity("Accra Sports Stadium landmark");
+      stadium.addComponent("render", { type: "cylinder", material: base, castShadows: true, receiveShadows: true });
+      stadium.setPosition(landmark.x, height / 2, landmark.z);
+      stadium.setLocalScale(width, height, depth);
+      app.root.addChild(stadium);
+    } else {
+      box(landmark.label + " landmark", landmark.x, height / 2, landmark.z, width, height, depth, base, 0, true);
+      box(landmark.label + " roofline", landmark.x, height + 0.3, landmark.z, width + 4, 0.6, depth + 4, mats.roof);
+    }
+  }
+
+  // Coastal vegetation and a playable Labadi beach / marina approach.
+  for (let i = 0; i < 26; i++) {
+    const x = 1450 + i * 48;
+    const z = -3030 + Math.sin(i * 0.7) * 65;
+    cylinder("Labadi palm trunk", x, 4.2, z, 0.34, 8.4, mats.roof);
+    cylinder("Labadi palm crown", x, 8.9, z, 2.2, 1.4, mats.palm);
+  }
+  box("Labadi beach kiosk", 2150, 1.5, -3180, 9, 3, 7, mats.red, 0, true);
+  box("Labadi lifeguard hut", 2350, 2, -3210, 6, 4, 6, mats.lightConcrete, 0, true);
+  box("Labadi marina jetty", 2800, 0.22, -3900, 7, 0.44, 150, mats.roof);
+  box("Marina service building", 2800, 5, -3800, 35, 10, 28, mats.concrete, 0, true);
+
+  return {
+    blockers,
+    spawn: { x: 1180, z: -1500 },
+    taxiSpawn: { x: 1212, z: -1510 }
+  };
+}
