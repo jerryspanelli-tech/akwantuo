@@ -45,9 +45,9 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     const pixels = context.createImageData(256, 256);
     for (let i = 0; i < pixels.data.length; i += 4) {
       const grain = (Math.random() - 0.5) * amplitude;
-      pixels.data[i] = Math.max(0, Math.min(255, base[0] + grain));
-      pixels.data[i + 1] = Math.max(0, Math.min(255, base[1] + grain));
-      pixels.data[i + 2] = Math.max(0, Math.min(255, base[2] + grain));
+      pixels.data[i] = Math.max(0, Math.min(255, 128 + grain));
+      pixels.data[i + 1] = Math.max(0, Math.min(255, 128 + grain));
+      pixels.data[i + 2] = Math.max(0, Math.min(255, 128 + grain));
       pixels.data[i + 3] = 255;
     }
     context.putImageData(pixels, 0, 0);
