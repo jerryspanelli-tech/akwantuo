@@ -123,69 +123,86 @@ async function boot() {
     url: "/assets/characters/generated/player.glb"
   });
   playerCharacterAsset.on("load", (loadedAsset: Asset) => {
+    const container = loadedAsset.resource as any;
+    if (!container) {
+      console.error("[AKWANTUO] Player GLB loaded without a container resource.");
+      document.documentElement.dataset.akwantuoPlayerModel = "3d-unavailable";
+      showNotice("Player model could not be loaded");
+      return;
+    }
+
+    // Make the actual skinned GLB visible first. Animation setup is deliberately
+    // independent: a missing/broken clip must never prevent the character mesh
+    // from being instantiated (the previous flow hid the whole player here).
     try {
-      const container = loadedAsset.resource as any;
-      const animationAssets = Array.isArray(container?.animations) ? container.animations : [];
-      if (!container || animationAssets.length < 3) {
-        throw new Error(`Player GLB must contain embedded idle, walk and run clips; found ${animationAssets.length}`);
-      }
       const character = container.instantiateRenderEntity({ castShadows: true });
       character.name = "AKWANTUO Ghanaian 3D player";
       character.enabled = true;
       character.setLocalPosition(0, 0, 0);
-      character.setLocalScale(1, 1, 1);
+      // The generated GLB's POSITION accessor spans 1.962m vertically.
+      // A fixed 0.92 scale gives a predictable ~1.8m character and avoids
+      // using an uninitialised world-space MeshInstance AABB during loading.
+      character.setLocalScale(0.92, 0.92, 0.92);
       player.addChild(character);
+      character.syncHierarchy();
 
-      // GLB exporters may author characters in centimetres or metres. Measure
-      // the imported render bounds and normalize the visible model to 1.8m.
-      // Also explicitly enable every imported render mesh (some exporters mark
-      // the source nodes disabled even though the container itself loads).
-      let largestExtent = 0;
       let renderMeshCount = 0;
       const enableImportedMeshes = (node: any) => {
         node.enabled = true;
-        const meshes = node.render?.meshInstances ?? [];
-        for (const mesh of meshes) {
+        for (const mesh of node.render?.meshInstances ?? []) {
           mesh.visible = true;
           renderMeshCount++;
-          const half = mesh.aabb?.halfExtents;
-          if (half) largestExtent = Math.max(largestExtent, half.x * 2, half.y * 2, half.z * 2);
         }
         for (const child of node.children ?? []) enableImportedMeshes(child);
       };
       enableImportedMeshes(character);
-      if (renderMeshCount === 0) throw new Error("The loaded player GLB has no enabled render meshes.");
-      if (largestExtent > 0.001) {
-        const fitScale = 1.8 / largestExtent;
-        character.setLocalScale(fitScale, fitScale, fitScale);
+      if (renderMeshCount === 0) {
+        character.destroy();
+        throw new Error("The loaded player GLB contains no renderable mesh instances.");
       }
-      character.syncHierarchy();
-      character.addComponent("anim", { activate: true });
-      const names: string[] = [];
-      for (const animationAsset of animationAssets) {
-        const track = animationAsset.resource;
-        const clipName = track?.name || animationAsset.name;
-        if (!track || !clipName) continue;
-        character.anim.assignAnimation(clipName, track);
-        names.push(clipName);
-      }
-      const findClip = (pattern: RegExp) => names.find((name) => pattern.test(name));
-      playerAnimationNames = {
-        idle: findClip(/idle/i) || "",
-        walk: findClip(/walk/i) || "",
-        run: findClip(/run/i) || ""
-      };
-      if (!playerAnimationNames.idle || !playerAnimationNames.walk || !playerAnimationNames.run) {
-        throw new Error(`Missing required locomotion clips. Loaded: ${names.join(", ")}`);
-      }
-      character.anim.baseLayer.play(playerAnimationNames.idle);
+
       playerCharacter = character;
-      activePlayerAnimation = playerAnimationNames.idle;
-      document.documentElement.dataset.akwantuoPlayerModel = "animated-3d";
-      console.info("[AKWANTUO] Animated player ready", { clips: names, height: 1.8 });
+      document.documentElement.dataset.akwantuoPlayerModel = "3d-visible";
+      console.info("[AKWANTUO] Player mesh instantiated", { renderMeshCount, scale: 0.92 });
+
+      // Bind the embedded clips only after the model is already in the scene.
+      // If animation binding fails, keep the visible 3D character on screen.
+      try {
+        const animationAssets = Array.isArray(container.animations) ? container.animations : [];
+        character.addComponent("anim", { activate: true });
+        const names: string[] = [];
+        for (const animationAsset of animationAssets) {
+          const track = animationAsset?.resource;
+          const clipName = track?.name || animationAsset?.name;
+          if (!track || !clipName) continue;
+          character.anim.assignAnimation(clipName, track);
+          names.push(clipName);
+        }
+        const findClip = (pattern: RegExp) => names.find((name) => pattern.test(name));
+        playerAnimationNames = {
+          idle: findClip(/idle/i) || "",
+          walk: findClip(/walk/i) || "",
+          run: findClip(/run/i) || ""
+        };
+        if (playerAnimationNames.idle) {
+          character.anim.baseLayer.play(playerAnimationNames.idle);
+          activePlayerAnimation = playerAnimationNames.idle;
+        }
+        if (playerAnimationNames.idle && playerAnimationNames.walk && playerAnimationNames.run) {
+          document.documentElement.dataset.akwantuoPlayerModel = "animated-3d";
+          console.info("[AKWANTUO] Player locomotion clips ready", names);
+        } else {
+          document.documentElement.dataset.akwantuoPlayerModel = "3d-visible-animation-incomplete";
+          console.warn("[AKWANTUO] Player is visible; locomotion clips are incomplete", names);
+        }
+      } catch (animationError) {
+        document.documentElement.dataset.akwantuoPlayerModel = "3d-visible-animation-error";
+        console.error("[AKWANTUO] Player is visible but animation binding failed", animationError);
+      }
     } catch (error) {
-      console.error("[AKWANTUO] Player GLB could not be bound to its animations", error);
+      console.error("[AKWANTUO] Player GLB could not be rendered", error);
       document.documentElement.dataset.akwantuoPlayerModel = "3d-unavailable";
+      showNotice("Player model failed to render");
     }
   });
   playerCharacterAsset.on("error", (error: unknown) => {
