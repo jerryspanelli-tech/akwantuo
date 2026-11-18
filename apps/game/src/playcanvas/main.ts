@@ -340,11 +340,11 @@ async function boot() {
         const angle = cameraYaw * Math.PI / 180;
         const normalizer = rawMagnitude > 1 ? 1 / rawMagnitude : 1;
         const moveForward = forward * normalizer, moveStrafe = strafe * normalizer;
-        // The PlayCanvas camera looks along +Z at yaw 0. Its screen-right
-        // axis is -X (camera local +X points toward world -X after lookAt).
-        // Use the camera's actual basis so joystick-right always moves screen-right.
-        const dx = (moveForward * Math.sin(angle) - moveStrafe * Math.cos(angle)) * speed * step;
-        const dz = (moveForward * Math.cos(angle) + moveStrafe * Math.sin(angle)) * speed * step;
+        // Camera forward is (sin(yaw), 0, cos(yaw)); camera screen-right
+        // is (cos(yaw), 0, -sin(yaw)). Positive joystick X must follow that
+        // screen-right basis, not the opposite direction.
+        const dx = (moveForward * Math.sin(angle) + moveStrafe * Math.cos(angle)) * speed * step;
+        const dz = (moveForward * Math.cos(angle) - moveStrafe * Math.sin(angle)) * speed * step;
         const p = player.getPosition();
         const nx = clamp(p.x + dx, -8000, 13000), nz = clamp(p.z + dz, -4050, 8500);
         if (!overlaps(nx, p.z)) player.setPosition(nx, p.y, p.z);
