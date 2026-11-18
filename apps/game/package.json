@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "tsc -p tsconfig.json && vite build",
-    "typecheck": "tsc -p tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json",
+    "prebuild": "node scripts/prepare-player-assets.mjs"
   },
   "dependencies": {
     "@babylonjs/core": "^8.56.2",
