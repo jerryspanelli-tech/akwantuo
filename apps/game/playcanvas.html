@@ -27,7 +27,8 @@
         <button class="action-button interact-button" id="interact" type="button" aria-label="Interact">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 12V5.5a1.5 1.5 0 0 1 3 0V11 4.5a1.5 1.5 0 0 1 3 0V11 6a1.5 1.5 0 0 1 3 0v6-1a1.5 1.5 0 0 1 3 0v5.2A5.8 5.8 0 0 1 14.2 22h-1.1a6 6 0 0 1-4.6-2.1L4.7 15a1.7 1.7 0 0 1 2.5-2.3L10 15"/></svg>
         </button>
-        <div class="vehicle-controls" id="vehicle-controls" hidden aria-label="Vehicle controls">
+      </div>
+      <div class="vehicle-controls" id="vehicle-controls" hidden aria-label="Vehicle controls">
           <div class="vehicle-steering">
             <button class="vehicle-control steer-control" id="steer-left" type="button" aria-label="Steer left">◀</button>
             <button class="vehicle-control steer-control" id="steer-right" type="button" aria-label="Steer right">▶</button>
@@ -35,9 +36,8 @@
           <div class="vehicle-pedals">
             <button class="vehicle-control reverse-control" id="reverse" type="button" aria-label="Reverse">REVERSE</button>
             <button class="vehicle-control accelerate-control" id="accelerate" type="button" aria-label="Accelerate">ACCELERATE</button>
-            <button class="vehicle-exit" id="exit" type="button">EXIT VEHICLE</button>
+            <button class="vehicle-exit" id="exit" type="button" aria-label="Exit vehicle through the door"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v17M3 21h18M9 12h.01M8 5l8 2v12H8z"/></svg><span>EXIT</span></button>
           </div>
-        </div>
       </div>
     </div>
     <div class="crosshair" aria-hidden="true"></div>
