@@ -113,136 +113,8 @@ async function boot() {
   player.setPosition(world.spawn.x, 0, world.spawn.z);
   app.root.addChild(player);
 
-  // The skinned Ghanaian GLB is the only player character. The old primitive
-  // capsule/sphere stand-in is removed; load failure is surfaced, not hidden.
-  const characterAssetUrl = (file: string) =>
-    new URL(`/assets/characters/${file}`, window.location.origin).toString();
-  const modelAsset = new Asset("AKWANTUO player character", "container", {
-    url: characterAssetUrl("akwantuo-male.glb")
-  });
-  let loadedCharacter: Entity | null = null;
-  let idleClipName: string | null = null;
-  let walkClipName: string | null = null;
-  let activeClipName: string | null = null;
-  app.assets.add(modelAsset);
-  modelAsset.ready(() => {
-    try {
-      const container = modelAsset.resource as any;
-      if (!container?.instantiateRenderEntity) throw new Error("Character GLB has no renderable container resource.");
-      const model = container.instantiateRenderEntity({ castShadows: true });
-      model.name = "AKWANTUO Ghanaian player character";
-      model.setLocalScale(1, 1, 1);
-      player.addChild(model);
-      loadedCharacter = model;
-      model.addComponent("anim", { activate: true });
-      // The GLB's skinned hierarchy has a named root bone. Set it explicitly
-      // so the animation evaluator resolves all 66 joint targets beneath it.
-      const skeletonRoot = model.findByName("root");
-      if (skeletonRoot && model.anim) model.anim.rootBone = skeletonRoot;
-      console.info("AKWANTUO character hierarchy", {
-        skeletonRootFound: !!skeletonRoot,
-        renderEntities: model.findComponents("render").length,
-        animationComponent: !!model.anim,
-        rootBone: model.anim?.rootBone?.name ?? null
-      });
-      model.enabled = true;
-      document.documentElement.dataset.akwantuoPlayerModel = "3d";
-      showNotice("3D player character loaded");
-
-      const loadClipContainer = (file: string) => new Promise<any>((resolve, reject) => {
-        const clipAsset = new Asset(file, "container", { url: characterAssetUrl(file) });
-        clipAsset.ready(() => resolve(clipAsset.resource));
-        clipAsset.on("error", (error: unknown) => reject(error));
-        app.assets.add(clipAsset);
-        app.assets.load(clipAsset);
-      });
-      void Promise.allSettled([loadClipContainer("idle.glb"), loadClipContainer("walk.glb")]).then(async (clipResults) => {
-        const idleContainer = clipResults[0].status === "fulfilled" ? clipResults[0].value : null;
-        const walkContainer = clipResults[1].status === "fulfilled" ? clipResults[1].value : null;
-        // ContainerResource.animations contains Asset objects. Some GLB
-        // loaders expose those assets before their AnimTrack resources have
-        // finished loading, so explicitly load each clip before binding it.
-        const loadTracks = async (clipContainer: any, fallbackName: string) => {
-          const animationAssets = clipContainer?.animations ?? [];
-          return Promise.all(animationAssets.map((animationAsset: any, index: number) =>
-            new Promise<any>((resolve) => {
-              const toEntry = () => {
-                const track = animationAsset?.resource;
-                if (!track) {
-                  console.error("AKWANTUO animation asset has no AnimTrack resource", {
-                    file: fallbackName, asset: animationAsset?.name
-                  });
-                  resolve(null);
-                  return;
-                }
-                resolve({
-                  track,
-                  name: String(track.name || animationAsset.name ||
-                    (index === 0 ? fallbackName : `${fallbackName}-${index + 1}`))
-                });
-              };
-              if (animationAsset?.resource) {
-                toEntry();
-                return;
-              }
-              animationAsset.once("load", toEntry);
-              animationAsset.once("error", (error: unknown) => {
-                console.error("AKWANTUO animation asset failed to load", fallbackName, error);
-                resolve(null);
-              });
-              app.assets.load(animationAsset);
-            })
-          )).then((entries: any[]) => entries.filter(Boolean));
-        };
-        const [idleTracks, walkTracks, embeddedTracks] = await Promise.all([
-          loadTracks(idleContainer, "Idle_A"),
-          loadTracks(walkContainer, "Walk"),
-          loadTracks(container, "Character")
-        ]);
-        const namedClips = [...idleTracks, ...walkTracks, ...embeddedTracks];
-        console.info("AKWANTUO animation assets loaded", {
-          idle: (idleContainer?.animations ?? []).map((asset: any) => ({
-            asset: asset?.name, track: asset?.resource?.name,
-            duration: asset?.resource?.duration, curves: asset?.resource?.curves?.length
-          })),
-          walk: (walkContainer?.animations ?? []).map((asset: any) => ({
-            asset: asset?.name, track: asset?.resource?.name,
-            duration: asset?.resource?.duration, curves: asset?.resource?.curves?.length
-          }))
-        });
-        for (const entry of namedClips) {
-          try {
-            model.anim.assignAnimation(entry.name, entry.track);
-          } catch (error) {
-            console.error("Could not bind character animation", entry.name, error);
-          }
-        }
-        idleClipName = namedClips.find((entry: any) => /idle/i.test(entry.name))?.name ?? null;
-        walkClipName = namedClips.find((entry: any) => /walk|run/i.test(entry.name))?.name ?? null;
-        if (idleClipName && model.anim?.baseLayer) {
-          model.anim.baseLayer.play(idleClipName);
-          activeClipName = idleClipName;
-          document.documentElement.dataset.akwantuoPlayerModel = "animated-3d";
-          console.info("AKWANTUO animation clips bound", namedClips.map((entry: any) => entry.name));
-        } else {
-          console.error("Character animation setup failed: no named Idle clip.", {
-            availableClips: namedClips.map((entry: any) => entry.name),
-            idleAssetLoaded: !!idleContainer,
-            walkAssetLoaded: !!walkContainer
-          });
-          document.documentElement.dataset.akwantuoPlayerModel = "3d-no-animation";
-        }
-      });
-    } catch (error) {
-      console.error("AKWANTUO character instantiation failed", error);
-      document.documentElement.dataset.akwantuoPlayerModel = "3d-unavailable";
-    }
-  });
-  modelAsset.on("error", (error: unknown) => {
-    console.error("AKWANTUO character GLB failed to load", error);
-    document.documentElement.dataset.akwantuoPlayerModel = "3d-unavailable";
-  });
-  app.assets.load(modelAsset);
+  // Character rendering is intentionally disabled until a properly rigged and animated replacement is ready.
+  document.documentElement.dataset.akwantuoPlayerModel = "none";
 
   const camera = new Entity("Third person camera");
   camera.addComponent("camera", { clearColor: new Color(0.68, 0.78, 0.83), fov: 62, farClip: 260 });
@@ -427,9 +299,7 @@ async function boot() {
         if (!overlaps(nx, p.z)) player.setPosition(nx, p.y, p.z);
         if (!overlaps(player.getPosition().x, nz)) player.setPosition(player.getPosition().x, p.y, nz);
         player.setEulerAngles(0, Math.atan2(dx, dz) * 180 / Math.PI, 0);
-        if (loadedCharacter?.anim && walkClipName && activeClipName !== walkClipName) { loadedCharacter.anim.baseLayer?.transition(walkClipName, 0.18); activeClipName = walkClipName; }
       } else {
-        if (loadedCharacter?.anim && idleClipName && activeClipName !== idleClipName) { loadedCharacter.anim.baseLayer?.transition(idleClipName, 0.2); activeClipName = idleClipName; }
       }
     }
     const focus = inVehicle ? vehicle.getPosition() : player.getPosition();
