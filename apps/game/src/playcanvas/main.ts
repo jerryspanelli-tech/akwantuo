@@ -162,6 +162,10 @@ async function boot() {
   const presentation = "masculine";
   const modelUrl = new URL(`./assets/characters/akwantuo-${presentation === "feminine" ? "female" : "male"}.glb`, window.location.href).toString();
   const modelAsset = new Asset("AKWANTUO player character", "container", { url: modelUrl });
+  let loadedCharacter: Entity | null = null;
+  let idleClipName: string | null = null;
+  let walkClipName: string | null = null;
+  let activeClipName: string | null = null;
   app.assets.add(modelAsset);
   modelAsset.ready(() => {
     try {
@@ -171,12 +175,14 @@ async function boot() {
       model.setLocalScale(1, 1, 1);
       model.addComponent("anim", { activate: true });
       player.addChild(model);
+      loadedCharacter = model;
       fallback.enabled = false;
       for (const animation of container.animations) {
         model.anim.assignAnimation(animation.resource.name, animation.resource);
       }
-      const idle = container.animations.find((a: any) => /idle/i.test(a.resource.name));
-      if (idle) model.anim.baseLayer.play(idle.resource.name);
+      idleClipName = container.animations.find((a: any) => /idle/i.test(a.resource.name))?.resource.name ?? null;
+      walkClipName = container.animations.find((a: any) => /walk|run/i.test(a.resource.name))?.resource.name ?? null;
+      if (idleClipName) { model.anim.baseLayer.play(idleClipName); activeClipName = idleClipName; }
       showNotice("Player character loaded");
       document.documentElement.dataset.akwantuoPlayerModel = "loaded";
     } catch (error) {
@@ -234,7 +240,7 @@ async function boot() {
   stick?.addEventListener("pointerup", resetStick); stick?.addEventListener("pointercancel", resetStick); stick?.addEventListener("lostpointercapture", resetStick);
 
   let cameraYaw = 0, cameraPitch = 13, dragPointer: number | null = null, lastX = 0, lastY = 0;
-  canvas.addEventListener("pointerdown", (event) => { if (event.pointerType === "mouse" || event.pointerType === "pen") { dragPointer = event.pointerId; lastX = event.clientX; lastY = event.clientY; } });
+  canvas.addEventListener("pointerdown", (event) => { dragPointer = event.pointerId; lastX = event.clientX; lastY = event.clientY; });
   window.addEventListener("pointermove", (event) => { if (dragPointer !== event.pointerId) return; cameraYaw -= (event.clientX - lastX) * 0.22; cameraPitch = clamp(cameraPitch + (event.clientY - lastY) * 0.12, -2, 30); lastX = event.clientX; lastY = event.clientY; });
   window.addEventListener("pointerup", (event) => { if (dragPointer === event.pointerId) dragPointer = null; });
 
@@ -286,11 +292,13 @@ async function boot() {
         if (!overlaps(player.getPosition().x, nz)) player.setPosition(player.getPosition().x, p.y, nz);
         player.setEulerAngles(0, Math.atan2(dx, dz) * 180 / Math.PI, 0);
         gaitTime += step * 9;
+        if (loadedCharacter?.anim && walkClipName && activeClipName !== walkClipName) { loadedCharacter.anim.baseLayer.transition(walkClipName, 0.18); activeClipName = walkClipName; }
         leftLeg.setLocalEulerAngles(Math.sin(gaitTime) * 26, 0, 0);
         rightLeg.setLocalEulerAngles(-Math.sin(gaitTime) * 26, 0, 0);
         leftArm.setLocalEulerAngles(-Math.sin(gaitTime) * 18, 0, 0);
         rightArm.setLocalEulerAngles(Math.sin(gaitTime) * 18, 0, 0);
       } else {
+        if (loadedCharacter?.anim && idleClipName && activeClipName !== idleClipName) { loadedCharacter.anim.baseLayer.transition(idleClipName, 0.2); activeClipName = idleClipName; }
         leftLeg.setLocalEulerAngles(0, 0, 0); rightLeg.setLocalEulerAngles(0, 0, 0);
         leftArm.setLocalEulerAngles(0, 0, 0); rightArm.setLocalEulerAngles(0, 0, 0);
       }
