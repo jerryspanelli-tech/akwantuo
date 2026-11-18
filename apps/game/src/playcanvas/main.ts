@@ -23,8 +23,8 @@ const exitButton = document.querySelector<HTMLButtonElement>("#exit");
 const vehicleControls = document.querySelector<HTMLElement>("#vehicle-controls");
 const accelerateButton = document.querySelector<HTMLButtonElement>("#accelerate");
 const reverseButton = document.querySelector<HTMLButtonElement>("#reverse");
-const steerLeftButton = document.querySelector<HTMLButtonElement>("#steer-left");
-const steerRightButton = document.querySelector<HTMLButtonElement>("#steer-right");
+const vehicleStick = document.querySelector<HTMLElement>("#vehicle-stick");
+const vehicleStickKnob = document.querySelector<HTMLElement>("#vehicle-stick-knob");
 const touchUi = document.querySelector<HTMLElement>(".touch-ui");
 const stick = document.querySelector<HTMLElement>("#stick");
 const stickKnob = document.querySelector<HTMLElement>("#stick-knob");
@@ -232,7 +232,7 @@ async function boot() {
 
   let stickX = 0, stickY = 0, stickPointer: number | null = null;
   // Vehicle pedals and steering are held independently of the on-foot joystick.
-  const vehicleInput = { accelerate: false, reverse: false, left: false, right: false };
+  const vehicleInput = { accelerate: false, reverse: false };
   const bindHold = (button: HTMLButtonElement | null, key: keyof typeof vehicleInput) => {
     if (!button) return;
     const release = (event: PointerEvent) => { event.preventDefault(); vehicleInput[key] = false; button.classList.remove("pressed"); };
@@ -249,8 +249,40 @@ async function boot() {
   };
   bindHold(accelerateButton, "accelerate");
   bindHold(reverseButton, "reverse");
-  bindHold(steerLeftButton, "left");
-  bindHold(steerRightButton, "right");
+
+  // Driving has its own analog steering stick. Horizontal travel maps
+  // continuously from full-left (-1) to full-right (+1).
+  let vehicleStickX = 0, vehicleStickPointer: number | null = null;
+  const updateVehicleStick = (event: PointerEvent) => {
+    if (!vehicleStick) return;
+    const rect = vehicleStick.getBoundingClientRect();
+    const dx = event.clientX - (rect.left + rect.width / 2);
+    const dy = event.clientY - (rect.top + rect.height / 2);
+    const radius = rect.width * 0.36;
+    const length = Math.hypot(dx, dy);
+    const scale = length > radius ? radius / length : 1;
+    const x = dx * scale, y = dy * scale;
+    vehicleStickX = Math.abs(x / radius) < 0.06 ? 0 : clamp(x / radius, -1, 1);
+    if (vehicleStickKnob) vehicleStickKnob.style.transform = `translate(${x}px,${y}px)`;
+  };
+  vehicleStick?.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
+    vehicleStickPointer = event.pointerId;
+    vehicleStick.setPointerCapture(event.pointerId);
+    updateVehicleStick(event);
+  });
+  vehicleStick?.addEventListener("pointermove", (event) => {
+    if (event.pointerId === vehicleStickPointer) updateVehicleStick(event);
+  });
+  const resetVehicleStick = (event: PointerEvent) => {
+    if (event.pointerId !== vehicleStickPointer) return;
+    vehicleStickPointer = null;
+    vehicleStickX = 0;
+    if (vehicleStickKnob) vehicleStickKnob.style.transform = "";
+  };
+  vehicleStick?.addEventListener("pointerup", resetVehicleStick);
+  vehicleStick?.addEventListener("pointercancel", resetVehicleStick);
+  vehicleStick?.addEventListener("lostpointercapture", resetVehicleStick);
   let jumpRequested = false, verticalVelocity = 0, grounded = true;
   const groundHeight = 0;
   const requestJump = () => { if (!inVehicle && grounded) { jumpRequested = true; jumpButton?.classList.add("pressed"); } };
@@ -315,6 +347,7 @@ async function boot() {
     }
     if (exitButton) exitButton.hidden = !inVehicle;
     if (vehicleControls) vehicleControls.hidden = !inVehicle;
+    if (!inVehicle && vehicleStickKnob) vehicleStickKnob.style.transform = "";
     touchUi?.classList.toggle("vehicle-mode", inVehicle);
     if (jumpButton) jumpButton.hidden = inVehicle;
     if (stick) stick.classList.toggle("sprinting", !inVehicle && Math.hypot(stickX, stickY) >= 0.84);
@@ -342,8 +375,8 @@ async function boot() {
       // buttons set yaw. The on-foot joystick never drives the vehicle.
       const accelerating = vehicleInput.accelerate || keys.has("KeyW") || keys.has("ArrowUp");
       const reversing = vehicleInput.reverse || keys.has("KeyS") || keys.has("ArrowDown");
-      const steerLeft = vehicleInput.left || keys.has("KeyA") || keys.has("ArrowLeft");
-      const steerRight = vehicleInput.right || keys.has("KeyD") || keys.has("ArrowRight");
+      const keyboardSteer = Number(keys.has("KeyD") || keys.has("ArrowRight")) - Number(keys.has("KeyA") || keys.has("ArrowLeft"));
+      const steer = clamp(vehicleStickX + keyboardSteer, -1, 1);
       const throttle = accelerating === reversing ? 0 : accelerating ? 1 : -1;
       const acceleration = throttle > 0 ? 10.5 : throttle < 0 ? 7.5 : 0;
       vehicleSpeed = clamp(vehicleSpeed + throttle * acceleration * step, -6.5, 16);
@@ -351,8 +384,8 @@ async function boot() {
       if (throttle === 0) {
         vehicleSpeed *= Math.max(0, 1 - step * (Math.abs(vehicleSpeed) < 0.45 ? 5 : 0.68));
       }
-      const steer = Number(steerRight) - Number(steerLeft);
       const steeringGrip = 0.3 + Math.min(Math.abs(vehicleSpeed) / 8, 1) * 0.7;
+      // Proportional analog steering: small thumb movements make gentle turns.
       vehicleYaw += steer * steeringGrip * (vehicleSpeed >= 0 ? 1 : -1) * step * 1.75;
       const nextX = vehicle.getPosition().x + Math.sin(vehicleYaw) * vehicleSpeed * step;
       const nextZ = vehicle.getPosition().z + Math.cos(vehicleYaw) * vehicleSpeed * step;
