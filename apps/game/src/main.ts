@@ -294,45 +294,50 @@ async function loadCharacterModel(presentation:"masculine"|"feminine"){
   const {GLTFLoader}=await import("three/addons/loaders/GLTFLoader.js");
   const loader=new GLTFLoader();
   const path=presentation==="feminine"?"/assets/characters/akwantuo-female.glb":"/assets/characters/akwantuo-male.glb";
-  const [gltf,idleFile,walkFile]=await Promise.all([
-   loader.loadAsync(path),
-   loader.loadAsync("/assets/characters/idle.glb"),
-   loader.loadAsync("/assets/characters/walk.glb")
-  ]);
+  // Load and display the actual character first. Animation files must never block the model.
+  const gltf=await loader.loadAsync(path);
   if(request!==modelRequest)return;
   const model=gltf.scene;
+  model.updateMatrixWorld(true);
   const bounds=new THREE.Box3().setFromObject(model);
   const size=bounds.getSize(new THREE.Vector3());
-  const scale=1.82/Math.max(size.y,.001);
+  if(!Number.isFinite(size.y)||size.y<.05)throw new Error("Character model has no visible 3D geometry.");
+  const scale=1.82/size.y;
   const widthScale=appearance.build==="broad"?1.08:appearance.build==="slim"?.94:1;
   const heightScale=appearance.age>=60?.96:1;
   model.scale.set(scale*widthScale,scale*heightScale,scale*widthScale);
   model.position.y=-bounds.min.y*scale*heightScale;
-  model.traverse(o=>{if((o as THREE.Mesh).isMesh){(o as THREE.Mesh).castShadow=true;(o as THREE.Mesh).receiveShadow=true;}});
+  model.traverse(o=>{if((o as THREE.Mesh).isMesh){const mesh=o as THREE.Mesh;mesh.castShadow=true;mesh.receiveShadow=true;mesh.frustumCulled=false;}});
   model.updateMatrixWorld(true);
-
-  const idleClip=(gltf.animations.find(c=>c.tracks.length>0)||idleFile.animations.find(c=>c.tracks.length>0))?.clone();
-  const walkClip=(walkFile.animations.find(c=>c.tracks.length>0)||gltf.animations.find(c=>c.tracks.length>0))?.clone();
-  if(!idleClip)throw new Error("No usable idle animation clip was found for the selected character.");
-  const nextMixer=new THREE.AnimationMixer(model);
-  const nextIdle=nextMixer.clipAction(idleClip);
-  const nextWalk=walkClip?nextMixer.clipAction(walkClip):null;
-  nextIdle.reset().play();
-  nextMixer.update(1/60);
-  if(request!==modelRequest){nextMixer.stopAllAction();nextMixer.uncacheRoot(model);return;}
-
   if(playerMixer&&activeModel){playerMixer.stopAllAction();playerMixer.uncacheRoot(activeModel);}
   if(activeModel)player.remove(activeModel);
-  playerMixer=nextMixer;
-  idleAction=nextIdle;
-  walkAction=nextWalk;
-  isWalking=false;
+  playerMixer=null;idleAction=null;walkAction=null;isWalking=false;
   activeModel=model;
   player.add(model);
   fallback.visible=false;
+
+  // Animation loading is independent: a missing clip leaves the 3D character visible.
+  try{
+   const [idleFile,walkFile]=await Promise.all([
+    loader.loadAsync("/assets/characters/idle.glb"),
+    loader.loadAsync("/assets/characters/walk.glb")
+   ]);
+   if(request!==modelRequest||activeModel!==model)return;
+   const idleClip=(gltf.animations.find(c=>c.tracks.length>0)||idleFile.animations.find(c=>c.tracks.length>0))?.clone();
+   const walkClip=(walkFile.animations.find(c=>c.tracks.length>0)||gltf.animations.find(c=>c.tracks.length>0))?.clone();
+   if(!idleClip)throw new Error("No usable idle animation clip was found.");
+   const nextMixer=new THREE.AnimationMixer(model);
+   const nextIdle=nextMixer.clipAction(idleClip);
+   const nextWalk=walkClip?nextMixer.clipAction(walkClip):null;
+   nextIdle.reset().play();
+   nextMixer.update(1/30);
+   playerMixer=nextMixer;idleAction=nextIdle;walkAction=nextWalk;isWalking=false;
+  }catch(animationError){
+   console.error("AKWANTUO character is visible, but animation loading failed.",animationError);
+  }
  }catch(error){
   if(request!==modelRequest)return;
-  console.error("AKWANTUO character or animation load failed; using animated fallback.",error);
+  console.error("AKWANTUO 3D character load failed; showing fallback.",error);
   if(playerMixer&&activeModel){playerMixer.stopAllAction();playerMixer.uncacheRoot(activeModel);}
   if(activeModel){player.remove(activeModel);activeModel=null;}
   playerMixer=null;idleAction=null;walkAction=null;isWalking=false;
@@ -351,11 +356,11 @@ let yaw=0,pitch=.2,drag=false,lx=0,ly=0,playing=false,driving=false,vehicleSpeed
 document.querySelector<HTMLButtonElement>("#enter")!.addEventListener("click",()=>{playing=true;document.querySelector("#intro")!.classList.add("hidden");document.querySelector("#hud")!.classList.add("visible");document.querySelector("#mobile-controls")!.classList.add("visible");document.querySelector("#minimap")!.classList.add("visible");document.querySelector("#mission-card")!.classList.add("visible");});
 function toggleVehicle(){
  if(!playing)return;
- if(driving){driving=false;player.visible=true;player.position.set(trotro.position.x+2.4,0,trotro.position.z);vehicleSpeed=0;void saveGameState();return;}
+ if(driving){driving=false;player.visible=true;const side=new THREE.Vector3(Math.cos(vehicleHeading),0,-Math.sin(vehicleHeading));player.position.copy(trotro.position).addScaledVector(side,2.4);player.position.y=0;vehicleSpeed=0;const speedLabel=document.querySelector("#speed-display");if(speedLabel)speedLabel.textContent="ON FOOT";void saveGameState();return;}
  if(player.position.distanceTo(trotro.position)>6)return;
  driving=true;player.visible=false;vehicleHeading=trotro.rotation.y;vehicleSpeed=0;void saveGameState();
 }
-document.querySelector<HTMLButtonElement>("#interact")?.addEventListener("click",toggleVehicle);
+const vehicleActionButton=document.querySelector<HTMLButtonElement>("#interact");vehicleActionButton?.addEventListener("click",toggleVehicle);
 
 
 const characterPanel=document.querySelector("#character-panel")!,accountPanel=document.querySelector("#account-panel")!,settingsPanel=document.querySelector("#settings-panel")!,newsPanel=document.querySelector("#news-panel")!;
@@ -450,6 +455,6 @@ function updateMinimap(){
  ctx.strokeStyle="#d6c48e";ctx.lineWidth=1;ctx.beginPath();ctx.arc(center,center,center-2,0,Math.PI*2);ctx.stroke();
 }
 let minimapTimer=0;
-const clock=new THREE.Clock();canvas.addEventListener("webglcontextlost",e=>{e.preventDefault();const status=document.querySelector("#loading");if(status){status.textContent="GRAPHICS PAUSED · RETURN TO THE GAME";status.classList.add("visible");}},false);canvas.addEventListener("webglcontextrestored",()=>document.querySelector("#loading")?.remove(),false);document.addEventListener("visibilitychange",()=>{clock.getDelta();if(document.hidden)void saveGameState();});function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.04);if(document.hidden)return;minimapTimer+=dt;if(minimapTimer>.18){updateMinimap();updateMission();minimapTimer=0;}railClock+=dt;missionMarker.rotation.y+=dt*.7;missionMarker.position.y=10+Math.sin(railClock*2)*.7;const railProgress=((railClock*12)%trainLength)/trainLength;trainCars.forEach((car,index)=>{const t=(railProgress-(index*22/trainLength)+1)%1,p=trainCurve.getPointAt(t),tan=trainCurve.getTangentAt(t);car.position.set(p.x,p.y+.07,p.z);car.rotation.y=Math.atan2(tan.x,tan.z);});if(playing){const keyF=keys.has("w")||keys.has("arrowup"),keyB=keys.has("s")||keys.has("arrowdown"),keyL=keys.has("a")||keys.has("arrowleft"),keyR=keys.has("d")||keys.has("arrowright");const f=keyF||stickY<-.18,b=keyB||stickY>.18,l=keyL||stickX<-.18,r=keyR||stickX>.18;const inputX=keyR?1:keyL?-1:stickX,inputZ=keyB?1:keyF?-1:stickY;const moving=Math.hypot(inputX,inputZ)>.12;if(driving){const throttle=f?1:b?-1:0;if(throttle)vehicleSpeed+=throttle*8.5*dt;else vehicleSpeed*=Math.exp(-1.15*dt);if(keys.has(" "))vehicleSpeed*=Math.exp(-5.5*dt);vehicleSpeed=THREE.MathUtils.clamp(vehicleSpeed,-6,17);vehicleHeading+=(Number(r)-Number(l))*Math.min(Math.abs(vehicleSpeed)/8,1)*.78*Math.sign(vehicleSpeed||1)*dt;const candidate=trotro.position.clone();candidate.x+=Math.sin(vehicleHeading)*vehicleSpeed*dt;candidate.z+=Math.cos(vehicleHeading)*vehicleSpeed*dt;const blocked=solidAreas.some(s=>candidate.x+1.1>s.minX&&candidate.x-1.1<s.maxX&&candidate.z+2.7>s.minZ&&candidate.z-2.7<s.maxZ);if(!blocked)trotro.position.copy(candidate);else vehicleSpeed=0;trotro.rotation.y=vehicleHeading;for(const wheel of trotro.userData.wheels as THREE.Mesh[])wheel.rotation.x+=vehicleSpeed*dt;const speed=document.querySelector("#speed-display");if(speed)speed.textContent=Math.round(Math.abs(vehicleSpeed)*3.6)+" KM/H";}else{const v=new THREE.Vector3(inputX,0,inputZ);if(v.lengthSq()){v.normalize().applyAxisAngle(new THREE.Vector3(0,1,0),yaw);const candidate=player.position.clone().addScaledVector(v,dt*7.2),radius=.55;const blocked=(p:THREE.Vector3)=>solidAreas.some(s=>p.x+radius>s.minX&&p.x-radius<s.maxX&&p.z+radius>s.minZ&&p.z-radius<s.maxZ);if(!blocked(candidate))player.position.copy(candidate);else{const slideX=player.position.clone();slideX.x=candidate.x;if(!blocked(slideX))player.position.x=slideX.x;const slideZ=player.position.clone();slideZ.z=candidate.z;if(!blocked(slideZ))player.position.z=slideZ.z;}player.rotation.y=Math.atan2(v.x,v.z);}if(playerMixer){playerMixer.update(dt);if(moving&&!isWalking&&walkAction){walkAction.reset().play();idleAction?.crossFadeTo(walkAction,.18,true);isWalking=true;}else if(!moving&&isWalking&&idleAction){idleAction.reset().play();walkAction?.crossFadeTo(idleAction,.2,true);isWalking=false;}}const speed=document.querySelector("#speed-display");if(speed)speed.textContent="ON FOOT";}const interact=document.querySelector("#interact");if(interact)interact.classList.toggle("visible",!driving&&player.position.distanceTo(trotro.position)<6);}traffic.position.z-=dt*5.5;if(traffic.position.z< -175)traffic.position.z=175;const focus=driving?trotro.position:player.position,target=new THREE.Vector3(focus.x,focus.y+(driving?2.3:1.6),focus.z),offset=driving?new THREE.Vector3(Math.sin(vehicleHeading)*10,4,-Math.cos(vehicleHeading)*10):new THREE.Vector3(Math.sin(yaw)*8.5,3.7+pitch*5,Math.cos(yaw)*8.5);camera.position.lerp(target.clone().add(offset),.09);camera.lookAt(target);renderer.render(scene,camera);}animate();
+const clock=new THREE.Clock();canvas.addEventListener("webglcontextlost",e=>{e.preventDefault();const status=document.querySelector("#loading");if(status){status.textContent="GRAPHICS PAUSED · RETURN TO THE GAME";status.classList.add("visible");}},false);canvas.addEventListener("webglcontextrestored",()=>document.querySelector("#loading")?.remove(),false);document.addEventListener("visibilitychange",()=>{clock.getDelta();if(document.hidden)void saveGameState();});function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.04);if(document.hidden)return;minimapTimer+=dt;if(minimapTimer>.18){updateMinimap();updateMission();minimapTimer=0;}railClock+=dt;missionMarker.rotation.y+=dt*.7;missionMarker.position.y=10+Math.sin(railClock*2)*.7;const railProgress=((railClock*12)%trainLength)/trainLength;trainCars.forEach((car,index)=>{const t=(railProgress-(index*22/trainLength)+1)%1,p=trainCurve.getPointAt(t),tan=trainCurve.getTangentAt(t);car.position.set(p.x,p.y+.07,p.z);car.rotation.y=Math.atan2(tan.x,tan.z);});if(playing){const keyF=keys.has("w")||keys.has("arrowup"),keyB=keys.has("s")||keys.has("arrowdown"),keyL=keys.has("a")||keys.has("arrowleft"),keyR=keys.has("d")||keys.has("arrowright");const f=keyF||stickY<-.18,b=keyB||stickY>.18,l=keyL||stickX<-.18,r=keyR||stickX>.18;const inputX=keyR?1:keyL?-1:stickX,inputZ=keyB?1:keyF?-1:stickY;const moving=Math.hypot(inputX,inputZ)>.12;if(driving){const throttle=f?1:b?-1:0;if(throttle)vehicleSpeed+=throttle*8.5*dt;else vehicleSpeed*=Math.exp(-1.15*dt);if(keys.has(" "))vehicleSpeed*=Math.exp(-5.5*dt);vehicleSpeed=THREE.MathUtils.clamp(vehicleSpeed,-6,17);vehicleHeading+=(Number(r)-Number(l))*Math.min(Math.abs(vehicleSpeed)/8,1)*.78*Math.sign(vehicleSpeed||1)*dt;const candidate=trotro.position.clone();candidate.x+=Math.sin(vehicleHeading)*vehicleSpeed*dt;candidate.z+=Math.cos(vehicleHeading)*vehicleSpeed*dt;const blocked=solidAreas.some(s=>candidate.x+1.1>s.minX&&candidate.x-1.1<s.maxX&&candidate.z+2.7>s.minZ&&candidate.z-2.7<s.maxZ);if(!blocked)trotro.position.copy(candidate);else vehicleSpeed=0;trotro.rotation.y=vehicleHeading;for(const wheel of trotro.userData.wheels as THREE.Mesh[])wheel.rotation.x+=vehicleSpeed*dt;const speed=document.querySelector("#speed-display");if(speed)speed.textContent=Math.round(Math.abs(vehicleSpeed)*3.6)+" KM/H";}else{const v=new THREE.Vector3(inputX,0,inputZ);if(v.lengthSq()){v.normalize().applyAxisAngle(new THREE.Vector3(0,1,0),yaw);const candidate=player.position.clone().addScaledVector(v,dt*7.2),radius=.55;const blocked=(p:THREE.Vector3)=>solidAreas.some(s=>p.x+radius>s.minX&&p.x-radius<s.maxX&&p.z+radius>s.minZ&&p.z-radius<s.maxZ);if(!blocked(candidate))player.position.copy(candidate);else{const slideX=player.position.clone();slideX.x=candidate.x;if(!blocked(slideX))player.position.x=slideX.x;const slideZ=player.position.clone();slideZ.z=candidate.z;if(!blocked(slideZ))player.position.z=slideZ.z;}player.rotation.y=Math.atan2(v.x,v.z);}if(playerMixer){playerMixer.update(dt);if(moving&&!isWalking&&walkAction){walkAction.reset().play();idleAction?.crossFadeTo(walkAction,.18,true);isWalking=true;}else if(!moving&&isWalking&&idleAction){idleAction.reset().play();walkAction?.crossFadeTo(idleAction,.2,true);isWalking=false;}}const speed=document.querySelector("#speed-display");if(speed)speed.textContent="ON FOOT";}const interact=document.querySelector("#interact");if(interact){interact.textContent=driving?"EXIT TRO-TRO":"ENTER TRO-TRO";interact.classList.toggle("visible",driving||player.position.distanceTo(trotro.position)<6);}}traffic.position.z-=dt*5.5;if(traffic.position.z< -175)traffic.position.z=175;const focus=driving?trotro.position:player.position,target=new THREE.Vector3(focus.x,focus.y+(driving?2.3:1.6),focus.z),offset=driving?new THREE.Vector3(Math.sin(vehicleHeading)*10,4,-Math.cos(vehicleHeading)*10):new THREE.Vector3(Math.sin(yaw)*8.5,3.7+pitch*5,Math.cos(yaw)*8.5);camera.position.lerp(target.clone().add(offset),.09);camera.lookAt(target);renderer.render(scene,camera);}animate();
 addEventListener("resize",()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,graphicsQuality==="performance"?.9:graphicsQuality==="high"?1.5:1.2));});
 document.querySelector("#loading")?.remove();
