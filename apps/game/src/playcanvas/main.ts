@@ -53,7 +53,6 @@ async function boot() {
   app.setCanvasFillMode(FILLMODE_FILL_WINDOW);
   app.setCanvasResolution(RESOLUTION_AUTO);
   app.scene.ambientLight = new Color(0.38, 0.39, 0.34);
-  app.scene.exposure = 1;
   app.start();
 
   const addBox = (name: string, x: number, y: number, z: number, sx: number, sy: number, sz: number, material: StandardMaterial, blocker = false) => {
@@ -166,16 +165,17 @@ async function boot() {
   app.assets.add(modelAsset);
   modelAsset.ready(() => {
     try {
-      const model = modelAsset.resource.instantiateRenderEntity({ castShadows: true });
+      const container = modelAsset.resource as any;
+      const model = container.instantiateRenderEntity({ castShadows: true });
       model.name = "Loaded Ghanaian player character";
       model.setLocalScale(1, 1, 1);
       model.addComponent("anim", { activate: true });
       player.addChild(model);
       fallback.enabled = false;
-      for (const animation of modelAsset.resource.animations) {
+      for (const animation of container.animations) {
         model.anim.assignAnimation(animation.resource.name, animation.resource);
       }
-      const idle = modelAsset.resource.animations.find((a: any) => /idle/i.test(a.resource.name));
+      const idle = container.animations.find((a: any) => /idle/i.test(a.resource.name));
       if (idle) model.anim.baseLayer.play(idle.resource.name);
       showNotice("Player character loaded");
       document.documentElement.dataset.akwantuoPlayerModel = "loaded";
@@ -209,7 +209,6 @@ async function boot() {
   for (const x of [-0.95, 0.95]) for (const z of [-1.35, 1.35]) { const wheel = new Entity("Taxi wheel"); wheel.addComponent("render", { type: "cylinder", material: materials.tyre }); wheel.setLocalScale(0.65, 0.22, 0.65); wheel.setLocalEulerAngles(0, 0, 90); wheel.setLocalPosition(x, 0.58, z); vehicle.addChild(wheel); }
   vehicle.setPosition(5, 0, 16);
   app.root.addChild(vehicle);
-  blockers.push({ x: 5, z: 16, hx: 1.5, hz: 2.6 });
 
   const keys = new Set<string>();
   window.addEventListener("keydown", (event) => { keys.add(event.code); if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"].includes(event.code)) event.preventDefault(); });
@@ -272,7 +271,8 @@ async function boot() {
       const nextZ = vehicle.getPosition().z + Math.cos(vehicleYaw) * vehicleSpeed * step;
       if (!overlaps(nextX, nextZ) && Math.abs(nextX) < 82 && nextZ > -68 && nextZ < 82) vehicle.setPosition(nextX, 0, nextZ);
       vehicle.setEulerAngles(0, vehicleYaw * 180 / Math.PI, 0);
-      player.setPosition(vehicle.getPosition());
+      const vehiclePosition = vehicle.getPosition();
+      player.setPosition(vehiclePosition.x, vehiclePosition.y, vehiclePosition.z);
       if (exitButton) exitButton.hidden = false;
     } else {
       const magnitude = Math.min(1, Math.hypot(forward, strafe));
