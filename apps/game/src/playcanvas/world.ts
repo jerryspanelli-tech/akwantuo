@@ -8,6 +8,7 @@ export type GreaterAccraWorld = {
   blockers: WorldBlocker[];
   spawn: { x: number; z: number };
   taxiSpawn: { x: number; z: number };
+  interactables: Array<{ id: string; label: string; x: number; z: number; radius: number }>;
 };
 
 const material = (r: number, g: number, b: number): StandardMaterial => {
@@ -557,6 +558,11 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
   return {
     blockers,
     spawn: { x: 1180, z: -1500 },
-    taxiSpawn: { x: 1185, z: -1504 }
+    taxiSpawn: { x: 1185, z: -1504 },
+    interactables: [
+      { id: "osu-bus-stop-bench", label: "USE BENCH", x: 1110, z: -1328.8, radius: 2.8 },
+      { id: "circle-bus-stop-bench", label: "USE BENCH", x: -520, z: 521.2, radius: 2.8 },
+      { id: "labadi-bus-stop-bench", label: "USE BENCH", x: 2260, z: -2378.8, radius: 2.8 }
+    ]
   };
 }
