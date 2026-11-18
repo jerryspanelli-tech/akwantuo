@@ -167,7 +167,7 @@ async function boot() {
         app.assets.add(clipAsset);
         app.assets.load(clipAsset);
       });
-      void Promise.allSettled([loadClipContainer("idle.glb"), loadClipContainer("walk.glb")]).then((clipResults) => {
+      void Promise.allSettled([loadClipContainer("idle.glb"), loadClipContainer("walk.glb")]).then(async (clipResults) => {
         const idleContainer = clipResults[0].status === "fulfilled" ? clipResults[0].value : null;
         const walkContainer = clipResults[1].status === "fulfilled" ? clipResults[1].value : null;
         // ContainerResource.animations contains Asset objects. Some GLB
