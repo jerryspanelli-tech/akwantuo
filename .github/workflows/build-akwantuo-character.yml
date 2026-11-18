@@ -1,0 +1,55 @@
+name: Build AKWANTUO animated player
+on:
+  push:
+    branches: ["engine/playcanvas-world-foundation"]
+    paths:
+      - "character-configs/**"
+      - ".github/workflows/build-akwantuo-character.yml"
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: akwantuo-character-{github.ref}
+  cancel-in-progress: true
+jobs:
+  build-player:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: engine/playcanvas-world-foundation
+          token: ${"{ { secrets.GITHUB_TOKEN } }"}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Cache Ara character data
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ara3d
+          key: ara3d-0.9.0-linux
+      - name: Generate rigged Ghanaian player with embedded locomotion
+        run: |
+          npx --yes ara3d@0.9.0 export \
+            --params character-configs/player.json \
+            --formats glb \
+            --animations idle,walk,run \
+            --detail medium \
+            --out /tmp/akwantuo-player
+          mkdir -p apps/game/public/assets/characters/generated
+          PLAYER_FILE="$(find /tmp/akwantuo-player -maxdepth 1 -type f -name '*.glb' -print -quit)"
+          test -n "$PLAYER_FILE"
+          cp "$PLAYER_FILE" apps/game/public/assets/characters/generated/player.glb
+          cat > apps/game/public/assets/characters/generated/README.md <<'EOF'
+          AKWANTUO player character
+          Generated from character-configs/player.json using Ara 3D Gen 0.9.0.
+          Includes embedded Idle, Walk and Run clips.
+          Generator: https://github.com/olatunde85/3d-gen
+          Character data: CC0; generator: MIT.
+          EOF
+      - name: Commit generated character asset
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/game/public/assets/characters/generated/player.glb apps/game/public/assets/characters/generated/README.md
+          git diff --cached --quiet || git commit -m "build: generate animated Ghanaian player GLB"
+          git push
