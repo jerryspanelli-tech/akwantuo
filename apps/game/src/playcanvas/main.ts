@@ -160,17 +160,22 @@ async function boot() {
       void Promise.allSettled([loadClipContainer("idle.glb"), loadClipContainer("walk.glb")]).then((clipResults) => {
         const idleContainer = clipResults[0].status === "fulfilled" ? clipResults[0].value : null;
         const walkContainer = clipResults[1].status === "fulfilled" ? clipResults[1].value : null;
-        const clips = [...(idleContainer?.animations ?? []), ...(walkContainer?.animations ?? []), ...(container.animations ?? [])];
-        const namedClips = clips.map((asset: any, index: number) => ({
-          asset,
-          track: asset?.resource,
-          name: String(asset?.name || asset?.resource?.name || `clip-${index}`)
-        })).filter((entry: any) => !!entry.track);
+        // PlayCanvas ContainerResource.animations contains AnimTrack objects
+        // directly (not Asset wrappers). Passing .resource here silently drops
+        // every clip and leaves the skinned model in its bind/T-pose.
+        const collectTracks = (clipContainer: any, fallbackName: string) =>
+          (clipContainer?.animations ?? []).map((track: any, index: number) => ({
+            track,
+            name: String(track?.name || (index === 0 ? fallbackName : `${fallbackName}-${index + 1}`))
+          }));
+        const namedClips = [
+          ...collectTracks(idleContainer, "Idle_A"),
+          ...collectTracks(walkContainer, "Walk"),
+          ...collectTracks(container, "Character")
+        ].filter((entry: any) => !!entry.track);
         for (const entry of namedClips) {
           try {
-            // The GLB animation Asset name is authoritative; AnimTrack.name can
-            // be empty for externally exported clips even when the asset is named.
-            model.anim.assignAnimation(entry.name, entry.track, undefined, 1, true);
+            model.anim.assignAnimation(entry.name, entry.track);
           } catch (error) {
             console.error("Could not bind character animation", entry.name, error);
           }
@@ -375,10 +380,11 @@ async function boot() {
         const angle = cameraYaw * Math.PI / 180;
         const normalizer = rawMagnitude > 1 ? 1 / rawMagnitude : 1;
         const moveForward = forward * normalizer, moveStrafe = strafe * normalizer;
-        // Camera-forward is (sin(yaw), cos(yaw)); camera-right is
-        // (cos(yaw), -sin(yaw)). Keep lateral input aligned with screen-right.
-        const dx = (moveForward * Math.sin(angle) + moveStrafe * Math.cos(angle)) * speed * step;
-        const dz = (moveForward * Math.cos(angle) - moveStrafe * Math.sin(angle)) * speed * step;
+        // The PlayCanvas camera looks along +Z at yaw 0. Its screen-right
+        // axis is -X (camera local +X points toward world -X after lookAt).
+        // Use the camera's actual basis so joystick-right always moves screen-right.
+        const dx = (moveForward * Math.sin(angle) - moveStrafe * Math.cos(angle)) * speed * step;
+        const dz = (moveForward * Math.cos(angle) + moveStrafe * Math.sin(angle)) * speed * step;
         const p = player.getPosition();
         const nx = clamp(p.x + dx, -8000, 13000), nz = clamp(p.z + dz, -4050, 8500);
         if (!overlaps(nx, p.z)) player.setPosition(nx, p.y, p.z);
