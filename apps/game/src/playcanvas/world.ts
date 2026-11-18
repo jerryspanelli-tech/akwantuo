@@ -221,10 +221,36 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
       const depth = isMarket ? 18 + (i % 2) * 5 : 20 + (i % 3) * 6;
       const floors = isModern ? 5 + (i % 4) : isMarket ? 1 + (i % 2) : 2 + (i % 3);
       const height = floors * 3.2;
-      box(name + " district building", x, height / 2, z, width, height, depth, facade, (i * 23) % 360, true);
-      box(name + " roof parapet", x, height + 0.18, z, width + 0.6, 0.36, depth + 0.6, mats.roof, (i * 23) % 360);
+      const yaw = (i * 23) % 360;
+      box(name + " district building", x, height / 2, z, width, height, depth, facade, yaw, true);
+      box(name + " roof parapet", x, height + 0.18, z, width + 0.6, 0.36, depth + 0.6, mats.roof, yaw);
+      // Layered facade detailing: recessed glazing, pale frames, balcony ledges,
+      // vertical pilasters and rooftop service structures.
+      const radians = yaw * Math.PI / 180;
+      const local = (lx: number, lz: number) => ({ x: x + lx * Math.cos(radians) + lz * Math.sin(radians), z: z - lx * Math.sin(radians) + lz * Math.cos(radians) });
+      const windowRows = Math.max(1, floors - 1);
+      for (let row = 0; row < windowRows; row++) {
+        const wy = 2.1 + row * 3.2;
+        for (let col = 0; col < 3; col++) {
+          const wx = (col - 1) * width * 0.27;
+          const p = local(wx, depth / 2 + 0.07);
+          box(name + " framed window", p.x, wy, p.z, width * 0.19, 1.45, 0.16, mats.glass, yaw);
+          box(name + " window sill", p.x, wy - 0.78, p.z + 0.08, width * 0.22, 0.16, 0.3, mats.lightConcrete, yaw);
+        }
+        if (isModern) {
+          const p = local(0, depth / 2 + 0.6);
+          box(name + " balcony slab", p.x, wy - 0.85, p.z, width * 0.92, 0.18, 1.1, mats.lightConcrete, yaw);
+          box(name + " balcony rail", p.x, wy - 0.22, p.z + 0.48, width * 0.9, 0.08, 0.08, mats.white, yaw);
+        }
+      }
+      for (const side of [-1, 1]) {
+        const p = local(side * width * 0.48, 0);
+        box(name + " facade pilaster", p.x, height / 2, p.z, 0.45, height, depth + 0.15, mats.lightConcrete, yaw);
+      }
+      box(name + " rooftop utility", x + width * 0.18, height + 0.85, z - depth * 0.12, width * 0.24, 1.4, depth * 0.22, mats.concrete, yaw);
       if (isMarket) {
-        box(name + " market awning", x, 2.4, z + depth / 2 + 0.5, width * 0.82, 0.28, 2.4, i % 2 ? mats.red : mats.gold);
+        const p = local(0, depth / 2 + 0.5);
+        box(name + " market awning", p.x, 2.4, p.z, width * 0.82, 0.28, 2.4, i % 2 ? mats.red : mats.gold, yaw);
       }
     }
   }
