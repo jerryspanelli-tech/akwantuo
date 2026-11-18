@@ -265,6 +265,30 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     }
   }
 
+  // Traffic-control furniture and public-transport stops at key Accra junctions.
+  const junctions = [
+    { name: "Osu", x: 1450, z: -1350 },
+    { name: "Circle", x: -450, z: 450 },
+    { name: "Tetteh Quarshie", x: 3650, z: 1750 },
+    { name: "Spintex", x: 5600, z: -1150 }
+  ];
+  for (const junction of junctions) {
+    for (const side of [-1, 1]) {
+      const x = junction.x + side * 11;
+      box(junction.name + " traffic signal pole", x, 4.2, junction.z + 10, 0.22, 8.4, 0.22, mats.roof);
+      box(junction.name + " signal head", x, 7.8, junction.z + 10, 0.72, 1.9, 0.6, mats.roof);
+      box(junction.name + " red signal", x, 8.35, junction.z + 9.68, 0.42, 0.42, 0.08, mats.red);
+      box(junction.name + " amber signal", x, 7.8, junction.z + 9.68, 0.42, 0.42, 0.08, mats.gold);
+      box(junction.name + " green signal", x, 7.25, junction.z + 9.68, 0.42, 0.42, 0.08, mats.green);
+    }
+  }
+  for (const stop of [{ name: "Osu trotro stop", x: 1110, z: -1330 }, { name: "Circle bus stop", x: -520, z: 520 }, { name: "Labadi beach stop", x: 2260, z: -2380 }]) {
+    box(stop.name + " shelter", stop.x, 2.2, stop.z, 7.5, 4.4, 3.2, mats.green);
+    box(stop.name + " shelter roof", stop.x, 4.55, stop.z, 8.2, 0.28, 3.8, mats.gold);
+    box(stop.name + " bench", stop.x, 0.75, stop.z + 1.2, 4.2, 0.35, 0.75, mats.roof);
+    box(stop.name + " route board", stop.x, 2.8, stop.z - 1.7, 3.6, 1.4, 0.16, makeSignMaterial("TROTRO STOP"));
+  }
+
   // Parked Ghanaian trotro minibus prop near the Osu district.
   box("Accra trotro minibus body", 1460, 1.35, -1560, 2.35, 2.7, 5.4, mats.green, 0, true);
   box("Accra trotro windscreen", 1460, 2.35, -1557.2, 1.95, 0.9, 0.12, mats.glass);
