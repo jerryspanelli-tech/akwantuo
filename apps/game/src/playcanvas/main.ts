@@ -15,6 +15,10 @@ const status = document.querySelector<HTMLElement>("#world-status");
 const objective = document.querySelector<HTMLElement>("#objective");
 const hint = document.querySelector<HTMLElement>("#hint");
 const interactButton = document.querySelector<HTMLButtonElement>("#interact");
+const jumpButton = document.querySelector<HTMLButtonElement>("#jump");
+const contextLabel = document.querySelector<HTMLElement>("#context-label");
+const healthFill = document.querySelector<HTMLElement>("#health-fill");
+const healthValue = document.querySelector<HTMLElement>("#health-value");
 const exitButton = document.querySelector<HTMLButtonElement>("#exit");
 const stick = document.querySelector<HTMLElement>("#stick");
 const stickKnob = document.querySelector<HTMLElement>("#stick-knob");
@@ -193,6 +197,13 @@ async function boot() {
   window.addEventListener("blur", () => keys.clear());
 
   let stickX = 0, stickY = 0, stickPointer: number | null = null;
+  let jumpRequested = false, verticalVelocity = 0, grounded = true;
+  const groundHeight = 0;
+  const requestJump = () => { if (!inVehicle && grounded) { jumpRequested = true; jumpButton?.classList.add("pressed"); } };
+  jumpButton?.addEventListener("pointerdown", (event) => { event.preventDefault(); requestJump(); });
+  jumpButton?.addEventListener("pointerup", () => jumpButton.classList.remove("pressed"));
+  jumpButton?.addEventListener("pointercancel", () => jumpButton.classList.remove("pressed"));
+  jumpButton?.addEventListener("click", requestJump);
   const updateStick = (event: PointerEvent) => {
     const rect = stick!.getBoundingClientRect();
     const dx = event.clientX - (rect.left + rect.width / 2);
@@ -215,8 +226,9 @@ async function boot() {
   window.addEventListener("pointermove", (event) => { if (dragPointer !== event.pointerId) return; cameraYaw -= (event.clientX - lastX) * 0.22; cameraPitch = clamp(cameraPitch + (event.clientY - lastY) * 0.12, -2, 30); lastX = event.clientX; lastY = event.clientY; });
   window.addEventListener("pointerup", (event) => { if (dragPointer === event.pointerId) dragPointer = null; });
 
-  const playerSpeed = 5.1;
+  const walkSpeed = 4.6, sprintSpeed = 8.2;
   let inVehicle = false, vehicleSpeed = 0, vehicleYaw = 0, gaitTime = 0;
+  let nearbyInteraction: { id: string; label: string; x: number; z: number; radius: number } | null = null;
   const overlaps = (x: number, z: number) => {
     const buildingCollision = blockers.some((b) => Math.abs(x - b.x) < b.hx + 0.38 && Math.abs(z - b.z) < b.hz + 0.38);
     const vehiclePosition = vehicle.getPosition();
@@ -224,19 +236,46 @@ async function boot() {
     return buildingCollision || vehicleCollision;
   };
   const canEnter = () => Math.hypot(player.getPosition().x - vehicle.getPosition().x, player.getPosition().z - vehicle.getPosition().z) < 4.3;
+  const findNearbyInteraction = () => {
+    const p = player.getPosition();
+    let nearest: typeof nearbyInteraction = null;
+    let nearestDistance = Number.POSITIVE_INFINITY;
+    for (const target of world.interactables) {
+      const distance = Math.hypot(p.x - target.x, p.z - target.z);
+      if (distance <= target.radius && distance < nearestDistance) { nearest = target; nearestDistance = distance; }
+    }
+    return nearest;
+  };
   const updateButtons = () => {
-    if (interactButton) { interactButton.hidden = !inVehicle && !canEnter(); interactButton.textContent = inVehicle ? "DRIVE" : "ENTER TAXI"; }
+    nearbyInteraction = inVehicle ? null : findNearbyInteraction();
+    const taxiAvailable = !inVehicle && canEnter();
+    const available = inVehicle || taxiAvailable || !!nearbyInteraction;
+    if (interactButton) {
+      interactButton.hidden = !available;
+      interactButton.classList.toggle("available", available && !inVehicle);
+      interactButton.setAttribute("aria-label", inVehicle ? "Drive" : taxiAvailable ? "Enter taxi" : nearbyInteraction?.label ?? "Interact");
+    }
+    if (contextLabel) {
+      const label = inVehicle ? "DRIVING" : taxiAvailable ? "ENTER TAXI" : nearbyInteraction?.label ?? "";
+      contextLabel.textContent = label;
+      contextLabel.classList.toggle("visible", !!label);
+    }
     if (exitButton) exitButton.hidden = !inVehicle;
+    if (jumpButton) jumpButton.hidden = inVehicle;
+    if (stick) stick.classList.toggle("sprinting", !inVehicle && Math.hypot(stickX, stickY) >= 0.84);
   };
   const enter = () => {
-    if (inVehicle) { inVehicle = false; const p = vehicle.getPosition(); player.setPosition(p.x - 2.4, 0, p.z); player.enabled = true; vehicleSpeed = 0; showNotice("You exited the taxi"); }
+    if (inVehicle) { inVehicle = false; const p = vehicle.getPosition(); player.setPosition(p.x - 2.4, 0, p.z); player.enabled = true; vehicleSpeed = 0; grounded = true; showNotice("You exited the taxi"); }
     else if (canEnter()) { inVehicle = true; const p = vehicle.getPosition(); player.setPosition(p.x, 0, p.z); player.enabled = false; vehicleSpeed = 0; showNotice("Taxi entered · drive with the joystick"); }
-    else showNotice("Walk closer to the taxi to enter");
+    else if (nearbyInteraction) { showNotice(nearbyInteraction.label === "USE BENCH" ? "Bench interaction selected" : nearbyInteraction.label); }
     updateButtons();
   };
   interactButton?.addEventListener("click", enter);
   exitButton?.addEventListener("click", enter);
-  window.addEventListener("keydown", (event) => { if (event.code === "KeyE" && !event.repeat) enter(); });
+  window.addEventListener("keydown", (event) => {
+    if (event.code === "KeyE" && !event.repeat) enter();
+    if (event.code === "Space" && !event.repeat) requestJump();
+  });
 
   let elapsed = 0, mapElapsed = 0;
   app.on("update", (dt: number) => {
@@ -257,11 +296,25 @@ async function boot() {
       player.setPosition(vehiclePosition.x, vehiclePosition.y, vehiclePosition.z);
       if (exitButton) exitButton.hidden = false;
     } else {
-      const magnitude = Math.min(1, Math.hypot(forward, strafe));
+      const rawMagnitude = Math.hypot(forward, strafe);
+      const magnitude = Math.min(1, rawMagnitude);
+      const joystickMagnitude = Math.hypot(stickX, stickY);
+      const sprinting = joystickMagnitude >= 0.84;
+      const speed = sprinting ? sprintSpeed : walkSpeed;
+      if (jumpRequested && grounded) { verticalVelocity = 6.2; grounded = false; }
+      jumpRequested = false;
+      if (!grounded) {
+        verticalVelocity -= 17.5 * step;
+        const nextY = player.getPosition().y + verticalVelocity * step;
+        if (nextY <= groundHeight) { player.setPosition(player.getPosition().x, groundHeight, player.getPosition().z); verticalVelocity = 0; grounded = true; }
+        else player.setPosition(player.getPosition().x, nextY, player.getPosition().z);
+      }
       if (magnitude > 0.04) {
         const angle = cameraYaw * Math.PI / 180;
-        const dx = (strafe * Math.cos(angle) - forward * Math.sin(angle)) * playerSpeed * step;
-        const dz = (forward * Math.cos(angle) + strafe * Math.sin(angle)) * playerSpeed * step;
+        const normalizer = rawMagnitude > 1 ? 1 / rawMagnitude : 1;
+        const moveForward = forward * normalizer, moveStrafe = strafe * normalizer;
+        const dx = (moveStrafe * Math.cos(angle) - moveForward * Math.sin(angle)) * speed * step;
+        const dz = (moveForward * Math.cos(angle) + moveStrafe * Math.sin(angle)) * speed * step;
         const p = player.getPosition();
         const nx = clamp(p.x + dx, -8000, 13000), nz = clamp(p.z + dz, -4050, 8500);
         if (!overlaps(nx, p.z)) player.setPosition(nx, p.y, p.z);
@@ -285,7 +338,7 @@ async function boot() {
     const height = inVehicle ? 4.4 : 3.6;
     camera.setPosition(focus.x - Math.sin(yaw) * distance, focus.y + height + cameraPitch * 0.08, focus.z - Math.cos(yaw) * distance);
     camera.lookAt(focus.x, focus.y + 1.15, focus.z);
-    if (elapsed > 0.12) { updateButtons(); elapsed = 0; }
+    if (elapsed > 0.10) { updateButtons(); elapsed = 0; }
     elapsed += step;
     mapElapsed += step;
     if (mapElapsed > 0.14 && minimapContext && minimap) {
@@ -318,7 +371,9 @@ async function boot() {
     }
     if (status) status.textContent = inVehicle ? "TAXI · DRIVING" : "OSU · EXPLORATION";
     if (objective) objective.textContent = inVehicle ? "Drive towards Labadi Beach" : "Explore Osu and find the taxi";
-    if (hint) hint.textContent = inVehicle ? "Joystick: steer and accelerate · EXIT to leave" : "Joystick: move · Drag: camera · E: enter / exit";
+    if (hint) hint.textContent = inVehicle ? "Joystick: steer and accelerate · EXIT to leave" : "Push fully to sprint · Tap ↑ to jump · Drag to look";
+    if (healthFill) healthFill.style.width = "100%";
+    if (healthValue) healthValue.textContent = "100";
   });
 
   window.addEventListener("resize", () => app.resizeCanvas());
