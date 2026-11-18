@@ -44,34 +44,31 @@ jobs:
             cp "$source" "$destination/$asset"
           done
 
-      - name: Validate GLB structure, skinning and animation clips
+      - name: Validate GLB structure, skinning and separate animation clips
         run: |
           node --input-type=module <<'NODE'
           import fs from 'node:fs';
           import path from 'node:path';
           const root = 'apps/game/public/assets/characters';
-          for (const file of ['akwantuo-male.glb', 'akwantuo-female.glb']) {
+          const readGlb = (file) => {
             const full = path.join(root, file);
             const bytes = fs.readFileSync(full);
             if (bytes.toString('ascii', 0, 4) !== 'glTF') throw new Error(file + ': invalid GLB magic');
             if (bytes.readUInt32LE(4) !== 2 || bytes.readUInt32LE(8) !== bytes.length) throw new Error(file + ': invalid GLB 2.0 header');
             const jsonLength = bytes.readUInt32LE(12);
             const doc = JSON.parse(bytes.subarray(20, 20 + jsonLength).toString('utf8').trim());
-            if (!doc.meshes?.length || !doc.skins?.length || !doc.animations?.length) throw new Error(file + ': mesh, skin and embedded animations are required');
-            const names = doc.animations.map((clip) => (clip.name || '').toLowerCase());
-            if (!names.some((name) => name.includes('idle')) || !names.some((name) => name.includes('walk'))) {
-              throw new Error(file + ': embedded idle and walk clips are required; found ' + names.join(', '));
-            }
-            console.log(file + ': ' + (bytes.length / 1048576).toFixed(2) + ' MB; meshes=' + doc.meshes.length + '; skins=' + doc.skins.length + '; clips=' + names.join(', '));
+            console.log(file + ': ' + (bytes.length / 1048576).toFixed(2) + ' MB; meshes=' + (doc.meshes?.length ?? 0) + '; skins=' + (doc.skins?.length ?? 0) + '; clips=' + (doc.animations ?? []).map((clip) => clip.name).join(', '));
+            return doc;
+          };
+          for (const file of ['akwantuo-male.glb', 'akwantuo-female.glb']) {
+            const doc = readGlb(file);
+            if (!doc.meshes?.length || !doc.skins?.length) throw new Error(file + ': skinned character mesh is required');
           }
-          for (const file of ['idle.glb', 'walk.glb']) {
-            const full = path.join(root, file);
-            const bytes = fs.readFileSync(full);
-            if (bytes.toString('ascii', 0, 4) !== 'glTF' || bytes.readUInt32LE(4) !== 2 || bytes.readUInt32LE(8) !== bytes.length) {
-              throw new Error(file + ': invalid GLB 2.0 file');
-            }
-            console.log(file + ': valid GLB; ' + (bytes.length / 1048576).toFixed(2) + ' MB');
-          }
+          const idle = readGlb('idle.glb');
+          const walk = readGlb('walk.glb');
+          if (!(idle.animations ?? []).some((clip) => /idle/i.test(clip.name ?? ''))) throw new Error('idle.glb: Idle animation clip not found');
+          if (!(walk.animations ?? []).some((clip) => /walk/i.test(clip.name ?? ''))) throw new Error('walk.glb: Walk animation clip not found');
+          if (!(idle.skins?.length) || !(walk.skins?.length)) throw new Error('Animation GLBs must include the rig/skeleton binding data');
           NODE
 
       - name: Record asset provenance
