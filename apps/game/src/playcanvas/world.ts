@@ -35,6 +35,34 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     palm: material(0.23, 0.31, 0.17)
   };
 
+  // Lightweight procedural surface grain: subtle pixel variation gives asphalt, concrete,
+  // earth and sand a material response instead of perfectly flat primitive colors.
+  const surfaceTexture = (name: string, base: [number, number, number], amplitude: number) => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 256; canvas.height = 256;
+    const context = canvas.getContext("2d");
+    if (!context) return null;
+    const pixels = context.createImageData(256, 256);
+    for (let i = 0; i < pixels.data.length; i += 4) {
+      const grain = (Math.random() - 0.5) * amplitude;
+      pixels.data[i] = Math.max(0, Math.min(255, base[0] + grain));
+      pixels.data[i + 1] = Math.max(0, Math.min(255, base[1] + grain));
+      pixels.data[i + 2] = Math.max(0, Math.min(255, base[2] + grain));
+      pixels.data[i + 3] = 255;
+    }
+    context.putImageData(pixels, 0, 0);
+    const texture = new Texture(app.graphicsDevice, { name, width: 256, height: 256, format: PIXELFORMAT_RGBA8, mipmaps: true });
+    texture.setSource(canvas);
+    return texture;
+  };
+  const roadGrain = surfaceTexture("Asphalt grain", [90, 94, 98], 20);
+  const concreteGrain = surfaceTexture("Concrete grain", [135, 132, 124], 14);
+  const earthGrain = surfaceTexture("Accra earth grain", [110, 94, 69], 22);
+  const sandGrain = surfaceTexture("Coastal sand grain", [194, 168, 124], 18);
+  for (const [surface, texture] of [[mats.road, roadGrain], [mats.roadFuture, roadGrain], [mats.concrete, concreteGrain], [mats.lightConcrete, concreteGrain], [mats.earth, earthGrain], [mats.sand, sandGrain]] as const) {
+    if (texture) { surface.diffuseMap = texture; surface.gloss = 8; surface.update(); }
+  }
+
   const box = (name: string, x: number, y: number, z: number, sx: number, sy: number, sz: number, mat: StandardMaterial, yaw = 0, solid = false) => {
     const entity = new Entity(name);
     entity.addComponent("render", { type: "box", material: mat, castShadows: solid, receiveShadows: true });
