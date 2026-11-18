@@ -6,6 +6,7 @@ import {
 } from "playcanvas";
 import "./style.css";
 import { createGreaterAccraWorld } from "./world";
+import { GREATER_ACCRA_ROAD_PATHS } from "../world/greaterAccraLayout";
 
 const canvas = document.querySelector<HTMLCanvasElement>("#application")!;
 const loading = document.querySelector<HTMLElement>("#loading");
@@ -18,6 +19,8 @@ const exitButton = document.querySelector<HTMLButtonElement>("#exit");
 const stick = document.querySelector<HTMLElement>("#stick");
 const stickKnob = document.querySelector<HTMLElement>("#stick-knob");
 const notice = document.querySelector<HTMLElement>("#notice");
+const minimap = document.querySelector<HTMLCanvasElement>("#minimap");
+const minimapContext = minimap?.getContext("2d") ?? null;
 
 if (!canvas) throw new Error("AKWANTUO PlayCanvas canvas is missing.");
 
@@ -234,7 +237,7 @@ async function boot() {
   exitButton?.addEventListener("click", enter);
   window.addEventListener("keydown", (event) => { if (event.code === "KeyE" && !event.repeat) enter(); });
 
-  let elapsed = 0;
+  let elapsed = 0, mapElapsed = 0;
   app.on("update", (dt: number) => {
     const step = Math.min(dt, 0.05);
     const forward = (keys.has("KeyW") || keys.has("ArrowUp") ? 1 : 0) - (keys.has("KeyS") || keys.has("ArrowDown") ? 1 : 0) - stickY;
@@ -283,6 +286,35 @@ async function boot() {
     camera.lookAt(focus.x, focus.y + 1.15, focus.z);
     if (elapsed > 0.12) { updateButtons(); elapsed = 0; }
     elapsed += step;
+    mapElapsed += step;
+    if (mapElapsed > 0.14 && minimapContext && minimap) {
+      mapElapsed = 0;
+      const map = minimapContext;
+      const center = inVehicle ? vehicle.getPosition() : player.getPosition();
+      const width = minimap.width, height = minimap.height, scale = 0.105;
+      map.clearRect(0, 0, width, height);
+      map.fillStyle = "#10231d"; map.fillRect(0, 0, width, height);
+      map.save(); map.beginPath(); map.arc(width / 2, height / 2, width * 0.46, 0, Math.PI * 2); map.clip();
+      for (const path of GREATER_ACCRA_ROAD_PATHS) {
+        if (!path.playableInFirstRelease) continue;
+        map.beginPath();
+        path.points.forEach((point, index) => {
+          const x = width / 2 + (point.x - center.x) * scale;
+          const y = height / 2 - (point.z - center.z) * scale;
+          if (index === 0) map.moveTo(x, y); else map.lineTo(x, y);
+        });
+        map.strokeStyle = /^(n1|n4|n6)-/.test(path.roadSegmentId) ? "#d0b477" : "#82918a";
+        map.lineWidth = /^(n1|n4|n6)-/.test(path.roadSegmentId) ? 3.5 : 2;
+        map.stroke();
+      }
+      if (!inVehicle) {
+        const vp = vehicle.getPosition();
+        map.fillStyle = "#61b88b"; map.beginPath(); map.arc(width / 2 + (vp.x - center.x) * scale, height / 2 - (vp.z - center.z) * scale, 4, 0, Math.PI * 2); map.fill();
+      }
+      map.fillStyle = "#f0c36e"; map.beginPath(); map.arc(width / 2, height / 2, 5, 0, Math.PI * 2); map.fill();
+      map.strokeStyle = "#fff2d2"; map.lineWidth = 1.5; map.stroke();
+      map.restore();
+    }
     if (status) status.textContent = inVehicle ? "TAXI · DRIVING" : "OSU · EXPLORATION";
     if (objective) objective.textContent = inVehicle ? "Drive towards Labadi Beach" : "Explore Osu and find the taxi";
     if (hint) hint.textContent = inVehicle ? "Joystick: steer and accelerate · EXIT to leave" : "Joystick: move · Drag: camera · E: enter / exit";
