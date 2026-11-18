@@ -481,7 +481,7 @@ async function boot() {
     }
     if (status) status.textContent = inVehicle ? "TAXI · DRIVING" : "OSU · EXPLORATION";
     if (objective) objective.textContent = inVehicle ? "Drive towards Labadi Beach" : "Explore Osu and find the taxi";
-    if (hint) hint.textContent = inVehicle ? "Steer with left/right · Hold ACCELERATE or REVERSE · Door to exit" : "Push fully to sprint · Tap ↑ to jump · Drag to look";
+    if (hint) hint.textContent = inVehicle ? "Steer with the joystick · Hold GAS or BRAKE / REVERSE · Tap the door to exit · Drag anywhere above to look" : "Push fully to sprint · Tap ↑ to jump · Drag to look";
     if (healthFill) healthFill.style.width = "100%";
     if (healthValue) healthValue.textContent = "100";
   });
