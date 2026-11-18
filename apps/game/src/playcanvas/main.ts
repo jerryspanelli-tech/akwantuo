@@ -400,6 +400,14 @@ async function boot() {
         activePlayerAnimation = desiredAnimation;
       }
     }
+    // The GLB is a separate scene entity so its imported hierarchy is not
+    // affected by the movement controller's parent transforms. Mirror the
+    // controller transform every frame while the player is on foot.
+    if (playerCharacter && !inVehicle) {
+      const playerPosition = player.getPosition();
+      playerCharacter.setPosition(playerPosition.x, playerPosition.y, playerPosition.z);
+      playerCharacter.setEulerAngles(player.getEulerAngles());
+    }
     const focus = inVehicle ? vehicle.getPosition() : player.getPosition();
     const yaw = cameraYaw * Math.PI / 180;
     const distance = inVehicle ? 10 : 7.5;
