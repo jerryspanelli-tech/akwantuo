@@ -6,6 +6,7 @@ on:
       - engine/playcanvas-world-foundation
     paths:
       - ".github/workflows/import-playcanvas-character-assets.yml"
+      - "apps/game/src/playcanvas/main.ts"
   workflow_dispatch:
 
 permissions:
