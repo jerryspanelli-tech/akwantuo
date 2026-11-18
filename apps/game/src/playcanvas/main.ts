@@ -173,18 +173,36 @@ async function boot() {
       const model = container.instantiateRenderEntity({ castShadows: true });
       model.name = "Loaded Ghanaian player character";
       model.setLocalScale(1, 1, 1);
+      model.enabled = false;
       model.addComponent("anim", { activate: true });
       player.addChild(model);
       loadedCharacter = model;
-      fallback.enabled = false;
-      for (const animation of container.animations) {
-        model.anim.assignAnimation(animation.resource.name, animation.resource);
-      }
-      idleClipName = container.animations.find((a: any) => /idle/i.test(a.resource.name))?.resource.name ?? null;
-      walkClipName = container.animations.find((a: any) => /walk|run/i.test(a.resource.name))?.resource.name ?? null;
-      if (idleClipName) { model.anim.baseLayer.play(idleClipName); activeClipName = idleClipName; }
-      showNotice("Player character loaded");
-      document.documentElement.dataset.akwantuoPlayerModel = "loaded";
+      const loadClipContainer = (file: string) => new Promise<any>((resolve, reject) => {
+        const clipAsset = new Asset(file, "container", { url: new URL(`./assets/characters/${file}`, window.location.href).toString() });
+        clipAsset.ready(() => resolve(clipAsset.resource));
+        clipAsset.on("error", (error: unknown) => reject(error));
+        app.assets.add(clipAsset);
+        app.assets.load(clipAsset);
+      });
+      void Promise.allSettled([loadClipContainer("idle.glb"), loadClipContainer("walk.glb")]).then((clipResults) => {
+        const idleContainer = clipResults[0].status === "fulfilled" ? clipResults[0].value : null;
+        const walkContainer = clipResults[1].status === "fulfilled" ? clipResults[1].value : null;
+        const clips = [...(idleContainer?.animations ?? []), ...(walkContainer?.animations ?? []), ...(container.animations ?? [])];
+        for (const animation of clips) model.anim.assignAnimation(animation.resource.name, animation.resource);
+        idleClipName = clips.find((a: any) => /idle/i.test(a.resource.name))?.resource.name ?? null;
+        walkClipName = clips.find((a: any) => /walk|run/i.test(a.resource.name))?.resource.name ?? null;
+        if (idleClipName) {
+          model.anim.baseLayer.play(idleClipName);
+          activeClipName = idleClipName;
+          model.enabled = true;
+          fallback.enabled = false;
+          showNotice("Player character and idle animation loaded");
+          document.documentElement.dataset.akwantuoPlayerModel = "animated";
+        } else {
+          console.warn("No compatible idle animation was found; keeping the animated fallback visible.");
+          document.documentElement.dataset.akwantuoPlayerModel = "fallback";
+        }
+      });
     } catch (error) {
       console.error("AKWANTUO character instantiation failed", error);
       document.documentElement.dataset.akwantuoPlayerModel = "fallback";
