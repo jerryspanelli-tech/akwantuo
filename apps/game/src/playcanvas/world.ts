@@ -391,17 +391,27 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
   const storefront = (label: string, x: number, z: number, w: number, d: number, h: number, facade: StandardMaterial) => {
     box(label + " shop structure", x, h/2, z, w, h, d, facade, 0, true);
     box(label + " parapet", x, h + 0.2, z, w + 0.4, 0.4, d + 0.4, mats.roof);
-    box(label + " glass frontage", x, h*0.4, z+d/2+0.08, w*0.62, h*0.48, 0.12, mats.glass);
-    box(label + " entrance", x-w*0.32, h*0.35, z+d/2+0.1, w*0.18, h*0.65, 0.15, mats.roof);
-    box(label + " signboard", x, h*0.85, z+d/2+0.22, w*0.9, 0.65, 0.18, makeSignMaterial(label));
-    box(label + " awning", x, h*0.65, z+d/2+0.55, w*0.95, 0.22, 1.1, mats.gold);
+    box(label + " recessed shopfront", x, h*0.4, z+d/2+0.035, w*0.72, h*0.52, 0.18, mats.concrete);
+    box(label + " glass frontage", x, h*0.4, z+d/2+0.14, w*0.62, h*0.46, 0.12, mats.glass);
+    box(label + " entrance", x-w*0.32, h*0.35, z+d/2+0.17, w*0.18, h*0.65, 0.15, mats.roof);
+    box(label + " roller shutter header", x+w*0.19, h*0.69, z+d/2+0.22, w*0.38, 0.16, 0.2, mats.lightConcrete);
+    box(label + " shop threshold", x, 0.12, z+d/2+0.72, w*0.82, 0.18, 1.15, mats.lightConcrete);
+    box(label + " signboard", x, h*0.85, z+d/2+0.26, w*0.9, 0.65, 0.18, makeSignMaterial(label));
+    box(label + " sign trim", x, h*0.85+0.38, z+d/2+0.28, w*0.94, 0.08, 0.24, mats.gold);
+    box(label + " awning", x, h*0.65, z+d/2+0.62, w*0.95, 0.22, 1.1, mats.gold);
   };
   const marketStalls = (label: string, x: number, z: number) => {
     for (let i=0;i<4;i++) {
       const sx=x+(i-1.5)*8;
       box(label+" stall",sx,0.8,z,5.8,1.6,4.2,i%2?mats.market:mats.red,0,true);
       box(label+" canopy",sx,3.1,z,6.2,0.28,4.6,i%2?mats.gold:mats.green);
-      box(label+" stall sign",sx,2.45,z+2.35,5.5,0.55,0.18,makeSignMaterial(["PROVISIONS","FRUITS","FABRICS","FOOD"][i]));
+      for (const side of [-1,1]) {
+        box(label+" canopy support",sx+side*2.75,1.95,z+1.85,0.12,2.3,0.12,mats.roof);
+      }
+      box(label+" vendor counter",sx,1.72,z+2.15,5.6,0.22,0.72,mats.lightConcrete);
+      box(label+" produce display left",sx-1.55,1.98,z+2.05,1.25,0.48,0.62,i%2?mats.red:mats.gold);
+      box(label+" produce display right",sx+1.55,1.98,z+2.05,1.25,0.48,0.62,i%2?mats.green:mats.market);
+      box(label+" stall sign",sx,2.45,z+2.55,5.5,0.55,0.18,makeSignMaterial(["PROVISIONS","FRUITS","FABRICS","FOOD"][i]));
     }
   };
   const house = (label: string,x:number,z:number,w:number,d:number,floors:number,facade:StandardMaterial) => {
