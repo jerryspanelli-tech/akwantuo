@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#14251f" />
+  <meta name="description" content="AKWANTUO PlayCanvas world prototype — a Ghana-inspired open-world game." />
+  <title>AKWANTUO — PlayCanvas World</title>
+</head>
+<body>
+  <main id="game">
+    <canvas id="application" aria-label="AKWANTUO playable Ghana-inspired 3D world"></canvas>
+    <header class="top-hud"><a href="./" class="wordmark">AKWANTUO<span>.</span></a><div><strong id="district">OSU · ACCRA</strong><small id="world-status">LOADING WORLD</small></div></header>
+    <div class="mission"><small>FIRST JOURNEY</small><strong id="objective">Explore the streets of Osu</strong><span id="hint">Move with the joystick · Drag to look</span></div>
+    <div class="touch-ui">
+      <div class="stick" id="stick"><div class="stick-ring"></div><div class="stick-knob" id="stick-knob"></div></div>
+      <div class="actions"><button id="interact" type="button">INTERACT</button><button id="exit" type="button" hidden>EXIT VEHICLE</button></div>
+    </div>
+    <div class="crosshair" aria-hidden="true"></div>
+    <div class="loading" id="loading"><div class="loader-mark">A</div><strong>AKWANTUO</strong><span id="loading-message">Building your world…</span></div>
+    <div class="notice" id="notice" role="status"></div>
+  </main>
+  <script type="module" src="/src/playcanvas/main.ts"></script>
+</body>
+</html>
