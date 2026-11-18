@@ -145,6 +145,16 @@ async function boot() {
       player.addChild(model);
       loadedCharacter = model;
       model.addComponent("anim", { activate: true });
+      // The GLB's skinned hierarchy has a named root bone. Set it explicitly
+      // so the animation evaluator resolves all 66 joint targets beneath it.
+      const skeletonRoot = model.findByName("root");
+      if (skeletonRoot && model.anim) model.anim.rootBone = skeletonRoot;
+      console.info("AKWANTUO character hierarchy", {
+        skeletonRootFound: !!skeletonRoot,
+        renderEntities: model.findComponents("render").length,
+        animationComponent: !!model.anim,
+        rootBone: model.anim?.rootBone?.name ?? null
+      });
       model.enabled = true;
       fallback.enabled = false;
       document.documentElement.dataset.akwantuoPlayerModel = "3d";
@@ -160,23 +170,47 @@ async function boot() {
       void Promise.allSettled([loadClipContainer("idle.glb"), loadClipContainer("walk.glb")]).then((clipResults) => {
         const idleContainer = clipResults[0].status === "fulfilled" ? clipResults[0].value : null;
         const walkContainer = clipResults[1].status === "fulfilled" ? clipResults[1].value : null;
-        // PlayCanvas ContainerResource.animations is an array of animation
-        // Assets. The AnimTrack is held in each Asset.resource; passing the
-        // Asset itself (or treating the array item as the track) leaves T-pose.
-        const collectTracks = (clipContainer: any, fallbackName: string) =>
-          (clipContainer?.animations ?? []).map((animationAsset: any, index: number) => {
-            const track = animationAsset?.resource;
-            return {
-              track,
-              name: String(track?.name || animationAsset?.name ||
-                (index === 0 ? fallbackName : `${fallbackName}-${index + 1}`))
-            };
-          }).filter((entry: any) => !!entry.track);
-        const namedClips = [
-          ...collectTracks(idleContainer, "Idle_A"),
-          ...collectTracks(walkContainer, "Walk"),
-          ...collectTracks(container, "Character")
-        ];
+        // ContainerResource.animations contains Asset objects. Some GLB
+        // loaders expose those assets before their AnimTrack resources have
+        // finished loading, so explicitly load each clip before binding it.
+        const loadTracks = async (clipContainer: any, fallbackName: string) => {
+          const animationAssets = clipContainer?.animations ?? [];
+          return Promise.all(animationAssets.map((animationAsset: any, index: number) =>
+            new Promise<any>((resolve) => {
+              const toEntry = () => {
+                const track = animationAsset?.resource;
+                if (!track) {
+                  console.error("AKWANTUO animation asset has no AnimTrack resource", {
+                    file: fallbackName, asset: animationAsset?.name
+                  });
+                  resolve(null);
+                  return;
+                }
+                resolve({
+                  track,
+                  name: String(track.name || animationAsset.name ||
+                    (index === 0 ? fallbackName : `${fallbackName}-${index + 1}`))
+                });
+              };
+              if (animationAsset?.resource) {
+                toEntry();
+                return;
+              }
+              animationAsset.once("load", toEntry);
+              animationAsset.once("error", (error: unknown) => {
+                console.error("AKWANTUO animation asset failed to load", fallbackName, error);
+                resolve(null);
+              });
+              app.assets.load(animationAsset);
+            })
+          )).then((entries: any[]) => entries.filter(Boolean));
+        };
+        const [idleTracks, walkTracks, embeddedTracks] = await Promise.all([
+          loadTracks(idleContainer, "Idle_A"),
+          loadTracks(walkContainer, "Walk"),
+          loadTracks(container, "Character")
+        ]);
+        const namedClips = [...idleTracks, ...walkTracks, ...embeddedTracks];
         console.info("AKWANTUO animation assets loaded", {
           idle: (idleContainer?.animations ?? []).map((asset: any) => ({
             asset: asset?.name, track: asset?.resource?.name,
