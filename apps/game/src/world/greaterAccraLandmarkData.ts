@@ -1,6 +1,6 @@
-import type { SpatialFootprint } from "../spatialIntersection";
-
-export interface LandmarkFootprint extends SpatialFootprint {
+export interface LandmarkFootprint {
+  readonly x: number;
+  readonly z: number;
   readonly id: string;
   readonly label: string;
   readonly minX: number;

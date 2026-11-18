@@ -1,0 +1,27 @@
+{
+  "$schema": "https://ara3dgen.com/schemas/character.v1.json",
+  "kind": "ara-character",
+  "version": 1,
+  "preset": "The Gangster",
+  "params": {
+    "name": "AKWANTUO Player",
+    "ageYears": 26,
+    "gender": 1,
+    "muscle": 0.56,
+    "weight": 0.5,
+    "height": 0.58,
+    "african": 1,
+    "asian": 0,
+    "caucasian": 0,
+    "hair": "cornrows",
+    "hairColor": "#17110d",
+    "facialHair": "stubble",
+    "beardColor": "#17110d",
+    "hat": "none",
+    "earrings": "none",
+    "accessories": [],
+    "expression": "neutral",
+    "outfit": "set_street_tee_jeans",
+    "shoes": "sneakers"
+  }
+}

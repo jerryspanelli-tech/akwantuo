@@ -13,6 +13,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: "index.html",
+        playcanvas: "playcanvas.html",
         circlePreview: "circle-preview.html",
         stationPreview: "station-preview.html",
         transportPreview: "transport-preview.html",

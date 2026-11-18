@@ -6,12 +6,14 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "tsc -p tsconfig.json && vite build",
-    "typecheck": "tsc -p tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json",
+    "prebuild": "npx --yes ara3d@0.9.0 export --params ../../character-configs/player.json --formats glb --animations idle,walk,run --detail medium --out /tmp/akwantuo-player && mkdir -p public/assets/characters/generated && PLAYER_FILE=\"$(find /tmp/akwantuo-player -maxdepth 1 -type f -name \"*.glb\" -print -quit)\" && test -n \"$PLAYER_FILE\" && cp \"$PLAYER_FILE\" public/assets/characters/generated/player.glb && node scripts/validate-player-glb.mjs public/assets/characters/generated/player.glb"
   },
   "dependencies": {
     "@babylonjs/core": "^8.56.2",
     "@akwantuo/shared": "0.1.0",
-    "@babylonjs/loaders": "^8.56.2"
+    "@babylonjs/loaders": "^8.56.2",
+    "playcanvas": "2.24.1"
   },
   "devDependencies": {
     "typescript": "^6.0.3",

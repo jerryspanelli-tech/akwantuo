@@ -1,0 +1,501 @@
+import {
+  AppBase, AppOptions, CameraComponentSystem, LightComponentSystem, RenderComponentSystem,
+  AnimComponentSystem, ContainerHandler, TextureHandler, Asset, Color, StandardMaterial,
+  createGraphicsDevice, DEVICETYPE_WEBGPU, DEVICETYPE_WEBGL2, FILLMODE_FILL_WINDOW,
+  RESOLUTION_AUTO, Entity
+} from "playcanvas";
+import "./style.css";
+import { createGreaterAccraWorld } from "./world";
+import { GREATER_ACCRA_ROAD_PATHS } from "../world/greaterAccraLayout";
+
+const canvas = document.querySelector<HTMLCanvasElement>("#application")!;
+const loading = document.querySelector<HTMLElement>("#loading");
+const loadingMessage = document.querySelector<HTMLElement>("#loading-message");
+const status = document.querySelector<HTMLElement>("#world-status");
+const objective = document.querySelector<HTMLElement>("#objective");
+const hint = document.querySelector<HTMLElement>("#hint");
+const interactButton = document.querySelector<HTMLButtonElement>("#interact");
+const jumpButton = document.querySelector<HTMLButtonElement>("#jump");
+const contextLabel = document.querySelector<HTMLElement>("#context-label");
+const healthFill = document.querySelector<HTMLElement>("#health-fill");
+const healthValue = document.querySelector<HTMLElement>("#health-value");
+const exitButton = document.querySelector<HTMLButtonElement>("#exit");
+const vehicleControls = document.querySelector<HTMLElement>("#vehicle-controls");
+const accelerateButton = document.querySelector<HTMLButtonElement>("#accelerate");
+const reverseButton = document.querySelector<HTMLButtonElement>("#reverse");
+const vehicleStick = document.querySelector<HTMLElement>("#vehicle-stick");
+const vehicleStickKnob = document.querySelector<HTMLElement>("#vehicle-stick-knob");
+const touchUi = document.querySelector<HTMLElement>(".touch-ui");
+const stick = document.querySelector<HTMLElement>("#stick");
+const stickKnob = document.querySelector<HTMLElement>("#stick-knob");
+const notice = document.querySelector<HTMLElement>("#notice");
+const minimap = document.querySelector<HTMLCanvasElement>("#minimap");
+const minimapContext = minimap?.getContext("2d") ?? null;
+
+if (!canvas) throw new Error("AKWANTUO PlayCanvas canvas is missing.");
+
+const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
+const showNotice = (message: string) => {
+  if (!notice) return;
+  notice.textContent = message;
+  notice.classList.add("show");
+  window.setTimeout(() => notice.classList.remove("show"), 1700);
+};
+
+
+const mat = (r: number, g: number, b: number) => {
+  const material = new StandardMaterial();
+  material.diffuse = new Color(r, g, b);
+  material.specular = new Color(0.04, 0.04, 0.04);
+  material.update();
+  return material;
+};
+
+async function boot() {
+  loadingMessage && (loadingMessage.textContent = "Starting WebGL / WebGPU renderer…");
+  const device = await createGraphicsDevice(canvas, { deviceTypes: [DEVICETYPE_WEBGPU, DEVICETYPE_WEBGL2] });
+  // Conservative default for older iPhones. Desktop can use a higher cap.
+  device.maxPixelRatio = Math.min(window.devicePixelRatio || 1, window.matchMedia("(pointer: coarse)").matches ? 1.25 : 1.6);
+
+  const options = new AppOptions();
+  options.graphicsDevice = device;
+  options.componentSystems = [RenderComponentSystem, CameraComponentSystem, LightComponentSystem, AnimComponentSystem];
+  options.resourceHandlers = [ContainerHandler, TextureHandler];
+  const app = new AppBase(canvas);
+  app.init(options);
+  app.setCanvasFillMode(FILLMODE_FILL_WINDOW);
+  app.setCanvasResolution(RESOLUTION_AUTO);
+  app.scene.ambientLight = new Color(0.48, 0.49, 0.46);
+  // Warm Accra daylight with a soft ambient fill, avoiding harsh flat lighting.
+  app.start();
+
+  const addBox = (name: string, x: number, y: number, z: number, sx: number, sy: number, sz: number, material: StandardMaterial, blocker = false) => {
+    const entity = new Entity(name);
+    entity.addComponent("render", { type: "box", material, castShadows: true, receiveShadows: true });
+    entity.setPosition(x, y, z);
+    entity.setLocalScale(sx, sy, sz);
+    app.root.addChild(entity);
+    if (blocker) blockers.push({ x, z, hx: sx * 0.52, hz: sz * 0.52 });
+    return entity;
+  };
+  const addPlane = (name: string, x: number, y: number, z: number, sx: number, sz: number, material: StandardMaterial) => {
+    const entity = new Entity(name);
+    entity.addComponent("render", { type: "plane", material });
+    entity.setPosition(x, y, z);
+    entity.setLocalScale(sx, 1, sz);
+    app.root.addChild(entity);
+    return entity;
+  };
+  const addCylinder = (name: string, x: number, y: number, z: number, radius: number, height: number, material: StandardMaterial) => {
+    const entity = new Entity(name);
+    entity.addComponent("render", { type: "cylinder", material });
+    entity.setPosition(x, y, z);
+    entity.setLocalScale(radius * 2, height, radius * 2);
+    app.root.addChild(entity);
+    return entity;
+  };
+
+  const materials = {
+    soil: mat(0.48, 0.38, 0.25), grass: mat(0.22, 0.34, 0.22), road: mat(0.105, 0.12, 0.12),
+    lane: mat(0.88, 0.78, 0.53), kerb: mat(0.69, 0.66, 0.57), sand: mat(0.78, 0.68, 0.48),
+    sea: mat(0.045, 0.25, 0.34), white: mat(0.85, 0.83, 0.75), gold: mat(0.78, 0.52, 0.19),
+    green: mat(0.12, 0.31, 0.22), red: mat(0.55, 0.16, 0.12), blue: mat(0.12, 0.28, 0.42),
+    concrete: mat(0.55, 0.53, 0.47), glass: mat(0.16, 0.29, 0.31), roof: mat(0.28, 0.20, 0.16),
+    tyre: mat(0.025, 0.03, 0.03), vehicle: mat(0.78, 0.67, 0.34)
+  };
+
+  loadingMessage && (loadingMessage.textContent = "Building Greater Accra roads, districts and coastline…");
+  const world = createGreaterAccraWorld(app);
+  const blockers = world.blockers;
+
+  loadingMessage && (loadingMessage.textContent = "Preparing the player and vehicle…");
+  const player = new Entity("Player");
+  player.setPosition(world.spawn.x, 0, world.spawn.z);
+  app.root.addChild(player);
+
+  // Load the rigged player through PlayCanvas' supported URL loader. Keep the
+  // rendered character as a direct scene child (not a child of the movement
+  // controller) so imported GLB root transforms cannot hide or offset it.
+  let playerCharacter: Entity | null = null;
+  let playerAnimationNames = { idle: "", walk: "", run: "" };
+  let activePlayerAnimation = "";
+  document.documentElement.dataset.akwantuoPlayerModel = "loading";
+
+  const markPlayerUnavailable = (reason: string, error?: unknown) => {
+    document.documentElement.dataset.akwantuoPlayerModel = "3d-unavailable";
+    console.error("[AKWANTUO] Player GLB unavailable:", reason, error ?? "");
+    showNotice("3D player failed to load");
+  };
+
+  app.assets.loadFromUrl("/assets/characters/generated/player.glb", "container", (loadError, loadedAsset) => {
+    if (loadError || !loadedAsset?.resource) {
+      markPlayerUnavailable("The GLB request or container parse failed.", loadError);
+      return;
+    }
+
+    const container = loadedAsset.resource as any;
+    try {
+      if (!Array.isArray(container.renders) || container.renders.length === 0) {
+        throw new Error("The GLB container has no render assets.");
+      }
+
+      const character = container.instantiateRenderEntity({ castShadows: true });
+      character.name = "AKWANTUO Ghanaian 3D player";
+      character.enabled = true;
+      character.setPosition(world.spawn.x, 0, world.spawn.z);
+      character.setLocalScale(0.92, 0.92, 0.92);
+      app.root.addChild(character);
+      character.syncHierarchy();
+
+      let renderMeshCount = 0;
+      const enableImportedMeshes = (node: any) => {
+        node.enabled = true;
+        for (const mesh of node.render?.meshInstances ?? []) {
+          mesh.visible = true;
+          renderMeshCount++;
+        }
+        for (const child of node.children ?? []) enableImportedMeshes(child);
+      };
+      enableImportedMeshes(character);
+      if (renderMeshCount === 0) {
+        character.destroy();
+        throw new Error("The GLB produced no render mesh instances.");
+      }
+
+      playerCharacter = character;
+      document.documentElement.dataset.akwantuoPlayerModel = "3d-visible";
+      console.info("[AKWANTUO] Player render entity attached to scene", {
+        renderAssets: container.renders.length,
+        renderMeshCount,
+        position: character.getPosition().toString()
+      });
+
+      // Animation is optional for visibility: never hide/destroy the mesh if
+      // a clip or animation component cannot be bound.
+      try {
+        const animationAssets = Array.isArray(container.animations) ? container.animations : [];
+        character.addComponent("anim", { activate: true });
+        const names: string[] = [];
+        for (const animationAsset of animationAssets) {
+          const track = animationAsset?.resource;
+          const clipName = track?.name || animationAsset?.name;
+          if (!track || !clipName) continue;
+          character.anim.assignAnimation(clipName, track);
+          names.push(clipName);
+        }
+        const findClip = (pattern: RegExp) => names.find((name) => pattern.test(name)) || "";
+        playerAnimationNames = {
+          idle: findClip(/idle/i),
+          walk: findClip(/walk/i),
+          run: findClip(/run/i)
+        };
+        if (playerAnimationNames.idle) {
+          character.anim.baseLayer.play(playerAnimationNames.idle);
+          activePlayerAnimation = playerAnimationNames.idle;
+        }
+        document.documentElement.dataset.akwantuoPlayerModel =
+          playerAnimationNames.idle && playerAnimationNames.walk && playerAnimationNames.run
+            ? "animated-3d"
+            : "3d-visible-animation-incomplete";
+        console.info("[AKWANTUO] Player animation clips", names);
+      } catch (animationError) {
+        document.documentElement.dataset.akwantuoPlayerModel = "3d-visible-animation-error";
+        console.error("[AKWANTUO] Character mesh is visible; animation setup failed", animationError);
+      }
+    } catch (renderError) {
+      markPlayerUnavailable("The GLB loaded but could not be attached as a visible render entity.", renderError);
+    }
+  });
+  const camera = new Entity("Third person camera");
+  camera.addComponent("camera", { clearColor: new Color(0.68, 0.78, 0.83), fov: 62, farClip: 260 });
+  app.root.addChild(camera);
+  const sun = new Entity("Ghana afternoon sun");
+  sun.addComponent("light", { type: "directional", color: new Color(1, 0.82, 0.66), intensity: 1.35, castShadows: true, shadowDistance: 70, shadowResolution: 512 });
+  sun.setEulerAngles(48, 32, 0);
+  app.root.addChild(sun);
+
+  // One drivable saloon/taxi prototype with separate body and wheels.
+  const vehicle = new Entity("Accra taxi");
+  addBox("Taxi body", 0, 1.1, 0, 2.1, 1.05, 4.2, materials.vehicle);
+  const vehicleBody = app.root.findByName("Taxi body") as Entity;
+  vehicle.addChild(vehicleBody);
+  vehicleBody.setLocalPosition(0, 1.1, 0);
+  const cab = new Entity("Taxi cabin"); cab.addComponent("render", { type: "box", material: materials.glass }); cab.setLocalScale(1.7, 0.8, 2); cab.setLocalPosition(0, 1.95, -0.15); vehicle.addChild(cab);
+  for (const x of [-0.95, 0.95]) for (const z of [-1.35, 1.35]) { const wheel = new Entity("Taxi wheel"); wheel.addComponent("render", { type: "cylinder", material: materials.tyre }); wheel.setLocalScale(0.65, 0.22, 0.65); wheel.setLocalEulerAngles(0, 0, 90); wheel.setLocalPosition(x, 0.58, z); vehicle.addChild(wheel); }
+  vehicle.setPosition(world.taxiSpawn.x, 0, world.taxiSpawn.z);
+  app.root.addChild(vehicle);
+
+  const keys = new Set<string>();
+  window.addEventListener("keydown", (event) => { keys.add(event.code); if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"].includes(event.code)) event.preventDefault(); });
+  window.addEventListener("keyup", (event) => keys.delete(event.code));
+  window.addEventListener("blur", () => keys.clear());
+
+  let stickX = 0, stickY = 0, stickPointer: number | null = null;
+  // Vehicle pedals and steering are held independently of the on-foot joystick.
+  const vehicleInput = { accelerate: false, reverse: false };
+  const bindHold = (button: HTMLButtonElement | null, key: keyof typeof vehicleInput) => {
+    if (!button) return;
+    const release = (event: PointerEvent) => { event.preventDefault(); vehicleInput[key] = false; button.classList.remove("pressed"); };
+    button.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      vehicleInput[key] = true;
+      button.classList.add("pressed");
+      button.setPointerCapture(event.pointerId);
+    });
+    button.addEventListener("pointerup", release);
+    button.addEventListener("pointercancel", release);
+    button.addEventListener("lostpointercapture", () => { vehicleInput[key] = false; button.classList.remove("pressed"); });
+    button.addEventListener("contextmenu", (event) => event.preventDefault());
+  };
+  bindHold(accelerateButton, "accelerate");
+  bindHold(reverseButton, "reverse");
+
+  // Driving has its own analog steering stick. Horizontal travel maps
+  // continuously from full-left (-1) to full-right (+1).
+  let vehicleStickX = 0, vehicleStickPointer: number | null = null;
+  const updateVehicleStick = (event: PointerEvent) => {
+    if (!vehicleStick) return;
+    const rect = vehicleStick.getBoundingClientRect();
+    const dx = event.clientX - (rect.left + rect.width / 2);
+    const dy = event.clientY - (rect.top + rect.height / 2);
+    const radius = rect.width * 0.36;
+    const length = Math.hypot(dx, dy);
+    const scale = length > radius ? radius / length : 1;
+    const x = dx * scale, y = dy * scale;
+    vehicleStickX = Math.abs(x / radius) < 0.06 ? 0 : clamp(x / radius, -1, 1);
+    if (vehicleStickKnob) vehicleStickKnob.style.transform = `translate(${x}px,${y}px)`;
+  };
+  vehicleStick?.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
+    vehicleStickPointer = event.pointerId;
+    vehicleStick.setPointerCapture(event.pointerId);
+    updateVehicleStick(event);
+  });
+  vehicleStick?.addEventListener("pointermove", (event) => {
+    if (event.pointerId === vehicleStickPointer) updateVehicleStick(event);
+  });
+  const resetVehicleStick = (event: PointerEvent) => {
+    if (event.pointerId !== vehicleStickPointer) return;
+    vehicleStickPointer = null;
+    vehicleStickX = 0;
+    if (vehicleStickKnob) vehicleStickKnob.style.transform = "";
+  };
+  vehicleStick?.addEventListener("pointerup", resetVehicleStick);
+  vehicleStick?.addEventListener("pointercancel", resetVehicleStick);
+  vehicleStick?.addEventListener("lostpointercapture", resetVehicleStick);
+  let jumpRequested = false, verticalVelocity = 0, grounded = true;
+  const groundHeight = 0;
+  const requestJump = () => { if (!inVehicle && grounded) { jumpRequested = true; jumpButton?.classList.add("pressed"); } };
+  jumpButton?.addEventListener("pointerdown", (event) => { event.preventDefault(); requestJump(); });
+  jumpButton?.addEventListener("pointerup", () => jumpButton.classList.remove("pressed"));
+  jumpButton?.addEventListener("pointercancel", () => jumpButton.classList.remove("pressed"));
+  const updateStick = (event: PointerEvent) => {
+    const rect = stick!.getBoundingClientRect();
+    const dx = event.clientX - (rect.left + rect.width / 2);
+    const dy = event.clientY - (rect.top + rect.height / 2);
+    const radius = rect.width * 0.36;
+    const length = Math.hypot(dx, dy);
+    const scale = length > radius ? radius / length : 1;
+    const x = dx * scale, y = dy * scale;
+    stickX = Math.abs(x / radius) < 0.12 ? 0 : x / radius;
+    stickY = Math.abs(y / radius) < 0.12 ? 0 : y / radius;
+    stickKnob!.style.transform = `translate(${x}px,${y}px)`;
+  };
+  stick?.addEventListener("pointerdown", (event) => { stickPointer = event.pointerId; stick!.setPointerCapture(event.pointerId); updateStick(event); });
+  stick?.addEventListener("pointermove", (event) => { if (event.pointerId === stickPointer) updateStick(event); });
+  const resetStick = (event: PointerEvent) => { if (event.pointerId !== stickPointer) return; stickPointer = null; stickX = stickY = 0; stickKnob!.style.transform = ""; };
+  stick?.addEventListener("pointerup", resetStick); stick?.addEventListener("pointercancel", resetStick); stick?.addEventListener("lostpointercapture", resetStick);
+
+  let cameraYaw = 0, cameraPitch = 13, dragPointer: number | null = null, lastX = 0, lastY = 0;
+  canvas.addEventListener("pointerdown", (event) => { dragPointer = event.pointerId; lastX = event.clientX; lastY = event.clientY; });
+  window.addEventListener("pointermove", (event) => { if (dragPointer !== event.pointerId) return; cameraYaw -= (event.clientX - lastX) * 0.22; cameraPitch = clamp(cameraPitch + (event.clientY - lastY) * 0.12, -2, 30); lastX = event.clientX; lastY = event.clientY; });
+  window.addEventListener("pointerup", (event) => { if (dragPointer === event.pointerId) dragPointer = null; });
+
+  const walkSpeed = 4.6, sprintSpeed = 8.2;
+  let inVehicle = false, vehicleSpeed = 0, vehicleYaw = 0;
+  let nearbyInteraction: { id: string; label: string; x: number; z: number; radius: number } | null = null;
+  const overlaps = (x: number, z: number) => {
+    const buildingCollision = blockers.some((b) => Math.abs(x - b.x) < b.hx + 0.38 && Math.abs(z - b.z) < b.hz + 0.38);
+    const vehiclePosition = vehicle.getPosition();
+    const vehicleCollision = !inVehicle && Math.abs(x - vehiclePosition.x) < 1.55 && Math.abs(z - vehiclePosition.z) < 2.45;
+    return buildingCollision || vehicleCollision;
+  };
+  const canEnter = () => Math.hypot(player.getPosition().x - vehicle.getPosition().x, player.getPosition().z - vehicle.getPosition().z) < 4.3;
+  const findNearbyInteraction = () => {
+    const p = player.getPosition();
+    let nearest: typeof nearbyInteraction = null;
+    let nearestDistance = Number.POSITIVE_INFINITY;
+    for (const target of world.interactables) {
+      const distance = Math.hypot(p.x - target.x, p.z - target.z);
+      if (distance <= target.radius && distance < nearestDistance) { nearest = target; nearestDistance = distance; }
+    }
+    return nearest;
+  };
+  const updateButtons = () => {
+    nearbyInteraction = inVehicle ? null : findNearbyInteraction();
+    const taxiAvailable = !inVehicle && canEnter();
+    const available = !inVehicle && (taxiAvailable || !!nearbyInteraction);
+    if (interactButton) {
+      interactButton.hidden = !available;
+      interactButton.classList.toggle("available", available && !inVehicle);
+      interactButton.setAttribute("aria-label", inVehicle ? "Drive" : taxiAvailable ? "Enter taxi" : nearbyInteraction?.label ?? "Interact");
+    }
+    if (contextLabel) {
+      const label = inVehicle ? "" : taxiAvailable ? "ENTER TAXI" : nearbyInteraction?.label ?? "";
+      contextLabel.textContent = label;
+      contextLabel.classList.toggle("visible", !!label);
+    }
+    if (exitButton) exitButton.hidden = !inVehicle;
+    if (vehicleControls) vehicleControls.hidden = !inVehicle;
+    if (!inVehicle && vehicleStickKnob) vehicleStickKnob.style.transform = "";
+    touchUi?.classList.toggle("vehicle-mode", inVehicle);
+    if (jumpButton) jumpButton.hidden = inVehicle;
+    if (stick) stick.classList.toggle("sprinting", !inVehicle && Math.hypot(stickX, stickY) >= 0.84);
+  };
+  const enter = () => {
+    if (inVehicle) { inVehicle = false; const p = vehicle.getPosition(); player.setPosition(p.x - 2.4, 0, p.z); player.enabled = true; vehicleSpeed = 0; grounded = true; if (playerCharacter) playerCharacter.enabled = true; showNotice("You exited the taxi"); }
+    else if (canEnter()) { inVehicle = true; const p = vehicle.getPosition(); player.setPosition(p.x, 0, p.z); player.enabled = false; vehicleSpeed = 0; if (playerCharacter) playerCharacter.enabled = false; showNotice("Taxi entered · use accelerator, reverse and steering controls"); }
+    else if (nearbyInteraction) { showNotice(nearbyInteraction.label === "USE BENCH" ? "Bench interaction selected" : nearbyInteraction.label); }
+    updateButtons();
+  };
+  interactButton?.addEventListener("click", enter);
+  exitButton?.addEventListener("click", enter);
+  window.addEventListener("keydown", (event) => {
+    if (event.code === "KeyE" && !event.repeat) enter();
+    if (event.code === "Space" && !event.repeat) requestJump();
+  });
+
+  let elapsed = 0, mapElapsed = 0;
+  app.on("update", (dt: number) => {
+    const step = Math.min(dt, 0.05);
+    const forward = (keys.has("KeyW") || keys.has("ArrowUp") ? 1 : 0) - (keys.has("KeyS") || keys.has("ArrowDown") ? 1 : 0) - stickY;
+    const strafe = (keys.has("KeyD") || keys.has("ArrowRight") ? 1 : 0) - (keys.has("KeyA") || keys.has("ArrowLeft") ? 1 : 0) + stickX;
+    if (inVehicle) {
+      // Dedicated vehicle controls: pedals set longitudinal force; steering
+      // buttons set yaw. The on-foot joystick never drives the vehicle.
+      const accelerating = vehicleInput.accelerate || keys.has("KeyW") || keys.has("ArrowUp");
+      const reversing = vehicleInput.reverse || keys.has("KeyS") || keys.has("ArrowDown");
+      const keyboardSteer = Number(keys.has("KeyD") || keys.has("ArrowRight")) - Number(keys.has("KeyA") || keys.has("ArrowLeft"));
+      const steer = clamp(vehicleStickX + keyboardSteer, -1, 1);
+      const throttle = accelerating === reversing ? 0 : accelerating ? 1 : -1;
+      const acceleration = throttle > 0 ? 10.5 : throttle < 0 ? 7.5 : 0;
+      vehicleSpeed = clamp(vehicleSpeed + throttle * acceleration * step, -6.5, 16);
+      // Coasting drag, with stronger resistance near a standstill.
+      if (throttle === 0) {
+        vehicleSpeed *= Math.max(0, 1 - step * (Math.abs(vehicleSpeed) < 0.45 ? 5 : 0.68));
+      }
+      const steeringGrip = 0.3 + Math.min(Math.abs(vehicleSpeed) / 8, 1) * 0.7;
+      // Proportional analog steering: small thumb movements make gentle turns.
+      vehicleYaw += steer * steeringGrip * (vehicleSpeed >= 0 ? 1 : -1) * step * 1.75;
+      const nextX = vehicle.getPosition().x + Math.sin(vehicleYaw) * vehicleSpeed * step;
+      const nextZ = vehicle.getPosition().z + Math.cos(vehicleYaw) * vehicleSpeed * step;
+      if (!overlaps(nextX, nextZ) && nextX > -8000 && nextX < 13000 && nextZ > -4050 && nextZ < 8500) vehicle.setPosition(nextX, 0, nextZ);
+      vehicle.setEulerAngles(0, vehicleYaw * 180 / Math.PI, 0);
+      const vehiclePosition = vehicle.getPosition();
+      player.setPosition(vehiclePosition.x, vehiclePosition.y, vehiclePosition.z);
+      if (exitButton) exitButton.hidden = false;
+    } else {
+      const rawMagnitude = Math.hypot(forward, strafe);
+      const magnitude = Math.min(1, rawMagnitude);
+      const joystickMagnitude = Math.hypot(stickX, stickY);
+      const sprinting = joystickMagnitude >= 0.84;
+      const speed = sprinting ? sprintSpeed : walkSpeed;
+      if (jumpRequested && grounded) { verticalVelocity = 6.2; grounded = false; }
+      jumpRequested = false;
+      if (!grounded) {
+        verticalVelocity -= 17.5 * step;
+        const nextY = player.getPosition().y + verticalVelocity * step;
+        if (nextY <= groundHeight) { player.setPosition(player.getPosition().x, groundHeight, player.getPosition().z); verticalVelocity = 0; grounded = true; }
+        else player.setPosition(player.getPosition().x, nextY, player.getPosition().z);
+      }
+      if (magnitude > 0.04) {
+        const angle = cameraYaw * Math.PI / 180;
+        const normalizer = rawMagnitude > 1 ? 1 / rawMagnitude : 1;
+        const moveForward = forward * normalizer, moveStrafe = strafe * normalizer;
+        // Camera forward is (sin(yaw), 0, cos(yaw)); camera screen-right
+        // is (cos(yaw), 0, -sin(yaw)). Positive joystick X must follow that
+        // screen-right basis, not the opposite direction.
+        const dx = (moveForward * Math.sin(angle) + moveStrafe * Math.cos(angle)) * speed * step;
+        const dz = (moveForward * Math.cos(angle) - moveStrafe * Math.sin(angle)) * speed * step;
+        const p = player.getPosition();
+        const nx = clamp(p.x + dx, -8000, 13000), nz = clamp(p.z + dz, -4050, 8500);
+        if (!overlaps(nx, p.z)) player.setPosition(nx, p.y, p.z);
+        if (!overlaps(player.getPosition().x, nz)) player.setPosition(player.getPosition().x, p.y, nz);
+        player.setEulerAngles(0, Math.atan2(dx, dz) * 180 / Math.PI, 0);
+      } else {
+      }
+      const desiredAnimation = magnitude <= 0.04
+        ? playerAnimationNames.idle
+        : sprinting ? playerAnimationNames.run : playerAnimationNames.walk;
+      const playerAnimationLayer = playerCharacter?.anim?.baseLayer;
+      if (playerAnimationLayer && desiredAnimation && desiredAnimation !== activePlayerAnimation) {
+        playerAnimationLayer.transition(desiredAnimation, 0.18);
+        activePlayerAnimation = desiredAnimation;
+      }
+      if (playerCharacter?.anim) playerCharacter.anim.speed = sprinting ? 1.45 : 1;
+    }
+    // The GLB is a separate scene entity so its imported hierarchy is not
+    // affected by the movement controller's parent transforms. Mirror the
+    // controller transform every frame while the player is on foot.
+    if (playerCharacter && !inVehicle) {
+      const playerPosition = player.getPosition();
+      playerCharacter.setPosition(playerPosition.x, playerPosition.y, playerPosition.z);
+      playerCharacter.setEulerAngles(player.getEulerAngles());
+    }
+    const focus = inVehicle ? vehicle.getPosition() : player.getPosition();
+    const yaw = cameraYaw * Math.PI / 180;
+    const distance = inVehicle ? 10 : 7.5;
+    const height = inVehicle ? 4.4 : 3.6;
+    camera.setPosition(focus.x - Math.sin(yaw) * distance, focus.y + height + cameraPitch * 0.08, focus.z - Math.cos(yaw) * distance);
+    camera.lookAt(focus.x, focus.y + 1.15, focus.z);
+    if (elapsed > 0.10) { updateButtons(); elapsed = 0; }
+    elapsed += step;
+    mapElapsed += step;
+    if (mapElapsed > 0.14 && minimapContext && minimap) {
+      mapElapsed = 0;
+      const map = minimapContext;
+      const center = inVehicle ? vehicle.getPosition() : player.getPosition();
+      const width = minimap.width, height = minimap.height, scale = 0.105;
+      map.clearRect(0, 0, width, height);
+      map.fillStyle = "#10231d"; map.fillRect(0, 0, width, height);
+      map.save(); map.beginPath(); map.arc(width / 2, height / 2, width * 0.46, 0, Math.PI * 2); map.clip();
+      for (const path of GREATER_ACCRA_ROAD_PATHS) {
+        if (!path.playableInFirstRelease) continue;
+        map.beginPath();
+        path.points.forEach((point, index) => {
+          const x = width / 2 + (point.x - center.x) * scale;
+          const y = height / 2 - (point.z - center.z) * scale;
+          if (index === 0) map.moveTo(x, y); else map.lineTo(x, y);
+        });
+        map.strokeStyle = /^(n1|n4|n6)-/.test(path.roadSegmentId) ? "#d0b477" : "#82918a";
+        map.lineWidth = /^(n1|n4|n6)-/.test(path.roadSegmentId) ? 3.5 : 2;
+        map.stroke();
+      }
+      if (!inVehicle) {
+        const vp = vehicle.getPosition();
+        map.fillStyle = "#61b88b"; map.beginPath(); map.arc(width / 2 + (vp.x - center.x) * scale, height / 2 - (vp.z - center.z) * scale, 4, 0, Math.PI * 2); map.fill();
+      }
+      map.fillStyle = "#f0c36e"; map.beginPath(); map.arc(width / 2, height / 2, 5, 0, Math.PI * 2); map.fill();
+      map.strokeStyle = "#fff2d2"; map.lineWidth = 1.5; map.stroke();
+      map.restore();
+    }
+    if (status) status.textContent = inVehicle ? "TAXI · DRIVING" : "OSU · EXPLORATION";
+    if (objective) objective.textContent = inVehicle ? "Drive towards Labadi Beach" : "Explore Osu and find the taxi";
+    if (hint) hint.textContent = inVehicle ? "Steer with the joystick · Hold GAS or BRAKE / REVERSE · Tap the door to exit · Drag anywhere above to look" : "Push fully to sprint · Tap ↑ to jump · Drag to look";
+    if (healthFill) healthFill.style.width = "100%";
+    if (healthValue) healthValue.textContent = "100";
+  });
+
+  window.addEventListener("resize", () => app.resizeCanvas());
+  if (status) status.textContent = "GREATER ACCRA · GHANA";
+  loadingMessage && (loadingMessage.textContent = "Ready — welcome to Accra.");
+  window.setTimeout(() => loading?.classList.add("done"), 400);
+  document.documentElement.dataset.akwantuoPlayCanvasReady = "true";
+  document.documentElement.dataset.akwantuoWorldSlice = "osu-labadi-prototype";
+}
+
+boot().catch((error) => {
+  console.error("AKWANTUO PlayCanvas startup failed", error);
+  loadingMessage && (loadingMessage.textContent = "The world could not start. Refresh to retry.");
+  document.documentElement.dataset.akwantuoPlayCanvasReady = "false";
+});

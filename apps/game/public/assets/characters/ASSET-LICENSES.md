@@ -1,10 +1,9 @@
-# Character model and animation credits
+# AKWANTUO character asset provenance
 
-The male and female player models and the shared idle/walk animation clips were copied from [Mesh2Motion/mesh2motion-app](https://github.com/Mesh2Motion/mesh2motion-app):
+The male and female rigged character models and their matching Idle/Walk clips are imported from the isolated `feat/ghanaian-character-assets` branch.
 
-- Male model: `static/assets/human/variations/psx-28-hm.glb`
-- Female model: `static/assets/human/variations/psx-28-female-hm.glb`
-- Idle animation: `static/assets/human/animations/idle-a.glb`
-- Walk animation: `static/assets/human/animations/walk.glb`
+- Ara 3D Gen source: https://github.com/olatunde85/3d-gen (MIT).
+- MakeHuman base data: CC0 1.0.
+- Motion-capture clips derive from the CMU Graphics Lab Motion Capture Database. Product use is permitted; the motion data itself must not be resold on its own.
 
-The source repository's [LICENSE-CC0.MD](https://github.com/Mesh2Motion/mesh2motion-app/blob/main/LICENSE-CC0.MD) dedicates its 3D models, rigs and animations to CC0 1.0 Universal. Its contributor credits identify Quaternius as the source of the base human model, rig and animations. The assets may be used and modified commercially under CC0.
+The source GLBs are stored as base64 text under `apps/game/character-assets-b64/` so the build can recreate binary assets without requiring a GitHub Actions cross-branch copy. PlayCanvas loads the male model with the matching Idle and Walk animation skeletons.
