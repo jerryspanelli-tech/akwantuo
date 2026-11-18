@@ -229,6 +229,19 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     }
   }
 
+  // Ghana-style route-number and destination signs.
+  const routeSigns = [
+    { label: "N1 - TEMA", x: 3650, z: 80 },
+    { label: "N4 - MADINA", x: 4900, z: 1880 },
+    { label: "N6 - ACHIMOTA", x: -1780, z: 2300 },
+    { label: "RING ROAD", x: 750, z: -80 },
+    { label: "LABADI BEACH", x: 2300, z: -2220 }
+  ];
+  for (const sign of routeSigns) {
+    box(sign.label + " sign post", sign.x, 3.1, sign.z + 24, 0.45, 6.2, 0.45, mats.roof);
+    box(sign.label + " directional board", sign.x, 5.4, sign.z + 24, 11, 2.1, 0.4, makeSignMaterial(sign.label));
+  }
+
   // Landmark footprints preserve the existing Greater Accra spatial catalogue.
   for (const landmark of GREATER_ACCRA_LANDMARK_FOOTPRINTS) {
     const width = landmark.maxX - landmark.minX;
@@ -250,6 +263,15 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
       box(landmark.label + " landmark", landmark.x, height / 2, landmark.z, width, height, depth, base, 0, true);
       box(landmark.label + " roofline", landmark.x, height + 0.3, landmark.z, width + 4, 0.6, depth + 4, mats.roof);
     }
+  }
+
+  // Parked Ghanaian trotro minibus prop near the Osu district.
+  box("Accra trotro minibus body", 1460, 1.35, -1560, 2.35, 2.7, 5.4, mats.green, 0, true);
+  box("Accra trotro windscreen", 1460, 2.35, -1557.2, 1.95, 0.9, 0.12, mats.glass);
+  box("Accra trotro side windows", 1460, 2.15, -1560, 2.4, 0.78, 4.0, mats.glass);
+  box("Accra trotro roof rack", 1460, 2.85, -1560, 1.8, 0.16, 4.0, mats.roof);
+  for (const x of [1458.85, 1462.15]) for (const z of [-1561.8, -1558.2]) {
+    cylinder("Accra trotro wheel", x, 0.55, z, 0.42, 0.24, mats.roof);
   }
 
   // Coastal vegetation and a playable Labadi beach / marina approach.
