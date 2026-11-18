@@ -203,7 +203,6 @@ async function boot() {
   jumpButton?.addEventListener("pointerdown", (event) => { event.preventDefault(); requestJump(); });
   jumpButton?.addEventListener("pointerup", () => jumpButton.classList.remove("pressed"));
   jumpButton?.addEventListener("pointercancel", () => jumpButton.classList.remove("pressed"));
-  jumpButton?.addEventListener("click", requestJump);
   const updateStick = (event: PointerEvent) => {
     const rect = stick!.getBoundingClientRect();
     const dx = event.clientX - (rect.left + rect.width / 2);
@@ -249,14 +248,14 @@ async function boot() {
   const updateButtons = () => {
     nearbyInteraction = inVehicle ? null : findNearbyInteraction();
     const taxiAvailable = !inVehicle && canEnter();
-    const available = inVehicle || taxiAvailable || !!nearbyInteraction;
+    const available = !inVehicle && (taxiAvailable || !!nearbyInteraction);
     if (interactButton) {
       interactButton.hidden = !available;
       interactButton.classList.toggle("available", available && !inVehicle);
       interactButton.setAttribute("aria-label", inVehicle ? "Drive" : taxiAvailable ? "Enter taxi" : nearbyInteraction?.label ?? "Interact");
     }
     if (contextLabel) {
-      const label = inVehicle ? "DRIVING" : taxiAvailable ? "ENTER TAXI" : nearbyInteraction?.label ?? "";
+      const label = inVehicle ? "" : taxiAvailable ? "ENTER TAXI" : nearbyInteraction?.label ?? "";
       contextLabel.textContent = label;
       contextLabel.classList.toggle("visible", !!label);
     }
