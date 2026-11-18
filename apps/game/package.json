@@ -11,7 +11,8 @@
   "dependencies": {
     "@babylonjs/core": "^8.56.2",
     "@akwantuo/shared": "0.1.0",
-    "@babylonjs/loaders": "^8.56.2"
+    "@babylonjs/loaders": "^8.56.2",
+    "playcanvas": "2.24.1"
   },
   "devDependencies": {
     "typescript": "^6.0.3",
