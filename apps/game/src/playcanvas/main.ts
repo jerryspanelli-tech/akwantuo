@@ -159,8 +159,7 @@ async function boot() {
 
   // Load the project's own CC0 character model when it is present. The visible
   // fallback remains until the GLB is fully instantiated and never disappears on failure.
-  const presentation: "masculine" | "feminine" = "masculine";
-  const modelUrl = new URL(`./assets/characters/akwantuo-${presentation === "feminine" ? "female" : "male"}.glb`, window.location.href).toString();
+  const modelUrl = new URL("./assets/characters/akwantuo-male.glb", window.location.href).toString();
   const modelAsset = new Asset("AKWANTUO player character", "container", { url: modelUrl });
   let loadedCharacter: Entity | null = null;
   let idleClipName: string | null = null;
@@ -309,13 +308,13 @@ async function boot() {
         if (!overlaps(player.getPosition().x, nz)) player.setPosition(player.getPosition().x, p.y, nz);
         player.setEulerAngles(0, Math.atan2(dx, dz) * 180 / Math.PI, 0);
         gaitTime += step * 9;
-        if (loadedCharacter?.anim && walkClipName && activeClipName !== walkClipName) { loadedCharacter.anim.baseLayer.transition(walkClipName, 0.18); activeClipName = walkClipName; }
+        if (loadedCharacter?.anim && walkClipName && activeClipName !== walkClipName) { loadedCharacter.anim.baseLayer?.transition(walkClipName, 0.18); activeClipName = walkClipName; }
         leftLeg.setLocalEulerAngles(Math.sin(gaitTime) * 26, 0, 0);
         rightLeg.setLocalEulerAngles(-Math.sin(gaitTime) * 26, 0, 0);
         leftArm.setLocalEulerAngles(-Math.sin(gaitTime) * 18, 0, 0);
         rightArm.setLocalEulerAngles(Math.sin(gaitTime) * 18, 0, 0);
       } else {
-        if (loadedCharacter?.anim && idleClipName && activeClipName !== idleClipName) { loadedCharacter.anim.baseLayer.transition(idleClipName, 0.2); activeClipName = idleClipName; }
+        if (loadedCharacter?.anim && idleClipName && activeClipName !== idleClipName) { loadedCharacter.anim.baseLayer?.transition(idleClipName, 0.2); activeClipName = idleClipName; }
         leftLeg.setLocalEulerAngles(0, 0, 0); rightLeg.setLocalEulerAngles(0, 0, 0);
         leftArm.setLocalEulerAngles(0, 0, 0); rightArm.setLocalEulerAngles(0, 0, 0);
       }
