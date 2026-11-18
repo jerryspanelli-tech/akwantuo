@@ -12,3 +12,11 @@
 .vehicle-pedals .vehicle-exit{min-height:42px}
 @media(min-width:800px){.vehicle-controls{padding:0 6px 0 0}.vehicle-control{min-width:74px}.accelerate-control,.reverse-control{min-width:132px}}
 @media(max-height:500px){.vehicle-control{min-height:46px;padding:7px 10px}.accelerate-control{min-height:56px}.steer-control{width:54px;height:54px}}
+
+/* Vehicle HUD is a sibling of the on-foot action cluster so it remains visible in driving mode. */
+.vehicle-controls[hidden]{display:none!important}
+.vehicle-exit{display:flex;align-items:center;justify-content:center;gap:7px;min-width:92px;min-height:48px;padding:9px 14px;border-radius:14px;border:1px solid #e8bd70aa;background:#18251fdf;color:#fff;font-size:10px;font-weight:900;letter-spacing:.1em;touch-action:manipulation;box-shadow:0 5px 18px #0006}
+.vehicle-exit svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.vehicle-exit:active{transform:scale(.94);background:#9b633f;border-color:#ffe0a0}
+.touch-ui.vehicle-mode{align-items:end}
+.touch-ui.vehicle-mode .vehicle-controls{display:flex}
