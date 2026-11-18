@@ -131,7 +131,35 @@ async function boot() {
       }
       const character = container.instantiateRenderEntity({ castShadows: true });
       character.name = "AKWANTUO Ghanaian 3D player";
+      character.enabled = true;
+      character.setLocalPosition(0, 0, 0);
+      character.setLocalScale(1, 1, 1);
       player.addChild(character);
+
+      // GLB exporters may author characters in centimetres or metres. Measure
+      // the imported render bounds and normalize the visible model to 1.8m.
+      // Also explicitly enable every imported render mesh (some exporters mark
+      // the source nodes disabled even though the container itself loads).
+      let largestExtent = 0;
+      let renderMeshCount = 0;
+      const enableImportedMeshes = (node: any) => {
+        node.enabled = true;
+        const meshes = node.render?.meshInstances ?? [];
+        for (const mesh of meshes) {
+          mesh.visible = true;
+          renderMeshCount++;
+          const half = mesh.aabb?.halfExtents;
+          if (half) largestExtent = Math.max(largestExtent, half.x * 2, half.y * 2, half.z * 2);
+        }
+        for (const child of node.children ?? []) enableImportedMeshes(child);
+      };
+      enableImportedMeshes(character);
+      if (renderMeshCount === 0) throw new Error("The loaded player GLB has no enabled render meshes.");
+      if (largestExtent > 0.001) {
+        const fitScale = 1.8 / largestExtent;
+        character.setLocalScale(fitScale, fitScale, fitScale);
+      }
+      character.syncHierarchy();
       character.addComponent("anim", { activate: true });
       const names: string[] = [];
       for (const animationAsset of animationAssets) {
