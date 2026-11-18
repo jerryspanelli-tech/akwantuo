@@ -29,15 +29,21 @@
         </button>
       </div>
       <div class="vehicle-controls" id="vehicle-controls" hidden aria-label="Vehicle controls">
-          <div class="vehicle-steering">
-            <button class="vehicle-control steer-control" id="steer-left" type="button" aria-label="Steer left">◀</button>
-            <button class="vehicle-control steer-control" id="steer-right" type="button" aria-label="Steer right">▶</button>
+        <div class="vehicle-steering">
+          <div class="vehicle-stick" id="vehicle-stick" role="application" aria-label="Vehicle steering joystick">
+            <div class="stick-ring"></div><div class="stick-knob" id="vehicle-stick-knob"></div>
           </div>
-          <div class="vehicle-pedals">
-            <button class="vehicle-control reverse-control" id="reverse" type="button" aria-label="Reverse">REVERSE</button>
-            <button class="vehicle-control accelerate-control" id="accelerate" type="button" aria-label="Accelerate">ACCELERATE</button>
-            <button class="vehicle-exit" id="exit" type="button" aria-label="Exit vehicle through the door"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v17M3 21h18M9 12h.01M8 5l8 2v12H8z"/></svg><span>EXIT</span></button>
+        </div>
+        <div class="vehicle-pedals">
+          <button class="vehicle-control accelerate-control" id="accelerate" type="button" aria-label="Gas, accelerate">GAS</button>
+          <div class="vehicle-brake-stack">
+            <button class="vehicle-exit" id="exit" type="button" aria-label="Exit car">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17V9l2-4h14l2 4v8M3 17h18M6 17v2m12-2v2M5 9h14M11 9v7m0-7 4-2m-4 2 4 2"/><path d="M15 13h7m-3-3 3 3-3 3"/></svg>
+              <span>EXIT CAR</span>
+            </button>
+            <button class="vehicle-control reverse-control" id="reverse" type="button" aria-label="Brake and reverse">BRAKE / REVERSE</button>
           </div>
+        </div>
       </div>
     </div>
     <div class="crosshair" aria-hidden="true"></div>
