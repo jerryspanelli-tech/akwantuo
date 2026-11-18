@@ -6,7 +6,7 @@ import {
 } from "playcanvas";
 import "./style.css";
 
-const canvas = document.querySelector<HTMLCanvasElement>("#application");
+const canvas = document.querySelector<HTMLCanvasElement>("#application")!;
 const loading = document.querySelector<HTMLElement>("#loading");
 const loadingMessage = document.querySelector<HTMLElement>("#loading-message");
 const status = document.querySelector<HTMLElement>("#world-status");
@@ -159,7 +159,7 @@ async function boot() {
 
   // Load the project's own CC0 character model when it is present. The visible
   // fallback remains until the GLB is fully instantiated and never disappears on failure.
-  const presentation = "masculine";
+  const presentation: "masculine" | "feminine" = "masculine";
   const modelUrl = new URL(`./assets/characters/akwantuo-${presentation === "feminine" ? "female" : "male"}.glb`, window.location.href).toString();
   const modelAsset = new Asset("AKWANTUO player character", "container", { url: modelUrl });
   let loadedCharacter: Entity | null = null;
@@ -226,7 +226,6 @@ async function boot() {
   const vehicle = new Entity("Accra taxi");
   addBox("Taxi body", 0, 1.1, 0, 2.1, 1.05, 4.2, materials.vehicle);
   const vehicleBody = app.root.findByName("Taxi body") as Entity;
-  vehicle.removeAllChildren();
   vehicle.addChild(vehicleBody);
   vehicleBody.setLocalPosition(0, 1.1, 0);
   const cab = new Entity("Taxi cabin"); cab.addComponent("render", { type: "box", material: materials.glass }); cab.setLocalScale(1.7, 0.8, 2); cab.setLocalPosition(0, 1.95, -0.15); vehicle.addChild(cab);
