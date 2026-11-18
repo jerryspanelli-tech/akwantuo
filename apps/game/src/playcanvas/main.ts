@@ -282,11 +282,26 @@ async function boot() {
     const forward = (keys.has("KeyW") || keys.has("ArrowUp") ? 1 : 0) - (keys.has("KeyS") || keys.has("ArrowDown") ? 1 : 0) - stickY;
     const strafe = (keys.has("KeyD") || keys.has("ArrowRight") ? 1 : 0) - (keys.has("KeyA") || keys.has("ArrowLeft") ? 1 : 0) + stickX;
     if (inVehicle) {
+      // Mobile driving: joystick up/down controls throttle and reverse;
+      // joystick left/right steers in the same direction the player pushes.
       const throttle = clamp(forward, -1, 1);
       const steer = clamp(strafe, -1, 1);
-      vehicleSpeed = clamp(vehicleSpeed + throttle * 8 * step, -3, 14);
-      vehicleSpeed *= Math.max(0, 1 - step * (Math.abs(throttle) < 0.1 ? 1.6 : 0.22));
-      vehicleYaw += steer * (vehicleSpeed / 4.2) * step;
+      const accelerating = throttle > 0.08;
+      const reversing = throttle < -0.08;
+      const acceleration = accelerating ? 11.5 : reversing ? 8.5 : 0;
+      vehicleSpeed = clamp(
+        vehicleSpeed + throttle * acceleration * step,
+        -7,
+        17
+      );
+      // Natural coasting and stronger drag at very low speed.
+      if (Math.abs(throttle) <= 0.08) {
+        vehicleSpeed *= Math.max(0, 1 - step * (Math.abs(vehicleSpeed) < 0.45 ? 5 : 0.75));
+      }
+      // Reverse the previous steering sign: right input now turns right.
+      // Steering response builds with speed but remains controllable when slow.
+      const steeringGrip = 0.28 + Math.min(Math.abs(vehicleSpeed) / 8, 1) * 0.72;
+      vehicleYaw -= steer * steeringGrip * (vehicleSpeed >= 0 ? 1 : -1) * step * 1.9;
       const nextX = vehicle.getPosition().x + Math.sin(vehicleYaw) * vehicleSpeed * step;
       const nextZ = vehicle.getPosition().z + Math.cos(vehicleYaw) * vehicleSpeed * step;
       if (!overlaps(nextX, nextZ) && nextX > -8000 && nextX < 13000 && nextZ > -4050 && nextZ < 8500) vehicle.setPosition(nextX, 0, nextZ);
