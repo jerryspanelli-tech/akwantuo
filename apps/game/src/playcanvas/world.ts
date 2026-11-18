@@ -333,6 +333,66 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
   box("Labadi marina jetty", 2800, 0.22, -3900, 7, 0.44, 150, mats.roof);
   box("Marina service building", 2800, 5, -3800, 35, 10, 28, mats.concrete, 0, true);
 
+  // Expanded Ghana-inspired street frontage and residential blocks.
+  const storefront = (label: string, x: number, z: number, w: number, d: number, h: number, facade: StandardMaterial) => {
+    box(label + " shop structure", x, h/2, z, w, h, d, facade, 0, true);
+    box(label + " parapet", x, h + 0.2, z, w + 0.4, 0.4, d + 0.4, mats.roof);
+    box(label + " glass frontage", x, h*0.4, z+d/2+0.08, w*0.62, h*0.48, 0.12, mats.glass);
+    box(label + " entrance", x-w*0.32, h*0.35, z+d/2+0.1, w*0.18, h*0.65, 0.15, mats.roof);
+    box(label + " signboard", x, h*0.85, z+d/2+0.22, w*0.9, 0.65, 0.18, makeSignMaterial(label));
+    box(label + " awning", x, h*0.65, z+d/2+0.55, w*0.95, 0.22, 1.1, mats.gold);
+  };
+  const marketStalls = (label: string, x: number, z: number) => {
+    for (let i=0;i<4;i++) {
+      const sx=x+(i-1.5)*8;
+      box(label+" stall",sx,0.8,z,5.8,1.6,4.2,i%2?mats.market:mats.red,0,true);
+      box(label+" canopy",sx,3.1,z,6.2,0.28,4.6,i%2?mats.gold:mats.green);
+      box(label+" stall sign",sx,2.45,z+2.35,5.5,0.55,0.18,makeSignMaterial(["PROVISIONS","FRUITS","FABRICS","FOOD"][i]));
+    }
+  };
+  const house = (label: string,x:number,z:number,w:number,d:number,floors:number,facade:StandardMaterial) => {
+    const h=floors*3.1;
+    box(label+" house",x,h/2,z,w,h,d,facade,0,true);
+    box(label+" roof",x,h+0.3,z,w+0.5,0.6,d+0.5,mats.roof);
+    for(let floor=0;floor<floors;floor++) for(const side of [-1,1])
+      box(label+" window",x+side*w*0.28,1.55+floor*3.1,z+d/2+0.06,w*0.24,1.1,0.12,mats.glass);
+    box(label+" entrance",x,1.15,z+d/2+0.08,w*0.22,2.3,0.16,mats.roof);
+    box(label+" compound wall",x,1.1,z-d/2-4,w+8,2.2,0.7,mats.concrete);
+    box(label+" gate",x,1.1,z-d/2-4,w*0.3,2.2,0.12,mats.gold);
+  };
+  const strips=[
+    {name:"Osu Oxford Street",x:1450,z:-1180,shops:["MOBILE MONEY","PHARMACY","GROCERY","CHOP BAR","SALON"]},
+    {name:"Makola Market",x:-400,z:450,shops:["FABRICS","PROVISIONS","FRUITS","FOOD","HARDWARE"]},
+    {name:"East Legon Shops",x:4300,z:1100,shops:["CAFE","SUPERMARKET","PHARMACY","FASHION","RESTAURANT"]},
+    {name:"Madina Market",x:4900,z:2150,shops:["PROVISIONS","FOOD","FABRICS","PHONE SHOP","BARBER"]},
+    {name:"Spintex Shops",x:5600,z:-1450,shops:["AUTO PARTS","FUEL","WAREHOUSE","SUPERMARKET","ELECTRICAL"]},
+    {name:"Tema Community",x:7900,z:300,shops:["SHOP","PHARMACY","FOOD","MOBILE MONEY","BAKERY"]}
+  ];
+  for(const strip of strips){
+    strip.shops.forEach((label,i)=>storefront(strip.name+" "+label,strip.x+(i-2)*15,strip.z,12.5,10,4.2+(i%2)*0.6,i%3===0?mats.market:mats.residential));
+    box(strip.name+" paved frontage",strip.x,0.02,strip.z+13,90,0.1,8,mats.lightConcrete);
+    for(let i=0;i<3;i++)box(strip.name+" planter",strip.x+(i-1)*28,0.28,strip.z+20,3.4,0.56,3.4,mats.green);
+  }
+  marketStalls("Makola covered market", -620, 650);
+  marketStalls("Madina market extension", 5140, 2350);
+  const housing=[
+    {name:"Nima compounds",x:-950,z:1100},{name:"Dansoman homes",x:-2800,z:-500},
+    {name:"East Legon residences",x:4450,z:1500},{name:"Adenta homes",x:6100,z:2500},
+    {name:"Tema community homes",x:8050,z:600}
+  ];
+  for(const c of housing)for(let i=0;i<5;i++)house(c.name,c.x+(i-2)*38,c.z+(i%2)*26,18+(i%3)*4,16,1+i%2,i%2?mats.residential:mats.lightConcrete);
+  for(const p of [{name:"Circle",x:-450,z:450},{name:"Kaneshie",x:-1800,z:300},{name:"Adenta",x:6000,z:2300},{name:"Tema",x:8000,z:0}])for(let i=0;i<3;i++){
+    const x=p.x+(i-1)*12;
+    box(p.name+" roadside kiosk",x,1.5,p.z+42,7.2,3,6.2,mats.market,0,true);
+    box(p.name+" kiosk awning",x,3.25,p.z+42,8,0.3,7,i%2?mats.green:mats.gold);
+    box(p.name+" kiosk counter",x,1,p.z+45.3,6.8,1.1,0.2,mats.roof);
+  }
+  for(const lot of [{name:"Osu parking",x:1540,z:-1220},{name:"Makola loading yard",x:-730,z:580},{name:"East Legon parking",x:4480,z:1080},{name:"Tema parking",x:8140,z:250}]){
+    plane(lot.name+" paved lot",lot.x,0.025,lot.z,46,32,mats.lightConcrete);
+    for(let i=0;i<6;i++)box(lot.name+" bay line",lot.x-20+i*8,0.09,lot.z,0.14,0.03,12,mats.white);
+    box(lot.name+" loading curb",lot.x,0.16,lot.z+16,44,0.32,1.2,mats.kerb);
+  }
+
   return {
     blockers,
     spawn: { x: 1180, z: -1500 },
