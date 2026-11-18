@@ -355,8 +355,9 @@ async function boot() {
       const desiredAnimation = magnitude <= 0.04
         ? playerAnimationNames.idle
         : sprinting ? playerAnimationNames.run : playerAnimationNames.walk;
-      if (playerCharacter?.anim && desiredAnimation && desiredAnimation !== activePlayerAnimation) {
-        playerCharacter.anim.baseLayer.transition(desiredAnimation, 0.18);
+      const playerAnimationLayer = playerCharacter?.anim?.baseLayer;
+      if (playerAnimationLayer && desiredAnimation && desiredAnimation !== activePlayerAnimation) {
+        playerAnimationLayer.transition(desiredAnimation, 0.18);
         activePlayerAnimation = desiredAnimation;
       }
     }
