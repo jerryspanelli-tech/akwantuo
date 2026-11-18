@@ -62,7 +62,7 @@ export function createGreaterAccraWorldDetail(scene: Scene): void {
       shadeTrunkSource,
       () => {
         const mesh = MeshBuilder.CreateCylinder("ghana-shade-tree-trunk-source", {
-          height: 4.8, diameterTop: 0.22, diameterBottom: 0.48, tessellation: 7
+          height: 4.8, diameterTop: 0.22, diameterBottom: 0.48, tessellation: 12
         }, scene);
         mesh.material = trunk;
         return mesh;
@@ -74,7 +74,7 @@ export function createGreaterAccraWorldDetail(scene: Scene): void {
       shadeCrownSource,
       () => {
         const mesh = MeshBuilder.CreateSphere("ghana-shade-tree-crown-source", {
-          diameter: 4.2, segments: 5
+          diameter: 4.2, segments: 12
         }, scene);
         mesh.material = leaf;
         return mesh;
@@ -92,7 +92,7 @@ export function createGreaterAccraWorldDetail(scene: Scene): void {
       palmTrunkSource,
       () => {
         const mesh = MeshBuilder.CreateCylinder("ghana-coastal-palm-trunk-source", {
-          height: 7.2, diameterTop: 0.2, diameterBottom: 0.42, tessellation: 7
+          height: 7.2, diameterTop: 0.2, diameterBottom: 0.42, tessellation: 12
         }, scene);
         mesh.material = trunk;
         return mesh;
@@ -145,19 +145,19 @@ export function createGreaterAccraWorldDetail(scene: Scene): void {
 
   // A recognisable lighthouse silhouette on the western coast.
   const lighthouse = MeshBuilder.CreateCylinder("jamestown-inspired-lighthouse", {
-    height: 24, diameterTop: 4.2, diameterBottom: 7, tessellation: 12
+    height: 24, diameterTop: 4.2, diameterBottom: 7, tessellation: 20
   }, scene);
   lighthouse.position.set(-5750, 12, -2300);
   lighthouse.material = concrete;
   lighthouse.isPickable = false;
   const lantern = MeshBuilder.CreateCylinder("lighthouse-lantern-room", {
-    height: 2.2, diameter: 5.2, tessellation: 12
+    height: 2.2, diameter: 5.2, tessellation: 16
   }, scene);
   lantern.position.set(-5750, 24.5, -2300);
   lantern.material = darkStone;
   lantern.isPickable = false;
   const beacon = MeshBuilder.CreateCylinder("lighthouse-roof", {
-    height: 2.5, diameterTop: 0.2, diameterBottom: 5.8, tessellation: 12
+    height: 2.5, diameterTop: 0.2, diameterBottom: 5.8, tessellation: 16
   }, scene);
   beacon.position.set(-5750, 26.8, -2300);
   beacon.material = oceanBlue;
@@ -184,13 +184,13 @@ export function createGreaterAccraWorldDetail(scene: Scene): void {
     const x = 2150 + (index % 3) * 24;
     const z = -2550 - Math.floor(index / 3) * 28;
     const pole = MeshBuilder.CreateCylinder("labadi-beach-umbrella-pole", {
-      height: 3.2, diameter: 0.16, tessellation: 6
+      height: 3.2, diameter: 0.16, tessellation: 10
     }, scene);
     pole.position.set(x, 1.6, z);
     pole.material = trunk;
     pole.isPickable = false;
     const canopy = MeshBuilder.CreateCylinder("labadi-beach-umbrella-canopy", {
-      height: 0.55, diameterTop: 0.25, diameterBottom: 4.8, tessellation: 8
+      height: 0.55, diameterTop: 0.25, diameterBottom: 4.8, tessellation: 14
     }, scene);
     canopy.position.set(x, 3.15, z);
     canopy.material = index % 2 === 0 ? oceanBlue : leaf;

@@ -39,6 +39,10 @@ const KERB_GREY = new Color3(0.62, 0.62, 0.58);
 const LINE_WHITE = new Color3(0.9, 0.9, 0.86);
 
 function material(scene: Scene, name: string, color: Color3): StandardMaterial {
+  if (name === "akwantuo-circle-ground-asphalt") {
+    const sharedRoadMaterial = scene.getMaterialByName("akwantuo-road-asphalt");
+    if (sharedRoadMaterial instanceof StandardMaterial) return sharedRoadMaterial;
+  }
   const existing = scene.getMaterialByName(name);
   if (existing instanceof StandardMaterial) return existing;
   const created = new StandardMaterial(name, scene);
@@ -228,28 +232,40 @@ export function createCircleGroundGeometry(
     laneMarkings.push(centreLine);
 
     const stopDistance = options.outerRadiusM + 3;
-    const halfWidth = approach.roadWidthM * 0.42;
-    const stopLine = MeshBuilder.CreateLines(
-      `${options.id}-approach-stopline-${approach.id}`,
-      {
-        points: [
-          new Vector3(
-            options.centerX + directionX * stopDistance - perpendicularX * halfWidth,
-            markingY,
-            options.centerZ + directionZ * stopDistance - perpendicularZ * halfWidth
-          ),
-          new Vector3(
-            options.centerX + directionX * stopDistance + perpendicularX * halfWidth,
-            markingY,
-            options.centerZ + directionZ * stopDistance + perpendicularZ * halfWidth
-          )
-        ]
-      },
+    const stopLine = MeshBuilder.CreateBox(
+      `${options.id}-approach-give-way-line-${approach.id}`,
+      { width: approach.roadWidthM * 0.84, height: 0.035, depth: 0.28 },
       scene
     );
-    stopLine.color = LINE_WHITE;
-    stopLine.isPickable = false;
+    stopLine.rotation.y = bearing;
+    stopLine.position.set(
+      options.centerX + directionX * stopDistance,
+      markingY,
+      options.centerZ + directionZ * stopDistance
+    );
+    markStatic(stopLine, material(scene, "akwantuo-circle-junction-paint", LINE_WHITE));
     laneMarkings.push(stopLine);
+
+    // High-contrast zebra crossing set back from the give-way line.
+    const crossingDistance = options.outerRadiusM + 16;
+    const stripeCount = 9;
+    const stripeSpacingM = 1.25;
+    for (let stripe = 0; stripe < stripeCount; stripe += 1) {
+      const alongOffset = (stripe - (stripeCount - 1) / 2) * stripeSpacingM;
+      const crossingStripe = MeshBuilder.CreateBox(
+        `${options.id}-approach-zebra-${approach.id}-${stripe + 1}`,
+        { width: approach.roadWidthM * 0.72, height: 0.035, depth: 0.72 },
+        scene
+      );
+      crossingStripe.rotation.y = bearing;
+      crossingStripe.position.set(
+        options.centerX + directionX * (crossingDistance + alongOffset),
+        markingY,
+        options.centerZ + directionZ * (crossingDistance + alongOffset)
+      );
+      markStatic(crossingStripe, material(scene, "akwantuo-circle-junction-paint", LINE_WHITE));
+      laneMarkings.push(crossingStripe);
+    }
   });
 
   return { circulatingSurface, centralIsland, islandKerb, approachRoads, laneMarkings };

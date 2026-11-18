@@ -40,13 +40,13 @@ try {
     "greater-accra-map-camera",
     -Math.PI / 2,
     0.88,
-    18500,
-    new Vector3(2500, 0, 1600),
+    29000,
+    new Vector3(2500, 0, 13750),
     scene
   );
   camera.lowerRadiusLimit = 700;
-  camera.upperRadiusLimit = 26000;
-  camera.maxZ = 30000;
+  camera.upperRadiusLimit = 42000;
+  camera.maxZ = 60000;
   camera.lowerBetaLimit = 0.12;
   camera.upperBetaLimit = 1.48;
   camera.wheelPrecision = 24;

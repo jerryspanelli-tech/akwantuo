@@ -1,6 +1,7 @@
 import {
   Color3,
   Color4,
+  DirectionalLight,
   HemisphericLight,
   MeshBuilder,
   Scene,
@@ -24,7 +25,14 @@ export function createPreviewWorld(scene: Scene, options: { includeGround?: bool
     WORLD_CONFIG.environment.sunlightDirection.y,
     WORLD_CONFIG.environment.sunlightDirection.z
   ), scene);
-  light.intensity = WORLD_CONFIG.environment.sunlightIntensity;
+  light.intensity = 1.02;
+  light.groundColor = new Color3(0.34, 0.31, 0.27);
+
+  // A soft directional daylight source gives buildings, vehicles and landmarks
+  // readable shape without shadow maps or extra render passes on mobile GPUs.
+  const daylight = new DirectionalLight("akwantuo-daylight", new Vector3(-0.45, -1, 0.28), scene);
+  daylight.position.set(1800, 4200, -1200);
+  daylight.intensity = 0.62;
 
   if (options.includeGround !== false) {
     scene.clearColor = new Color4(...WORLD_CONFIG.environment.clearColor);

@@ -133,28 +133,38 @@ function makeFeoOyeoRamp(
   id: string,
   referenceId: CircleFeoOyeoRampLayout["referenceId"],
   lengthM: number,
-  startX: number,
-  startZ: number
+  _startX: number,
+  _startZ: number
 ): CircleFeoOyeoRampLayout {
-  const riseM = 7.5;
-  const horizontalLengthM = Math.sqrt(lengthM * lengthM - riseM * riseM);
-  const dx = horizontalLengthM * 0.8;
-  const dz = horizontalLengthM * 0.6;
-  const ascendingPoints = [
-    { x: startX, y: 0, z: startZ },
-    { x: startX + dx / 2, y: riseM / 2, z: startZ + dz / 2 },
-    { x: startX + dx, y: riseM, z: startZ + dz }
-  ];
-  const points = id.includes("ramp-down")
-    ? [...ascendingPoints].reverse()
-    : ascendingPoints;
+  // Attach both ramps to the two actual ends of the existing loop viaduct.
+  // The earlier offsets placed them beside the deck, leaving a visible gap.
+  const loopRadius = loopLength / (10 * 2 * Math.sin(Math.PI / 20));
+  const deckElevationM = 8.5;
+  const horizontalLengthM = Math.sqrt(lengthM * lengthM - deckElevationM * deckElevationM);
+  const isDownRamp = id.includes("ramp-down");
+  const deckX = isDownRamp ? 145 + loopRadius : 145 - loopRadius;
+  const groundX = isDownRamp
+    ? deckX + horizontalLengthM
+    : deckX - horizontalLengthM;
+  const middleX = (deckX + groundX) / 2;
+  const ascendingPoints = isDownRamp
+    ? [
+        { x: deckX, y: deckElevationM, z: -95 },
+        { x: middleX, y: deckElevationM / 2, z: -95 },
+        { x: groundX, y: 0, z: -95 }
+      ]
+    : [
+        { x: groundX, y: 0, z: -95 },
+        { x: middleX, y: deckElevationM / 2, z: -95 },
+        { x: deckX, y: deckElevationM, z: -95 }
+      ];
   return {
     id,
     referenceId,
     lengthM,
     deckWidthM: 6.5,
-    points,
-    designNote: "Published length and width; local alignment and vertical profile are provisional visual-design assumptions, not surveyed ramp geometry."
+    points: ascendingPoints,
+    designNote: "The elevated ends now meet the two ends of the Circle loop viaduct. Ground-level ramp termini remain provisional and require final tie-in to the local road layout."
   };
 }
 
@@ -162,6 +172,76 @@ export const CIRCLE_FEO_OYEO_RAMPS: readonly CircleFeoOyeoRampLayout[] = [
   makeFeoOyeoRamp("circle-feo-oye-ramp-down-3d", "circle-feo-oye-o-ramp-down", feoOyeoRampDownLength, 185, -160),
   makeFeoOyeoRamp("circle-feo-oye-ramp-up-3d", "circle-feo-oye-o-ramp-up", feoOyeoRampUpLength, 170, -178)
 ] as const;
+
+
+/**
+ * Returns the elevated deck height under a vehicle on either Feo Oyeo ramp.
+ * The vehicle controller is kinematic, so it must explicitly follow the ramp
+ * profile rather than relying on Babylon mesh collisions.
+ */
+export function getCircleRampElevationAtPosition(
+  x: number,
+  z: number,
+  maximumLateralErrorM = 2.6
+): number | null {
+  if (![x, z, maximumLateralErrorM].every(Number.isFinite) || maximumLateralErrorM <= 0) {
+    return null;
+  }
+  const centre = getMapNodePosition("circle-junction");
+  if (!centre) return null;
+  let nearest: { distanceM: number; elevationM: number } | null = null;
+
+  // The two ramps meet the semicircular loop at its endpoints. Include the
+  // loop deck itself so a vehicle does not drop back to ground height after
+  // reaching the top of a ramp.
+  const loopLayout = CIRCLE_ELEVATED_STRUCTURE_LAYOUTS.find(
+    (layout) => layout.id === "circle-loop-viaduct-3d"
+  );
+  if (loopLayout) {
+    for (let index = 1; index < loopLayout.points.length; index += 1) {
+      const a = loopLayout.points[index - 1];
+      const b = loopLayout.points[index];
+      const ax = centre.x + a.x;
+      const az = centre.z + a.z;
+      const bx = centre.x + b.x;
+      const bz = centre.z + b.z;
+      const dx = bx - ax;
+      const dz = bz - az;
+      const lengthSquared = dx * dx + dz * dz;
+      if (lengthSquared <= 1e-8) continue;
+      const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / lengthSquared));
+      const closestX = ax + dx * t;
+      const closestZ = az + dz * t;
+      const distanceM = Math.hypot(x - closestX, z - closestZ);
+      if (!nearest || distanceM < nearest.distanceM) {
+        nearest = { distanceM, elevationM: loopLayout.deckElevationM };
+      }
+    }
+  }
+
+  for (const ramp of CIRCLE_FEO_OYEO_RAMPS) {
+    for (let index = 1; index < ramp.points.length; index += 1) {
+      const a = ramp.points[index - 1];
+      const b = ramp.points[index];
+      const ax = centre.x + a.x;
+      const az = centre.z + a.z;
+      const bx = centre.x + b.x;
+      const bz = centre.z + b.z;
+      const dx = bx - ax;
+      const dz = bz - az;
+      const lengthSquared = dx * dx + dz * dz;
+      if (lengthSquared <= 1e-8) continue;
+      const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / lengthSquared));
+      const closestX = ax + dx * t;
+      const closestZ = az + dz * t;
+      const distanceM = Math.hypot(x - closestX, z - closestZ);
+      if (!nearest || distanceM < nearest.distanceM) {
+        nearest = { distanceM, elevationM: a.y + (b.y - a.y) * t };
+      }
+    }
+  }
+  return nearest && nearest.distanceM <= maximumLateralErrorM ? nearest.elevationM : null;
+}
 
 export function isCircleFeoOyeoRampLayoutValid(): boolean {
   const ids = new Set(CIRCLE_FEO_OYEO_RAMPS.map((ramp) => ramp.id));
@@ -222,6 +302,9 @@ export function createCircleInterchangeElevatedStructures(
       supportStationsM: layout.supportStationsM,
       supportWidthM: layout.level === "second_elevated" ? 2.2 : 1.6,
       supportDepthM: layout.level === "second_elevated" ? 2.2 : 1.6,
+      // Narrow first-level viaducts have no central median: move their piers
+      // beneath the outer shoulder rather than through the traffic lanes.
+      supportLateralOffsetM: layout.level === "second_elevated" ? 0 : 2.5,
       guardrailHeightM: 1.15,
       guardrailInsetM: 0.3
     });

@@ -6,7 +6,8 @@ import {
   StandardMaterial
 } from "@babylonjs/core";
 import type { SolidArea } from "./collision";
-import { GREATER_ACCRA_REGION_ANCHORS } from "./greaterAccraLayout";
+import { GREATER_ACCRA_REGION_ANCHORS, GREATER_ACCRA_ROAD_PATHS } from "./greaterAccraLayout";
+import { getRoadDesignWidth } from "./roadDesign";
 import { buildingIntersectsChunk, type ChunkGenerationBounds } from "./spatialIntersection";
 
 export type BuildingUse =
@@ -48,25 +49,25 @@ const BUILDING_TEMPLATES: readonly DistrictBuildingTemplate[] = [
   { id: "community-pharmacy", name: "Community Pharmacy", use: "pharmacy", side: "east", x: 18, z: -72, width: 10, depth: 11, floors: 1, exteriorStyle: "modern", signText: "PHARMACY", interiorId: "shop-small" },
   { id: "ama-salon", name: "Ama's Hair Studio", use: "salon", side: "west", x: -23, z: -59, width: 10, depth: 9, floors: 1, exteriorStyle: "coastal", signText: "HAIR STUDIO", interiorId: "salon" },
   { id: "chop-bar", name: "Auntie Esi Chop Bar", use: "food", side: "east", x: 23, z: -59, width: 11, depth: 10, floors: 1, exteriorStyle: "market", signText: "CHOP BAR", interiorId: "restaurant" },
-  { id: "adom-compound", name: "Adom Family Compound", use: "compound_house", side: "west", x: -18, z: -46, width: 12, depth: 10, floors: 1, exteriorStyle: "compound", interiorId: "compound-house" },
-  { id: "coastal-guest-house", name: "Coastal Guest House", use: "guest_house", side: "east", x: 19, z: -46, width: 12, depth: 11, floors: 2, exteriorStyle: "coastal", signText: "GUEST HOUSE", interiorId: "guest-house" },
-  { id: "kwame-auto-works", name: "Kwame Auto Works", use: "workshop", side: "west", x: -23, z: -33, width: 11, depth: 10, floors: 1, exteriorStyle: "market", signText: "AUTO WORKS", interiorId: "workshop" },
-  { id: "district-office", name: "District Services Office", use: "office", side: "east", x: 23, z: -33, width: 12, depth: 11, floors: 3, exteriorStyle: "modern", signText: "DISTRICT OFFICE", interiorId: "office" },
+  { id: "adom-compound", name: "Adom Family Compound", use: "compound_house", side: "west", x: -18, z: -46, width: 12, depth: 10, floors: 1, exteriorStyle: "compound", interiorId: "compound-house", anchorOffsetZ: -180 },
+  { id: "coastal-guest-house", name: "Coastal Guest House", use: "guest_house", side: "east", x: 19, z: -46, width: 12, depth: 11, floors: 2, exteriorStyle: "coastal", signText: "GUEST HOUSE", interiorId: "guest-house", anchorOffsetZ: -180 },
+  { id: "kwame-auto-works", name: "Kwame Auto Works", use: "workshop", side: "west", x: -23, z: -33, width: 11, depth: 10, floors: 1, exteriorStyle: "market", signText: "AUTO WORKS", interiorId: "workshop", anchorOffsetZ: 67 },
+  { id: "district-office", name: "District Services Office", use: "office", side: "east", x: 23, z: -33, width: 12, depth: 11, floors: 3, exteriorStyle: "modern", signText: "DISTRICT OFFICE", interiorId: "office", anchorOffsetZ: 67 },
   { id: "makola-stall-row-a", name: "Makola Market Stall A", use: "market_stall", side: "west", x: -18, z: -20, width: 8, depth: 8, floors: 1, exteriorStyle: "market", signText: "MARKET", interiorId: "shop-small" },
   { id: "makola-stall-row-b", name: "Makola Market Stall B", use: "market_stall", side: "east", x: 18, z: -20, width: 8, depth: 8, floors: 1, exteriorStyle: "market", signText: "MARKET", interiorId: "shop-small" },
   { id: "ridge-clinic", name: "Ridge Community Clinic", use: "clinic", side: "west", x: -23, z: -7, width: 12, depth: 11, floors: 2, exteriorStyle: "modern", signText: "COMMUNITY CLINIC", interiorId: "clinic" },
   { id: "east-legon-apartments", name: "Palm Court Apartments", use: "apartment", side: "east", x: 23, z: -7, width: 13, depth: 12, floors: 3, exteriorStyle: "modern", signText: "PALM COURT", interiorId: "apartment" },
   { id: "old-town-house", name: "Old Town Family House", use: "compound_house", side: "west", x: -18, z: 7, width: 12, depth: 10, floors: 1, exteriorStyle: "compound", interiorId: "compound-house" },
   { id: "harbour-foods", name: "Harbour Foods", use: "food", side: "east", x: 18, z: 7, width: 10, depth: 10, floors: 1, exteriorStyle: "coastal", signText: "HARBOUR FOODS", interiorId: "restaurant" },
-  { id: "akwaaba-provisions", name: "Akwaaba Provisions", use: "provisions", side: "west", x: -23, z: 20, width: 12, depth: 13, floors: 1, exteriorStyle: "convenience", signText: "AKWAABA EXPRESS", interiorId: "convenience-store" },
-  { id: "labadi-lodge", name: "Labadi Lodge", use: "guest_house", side: "east", x: 23, z: 20, width: 12, depth: 11, floors: 2, exteriorStyle: "coastal", signText: "LABADI LODGE", interiorId: "guest-house" },
+  { id: "akwaaba-provisions", name: "Akwaaba Provisions", use: "provisions", side: "west", x: -23, z: 20, width: 12, depth: 13, floors: 1, exteriorStyle: "convenience", signText: "AKWAABA EXPRESS", interiorId: "convenience-store", anchorOffsetZ: -130 },
+  { id: "labadi-lodge", name: "Labadi Lodge", use: "guest_house", side: "east", x: 23, z: 20, width: 12, depth: 11, floors: 2, exteriorStyle: "coastal", signText: "LABADI LODGE", interiorId: "guest-house", anchorOffsetZ: -130 },
   { id: "family-compound-north", name: "Northside Compound", use: "compound_house", side: "west", x: -18, z: 33, width: 12, depth: 10, floors: 1, exteriorStyle: "compound", interiorId: "compound-house" },
   { id: "digital-office", name: "Coastline Digital Hub", use: "office", side: "east", x: 18, z: 33, width: 11, depth: 10, floors: 2, exteriorStyle: "modern", signText: "DIGITAL HUB", interiorId: "office" },
   { id: "market-kiosk", name: "Street Market Kiosk", use: "market_stall", side: "west", x: -23, z: 46, width: 8, depth: 8, floors: 1, exteriorStyle: "market", signText: "KIOSK", interiorId: "shop-small" },
   { id: "northside-workshop", name: "Northside Repairs", use: "workshop", side: "east", x: 23, z: 46, width: 10, depth: 10, floors: 1, exteriorStyle: "market", signText: "REPAIRS", interiorId: "workshop" },
   { id: "heritage-house", name: "Heritage Family House", use: "compound_house", side: "west", x: -18, z: 59, width: 12, depth: 10, floors: 1, exteriorStyle: "compound", interiorId: "compound-house" },
-  { id: "city-view-apartments", name: "City View Apartments", use: "apartment", side: "east", x: 18, z: 59, width: 12, depth: 10, floors: 3, exteriorStyle: "modern", interiorId: "apartment" },
-  { id: "akwaaba-creative-arts-centre", name: "Akwaaba Creative Arts & Events Centre", use: "event_venue", side: "east", x: 70, z: 100, width: 68, depth: 58, floors: 2, exteriorStyle: "modern", signText: "AKWAABA CREATIVE ARTS", interiorId: "creative-arts-centre", anchorOffsetX: 70, anchorOffsetZ: 100 }
+  { id: "city-view-apartments", name: "City View Apartments", use: "apartment", side: "east", x: 18, z: 59, width: 12, depth: 10, floors: 3, exteriorStyle: "modern", interiorId: "apartment", anchorOffsetZ: -41 },
+  { id: "akwaaba-creative-arts-centre", name: "Akwaaba Creative Arts & Events Centre", use: "event_venue", side: "east", x: 70, z: 100, width: 68, depth: 58, floors: 2, exteriorStyle: "modern", signText: "AKWAABA CREATIVE ARTS", interiorId: "creative-arts-centre", anchorOffsetX: 170, anchorOffsetZ: 100 }
 ] as const;
 
 /**
@@ -89,8 +90,11 @@ export const DISTRICT_BUILDINGS: readonly DistrictBuilding[] = BUILDING_TEMPLATE
     ...template,
     districtId,
     side,
-    x: anchor.x + (template.anchorOffsetX ?? (side === "west" ? -(template.width / 2 + 6) : template.width / 2 + 6)),
-    z: anchor.z + (template.anchorOffsetZ ?? 0)
+    // Preserve each catalogue entry's block position around its district
+    // anchor. The old formula collapsed every storefront pair onto one Z row,
+    // discarding the authored street-block offsets and causing poor frontage.
+    x: anchor.x + (template.anchorOffsetX ?? template.x),
+    z: anchor.z + (template.anchorOffsetZ ?? template.z)
   };
 });
 
@@ -345,6 +349,62 @@ export function createGhanaianStreetBuildings(scene: Scene, bounds?: ChunkGenera
   return { buildings: selectedBuildings, solidAreas };
 }
 
+/**
+ * Conservative AABB clearance test: no playable primary-road centreline may
+ * enter a building footprint expanded by half the road's designed width.
+ * This catches roads accidentally routed through buildings before geometry
+ * reaches the game scene.
+ */
+function segmentIntersectsBuildingClearance(
+  start: { x: number; z: number },
+  end: { x: number; z: number },
+  building: DistrictBuilding,
+  roadHalfWidth: number
+): boolean {
+  const minX = building.x - building.width / 2 - roadHalfWidth;
+  const maxX = building.x + building.width / 2 + roadHalfWidth;
+  const minZ = building.z - building.depth / 2 - roadHalfWidth;
+  const maxZ = building.z + building.depth / 2 + roadHalfWidth;
+  const dx = end.x - start.x;
+  const dz = end.z - start.z;
+  let tMin = 0;
+  let tMax = 1;
+  const clippingPlanes: readonly [number, number][] = [
+    [-dx, start.x - minX], [dx, maxX - start.x],
+    [-dz, start.z - minZ], [dz, maxZ - start.z]
+  ];
+  for (const [p, q] of clippingPlanes) {
+    if (Math.abs(p) < 1e-9) {
+      if (q < 0) return false;
+      continue;
+    }
+    const ratio = q / p;
+    if (p < 0) {
+      if (ratio > tMax) return false;
+      tMin = Math.max(tMin, ratio);
+    } else {
+      if (ratio < tMin) return false;
+      tMax = Math.min(tMax, ratio);
+    }
+  }
+  return tMin <= tMax;
+}
+
+function isBuildingClearOfPrimaryRoads(building: DistrictBuilding): boolean {
+  return GREATER_ACCRA_ROAD_PATHS
+    .filter((path) => path.playableInFirstRelease)
+    .every((path) => {
+      const width = getRoadDesignWidth(path.roadSegmentId);
+      if (width === undefined) return false;
+      const roadHalfWidth = width / 2;
+      return path.points.slice(1).every((point, index) =>
+        !segmentIntersectsBuildingClearance(
+          path.points[index], point, building, roadHalfWidth
+        )
+      );
+    });
+}
+
 export function isBuildingCatalogueValid(): boolean {
   const ids = new Set(DISTRICT_BUILDINGS.map((building) => building.id));
   const coveredDistricts = new Set(DISTRICT_BUILDINGS.map((building) => building.districtId));
@@ -352,7 +412,7 @@ export function isBuildingCatalogueValid(): boolean {
   return ids.size === DISTRICT_BUILDINGS.length &&
     DISTRICT_BUILDINGS.length >= 20 &&
     coveredDistricts.size === 12 &&
-    DISTRICT_BUILDINGS.every((building) => {
+    DISTRICT_BUILDINGS.every((building, index) => {
       const anchor = GREATER_ACCRA_REGION_ANCHORS.find((item) => item.regionId === building.districtId);
       return building.id.length > 0 && building.name.length > 0 &&
         anchorIds.has(building.districtId) && !!anchor &&
@@ -360,8 +420,18 @@ export function isBuildingCatalogueValid(): boolean {
         Number.isFinite(building.x) && Number.isFinite(building.z) &&
         building.width >= 6 && building.depth >= 6 &&
         building.floors >= 1 && building.floors <= 5 &&
-        (building.interiorId === undefined || building.interiorId.length > 0);
+        (building.interiorId === undefined || building.interiorId.length > 0) &&
+        // Building footprints must not overlap another catalogue footprint.
+        DISTRICT_BUILDINGS.every((other, otherIndex) => {
+          if (otherIndex <= index) return true;
+          const overlapX = Math.abs(building.x - other.x) <
+            (building.width + other.width) / 2;
+          const overlapZ = Math.abs(building.z - other.z) <
+            (building.depth + other.depth) / 2;
+          return !overlapX || !overlapZ;
+        });
     }) &&
+    DISTRICT_BUILDINGS.every(isBuildingClearOfPrimaryRoads) &&
     ["provisions", "pharmacy", "salon", "food", "workshop", "office", "compound_house", "apartment", "market_stall", "guest_house", "clinic", "event_venue"]
       .every((use) => DISTRICT_BUILDINGS.some((building) => building.use === use));
 }

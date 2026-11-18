@@ -16,14 +16,13 @@ export const CIRCLE_GROUND_ROUNDABOUT_LAYOUT = {
   groundElevationM: 0,
   outerRadiusM: 58,
   islandRadiusM: 18,
-  approachRoadLengthM: 150,
   approaches: [
-    { id: "n1-west-approach", bearingRadians: -Math.PI / 2, roadWidthM: 18 },
-    { id: "n1-tema-corridor", bearingRadians: Math.PI / 2, roadWidthM: 18 },
-    { id: "nsawam-road", bearingRadians: 0, roadWidthM: 16 },
-    { id: "kwame-nkrumah-avenue", bearingRadians: 2.35, roadWidthM: 16 },
-    { id: "ring-road-west", bearingRadians: -2.2, roadWidthM: 15 },
-    { id: "feo-oye-o-connection", bearingRadians: 0.78, roadWidthM: 14 }
+    // Bearings follow the actual authored Greater Accra road centrelines.
+    // Their ends overlap the clipped main-road ribbons at the Circle envelope.
+    { id: "n1-west-approach", bearingRadians: -1.85459, roadWidthM: 24.5, roadLengthM: 675 },
+    { id: "n1-tema-corridor", bearingRadians: 1.69710, roadWidthM: 24.5, roadLengthM: 675 },
+    { id: "n6-circle-caprice", bearingRadians: -0.41822, roadWidthM: 24.5, roadLengthM: 443 },
+    { id: "ring-road-central", bearingRadians: 2.01064, roadWidthM: 24.5, roadLengthM: 675 }
   ],
   status: "prototype",
   designNote: "The ground-level roundabout is documented in the Circle project descriptions. Radius, island size, approach bearings and widths here are provisional game-layout values chosen to make a first spatial prototype; they are not measurements of the real interchange."
@@ -35,7 +34,7 @@ export function isCircleGroundRoundaboutLayoutValid(): boolean {
   return !!centre &&
     CIRCLE_GROUND_ROUNDABOUT_LAYOUT.outerRadiusM > CIRCLE_GROUND_ROUNDABOUT_LAYOUT.islandRadiusM &&
     CIRCLE_GROUND_ROUNDABOUT_LAYOUT.islandRadiusM > 0 &&
-    CIRCLE_GROUND_ROUNDABOUT_LAYOUT.approachRoadLengthM > 0 &&
+    approaches.every((approach) => approach.roadLengthM > 0) &&
     approaches.length >= 4 &&
     new Set(approaches.map((approach) => approach.id)).size === approaches.length &&
     approaches.every((approach) =>
@@ -64,7 +63,7 @@ export function createCircleInterchangeGroundLevel(
     islandRadiusM: CIRCLE_GROUND_ROUNDABOUT_LAYOUT.islandRadiusM,
     approaches: CIRCLE_GROUND_ROUNDABOUT_LAYOUT.approaches.map((approach) => ({
       ...approach,
-      roadLengthM: CIRCLE_GROUND_ROUNDABOUT_LAYOUT.approachRoadLengthM
+      roadLengthM: approach.roadLengthM
     }))
   });
 }

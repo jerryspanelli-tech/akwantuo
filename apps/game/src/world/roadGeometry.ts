@@ -1,5 +1,6 @@
 import {
   Color3,
+  DynamicTexture,
   Mesh,
   MeshBuilder,
   Scene,
@@ -12,7 +13,7 @@ import { getRoadCrossSectionProfile, ROAD_CROSS_SECTION_PROFILES, GREATER_ACCRA_
 import { GREATER_ACCRA_JUNCTION_LAYOUTS } from "./junctionLayouts";
 import { GREATER_ACCRA_ROAD_NETWORK } from "./roadNetwork";
 
-type RoadBandKind = "asphalt" | "sidewalk" | "median" | "drain";
+type RoadBandKind = "asphalt" | "sidewalk" | "median" | "drain" | "curb";
 
 type RoadBand = Readonly<{
   kind: RoadBandKind;
@@ -32,7 +33,8 @@ const ROAD_MATERIAL_COLORS: Record<RoadBandKind, Color3> = {
   asphalt: new Color3(0.105, 0.12, 0.125),
   sidewalk: new Color3(0.48, 0.47, 0.42),
   median: new Color3(0.62, 0.59, 0.48),
-  drain: new Color3(0.075, 0.09, 0.085)
+  drain: new Color3(0.075, 0.09, 0.085),
+  curb: new Color3(0.62, 0.62, 0.57)
 };
 
 function getMaterial(scene: Scene, kind: RoadBandKind): StandardMaterial {
@@ -42,7 +44,33 @@ function getMaterial(scene: Scene, kind: RoadBandKind): StandardMaterial {
 
   const material = new StandardMaterial(name, scene);
   material.diffuseColor = ROAD_MATERIAL_COLORS[kind];
-  material.specularColor = new Color3(0.08, 0.08, 0.08);
+  material.specularColor = new Color3(0.025, 0.025, 0.025);
+  if (kind === "asphalt") {
+    // One shared, subtle procedural asphalt texture avoids a flat plastic look
+    // without adding per-road images or large texture memory allocations.
+    const texture = new DynamicTexture(
+      "akwantuo-road-asphalt-grain",
+      { width: 256, height: 256 },
+      scene,
+      false
+    );
+    const context = texture.getContext();
+    context.fillStyle = "#343a3b";
+    context.fillRect(0, 0, 256, 256);
+    for (let index = 0; index < 5200; index += 1) {
+      const x = (index * 73 + 19) % 256;
+      const y = (index * 151 + 47) % 256;
+      const shade = index % 3 === 0 ? 75 : index % 3 === 1 ? 105 : 135;
+      context.fillStyle = "rgba(" + shade + "," + shade + "," + shade + "," + (0.08 + (index % 4) * 0.025) + ")";
+      context.fillRect(x, y, 1 + (index % 2), 1);
+    }
+    texture.update(false);
+    texture.uScale = 3;
+    texture.vScale = 72;
+    texture.anisotropicFilteringLevel = Math.min(8, scene.getEngine().getCaps().maxAnisotropy || 1);
+    material.diffuseTexture = texture;
+    material.diffuseColor = new Color3(0.9, 0.92, 0.92);
+  }
   return material;
 }
 
@@ -95,6 +123,11 @@ function trimRoadPathAtJunctions(roadSegmentId: string, source: readonly MapPoin
   const clipEndpoint = (points: readonly MapPoint[], nodeId: string): MapPoint[] => {
     const reservation = GREATER_ACCRA_JUNCTION_LAYOUTS.find((item) => item.nodeId === nodeId);
     if (!reservation) return [...points];
+    // Only Circle currently has a dedicated grade-separated/ground-level
+    // junction package. Other reserved junctions have no connector geometry
+    // yet, so clipping them creates visible dead ends. Keep those approaches
+    // continuous and let them meet at grade until their interchanges are built.
+    if (nodeId !== "circle-junction") return [...points];
 
     const halfX = reservation.reserveWidthM / 2 + 25;
     const halfZ = reservation.reserveDepthM / 2 + 25;
@@ -230,9 +263,39 @@ export function createRoadSegmentGeometry(
   if (approachPath.length < 2) return [];
   const points = samplePolyline(approachPath, spacing);
   const normals = getNormals(points);
-  return createBands(profile).map((band, index) =>
+  const meshes = createBands(profile).map((band, index) =>
     createBandMesh(scene, `${roadSegmentId}-${band.kind}-${index}`, points, normals, band)
   );
+
+  // Raised kerb strips separate the asphalt shoulder from the pedestrian
+  // pavement. They sit inside the authored cross-section and do not widen it.
+  if (profile.sidewalkWidthM > 0) {
+    const carriageway = profile.lanesPerDirection * profile.laneWidthM;
+    const kerbCentre = profile.medianWidthM / 2 + carriageway + profile.shoulderWidthM;
+    const kerbMaterial = getMaterial(scene, "curb");
+    for (const side of [-1, 1] as const) {
+      const inner = points.map((point, index) => new Vector3(
+        point.x + normals[index].x * side * (kerbCentre - 0.08),
+        0.12,
+        point.z + normals[index].z * side * (kerbCentre - 0.08)
+      ));
+      const outer = points.map((point, index) => new Vector3(
+        point.x + normals[index].x * side * (kerbCentre + 0.08),
+        0.12,
+        point.z + normals[index].z * side * (kerbCentre + 0.08)
+      ));
+      const kerb = MeshBuilder.CreateRibbon(
+        `${roadSegmentId}-raised-kerb-${side === -1 ? "west" : "east"}`,
+        { pathArray: [inner, outer], sideOrientation: Mesh.DOUBLESIDE, updatable: false },
+        scene
+      );
+      kerb.material = kerbMaterial;
+      kerb.isPickable = false;
+      kerb.checkCollisions = false;
+      meshes.push(kerb);
+    }
+  }
+  return meshes;
 }
 
 /** Builds all first-release road ribbons from the approved layout catalogue. */

@@ -47,8 +47,10 @@ function createMaterial(scene: Scene, id: string, colour: string): StandardMater
   return value;
 }
 
-export function createInteriorRooms(scene: Scene): readonly InteriorRoomInstance[] {
-  const rooms = INTERIOR_BLUEPRINTS.map((blueprint, index) => {
+export function createInteriorRoom(scene: Scene, roomId: string): InteriorRoomInstance | null {
+  const index = INTERIOR_BLUEPRINTS.findIndex((item) => item.id === roomId);
+  const blueprint = INTERIOR_BLUEPRINTS[index];
+  if (!blueprint) return null;
     const root = new TransformNode("interior-room-" + blueprint.id, scene);
     // Interiors are streamed as dormant room modules and enabled only on entry.
     root.position.set(10400 + index * 40, 0, 7800);
@@ -316,22 +318,21 @@ export function createInteriorRooms(scene: Scene): readonly InteriorRoomInstance
         });
       }
     }
-    return {
-      id: blueprint.id,
-      root,
-      spawn: { x: centreX, z: centreZ + halfD - 1.4 },
-      solidAreas
-    };
-  });
-  scene.onBeforeRenderObservable.add(() => {
+  const room: InteriorRoomInstance = {
+    id: blueprint.id,
+    root,
+    spawn: { x: centreX, z: centreZ + halfD - 1.4 },
+    solidAreas
+  };
+  if (blueprint.id === "convenience-store") scene.onBeforeRenderObservable.add(() => {
     const head = scene.getMeshByName("shopkeeper-head");
     const leftArm = scene.getMeshByName("shopkeeper-arm--1");
     const rightArm = scene.getMeshByName("shopkeeper-arm-1");
-    if (!head || !leftArm || !rightArm) return;
+    if (!root.isEnabled() || !head || !leftArm || !rightArm) return;
     const seconds = performance.now() / 1000;
     head.rotation.y = Math.sin(seconds * 0.72) * 0.12;
     leftArm.rotation.z = -0.12 + Math.sin(seconds * 1.1) * 0.035;
     rightArm.rotation.z = 0.12 + Math.sin(seconds * 1.1 + 1.2) * 0.035;
   });
-  return rooms;
+  return room;
 }

@@ -15,15 +15,17 @@ import { COMPLEXIONS, DEFAULT_APPEARANCE, OUTFITS, resolveAppearance, type Chara
 import { loadAppearance, saveAppearance } from "./character/appearanceStore";
 import { getHairstyle } from "./character/hairstyles";
 import { WORLD_CONFIG } from "./world/config";
+import { createAkwantuoDaylight } from "./world/lighting";
+import { GREATER_ACCRA_REGION_ANCHORS } from "./world/greaterAccraLayout";
+import { getCircleRampElevationAtPosition } from "./world/circleInterchangeElevatedLayout";
+import { GREATER_ACCRA_REGIONS } from "./world/regions";
 import { WorldChunkManager } from "./world/chunkManager";
 import { ChunkRegistry } from "./world/chunkRegistry";
 import { clampToWorld, isBlocked } from "./world/collision";
 import { createPreviewWorld } from "./world/previewWorld";
 import { createGreaterAccraPlayableWorld } from "./world/greaterAccraPlayableWorld";
 import { createGreaterAccraWorldDetail } from "./world/ghanaianWorldDetail";
-import { createGreaterAccraLandmarks } from "./world/greaterAccraLandmarks";
-import { getMapRoadPath } from "./world/greaterAccraLayout";
-import { findNearestRoadProjection, getRoadLaneCenterPoint } from "./world/roadNavigation";
+import { createGreaterAccraLandmarks, createOsuLocalRoads } from "./world/greaterAccraLandmarks";
 import { getRoadVehicleAutopilotControl } from "./vehicles/roadVehicleAutopilot";
 import { advanceRoadVehicleDynamics, type RoadVehicleDynamicsState } from "./vehicles/roadVehicleDynamics";
 import { createRoadVehicleGeometry } from "./vehicles/roadVehicleGeometry";
@@ -41,7 +43,7 @@ import { DISTRICT_BUILDINGS } from "./world/ghanaianStreetBuildings";
 import { DISTRICT_PROPERTIES } from "./world/districtProperties";
 import { DISTRICT_BUSINESSES } from "./world/districtBusinesses";
 import { INTERIOR_BLUEPRINTS } from "./world/interiorBlueprints";
-import { createInteriorRooms } from "./world/interiorRooms";
+import { createInteriorRoom } from "./world/interiorRooms";
 import { runStage6SmokeChecks } from "./world/stage6SmokeChecks";
 import { AKWAABA_VENUE_PROGRAMME, isVenueProgrammeValid } from "./world/venueProgramme";
 import { AKWANTUO_RETAIL_PRODUCTS, isAkwantuoRetailCatalogueValid } from "./world/retailCatalogue";
@@ -77,6 +79,32 @@ if (import.meta.hot) {
 const bootScreen = document.querySelector<HTMLElement>("#boot-screen");
 const gameShell = document.querySelector<HTMLElement>("#game-shell");
 const bootStatus = document.querySelector<HTMLElement>("#boot-status");
+const hudLocation = document.querySelector<HTMLElement>(".hud-location");
+let locationRefreshElapsed = 0;
+let lastDisplayedRegionId = "";
+const refreshHudLocation = (x: number, z: number): void => {
+  if (!hudLocation) return;
+  let nearestRegionId = "";
+  let nearestDistanceSquared = Number.POSITIVE_INFINITY;
+  for (const anchor of GREATER_ACCRA_REGION_ANCHORS) {
+    const dx = anchor.x - x;
+    const dz = anchor.z - z;
+    const distanceSquared = dx * dx + dz * dz;
+    if (distanceSquared < nearestDistanceSquared) {
+      nearestDistanceSquared = distanceSquared;
+      nearestRegionId = anchor.regionId;
+    }
+  }
+  if (!nearestRegionId || nearestRegionId === lastDisplayedRegionId) return;
+  const region = GREATER_ACCRA_REGIONS.find((item) => item.id === nearestRegionId);
+  const label = nearestDistanceSquared > 1400 * 1400
+    ? "N6 INTERCITY ROUTE"
+    : region?.name ?? "GHANA";
+  hudLocation.textContent = "AKWANTUO · " + label.toUpperCase();
+  hudLocation.dataset.regionId = nearestRegionId;
+  lastDisplayedRegionId = nearestRegionId;
+};
+
 const canvas = document.querySelector<HTMLCanvasElement>("#world-canvas");
 const playButton = document.querySelector<HTMLButtonElement>("#play-button");
 const mainMenu = document.querySelector<HTMLElement>("#main-menu");
@@ -86,6 +114,7 @@ const gameHud = document.querySelector<HTMLElement>("#game-hud");
 const joystick = document.querySelector<HTMLElement>("#joystick");
 const joystickStick = document.querySelector<HTMLElement>("#joystick-stick");
 const jumpButton = document.querySelector<HTMLButtonElement>("#jump-button");
+const vehicleBrakeButton = document.querySelector<HTMLButtonElement>("#vehicle-brake-button");
 const interactButton = document.querySelector<HTMLButtonElement>("#interact-button");
 const vehicleViewButton = document.querySelector<HTMLButtonElement>("#vehicle-view-button");
 const notice = document.querySelector<HTMLElement>("#notice");
@@ -177,16 +206,21 @@ function advanceWatercraftElapsed(
   return next;
 }
 
-function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
+function createPlayer(
+  scene: Scene,
+  initialAppearance: CharacterAppearance,
+  options: { id?: string; pedestrian?: boolean } = {}
+): {
   root: TransformNode;
   leftArm: TransformNode;
   rightArm: TransformNode;
   leftLeg: TransformNode;
   rightLeg: TransformNode;
   applyAppearance: (appearance: CharacterAppearance) => void;
-  setMoving: (moving: boolean) => void;
+  setMoving: (moving: boolean, movementStrength?: number) => void;
+  setJumping: (phase: "jump-start" | "jump-air" | "jump-land" | null) => void;
 } {
-  const root = new TransformNode("player-root", scene);
+  const root = new TransformNode(options.id ?? "player-root", scene);
   root.position.set(WORLD_CONFIG.spawn.x, WORLD_CONFIG.spawn.y, WORLD_CONFIG.spawn.z);
   root.rotation.y = Math.PI;
 
@@ -295,22 +329,52 @@ function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
   let activeModelSkeletons: import("@babylonjs/core").Skeleton[] = [];
   let locomotionGroups: import("@babylonjs/core").AnimationGroup[] = [];
   let currentLocomotion = "idle";
+  let currentJumpPhase: string | null = null;
   let loadGeneration = 0;
-  const setMoving = (moving: boolean): void => {
-    const next = moving ? "walk" : "idle";
-    if (next === currentLocomotion) return;
-    currentLocomotion = next;
-    const selected = locomotionGroups.find((group) => group.name.toLowerCase() === next);
-    if (!selected) return;
+  const setMoving = (moving: boolean, movementStrength = 1): void => {
+    if (currentJumpPhase) return;
+    const requested = moving ? (movementStrength >= 0.68 ? "run" : "walk") : "idle";
+    const selected = locomotionGroups.find((group) => group.name.toLowerCase() === requested)
+      ?? (requested === "run" ? locomotionGroups.find((group) => group.name.toLowerCase() === "walk") : undefined);
+    const next = selected?.name.toLowerCase() ?? requested;
+    if (next !== currentLocomotion) {
+      currentLocomotion = next;
+      for (const group of locomotionGroups) group.stop();
+      selected?.start(true);
+    }
+    if (selected) selected.speedRatio = moving
+      ? 0.85 + Math.max(0, Math.min(1, movementStrength)) * 0.35
+      : 1;
+  };
+  const setJumping = (phase: "jump-start" | "jump-air" | "jump-land" | null): void => {
+    if (phase === currentJumpPhase) return;
+    if (phase === null) {
+      currentJumpPhase = null;
+      for (const group of locomotionGroups) group.stop();
+      locomotionGroups.find((group) => group.name.toLowerCase() === currentLocomotion)?.start(true);
+      return;
+    }
+    const selected = locomotionGroups.find((group) => group.name.toLowerCase() === phase);
+    if (!selected) {
+      currentJumpPhase = null;
+      return;
+    }
+    currentJumpPhase = phase;
     for (const group of locomotionGroups) group.stop();
-    selected.start(true);
+    selected.start(phase === "jump-air");
+    if (phase !== "jump-air") {
+      selected.onAnimationGroupEndObservable.addOnce(() => {
+        if (currentJumpPhase !== phase) return;
+        setJumping(phase === "jump-start" ? "jump-air" : null);
+      });
+    }
   };
   const loadCharacterModel = async (appearance: CharacterAppearance): Promise<void> => {
     const generation = ++loadGeneration;
     const file = appearance.presentation === "feminine" ? "akwantuo-female.glb" : "akwantuo-male.glb";
-    // Character GLBs are published by the dedicated asset build project.
-    // Keep this stable URL separate from the game site so large models do not bloat its deployment.
-    const baseUrl = "https://akwantuo-character-assets.vercel.app/";
+    // Serve the character GLBs from this game's own public assets.
+    // BASE_URL keeps the path valid on Vercel and GitHub Pages project URLs.
+    const baseUrl = `${import.meta.env.BASE_URL}assets/characters/`;
     try {
       const imported = await SceneLoader.ImportMeshAsync("", baseUrl, file, scene);
       if (generation !== loadGeneration) {
@@ -332,14 +396,23 @@ function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
       // no cross-file retargeting. Keep the older separate-GLB path as a fallback.
       const embeddedIdle = imported.animationGroups.some((group) => group.name.toLowerCase() === "idle");
       const embeddedWalk = imported.animationGroups.some((group) => group.name.toLowerCase() === "walk");
-      const animationSpecs = [
+      const embeddedRun = imported.animationGroups.some((group) => group.name.toLowerCase() === "run");
+      const animationSpecs: readonly { file: string; name: string; remote?: boolean }[] = [
         ...(!embeddedIdle ? [{ file: "idle.glb", name: "idle" }] : []),
-        ...(!embeddedWalk ? [{ file: "walk.glb", name: "walk" }] : [])
-      ] as const;
+        ...(!embeddedWalk ? [{ file: "walk.glb", name: "walk" }] : []),
+        ...(!options.pedestrian && !embeddedRun ? [{ file: "run-female.glb", name: "run", remote: true }] : []),
+        ...(!options.pedestrian ? [
+          { file: "jump-start.glb", name: "jump-start", remote: true },
+          { file: "jump-air.glb", name: "jump-air", remote: true },
+          { file: "jump-land.glb", name: "jump-land", remote: true }
+        ] : [])
+      ];
+      const remoteAnimationBaseUrl = "https://cdn.jsdelivr.net/gh/Mesh2Motion/mesh2motion-app@5d6918ef67203e68c661b3e32e8e8f227bfd953e/static/assets/human/animations/";
       const retargetedGroups: import("@babylonjs/core").AnimationGroup[] = [];
       for (const spec of animationSpecs) {
         try {
-          const source = await SceneLoader.ImportMeshAsync("", baseUrl, spec.file, scene);
+          const animationBaseUrl = spec.remote ? remoteAnimationBaseUrl : baseUrl;
+          const source = await SceneLoader.ImportMeshAsync("", animationBaseUrl, spec.file, scene);
           const sourceGroup = source.animationGroups[0];
           if (sourceGroup) {
             const cloned = sourceGroup.clone(
@@ -387,13 +460,21 @@ function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
         ?? locomotionGroups.find((group) => group.name.toLowerCase() === "idle");
       if (selected) selected.start(true);
       const walk = locomotionGroups.find((group) => group.name.toLowerCase() === "walk");
-      if (!walk) showNotice("3D character loaded, but its walking animation could not be connected.");
-      document.documentElement.dataset.akwantuoCharacterModel = file;
-      document.documentElement.dataset.akwantuoCharacterAnimations = String(locomotionGroups.length);
+      if (!walk && !options.pedestrian) showNotice("3D character loaded, but its walking animation could not be connected.");
+      if (options.pedestrian) {
+        document.documentElement.dataset[options.id ?? "pedestrianModel"] = file;
+      } else {
+        document.documentElement.dataset.akwantuoCharacterModel = file;
+        document.documentElement.dataset.akwantuoCharacterAnimations = String(locomotionGroups.length);
+      }
     } catch (error) {
       console.error("AKWANTUO character GLB failed to load:", error);
-      document.documentElement.dataset.akwantuoCharacterModel = "fallback";
-      showNotice("The 3D character could not load. Check your connection and retry.");
+      if (!options.pedestrian) {
+        document.documentElement.dataset.akwantuoCharacterModel = "fallback";
+        showNotice("The 3D character could not load. Check your connection and retry.");
+      } else {
+        console.warn("AKWANTUO pedestrian model failed to load:", error);
+      }
     }
   };
   void loadCharacterModel(initialAppearance);
@@ -403,7 +484,7 @@ function createPlayer(scene: Scene, initialAppearance: CharacterAppearance): {
     const expected = appearance.presentation === "feminine" ? "akwantuo-female.glb" : "akwantuo-male.glb";
     if (document.documentElement.dataset.akwantuoCharacterModel !== expected) void loadCharacterModel(appearance);
   };
-  return { root, leftArm, rightArm, leftLeg, rightLeg, applyAppearance: applyModelAppearance, setMoving };
+  return { root, leftArm, rightArm, leftLeg, rightLeg, applyAppearance: applyModelAppearance, setMoving, setJumping };
 }
 
 function installTouchControls(): void {
@@ -456,7 +537,7 @@ function installTouchControls(): void {
     const bounds = joystick.getBoundingClientRect();
     centreX = bounds.left + bounds.width / 2;
     centreY = bounds.top + bounds.height / 2;
-    maxTravel = Math.max(1, bounds.width * 0.31);
+    maxTravel = Math.max(1, bounds.width * 0.43);
     joystick.setPointerCapture(event.pointerId);
     queuePosition(event);
   });
@@ -555,29 +636,44 @@ async function start(): Promise<void> {
   bootStatus.textContent = "Starting the 3D world…";
   let engine: Engine;
   try {
-    // Mobile GPUs are more reliable with antialiasing disabled. Babylon still
-    // selects WebGL2/WebGL1 as supported by the device.
-    // iPhone/iPad browsers can terminate a WebGL tab when its drawing
-    // buffer and scene exceed the device's available graphics memory.
-    // Use a deliberately smaller render target on touch-first devices.
+    // Keep MSAA disabled for older mobile GPUs, but avoid the visibly soft
+    // half-resolution image previously used on every touch-first device.
+    // A 1.5 scaling factor is a middle ground between native resolution and
+    // the former 2x downscale while retaining the low-power WebGL profile.
     const mobileGraphicsProfile =
       window.matchMedia("(pointer: coarse)").matches ||
       Math.min(window.innerWidth, window.innerHeight) <= 820;
-    engine = new Engine(canvas, false, {
+    engine = new Engine(canvas, !mobileGraphicsProfile, {
       preserveDrawingBuffer: false,
       stencil: false,
       powerPreference: "low-power",
       adaptToDeviceRatio: false
     });
-    engine.setHardwareScalingLevel(mobileGraphicsProfile ? 2 : 1);
+    engine.setHardwareScalingLevel(mobileGraphicsProfile ? 1.5 : 1);
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
     document.documentElement.dataset.akwantuoWebglInitError = detail.slice(0, 240);
     throw new Error("Babylon could not create a WebGL rendering context: " + detail);
   }
   activeEngine = engine;
+  // Keep graphics failures distinguishable from application/account failures.
+  engine.onContextLostObservable.add(() => {
+    document.documentElement.dataset.akwantuoWebglContext = "lost";
+    document.documentElement.dataset.akwantuoWebglContextLostAt = new Date().toISOString();
+    showNotice("The 3D graphics context was interrupted. Please reload AKWANTUO.");
+  });
+  engine.onContextRestoredObservable.add(() => {
+    document.documentElement.dataset.akwantuoWebglContext = "restored";
+  });
+  document.documentElement.dataset.akwantuoHardwareScaling = String(engine.getHardwareScalingLevel());
   engine.resize();
+  document.documentElement.dataset.akwantuoRenderSize =
+    engine.getRenderWidth() + "x" + engine.getRenderHeight();
   const scene = new Scene(engine);
+  const daylightReport = createAkwantuoDaylight(scene);
+  document.documentElement.dataset.akwantuoLighting = "daylight";
+  document.documentElement.dataset.akwantuoAmbientLight = daylightReport.ambientLightName;
+  document.documentElement.dataset.akwantuoSunLight = daylightReport.sunLightName;
   activeScene = scene;
   const yieldToStartupFrame = async (): Promise<boolean> => {
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
@@ -628,9 +724,12 @@ async function start(): Promise<void> {
   document.documentElement.dataset.akwantuoChunkGenerators = chunkRegistry.getGeneratorIds().join(",");
   if (!(await yieldToStartupFrame())) return;
   bootStatus.textContent = "Building interiors…";
-  const interiorRooms = createInteriorRooms(scene);
-  document.documentElement.dataset.akwantuoInteriorRoomCount = String(interiorRooms.length);
-  document.documentElement.dataset.akwantuoStoreCollisionCount = String(interiorRooms.find((room) => room.id === "convenience-store")?.solidAreas.length ?? 0);
+  // Interior geometry is created on first entry and cached for later visits.
+  // Blueprints and building links remain available without allocating room meshes.
+  const interiorRooms = new Map<string, NonNullable<ReturnType<typeof createInteriorRoom>>>();
+  document.documentElement.dataset.akwantuoInteriorRoomCount = "0";
+  document.documentElement.dataset.akwantuoInteriorBuiltRoomCount = "0";
+  document.documentElement.dataset.akwantuoStoreCollisionCount = "0";
   const convenienceStoreBlueprint = INTERIOR_BLUEPRINTS.find((blueprint) => blueprint.id === "convenience-store");
   document.documentElement.dataset.akwantuoStoreFridgeCount = String(
     convenienceStoreBlueprint?.fixtures.filter((fixture) => fixture.type === "refrigerator").length ?? 0
@@ -638,9 +737,7 @@ async function start(): Promise<void> {
   document.documentElement.dataset.akwantuoStoreSnackRackCount = String(
     convenienceStoreBlueprint?.fixtures.filter((fixture) => fixture.type === "snack_rack").length ?? 0
   );
-  document.documentElement.dataset.akwantuoStoreShopkeeperRig =
-    String(!!scene.getMeshByName("shopkeeper-head") && !!scene.getMeshByName("shopkeeper-arm--1") && !!scene.getMeshByName("shopkeeper-arm-1"));
-  for (const room of interiorRooms) solidAreas.push(...room.solidAreas);
+  document.documentElement.dataset.akwantuoStoreShopkeeperRig = "false";
   if (!(await yieldToStartupFrame())) return;
   bootStatus.textContent = "Preparing the coastline and island…";
   const privateIslandMeshCount = createAkwantuoPrivateIsland(scene);
@@ -652,6 +749,10 @@ async function start(): Promise<void> {
   bootStatus.textContent = "Adding Accra landmarks and neighbourhood roads…";
   const greaterAccraLandmarkReport = await createGreaterAccraLandmarks(scene);
   solidAreas.push(...greaterAccraLandmarkReport.solidAreas);
+  // Add the four connected Osu local streets needed for nearby traffic. The full
+  // 35-road neighbourhood layer remains streamed into later map work.
+  const osuLocalRoadCount = createOsuLocalRoads(scene);
+  document.documentElement.dataset.playableLocalRoadCount = String(osuLocalRoadCount);
   document.documentElement.dataset.greaterAccraLandmarkCount = String(greaterAccraLandmarkReport.landmarkCount);
   document.documentElement.dataset.greaterAccraLandmarkLocalRoadCount = String(greaterAccraLandmarkReport.localRoadCount);
   if (!(await yieldToStartupFrame())) return;
@@ -663,6 +764,7 @@ async function start(): Promise<void> {
   document.documentElement.dataset.playableRailRoutes = String(greaterAccraTransportReport.railRouteCount);
   document.documentElement.dataset.playableRailStations = String(greaterAccraTransportReport.plannedStationAnchorCount);
   document.documentElement.dataset.playableCircleStructures = String(greaterAccraTransportReport.circleElevatedStructureCount);
+  document.documentElement.dataset.playableN6TownSigns = String(greaterAccraTransportReport.n6TownSignCount);
   document.documentElement.dataset.playableRailRoadCrossingCandidates = String(greaterAccraTransportReport.railRoadCrossingCandidateCount);
   document.documentElement.dataset.playablePublicTransportCorridors = String(greaterAccraTransportReport.publicTransportCorridorCount);
   bootStatus.textContent = "Preparing public transport…";
@@ -706,6 +808,29 @@ async function start(): Promise<void> {
     }
   }
   const player = createPlayer(scene, currentAppearance);
+  // Two skinned Ghanaian pedestrians use the same character/idle/walk assets as
+  // the player. They walk short, bounded sidewalk loops on the nearby Osu roads.
+  const pedestrianNpcs = [
+    {
+      id: "osu-pedestrian-male",
+      appearance: resolveAppearance({ ...DEFAULT_APPEARANCE, presentation: "masculine" }),
+      startX: 650, endX: 1700, z: -1194, distanceM: 350, direction: 1, walkedM: 0
+    },
+    {
+      id: "osu-pedestrian-female",
+      appearance: resolveAppearance({ ...DEFAULT_APPEARANCE, presentation: "feminine" }),
+      startX: 650, endX: 1700, z: -1294, distanceM: 450, direction: -1, walkedM: 0
+    }
+  ].map((pedestrian) => {
+    const actor = createPlayer(scene, pedestrian.appearance, {
+      id: pedestrian.id, pedestrian: true
+    });
+    actor.root.position.set(pedestrian.startX + pedestrian.distanceM, 0, pedestrian.z);
+    actor.root.rotation.y = pedestrian.direction > 0 ? Math.PI / 2 : -Math.PI / 2;
+    actor.setMoving(true, 0.28);
+    return { ...pedestrian, actor };
+  });
+  document.documentElement.dataset.npcPedestrianCount = String(pedestrianNpcs.length);
   const mainlandMarina = { x: 2700, z: -3380 };
   let activeInterior: { buildingId: string; roomId: string; exitX: number; exitZ: number } | null = null;
   // Shop checkout and premium asset ownership are committed server-side.
@@ -957,54 +1082,100 @@ async function start(): Promise<void> {
     document.documentElement.dataset.interiorTestMode = testBuilding.id;
   }
 
-  // First live NPC road vehicle: follows the authored N1 Tema corridor in the
-  // playable world. Speed tapers toward the route end so it stops safely rather
-  // than driving beyond the authored road. This is local prototype traffic;
-  // junction priority and multiplayer authority remain future work.
-  const npcTrafficPath = getMapRoadPath("n1-tema-corridor");
-  if (!npcTrafficPath || !npcTrafficPath.playableInFirstRelease || npcTrafficPath.points.length < 2) {
-    throw new Error("The first-release N1 NPC traffic route is unavailable.");
-  }
-  // NPC vehicles follow the authored first lane centre, not the road
-  // centreline. Restrict projection to this corridor so junction overlaps
-  // cannot silently snap the traffic onto a neighbouring road.
-  const npcTrafficRoute = npcTrafficPath.points.map((point) => {
-    const projection = findNearestRoadProjection(point.x, point.z, {
-      maxDistanceM: 1,
-      roadSegmentId: npcTrafficPath.roadSegmentId
-    });
-    if (!projection) throw new Error("N1 NPC route could not project onto its authored road segment.");
-    return getRoadLaneCenterPoint(projection, "forward", 0);
-  });
+  // Put ambient NPC traffic on the connected Osu street loop beside the player spawn,
+  // rather than hiding every car kilometres away on the N1 Tema corridor.
+  // Each route follows a separate lane around the authored local street loop.
+  const npcTrafficRouteDefinitions = [
+    {
+      id: "osu-residential-street",
+      // Clockwise lane: east on the north street, south on the east link,
+      // west on the south street, then north on the west link.
+      points: [
+        { x: 900, z: -1201.5 }, { x: 1400, z: -1201.5 }, { x: 1650, z: -1201.5 },
+        { x: 1670, z: -1207 }, { x: 1688, z: -1220 }, { x: 1698.5, z: -1240 },
+        { x: 1698.5, z: -1260 }, { x: 1688, z: -1280 }, { x: 1670, z: -1293 },
+        { x: 1650, z: -1298.5 }, { x: 1200, z: -1298.5 }, { x: 700, z: -1298.5 },
+        { x: 680, z: -1293 }, { x: 662, z: -1280 }, { x: 651.5, z: -1260 },
+        { x: 651.5, z: -1240 }, { x: 662, z: -1220 }, { x: 680, z: -1207 },
+        { x: 700, z: -1201.5 }, { x: 900, z: -1201.5 }
+      ]
+    },
+    {
+      id: "osu-oxford-street-link",
+      // Counter-clockwise lane on the opposite side of the same street loop.
+      points: [
+        { x: 1600, z: -1198.5 }, { x: 1100, z: -1198.5 }, { x: 700, z: -1198.5 },
+        { x: 680, z: -1204 }, { x: 662, z: -1220 }, { x: 648.5, z: -1240 },
+        { x: 648.5, z: -1260 }, { x: 662, z: -1280 }, { x: 680, z: -1296 },
+        { x: 700, z: -1301.5 }, { x: 1150, z: -1301.5 }, { x: 1650, z: -1301.5 },
+        { x: 1670, z: -1296 }, { x: 1688, z: -1280 }, { x: 1701.5, z: -1260 },
+        { x: 1701.5, z: -1240 }, { x: 1688, z: -1220 }, { x: 1670, z: -1204 },
+        { x: 1650, z: -1198.5 }, { x: 1600, z: -1198.5 }
+      ]
+    }
+  ].map((route) => ({
+    ...route,
+    lengthM: route.points.slice(1).reduce((total, point, index) =>
+      total + Math.hypot(point.x - route.points[index].x, point.z - route.points[index].z), 0)
+  }));
+
+  // Ghana uses left-hand traffic. Swap the two physical lane paths while
+  // reversing their direction so each stream remains on its proper left lane.
+  const npcTrafficRoutes = [
+    {
+      ...npcTrafficRouteDefinitions[0],
+      points: [...npcTrafficRouteDefinitions[1].points].reverse()
+    },
+    {
+      ...npcTrafficRouteDefinitions[1],
+      points: [...npcTrafficRouteDefinitions[0].points].reverse()
+    }
+  ].map((route) => ({
+    ...route,
+    lengthM: route.points.slice(1).reduce((total, point, index) =>
+      total + Math.hypot(point.x - route.points[index].x, point.z - route.points[index].z), 0)
+  }));
+  const npcTraffic = npcTrafficRoutes.flatMap((route, routeIndex) =>
+    (routeIndex === 0 ? [200, 850, 1500] : [500, 1150, 1800]).map((startDistanceM, index) => {
+      const start = sampleRouteAtDistance(route.points, startDistanceM);
+      const origin = { x: start.x, y: 0, z: start.z };
+      const geometry = createRoadVehicleGeometry(scene, {
+        id: "npc-" + route.id + "-saloon-" + (index + 1),
+        centerX: origin.x,
+        centerZ: origin.z,
+        groundElevationM: 0,
+        bodyColour: ["#b47a32", "#315a78", "#687a54"][(index + routeIndex) % 3]
+      });
+      const rig = createRoadVehicleRig(scene, geometry, {
+        id: "npc-" + route.id + "-saloon-rig-" + (index + 1),
+        origin
+      });
+      return {
+        rig,
+        routeId: route.id,
+        route: route.points,
+        routeLengthM: route.lengthM,
+        state: {
+          ...origin,
+          headingRadians: start.headingRadians,
+          speedMps: 0
+        } as RoadVehicleDynamicsState,
+        distanceM: startDistanceM
+      };
+    })
+  );
   document.documentElement.dataset.npcRoadTrafficLaneCenter = "true";
-  const npcTrafficRouteLengthM = npcTrafficRoute.slice(1).reduce((total, point, index) =>
-    total + Math.hypot(point.x - npcTrafficRoute[index].x, point.z - npcTrafficRoute[index].z), 0);
-  const npcTraffic = [0, 32, 64].map((startDistanceM, index) => {
-    const start = sampleRouteAtDistance(npcTrafficRoute, startDistanceM);
-    const origin = { x: start.x, y: 0, z: start.z };
-    const geometry = createRoadVehicleGeometry(scene, {
-      id: "npc-n1-traffic-saloon-" + (index + 1),
-      centerX: origin.x,
-      centerZ: origin.z,
-      groundElevationM: 0,
-      bodyColour: ["#b47a32", "#315a78", "#687a54"][index]
-    });
-    const rig = createRoadVehicleRig(scene, geometry, {
-      id: "npc-n1-traffic-saloon-rig-" + (index + 1),
-      origin
-    });
-    return {
-      rig,
-      state: {
-        ...origin,
-        headingRadians: start.headingRadians,
-        speedMps: 0
-      } as RoadVehicleDynamicsState,
-      distanceM: startDistanceM
-    };
-  });
+  document.documentElement.dataset.npcRoadTrafficDriveSide = "left";
   document.documentElement.dataset.npcRoadTraffic = String(npcTraffic.length);
-  document.documentElement.dataset.npcRoadTrafficRoute = npcTrafficPath.roadSegmentId;
+  document.documentElement.dataset.npcRoadTrafficRoute = npcTrafficRoutes.map((route) => route.id).join(",");
+  document.documentElement.dataset.npcRoadTrafficRoutes = npcTrafficRoutes.map((route) => route.id).join(",");
+  document.documentElement.dataset.npcTrafficTimeHeadway = "1.8";
+  document.documentElement.dataset.npcTrafficConflictPrediction = "true";
+  document.documentElement.dataset.npcRoadTrafficLoop = String(npcTrafficRoutes.every((route) =>
+    route.points.length >= 4 &&
+    route.points[0].x === route.points[route.points.length - 1].x &&
+    route.points[0].z === route.points[route.points.length - 1].z
+  ));
 
 
   // First real in-world road vehicle: a nearby saloon that can be entered,
@@ -1133,13 +1304,13 @@ async function start(): Promise<void> {
     x: mainlandMarina.x, z: mainlandMarina.z, headingRadians: Math.atan2(4445, -1100), speedMps: 0
   };
   const interiorWindowAnchor = new TransformNode("starter-saloon-interior-camera-anchor", scene);
-  interiorWindowAnchor.position.set(0, 1.48, 0.22);
+  interiorWindowAnchor.position.set(0, 1.56, 0.34);
   interiorWindowAnchor.parent = vehicleRig.root;
   const exteriorFollowAnchor = new TransformNode("starter-saloon-exterior-camera-anchor", scene);
   exteriorFollowAnchor.position.set(0, 3.7, -7.5);
   exteriorFollowAnchor.parent = vehicleRig.root;
   let passengerCameraRig: PassengerCameraRig | null = null;
-  const vehicleCameraModes = ["interior_window", "interior_free_look", "exterior_follow"] as const;
+  const vehicleCameraModes = ["interior_window", "exterior_follow"] as const;
   let vehicleCameraModeIndex = 0;
 
   const camera = new ArcRotateCamera(
@@ -1202,11 +1373,42 @@ async function start(): Promise<void> {
   let walkClock = 0;
 
   let chunkUpdateElapsed = 0;
+  let playDiagnosticFramesRemaining = 0;
+  let playDiagnosticFrameCount = 0;
+  let playDiagnosticFrameTimeTotal = 0;
+  let playDiagnosticFrameTimeMax = 0;
   const render = (): void => {
     const rawDelta = engine.getDeltaTime() / 1000;
     const delta = Math.min(rawDelta, 0.05);
 
     if (hasEnteredWorld) {
+      locationRefreshElapsed += delta;
+      if (locationRefreshElapsed >= 0.5) {
+        locationRefreshElapsed = 0;
+        refreshHudLocation(player.root.position.x, player.root.position.z);
+      }
+      // Keep pedestrian motion bounded and deterministic on mobile frame rates.
+      let pedestrianWalkedM = 0;
+      for (const pedestrian of pedestrianNpcs) {
+        const step = Math.min(rawDelta, 0.1) * 1.05 * pedestrian.direction;
+        pedestrian.distanceM += step;
+        pedestrian.walkedM += Math.abs(step);
+        const routeLength = pedestrian.endX - pedestrian.startX;
+        if (pedestrian.distanceM >= routeLength) {
+          pedestrian.distanceM = routeLength;
+          pedestrian.direction = -1;
+        } else if (pedestrian.distanceM <= 0) {
+          pedestrian.distanceM = 0;
+          pedestrian.direction = 1;
+        }
+        pedestrian.actor.root.position.set(
+          pedestrian.startX + pedestrian.distanceM, 0, pedestrian.z
+        );
+        pedestrian.actor.root.rotation.y = pedestrian.direction > 0 ? Math.PI / 2 : -Math.PI / 2;
+        pedestrian.actor.setMoving(true, 0.28);
+        pedestrianWalkedM += pedestrian.walkedM;
+      }
+      document.documentElement.dataset.npcPedestrianWalkedM = pedestrianWalkedM.toFixed(2);
       chunkUpdateElapsed += delta;
       if (chunkUpdateElapsed >= 0.25) {
         chunkUpdateElapsed = 0;
@@ -1228,43 +1430,98 @@ async function start(): Promise<void> {
       // Follow the same authored corridor with a conservative headway controller.
       // The nearest vehicle ahead limits target speed so the prototype convoy
       // does not simply stack several cars at one point on the route.
-      const trafficInRouteOrder = [...npcTraffic].sort((a, b) => b.distanceM - a.distanceM);
-      for (let index = 0; index < trafficInRouteOrder.length; index += 1) {
-        const traffic = trafficInRouteOrder[index];
-        const leader = trafficInRouteOrder[index - 1];
-        const gapM = leader ? Math.max(0, leader.distanceM - traffic.distanceM) : Number.POSITIVE_INFINITY;
-        const routeEndSpeed = Math.sqrt(2 * 1.6 * Math.max(0, npcTrafficRouteLengthM - traffic.distanceM));
-        const headwaySpeed = Number.isFinite(gapM) ? Math.sqrt(2 * 2.0 * Math.max(0, gapM - 12)) : 9;
-        const npcControl = getRoadVehicleAutopilotControl({
-          wheelbaseM: 2.65,
-          maximumSteeringAngleRadians: 0.48,
-          targetSpeedMps: Math.min(9, routeEndSpeed, headwaySpeed),
-          baseLookaheadM: 9,
-          speedLookaheadFactor: 0.65,
-          throttleGain: 0.32,
-          brakeGain: 0.55
-        }, traffic.state, npcTrafficRoute);
-        traffic.state = advanceRoadVehicleElapsed({
-          wheelbaseM: 2.65,
-          maximumForwardSpeedMps: 12,
-          maximumReverseSpeedMps: 0.1,
-          maximumAccelerationMps2: 2.2,
-          serviceBrakingMps2: 5.5,
-          maximumSteeringAngleRadians: 0.48,
-          rollingDragMps2: 0.28
-        }, traffic.state, {
-          throttle: npcControl.throttle,
-          brake: npcControl.brake,
-          steering: npcControl.steering
-        }, rawDelta);
-        traffic.rig.update(traffic.state);
-        traffic.distanceM = npcControl.routeDistanceM;
+      let minimumTrafficGapM = Number.POSITIVE_INFINITY;
+      for (const route of npcTrafficRoutes) {
+        const trafficInRouteOrder = npcTraffic
+          .filter((traffic) => traffic.routeId === route.id)
+          .sort((a, b) => a.distanceM - b.distanceM);
+        for (let index = 0; index < trafficInRouteOrder.length; index += 1) {
+          const traffic = trafficInRouteOrder[index];
+          const leader = trafficInRouteOrder[(index + 1) % trafficInRouteOrder.length];
+          // Treat the road as a closed loop: the last car's leader is the
+          // first car on the next lap, so no vehicle brakes permanently at an end.
+          const gapM = trafficInRouteOrder.length > 1
+            ? leader.distanceM - traffic.distanceM +
+              (index === trafficInRouteOrder.length - 1 ? route.lengthM : 0)
+            : Number.POSITIVE_INFINITY;
+          // Maintain a speed-dependent time gap, not just a fixed number of metres.
+          const desiredGapM = 8 + traffic.state.speedMps * 1.8;
+          const headwaySpeed = Number.isFinite(gapM)
+            ? Math.sqrt(2 * 2.5 * Math.max(0, gapM - desiredGapM))
+            : 8.5;
+
+          // Predict short-horizon conflicts with vehicles on other routes.
+          // This is a safety fallback for close approaches; it does not replace
+          // signal phases or right-of-way rules at authored junctions.
+          let conflictSpeedLimitMps = 8.5;
+          for (const other of npcTraffic) {
+            if (other === traffic) continue;
+            const relativeX = other.state.x - traffic.state.x;
+            const relativeZ = other.state.z - traffic.state.z;
+            const relativeVelocityX =
+              Math.sin(other.state.headingRadians) * other.state.speedMps -
+              Math.sin(traffic.state.headingRadians) * traffic.state.speedMps;
+            const relativeVelocityZ =
+              Math.cos(other.state.headingRadians) * other.state.speedMps -
+              Math.cos(traffic.state.headingRadians) * traffic.state.speedMps;
+            const relativeSpeedSquared =
+              relativeVelocityX * relativeVelocityX + relativeVelocityZ * relativeVelocityZ;
+            if (relativeSpeedSquared <= 1e-4) continue;
+            const closestApproachSeconds = Math.max(0, Math.min(1.5,
+              -(relativeX * relativeVelocityX + relativeZ * relativeVelocityZ) /
+              relativeSpeedSquared
+            ));
+            const closestDistanceM = Math.hypot(
+              relativeX + relativeVelocityX * closestApproachSeconds,
+              relativeZ + relativeVelocityZ * closestApproachSeconds
+            );
+            // The two Osu routes occupy opposing, parallel lane centres about
+            // three metres apart. Do not treat ordinary opposite-direction
+            // lane traffic as a junction conflict; brake only for a genuinely
+            // overlapping predicted vehicle footprint.
+            if (closestApproachSeconds > 0.05 && closestDistanceM < 2.05) {
+              conflictSpeedLimitMps = 0;
+              break;
+            }
+          }
+
+          const npcControl = getRoadVehicleAutopilotControl({
+            wheelbaseM: 2.65,
+            maximumSteeringAngleRadians: 0.48,
+            targetSpeedMps: Math.min(8.5, headwaySpeed, conflictSpeedLimitMps),
+            baseLookaheadM: 9,
+            speedLookaheadFactor: 0.65,
+            throttleGain: 0.32,
+            brakeGain: 0.65
+          }, traffic.state, traffic.route);
+          traffic.state = advanceRoadVehicleElapsed({
+            wheelbaseM: 2.65,
+            maximumForwardSpeedMps: 12,
+            maximumReverseSpeedMps: 0.1,
+            maximumAccelerationMps2: 2.2,
+            serviceBrakingMps2: 5.5,
+            maximumSteeringAngleRadians: 0.48,
+            rollingDragMps2: 0.28
+          }, traffic.state, {
+            throttle: npcControl.throttle,
+            brake: npcControl.brake,
+            steering: npcControl.steering
+          }, rawDelta);
+          traffic.rig.update(traffic.state);
+          traffic.distanceM = npcControl.routeDistanceM;
+        }
+        const routeProgress = trafficInRouteOrder.slice().sort((a, b) => a.distanceM - b.distanceM);
+        const routeGap = routeProgress.length > 1
+          ? routeProgress.reduce((minimum, traffic, index) => {
+              const next = routeProgress[(index + 1) % routeProgress.length];
+              const gap = next.distanceM - traffic.distanceM +
+                (index === routeProgress.length - 1 ? route.lengthM : 0);
+              return Math.min(minimum, gap);
+            }, Number.POSITIVE_INFINITY)
+          : Number.POSITIVE_INFINITY;
+        minimumTrafficGapM = Math.min(minimumTrafficGapM, routeGap);
       }
       const trafficProgress = [...npcTraffic].sort((a, b) => a.distanceM - b.distanceM);
-      const minimumTrafficGapM = trafficProgress.slice(1).reduce(
-        (minimum, traffic, index) => Math.min(minimum, traffic.distanceM - trafficProgress[index].distanceM),
-        Number.POSITIVE_INFINITY
-      );
       document.documentElement.dataset.npcRoadTrafficDistanceM = trafficProgress[0].distanceM.toFixed(2);
       document.documentElement.dataset.npcRoadTrafficSpeedMps = npcTraffic.reduce(
         (total, traffic) => total + traffic.state.speedMps, 0
@@ -1326,7 +1583,7 @@ async function start(): Promise<void> {
               : "Welcome to Akwaaba Cay. Your ownership has been verified against your AKWANTUO account.");
           }
         } else if (activeInterior) {
-          const room = interiorRooms.find((item) => item.id === activeInterior?.roomId);
+          const room = interiorRooms.get(activeInterior.roomId);
           room?.root.setEnabled(false);
           player.root.position.set(activeInterior.exitX, 0, activeInterior.exitZ);
           activeInterior = null;
@@ -1360,7 +1617,22 @@ async function start(): Promise<void> {
             })
             .sort((a, b) => a.distanceM - b.distanceM)[0];
           if (nearbyBuilding && nearbyBuilding.distanceM <= 3.5 && nearbyBuilding.building.interiorId) {
-            const room = interiorRooms.find((item) => item.id === nearbyBuilding.building.interiorId);
+            let room = interiorRooms.get(nearbyBuilding.building.interiorId);
+            if (!room) {
+              const createdRoom = createInteriorRoom(scene, nearbyBuilding.building.interiorId);
+              if (createdRoom) {
+                room = createdRoom;
+                interiorRooms.set(createdRoom.id, createdRoom);
+                solidAreas.push(...createdRoom.solidAreas);
+                document.documentElement.dataset.akwantuoInteriorRoomCount = String(interiorRooms.size);
+                document.documentElement.dataset.akwantuoInteriorBuiltRoomCount = String(interiorRooms.size);
+                if (createdRoom.id === "convenience-store") {
+                  document.documentElement.dataset.akwantuoStoreCollisionCount = String(createdRoom.solidAreas.length);
+                  document.documentElement.dataset.akwantuoStoreShopkeeperRig =
+                    String(!!scene.getMeshByName("shopkeeper-head") && !!scene.getMeshByName("shopkeeper-arm--1") && !!scene.getMeshByName("shopkeeper-arm-1"));
+                }
+              }
+            }
             if (room) {
               room.root.setEnabled(true);
               player.root.position.set(room.spawn.x, 0, room.spawn.z);
@@ -1452,7 +1724,8 @@ async function start(): Promise<void> {
           else if (!result.ok) showNotice("Unable to board train: " + result.reason.replaceAll("_", " ") + ".");
         } else if (passengerState.mode === "riding" && passengerState.vehicleId === "preview-shared-trotro") {
           const result = alightPublicTransport(passengerState, { id: "preview-terminal", vehicleStopped: publicRideArrived, boardingOpen: false, alightingOpen: publicRideArrived, remainingSeats: 0 }, "preview-shared-trotro");
-          if (result.ok) { passengerState = result.state; passengerCameraRig?.dispose(); passengerCameraRig = null; player.root.setEnabled(true); player.root.position.set(publicTaxiState.x - 1.7, 0, publicTaxiState.z); showNotice("You alighted. Balance: GH₵" + (passengerState.balancePesewas / 100).toFixed(2)); }
+          if (result.ok) { passengerState = result.state; passengerCameraRig?.dispose(); passengerCameraRig = null; player.root.setEnabled(true); // Spawn beyond the 2m vehicle collision radius so the player can walk away immediately.
+            player.root.position.set(publicTaxiState.x - 2.6, 0, publicTaxiState.z); showNotice("You alighted. Balance: GH₵" + (passengerState.balancePesewas / 100).toFixed(2)); }
           else showNotice("The trotro is still travelling. Wait for the terminal stop.");
         } else if (interactionState.mode === "on_foot" && passengerState.mode === "not_riding" && Math.hypot(player.root.position.x - (publicTaxiState.x - 1.15), player.root.position.z - publicTaxiState.z) <= 3) {
           document.documentElement.dataset.transportTrotroBranch = "entered";
@@ -1529,7 +1802,12 @@ async function start(): Promise<void> {
           vehicleViewRequested = false;
           vehicleCameraModeIndex = (vehicleCameraModeIndex + 1) % vehicleCameraModes.length;
           activePassengerCameraRig.setMode(vehicleCameraModes[vehicleCameraModeIndex], canvas ?? undefined);
-          showNotice(`Vehicle view: ${vehicleCameraModes[vehicleCameraModeIndex].replaceAll("_", " ")}.`);
+          if (vehicleViewButton) {
+            vehicleViewButton.textContent = vehicleCameraModeIndex === 0 ? "OUTSIDE" : "INSIDE";
+            vehicleViewButton.setAttribute("aria-label", vehicleCameraModeIndex === 0 ? "Switch to outside vehicle camera" : "Switch to inside vehicle camera");
+          }
+          document.documentElement.dataset.akwantuoVehicleCamera = vehicleCameraModes[vehicleCameraModeIndex];
+          showNotice(vehicleCameraModeIndex === 0 ? "Inside vehicle view." : "Outside follow view.");
           window.setTimeout(() => notice?.classList.remove("is-visible"), 1800);
         }
         if (passengerState.mode === "riding" && passengerState.vehicleId === "preview-shared-trotro") {
@@ -1585,9 +1863,9 @@ async function start(): Promise<void> {
           steering = Math.max(-1, Math.min(1, steering));
           throttle = Math.max(-1, Math.min(1, throttle));
           const next = advanceRoadVehicleElapsed({
-            wheelbaseM: 2.65, maximumForwardSpeedMps: 16, maximumReverseSpeedMps: 4,
-            maximumAccelerationMps2: 3.2, serviceBrakingMps2: 7,
-            maximumSteeringAngleRadians: 0.48, rollingDragMps2: 0.45
+            wheelbaseM: 2.65, maximumForwardSpeedMps: 28, maximumReverseSpeedMps: 5,
+            maximumAccelerationMps2: 5.2, serviceBrakingMps2: 9,
+            maximumSteeringAngleRadians: 0.44, rollingDragMps2: 0.55
           }, vehicleState, {
             throttle, brake: vehicleBrake || pressedKeys.has(" ") ? 1 : 0, steering
           }, rawDelta);
@@ -1604,7 +1882,8 @@ async function start(): Promise<void> {
           } else {
             vehicleState = { ...vehicleState, speedMps: 0 };
           }
-          vehicleRig.update(vehicleState);
+          const rampElevationM = getCircleRampElevationAtPosition(vehicleState.x, vehicleState.z);
+          vehicleRig.update(vehicleState, rampElevationM ?? 0);
           camera.target = Vector3.Lerp(camera.target, new Vector3(vehicleState.x, 1.4, vehicleState.z), Math.min(1, delta * 8));
           camera.alpha = -Math.PI / 2 - vehicleState.headingRadians;
           camera.radius = 9;
@@ -1613,6 +1892,7 @@ async function start(): Promise<void> {
           interactButton.hidden = false;
           interactButton.textContent = passengerState.mode === "riding" ? "ALIGHT" : "EXIT";
           interactButton.setAttribute("aria-label", passengerState.mode === "riding" ? "Alight from public transport" : "Exit vehicle");
+          if (vehicleBrakeButton) vehicleBrakeButton.hidden = !(interactionState.mode === "inside_vehicle" || watercraftMode);
         }
         if (jumpButton) jumpButton.classList.add("is-hidden");
         if (vehicleViewButton) vehicleViewButton.classList.remove("is-hidden");
@@ -1640,6 +1920,7 @@ async function start(): Promise<void> {
           interactButton.textContent = activeInterior ? "EXIT" : nearMappedRail || nearPreviewRail ? "BOARD" : "ENTER";
           interactButton.setAttribute("aria-label", activeInterior ? "Exit building" : nearMappedRail || nearPreviewRail ? "Board public transport" : "Enter nearby vehicle or building");
         }
+        if (vehicleBrakeButton) vehicleBrakeButton.hidden = true;
         if (jumpButton) jumpButton.classList.remove("is-hidden");
         if (vehicleViewButton) vehicleViewButton.classList.add("is-hidden");
       }
@@ -1652,6 +1933,7 @@ async function start(): Promise<void> {
       if (interactionState.mode === "on_foot" && passengerState.mode !== "riding" && !watercraftMode && (pressedKeys.has("s") || pressedKeys.has("arrowdown"))) inputZ -= 1;
 
       const inputLength = Math.hypot(inputX, inputZ);
+      const movementStrength = Math.min(1, inputLength);
       if (inputLength > 1) {
         inputX /= inputLength;
         inputZ /= inputLength;
@@ -1671,8 +1953,9 @@ async function start(): Promise<void> {
 
       if (moving) {
         direction.normalize();
-        const stepX = direction.x * WORLD_CONFIG.movement.walkSpeed * delta;
-        const stepZ = direction.z * WORLD_CONFIG.movement.walkSpeed * delta;
+        const moveSpeed = 1.2 + (WORLD_CONFIG.movement.maxSpeed - 1.2) * Math.pow(movementStrength, 1.6);
+        const stepX = direction.x * moveSpeed * delta;
+        const stepZ = direction.z * moveSpeed * delta;
         const nextX = player.root.position.x + stepX;
         const nextZ = player.root.position.z + stepZ;
         const onMainlandMarinaDock = Math.abs(nextX - mainlandMarina.x) <= 16 &&
@@ -1686,12 +1969,13 @@ async function start(): Promise<void> {
         if (onWalkableShore && !isBlocked(nextX, player.root.position.z, solidAreas, WORLD_CONFIG.movement.collisionRadius) && Math.hypot(nextX - vehicleState.x, player.root.position.z - vehicleState.z) >= 2.0 && Math.hypot(nextX - publicTaxiState.x, player.root.position.z - publicTaxiState.z) >= 2.0) player.root.position.x = nextX;
         if (onWalkableShore && !isBlocked(player.root.position.x, nextZ, solidAreas, WORLD_CONFIG.movement.collisionRadius) && Math.hypot(player.root.position.x - vehicleState.x, nextZ - vehicleState.z) >= 2.0 && Math.hypot(player.root.position.x - publicTaxiState.x, nextZ - publicTaxiState.z) >= 2.0) player.root.position.z = nextZ;
         player.root.rotation.y = Math.atan2(direction.x, direction.z);
-        walkClock += delta * 9;
+        walkClock += delta * (6 + movementStrength * 7);
       }
 
       if (interactionState.mode === "on_foot" && passengerState.mode !== "riding" && !watercraftMode && jumpRequested && onGround) {
         verticalVelocity = WORLD_CONFIG.movement.jumpVelocity;
         onGround = false;
+        player.setJumping("jump-start");
       }
       jumpRequested = false;
       if (interactionState.mode === "on_foot" && passengerState.mode !== "riding") {
@@ -1699,12 +1983,14 @@ async function start(): Promise<void> {
         player.root.position.y += verticalVelocity * delta;
       }
       if (interactionState.mode === "on_foot" && passengerState.mode !== "riding" && !watercraftMode && player.root.position.y <= 0) {
+        const justLanded = !onGround;
         player.root.position.y = 0;
         verticalVelocity = 0;
         onGround = true;
+        if (justLanded) player.setJumping("jump-land");
       }
 
-      player.setMoving(moving && onGround);
+      player.setMoving(moving && onGround, movementStrength);
 
       if (moving && onGround) {
         const swing = Math.sin(walkClock) * 0.48;
@@ -1734,13 +2020,34 @@ async function start(): Promise<void> {
     }
 
     scene.render();
+
+    // Sample the first 120 gameplay frames without logging every frame.
+    // This records CPU-visible scene/render indicators, not actual GPU memory.
+    if (playDiagnosticFramesRemaining > 0) {
+      const frameTimeMs = engine.getDeltaTime();
+      playDiagnosticFrameCount += 1;
+      playDiagnosticFrameTimeTotal += frameTimeMs;
+      playDiagnosticFrameTimeMax = Math.max(playDiagnosticFrameTimeMax, frameTimeMs);
+      if (playDiagnosticFrameCount === 1 || playDiagnosticFrameCount % 30 === 0 ||
+          playDiagnosticFramesRemaining === 1) {
+        document.documentElement.dataset.akwantuoPlaySampleFrames = String(playDiagnosticFrameCount);
+        document.documentElement.dataset.akwantuoPlayFps = String(Math.round(engine.getFps()));
+        document.documentElement.dataset.akwantuoPlayActiveMeshes = String(scene.getActiveMeshes().length);
+        document.documentElement.dataset.akwantuoPlayTotalVertices = String(scene.getTotalVertices());
+        document.documentElement.dataset.akwantuoPlayAverageFrameMs =
+          (playDiagnosticFrameTimeTotal / playDiagnosticFrameCount).toFixed(2);
+        document.documentElement.dataset.akwantuoPlayMaxFrameMs = playDiagnosticFrameTimeMax.toFixed(2);
+      }
+      playDiagnosticFramesRemaining -= 1;
+    }
   };
 
-  document.querySelector<HTMLButtonElement>("#vehicle-brake-button")?.addEventListener("pointerdown", (event) => {
-    event.preventDefault(); vehicleBrake = true;
+  vehicleBrakeButton?.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
+    if (interactionState.mode === "inside_vehicle" || watercraftMode) vehicleBrake = true;
   });
   for (const eventName of ["pointerup", "pointercancel", "lostpointercapture"] as const) {
-    document.querySelector<HTMLButtonElement>("#vehicle-brake-button")?.addEventListener(eventName, () => { vehicleBrake = false; });
+    vehicleBrakeButton?.addEventListener(eventName, () => { vehicleBrake = false; });
   }
 
   // Reveal the game shell before starting the continuous render loop. This
@@ -1898,8 +2205,29 @@ async function start(): Promise<void> {
   });
 
   playButton?.addEventListener("click", () => {
+    // Capture the exact scene footprint at the menu-to-gameplay handoff.
+    document.documentElement.dataset.akwantuoPlayClickedAt = new Date().toISOString();
+    document.documentElement.dataset.akwantuoPlayMeshCount = String(scene.meshes.length);
+    document.documentElement.dataset.akwantuoPlayMaterialCount = String(scene.materials.length);
+    document.documentElement.dataset.akwantuoPlayTextureCount = String(scene.textures.length);
+    document.documentElement.dataset.akwantuoPlayActiveCamera = scene.activeCamera?.name ?? "none";
+    document.documentElement.dataset.akwantuoPlayTextures = JSON.stringify(
+      scene.textures.slice(0, 80).map((texture) => {
+        try {
+          const size = texture.getSize();
+          return { name: texture.name, width: size.width, height: size.height, ready: texture.isReady() };
+        } catch {
+          return { name: texture.name, width: null, height: null, ready: texture.isReady() };
+        }
+      })
+    );
+    playDiagnosticFramesRemaining = 120;
+    playDiagnosticFrameCount = 0;
+    playDiagnosticFrameTimeTotal = 0;
+    playDiagnosticFrameTimeMax = 0;
     closeCharacterCreator();
     hasEnteredWorld = true;
+    gameShell?.classList.add("is-playing");
     mainMenu?.classList.add("is-hidden");
     footerBar?.classList.add("is-hidden");
     gameHud?.classList.remove("is-hidden");

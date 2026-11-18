@@ -1,4 +1,4 @@
-import { Color3, Mesh, MeshBuilder, Scene, Vector3 } from "@babylonjs/core";
+import { Color3, Mesh, MeshBuilder, Scene, StandardMaterial, Vector3, VertexData } from "@babylonjs/core";
 import type { RoadCrossSectionProfile } from "@akwantuo/shared";
 import { getMapRoadPath, GREATER_ACCRA_ROAD_PATHS, type MapPoint } from "./greaterAccraLayout";
 import { getRoadCrossSectionProfile, ROAD_CROSS_SECTION_PROFILES, GREATER_ACCRA_ROAD_DESIGNS } from "./roadDesign";
@@ -14,8 +14,9 @@ export type RoadMarkingGeometryOptions = Readonly<{
 
 type MarkingPath = Readonly<{ points: readonly Vector3[] }>;
 
-const WHITE = new Color3(0.92, 0.92, 0.86);
-const EDGE_WHITE = new Color3(0.78, 0.8, 0.77);
+const WHITE = new Color3(0.98, 0.98, 0.94);
+const EDGE_WHITE = new Color3(0.86, 0.87, 0.83);
+const CENTRE_YELLOW = new Color3(0.95, 0.72, 0.16);
 
 function distance(a: MapPoint, b: MapPoint): number {
   return Math.hypot(b.x - a.x, b.z - a.z);
@@ -77,6 +78,11 @@ function trimAtJunctionReservations(
   const clipFromEndpoint = (points: readonly MapPoint[], nodeId: string): MapPoint[] => {
     const reservation = GREATER_ACCRA_JUNCTION_LAYOUTS.find((item) => item.nodeId === nodeId);
     if (!reservation) return [...points];
+    // Only Circle currently has a dedicated grade-separated/ground-level
+    // junction package. Other reserved junctions have no connector geometry
+    // yet, so clipping them creates visible dead ends. Keep those approaches
+    // continuous and let them meet at grade until their interchanges are built.
+    if (nodeId !== "circle-junction") return [...points];
 
     const halfWidth = reservation.reserveWidthM / 2 + 25;
     const halfDepth = reservation.reserveDepthM / 2 + 25;
@@ -157,12 +163,56 @@ function createLineMesh(
   color: Color3
 ): Mesh | undefined {
   if (lines.length === 0) return undefined;
-  const mesh = MeshBuilder.CreateLineSystem(name, { lines, updatable: false }, scene);
-  mesh.color = color;
-  mesh.alpha = 1;
+  // Use shallow ribbon-like quads instead of one-pixel WebGL lines. This keeps
+  // road paint readable at mobile render scale and avoids stair-stepped edges.
+  const width = color === EDGE_WHITE ? 0.18 : color === CENTRE_YELLOW ? 0.22 : 0.24;
+  const positions: number[] = [];
+  const indices: number[] = [];
+  for (const line of lines) {
+    for (let index = 1; index < line.length; index += 1) {
+      const start = line[index - 1];
+      const end = line[index];
+      const dx = end.x - start.x;
+      const dz = end.z - start.z;
+      const length = Math.hypot(dx, dz);
+      if (length < 0.01) continue;
+      const halfX = (dz / length) * width / 2;
+      const halfZ = (-dx / length) * width / 2;
+      const base = positions.length / 3;
+      positions.push(
+        start.x + halfX, start.y, start.z + halfZ,
+        start.x - halfX, start.y, start.z - halfZ,
+        end.x + halfX, end.y, end.z + halfZ,
+        end.x - halfX, end.y, end.z - halfZ
+      );
+      indices.push(base, base + 1, base + 2, base + 1, base + 3, base + 2);
+    }
+  }
+  if (indices.length === 0) return undefined;
+  const normals: number[] = [];
+  VertexData.ComputeNormals(positions, indices, normals);
+  const vertexData = new VertexData();
+  vertexData.positions = positions;
+  vertexData.indices = indices;
+  vertexData.normals = normals;
+  const mesh = new Mesh(name, scene);
+  vertexData.applyToMesh(mesh, false);
+  const materialName = color === EDGE_WHITE
+    ? "akwantuo-road-edge-paint-material"
+    : "akwantuo-road-lane-paint-material";
+  let material = scene.getMaterialByName(materialName);
+  if (!(material instanceof StandardMaterial)) {
+    material = new StandardMaterial(materialName, scene);
+    material.diffuseColor = color;
+    material.emissiveColor = color.scale(0.12);
+    material.specularColor = new Color3(0, 0, 0);
+    material.backFaceCulling = false;
+  }
+  mesh.material = material;
   mesh.isPickable = false;
   mesh.checkCollisions = false;
-  mesh.renderingGroupId = 1;
+  // Opaque pass preserves depth testing: vehicles must occlude paint beneath them.
+  mesh.renderingGroupId = 0;
   return mesh;
 }
 
@@ -203,7 +253,10 @@ export function createRoadSegmentMarkings(
   for (const side of [-1, 1] as const) {
     const inner = offsetPath(points, normals, side * innerEdge, y);
     const outer = offsetPath(points, normals, side * outerEdge, y);
-    solidLines.push(inner, outer);
+    // Divided roads have a painted inner edge on each carriageway. On
+    // undivided two-way roads the centre is marked once in yellow below.
+    if (profile.medianWidthM > 0) solidLines.push(inner);
+    solidLines.push(outer);
 
     for (let lane = 1; lane < profile.lanesPerDirection; lane += 1) {
       const dividerOffset = innerEdge + lane * profile.laneWidthM;
@@ -217,6 +270,16 @@ export function createRoadSegmentMarkings(
   const dashed = createLineMesh(scene, `${roadSegmentId}-lane-markings`, dashedLines, WHITE);
   if (solid) meshes.push(solid);
   if (dashed) meshes.push(dashed);
+  if (profile.medianWidthM === 0) {
+    const centre = offsetPath(points, normals, 0, y + 0.003);
+    const centreMarking = createLineMesh(
+      scene,
+      `${roadSegmentId}-yellow-centre-marking`,
+      [centre],
+      CENTRE_YELLOW
+    );
+    if (centreMarking) meshes.push(centreMarking);
+  }
   return meshes;
 }
 

@@ -1,10 +1,12 @@
 import { findShortestRoadRoute, isRoadRouteValid } from "./roadRouting";
-import { GREATER_ACCRA_ROAD_PATHS } from "./greaterAccraLayout";
+import { GREATER_ACCRA_MAP_EXTENT, GREATER_ACCRA_ROAD_PATHS } from "./greaterAccraLayout";
+import { WORLD_CONFIG } from "./config";
 import { findNearestRoadProjection, getRoadLaneCenterOffset, getRoadLaneCenterPoint, isPointOnRoadNetwork, isRoadProjectionValid } from "./roadNavigation";
 import { isGreaterAccraMapLayoutValid } from "./greaterAccraLayout";
 import { isGreaterAccraRailNetworkValid } from "./railNetwork";
 import { isGreaterAccraTrackDesignValid } from "./railTrackDesign";
 import { isGreaterAccraRoadDesignCatalogueValid } from "./roadDesign";
+import { GREATER_ACCRA_TRAFFIC_RULES, isGreaterAccraTrafficRulesValid } from "./trafficRules";
 import { isPedestrianCrossingLayoutValid } from "./pedestrianCrossingGeometry";
 import { getTrafficSignalState, isTrafficSignalPlanValid, mayProceedOnTrafficSignal } from "./trafficSignals";
 import {
@@ -35,6 +37,7 @@ import { GREATER_ACCRA_PUBLIC_TRANSPORT_ROUTE_PLANS, isGreaterAccraPublicTranspo
 import { isBuildingCatalogueValid, DISTRICT_BUILDINGS } from "./ghanaianStreetBuildings";
 import { isDistrictPropertyCatalogueValid } from "./districtProperties";
 import { INTERIOR_BLUEPRINTS, isInteriorBlueprintCatalogueValid } from "./interiorBlueprints";
+import { isCircleRampGroundAccessLayoutValid } from "./circleGroundAccessGeometry";
 
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error("Transport smoke check failed: " + message);
@@ -56,16 +59,25 @@ function expectThrow(action: () => unknown, message: string): void {
  * railway certification, or authoritative multiplayer validation.
  */
 export function runTransportSmokeChecks(): void {
-  assert(isBuildingCatalogueValid(), "Ghanaian building catalogue has unique, dimensionally valid entries across every planned building use");
+  assert(isBuildingCatalogueValid(), "Ghanaian building footprints are unique, non-overlapping and clear of every playable primary-road corridor");
   assert(isDistrictPropertyCatalogueValid(), "district property records match buildings and cannot grant client-side ownership");
   assert(isInteriorBlueprintCatalogueValid(), "business, home and convenience-store interior plans have valid dimensions and fixture placements");
   const interiorIds = new Set(INTERIOR_BLUEPRINTS.map((blueprint) => blueprint.id));
   assert(DISTRICT_BUILDINGS.every((building) => !building.interiorId || interiorIds.has(building.interiorId)),
     "every advertised building interior resolves to a known interior blueprint");
   assert(isGreaterAccraMapLayoutValid(), "Greater Accra map nodes, roads and coastline validate");
+  assert(WORLD_CONFIG.bounds.maxZ === GREATER_ACCRA_MAP_EXTENT.maxZ &&
+    WORLD_CONFIG.bounds.playerMaxZ < GREATER_ACCRA_MAP_EXTENT.maxZ &&
+    WORLD_CONFIG.bounds.playerMaxZ >= GREATER_ACCRA_MAP_EXTENT.maxZ - 200,
+    "player movement bounds cover the full Accra–Kumasi map without allowing travel beyond its northern edge");
   assert(isGreaterAccraRailNetworkValid(), "Greater Accra Cape-gauge rail routes and station nodes validate");
   assert(isGreaterAccraTrackDesignValid(), "Greater Accra rail track design assignments validate");
   assert(isGreaterAccraRoadDesignCatalogueValid(), "Greater Accra road cross-section assignments validate");
+  assert(isGreaterAccraTrafficRulesValid() && GREATER_ACCRA_TRAFFIC_RULES.driveSide === "left" &&
+    GREATER_ACCRA_TRAFFIC_RULES.overtakeSide === "right" &&
+    GREATER_ACCRA_TRAFFIC_RULES.roundaboutCirculation === "clockwise",
+    "Greater Accra traffic follows Ghana left-hand driving, right-side overtaking and clockwise roundabout circulation");
+  assert(isCircleRampGroundAccessLayoutValid(), "both Circle overpass ramp feet have a nearby tie-in to an authored ground approach");
   assert(isGreaterAccraPublicTransportRouteCatalogueValid() &&
     GREATER_ACCRA_PUBLIC_TRANSPORT_ROUTE_PLANS.length === 4,
     "Greater Accra proposed public transport corridors validate against the primary-road graph");
@@ -134,8 +146,21 @@ export function runTransportSmokeChecks(): void {
   assert(!!futureRoute && futureRoute.includesFutureExpansion &&
     isRoadRouteValid(futureRoute, { includeFutureExpansion: true }),
     "future expansion can be previewed when explicitly enabled");
-  assert(findShortestRoadRoute("achimota-interchange", "mallam-junction") === null,
-    "disconnected primary-road components do not invent a connecting route");
+  const circleToOfankor = findShortestRoadRoute("circle-junction", "ofankor-junction");
+  assert(!!circleToOfankor && isRoadRouteValid(circleToOfankor) &&
+    circleToOfankor.roadSegmentIds.includes("n6-circle-caprice") &&
+    circleToOfankor.roadSegmentIds.includes("n6-achimota-ofankor"),
+    "N6 connects Circle through Caprice, Alajo, Apenkwa and Achimota to Ofankor");
+  const accraToKumasi = findShortestRoadRoute("circle-junction", "kumasi-gateway");
+  assert(!!accraToKumasi && isRoadRouteValid(accraToKumasi) &&
+    accraToKumasi.roadSegmentIds.includes("n6-nsawam-suhum") &&
+    accraToKumasi.roadSegmentIds.includes("n6-ejisu-kumasi") &&
+    !accraToKumasi.includesFutureExpansion,
+    "N6 connects Accra through Nsawam, Suhum, Bunso, Anyinam, Nkawkaw, Konongo and Ejisu to Kumasi");
+  const achimotaToMallam = findShortestRoadRoute("achimota-interchange", "mallam-junction");
+  assert(!!achimotaToMallam && isRoadRouteValid(achimotaToMallam) &&
+    achimotaToMallam.roadSegmentIds.length > 0,
+    "the N6 and N1 form a connected Achimota-to-Mallam primary-road route");
 
   const firstRoad = GREATER_ACCRA_ROAD_PATHS.find((road) => road.roadSegmentId === "n1-west-approach");
   assert(!!firstRoad, "first-release N1 road path exists for road projection");
@@ -166,14 +191,14 @@ export function runTransportSmokeChecks(): void {
   assert(Number.isFinite(laneCentre.x) && Number.isFinite(laneCentre.z) &&
     isPointOnRoadNetwork(laneCentre.x, laneCentre.z, { maxDistanceM: 10 }),
     "computed lane centres fall inside the drivable carriageway");
-  const futureRoad = GREATER_ACCRA_ROAD_PATHS.find((road) => road.roadSegmentId === "n6-nsawam-expansion");
-  assert(!!futureRoad, "future Nsawam road stub exists in the planning catalogue");
+  const futureRoad = GREATER_ACCRA_ROAD_PATHS.find((road) => road.roadSegmentId === "n2-prampram-expansion");
+  assert(!!futureRoad, "future Prampram road stub exists in the planning catalogue");
   const futurePoint = futureRoad.points[1];
   assert(findNearestRoadProjection(futurePoint.x, futurePoint.z, { maxDistanceM: 1 }) === null,
     "future road stubs are excluded from normal road projection");
   const futureProjection = findNearestRoadProjection(futurePoint.x, futurePoint.z,
     { maxDistanceM: 1, includeFutureExpansion: true });
-  assert(!!futureProjection && futureProjection.roadSegmentId === "n6-nsawam-expansion" &&
+  assert(!!futureProjection && futureProjection.roadSegmentId === "n2-prampram-expansion" &&
     !futureProjection.playableInFirstRelease,
     "future road stubs can be projected only when explicitly enabled");
 

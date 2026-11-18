@@ -95,7 +95,17 @@ export const GREATER_ACCRA_REGIONS: readonly WorldRegion[] = [
     kind: "town",
     parentId: "greater-accra",
     status: "planned"
-  }
+  },
+  { id: "pokuase", name: "Pokuase", kind: "town", parentId: "greater-accra", status: "planned" },
+  { id: "amasaman", name: "Amasaman", kind: "town", parentId: "greater-accra", status: "planned" },
+  { id: "nsawam", name: "Nsawam", kind: "town", parentId: null, status: "planned" },
+  { id: "suhum", name: "Suhum", kind: "town", parentId: null, status: "planned" },
+  { id: "bunso", name: "Bunso", kind: "town", parentId: null, status: "planned" },
+  { id: "anyinam", name: "Anyinam", kind: "town", parentId: null, status: "planned" },
+  { id: "nkawkaw", name: "Nkawkaw", kind: "town", parentId: null, status: "planned" },
+  { id: "konongo", name: "Konongo", kind: "town", parentId: null, status: "planned" },
+  { id: "ejisu", name: "Ejisu", kind: "town", parentId: null, status: "planned" },
+  { id: "kumasi", name: "Kumasi", kind: "town", parentId: null, status: "planned" }
 ] as const;
 
 export const GREATER_ACCRA_REGION_IDS = GREATER_ACCRA_REGIONS.map((region) => region.id);

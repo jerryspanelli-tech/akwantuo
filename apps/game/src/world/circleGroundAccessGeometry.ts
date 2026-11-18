@@ -8,12 +8,15 @@ import {
 } from "@babylonjs/core";
 import { getMapNodePosition } from "./greaterAccraLayout";
 import { CIRCLE_GROUND_ACCESS_ROUTES } from "./circleGroundAccess";
+import { CIRCLE_FEO_OYEO_RAMPS } from "./circleInterchangeElevatedLayout";
+import { CIRCLE_GROUND_ROUNDABOUT_LAYOUT } from "./circleInterchangeGroundLevel";
 
 export type CircleAccessPathPoint = Readonly<{
   name: string;
   /** Metres relative to the Circle centre node. */
   x: number;
   z: number;
+  elevationM?: number;
 }>;
 
 export type CircleAccessPathLayout = Readonly<{
@@ -69,6 +72,10 @@ export const CIRCLE_ACCESS_PATH_LAYOUTS: readonly CircleAccessPathLayout[] = [
 ] as const;
 
 function materialFor(scene: Scene, surface: CircleAccessPathLayout["surface"]): StandardMaterial {
+  if (surface === "asphalt") {
+    const sharedRoadMaterial = scene.getMaterialByName("akwantuo-road-asphalt");
+    if (sharedRoadMaterial instanceof StandardMaterial) return sharedRoadMaterial;
+  }
   const name = surface === "asphalt"
     ? "akwantuo-circle-local-asphalt"
     : "akwantuo-circle-pedestrian-paving";
@@ -105,12 +112,12 @@ function createPathMesh(
     const normalZ = -dx / length;
     left.push(new Vector3(
       centreX + point.x + normalX * halfWidth,
-      layout.surface === "pedestrian_paving" ? 0.12 : 0.08,
+      point.elevationM ?? (layout.surface === "pedestrian_paving" ? 0.12 : 0.08),
       centreZ + point.z + normalZ * halfWidth
     ));
     right.push(new Vector3(
       centreX + point.x - normalX * halfWidth,
-      layout.surface === "pedestrian_paving" ? 0.12 : 0.08,
+      point.elevationM ?? (layout.surface === "pedestrian_paving" ? 0.12 : 0.08),
       centreZ + point.z - normalZ * halfWidth
     ));
   });
@@ -130,6 +137,37 @@ export type CircleGroundAccessGeometryResult = Readonly<{
   pedestrianAccessPaths: readonly Mesh[];
 }>;
 
+/**
+ * Checks that both elevated-ramp feet have a short, deterministic tie-in to
+ * one of the authored ground-level Circle approach arms.
+ */
+export function isCircleRampGroundAccessLayoutValid(): boolean {
+  if (CIRCLE_FEO_OYEO_RAMPS.length !== 2) return false;
+  return CIRCLE_FEO_OYEO_RAMPS.every((ramp) => {
+    const foot = ramp.points.reduce((lowest, point) => point.y < lowest.y ? point : lowest);
+    const nearest = CIRCLE_GROUND_ROUNDABOUT_LAYOUT.approaches.map((approach) => {
+      const directionX = Math.sin(approach.bearingRadians);
+      const directionZ = Math.cos(approach.bearingRadians);
+      const along = foot.x * directionX + foot.z * directionZ;
+      const projectedX = directionX * along;
+      const projectedZ = directionZ * along;
+      return {
+        along,
+        distanceM: Math.hypot(foot.x - projectedX, foot.z - projectedZ),
+        roadHalfWidthM: approach.roadWidthM / 2,
+        roadLengthM: approach.roadLengthM
+      };
+    }).filter((candidate) =>
+        candidate.along >= CIRCLE_GROUND_ROUNDABOUT_LAYOUT.outerRadiusM - 8 &&
+        candidate.along <= CIRCLE_GROUND_ROUNDABOUT_LAYOUT.outerRadiusM +
+          candidate.roadLengthM - 8
+      )
+      .sort((a, b) => a.distanceM - b.distanceM)[0];
+    return !!nearest && nearest.distanceM <= 80 &&
+      nearest.roadHalfWidthM > 0 && ramp.deckWidthM > 0;
+  });
+}
+
 /** Builds provisional local access surfaces around the Circle preview. */
 export function createCircleGroundAccessGeometry(
   scene: Scene
@@ -145,10 +183,54 @@ export function createCircleGroundAccessGeometry(
   const meshes = CIRCLE_ACCESS_PATH_LAYOUTS.map((layout) =>
     createPathMesh(scene, layout, centre.x, centre.z)
   );
+
+  // Join each ramp foot to the nearest actual ground-level approach arm.
+  // The connector endpoint is projected onto the authored approach centreline,
+  // so it overlaps the road surface instead of stopping short beside it.
+  const rampGroundConnectors: CircleAccessPathLayout[] = CIRCLE_FEO_OYEO_RAMPS.map((ramp) => {
+    const foot = ramp.points.reduce((lowest, point) => point.y < lowest.y ? point : lowest);
+    const candidates = CIRCLE_GROUND_ROUNDABOUT_LAYOUT.approaches.map((approach) => {
+      const directionX = Math.sin(approach.bearingRadians);
+      const directionZ = Math.cos(approach.bearingRadians);
+      const along = foot.x * directionX + foot.z * directionZ;
+      const projectedX = directionX * along;
+      const projectedZ = directionZ * along;
+      return {
+        approach,
+        projectedX,
+        projectedZ,
+        distanceM: Math.hypot(foot.x - projectedX, foot.z - projectedZ),
+        along
+      };
+    }).filter((candidate) =>
+        candidate.along >= CIRCLE_GROUND_ROUNDABOUT_LAYOUT.outerRadiusM - 8 &&
+        candidate.along <= CIRCLE_GROUND_ROUNDABOUT_LAYOUT.outerRadiusM +
+          candidate.approach.roadLengthM - 8
+      )
+      .sort((a, b) => a.distanceM - b.distanceM);
+    const nearest = candidates[0];
+    if (!nearest || nearest.distanceM > 80) {
+      throw new Error(`Circle ramp ${ramp.id} has no nearby ground-road approach for a safe surface tie-in.`);
+    }
+    return {
+      routeId: ramp.id + "-ground-approach-connector",
+      widthM: Math.min(ramp.deckWidthM, nearest.approach.roadWidthM - 2),
+      surface: "asphalt" as const,
+      points: [
+        { name: "Ramp ground foot", x: foot.x, z: foot.z, elevationM: foot.y },
+        { name: nearest.approach.id + " road centreline", x: nearest.projectedX, z: nearest.projectedZ, elevationM: 0.055 }
+      ],
+      designNote: "Ground-level connector joins the ramp foot to the nearest authored Circle approach surface."
+    };
+  });
+  const connectorMeshes = rampGroundConnectors.map((layout) =>
+    createPathMesh(scene, layout, centre.x, centre.z)
+  );
   return {
-    vehicleAccessRoads: meshes.filter((_, index) =>
-      CIRCLE_ACCESS_PATH_LAYOUTS[index].surface === "asphalt"
-    ),
+    vehicleAccessRoads: [
+      ...meshes.filter((_, index) => CIRCLE_ACCESS_PATH_LAYOUTS[index].surface === "asphalt"),
+      ...connectorMeshes
+    ],
     pedestrianAccessPaths: meshes.filter((_, index) =>
       CIRCLE_ACCESS_PATH_LAYOUTS[index].surface === "pedestrian_paving"
     )

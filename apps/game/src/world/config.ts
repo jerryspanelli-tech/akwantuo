@@ -6,7 +6,7 @@ export const WORLD_CONFIG = {
   coordinateUnit: "metres",
   ground: {
     width: 21000,
-    depth: 13500
+    depth: 37500
   },
   road: {
     width: 13,
@@ -16,11 +16,11 @@ export const WORLD_CONFIG = {
     minX: -8000,
     maxX: 13000,
     minZ: -5000,
-    maxZ: 8500,
+    maxZ: 32500,
     playerMinX: -7900,
     playerMaxX: 12900,
     playerMinZ: -4900,
-    playerMaxZ: 8400
+    playerMaxZ: 32400
   },
   spawn: {
     x: 1100,
@@ -33,7 +33,7 @@ export const WORLD_CONFIG = {
     sunlightIntensity: 0.9
   },
   movement: {
-    walkSpeed: 5.2,
+    maxSpeed: 12.0,
     gravity: 17,
     jumpVelocity: 6.3,
     collisionRadius: 0.48

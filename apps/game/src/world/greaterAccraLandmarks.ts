@@ -315,6 +315,37 @@ function yieldToNextFrame(): Promise<void> {
   return new Promise((resolve) => requestAnimationFrame(() => resolve()));
 }
 
+/**
+ * Builds the connected Osu street loop needed by the first visible local traffic
+ * prototype. Keeping this separate avoids loading all 35 neighbourhood roads
+ * and their ribbon meshes on mobile before the rest of the map is ready.
+ */
+export function createOsuLocalRoads(scene: Scene): number {
+  const firstMeshIndex = scene.meshes.length;
+  // A compact local street loop around the Osu spawn area. The parallel
+  // streets sit either side of the nearby shop block; end connectors keep
+  // traffic on a continuous road rather than driving off a dead-end.
+  addRoad(scene, "osu-residential-street", [
+    { x: 650, z: -1200 }, { x: 950, z: -1200 }, { x: 1300, z: -1200 }, { x: 1700, z: -1200 }
+  ], 11);
+  addRoad(scene, "osu-oxford-street-link", [
+    { x: 650, z: -1300 }, { x: 950, z: -1300 }, { x: 1300, z: -1300 }, { x: 1700, z: -1300 }
+  ], 11);
+  addRoad(scene, "osu-west-street-connector", [
+    { x: 650, z: -1300 }, { x: 650, z: -1265 }, { x: 650, z: -1235 }, { x: 650, z: -1200 }
+  ], 10);
+  addRoad(scene, "osu-east-street-connector", [
+    { x: 1700, z: -1300 }, { x: 1700, z: -1265 }, { x: 1700, z: -1235 }, { x: 1700, z: -1200 }
+  ], 10);
+  const materials = new Set<Material>();
+  for (const mesh of scene.meshes.slice(firstMeshIndex)) {
+    mesh.freezeWorldMatrix();
+    if (mesh.material) materials.add(mesh.material);
+  }
+  for (const material of materials) material.freeze();
+  return 4;
+}
+
 export async function createGreaterAccraLandmarks(
   scene: Scene,
   options: { includeLocalRoads?: boolean } = {}

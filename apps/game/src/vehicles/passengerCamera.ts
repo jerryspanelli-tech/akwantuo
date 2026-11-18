@@ -36,6 +36,7 @@ export class PassengerCameraRig {
     this.previousCamera = scene.activeCamera;
     this.camera = new UniversalCamera("akwantuo-passenger-camera", Vector3.Zero(), scene);
     this.camera.minZ = 0.05;
+    this.camera.fov = 0.95;
     this.camera.speed = 0;
     this.camera.angularSensibility = 2400;
     this.camera.touchAngularSensibility = 4200;
@@ -64,7 +65,7 @@ export class PassengerCameraRig {
     this.camera.detachControl();
     this.attachedCanvas = null;
     this.mode = mode;
-    this.camera.rotation.set(0, 0, 0);
+    this.camera.rotation.set(mode === "exterior_follow" ? 0.18 : 0, 0, 0);
 
     if (mode === "exterior_follow") {
       this.camera.parent = this.anchors.exteriorFollow;

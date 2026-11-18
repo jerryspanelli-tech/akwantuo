@@ -57,7 +57,7 @@ These coordinates are **game-layout approximations** intended to preserve the ag
 `apps/game/src/world/roadNetwork.ts` contains a topology-only first pass for the major Greater Accra corridors:
 
 - N1 western, central and Tema-facing segments
-- N6 Achimota–Ofankor, with a separate future Nsawam expansion gateway
+- N6 Accra–Kumasi corridor through Ofankor, Pokuase, Amasaman, Nsawam, Suhum, Bunso, Anyinam, Nkawkaw, Konongo and Ejisu
 - N4 Madina–Adenta
 - Liberation Road
 - Ring Road Central and the coastal connection

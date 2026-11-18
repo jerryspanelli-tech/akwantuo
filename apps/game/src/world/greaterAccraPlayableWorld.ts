@@ -1,6 +1,8 @@
 import {
   Color3,
   Color4,
+  DynamicTexture,
+  Mesh,
   MeshBuilder,
   Scene,
   StandardMaterial,
@@ -8,7 +10,8 @@ import {
 } from "@babylonjs/core";
 import {
   GREATER_ACCRA_COASTLINE,
-  GREATER_ACCRA_MAP_EXTENT
+  GREATER_ACCRA_MAP_EXTENT,
+  GREATER_ACCRA_REGION_ANCHORS
 } from "./greaterAccraLayout";
 import { createGreaterAccraRoadGeometry } from "./roadGeometry";
 import { createGreaterAccraRoadMarkings } from "./roadMarkingGeometry";
@@ -27,7 +30,81 @@ export type GreaterAccraPlayableWorldReport = Readonly<{
   circleElevatedStructureCount: number;
   railRoadCrossingCandidateCount: number;
   publicTransportCorridorCount: number;
+  n6TownSignCount: number;
 }>;
+
+const N6_TOWN_SIGN_LABELS = [
+  ["pokuase", "POKUASE"],
+  ["amasaman", "AMASAMAN"],
+  ["nsawam", "NSAWAM"],
+  ["suhum", "SUHUM"],
+  ["bunso", "BUNSO"],
+  ["anyinam", "ANYINAM"],
+  ["nkawkaw", "NKAWKAW"],
+  ["konongo", "KONONGO"],
+  ["ejisu", "EJISU"],
+  ["kumasi", "KUMASI"]
+] as const;
+
+/** Small roadside wayfinding signs make the intercity corridor readable in play. */
+function createN6TownSigns(scene: Scene): number {
+  const postMaterial = new StandardMaterial("n6-town-sign-post-material", scene);
+  postMaterial.diffuseColor = new Color3(0.22, 0.25, 0.23);
+  const labels = new Map<string, (typeof GREATER_ACCRA_REGION_ANCHORS)[number]>();
+  for (const anchor of GREATER_ACCRA_REGION_ANCHORS) labels.set(anchor.regionId, anchor);
+  for (const [regionId, label] of N6_TOWN_SIGN_LABELS) {
+    const anchor = labels.get(regionId);
+    if (!anchor) throw new Error("Missing N6 town sign anchor for " + regionId);
+    const texture = new DynamicTexture(
+      "n6-town-sign-texture-" + regionId,
+      { width: 256, height: 96 },
+      scene,
+      false
+    );
+    const context = texture.getContext();
+    context.fillStyle = "#174b3b";
+    context.fillRect(0, 0, 256, 96);
+    context.strokeStyle = "#f1e8c9";
+    context.lineWidth = 6;
+    context.strokeRect(4, 4, 248, 88);
+    context.fillStyle = "#f1e8c9";
+    context.font = "bold 24px Arial";
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    context.fillText("N6", 42, 48);
+    context.fillRect(76, 20, 2, 56);
+    context.font = "bold 25px Arial";
+    context.fillText(label, 165, 48, 166);
+    texture.update(false);
+
+    const signMaterial = new StandardMaterial("n6-town-sign-material-" + regionId, scene);
+    signMaterial.diffuseTexture = texture;
+    signMaterial.emissiveColor = new Color3(0.12, 0.12, 0.1);
+    signMaterial.backFaceCulling = false;
+    const signX = anchor.x + 30;
+    const board = MeshBuilder.CreatePlane("n6-town-sign-board-" + regionId, {
+      width: 5.2,
+      height: 2.1,
+      sideOrientation: Mesh.DOUBLESIDE
+    }, scene);
+    board.position.set(signX, 4.1, anchor.z);
+    board.material = signMaterial;
+    board.isPickable = false;
+    board.checkCollisions = false;
+    for (const side of [-1, 1]) {
+      const post = MeshBuilder.CreateCylinder("n6-town-sign-post-" + regionId + "-" + side, {
+        height: 3.4,
+        diameter: 0.14,
+        tessellation: 8
+      }, scene);
+      post.position.set(signX + side * 2.15, 1.7, anchor.z);
+      post.material = postMaterial;
+      post.isPickable = false;
+      post.checkCollisions = false;
+    }
+  }
+  return N6_TOWN_SIGN_LABELS.length;
+}
 
 /**
  * Adds the first Greater Accra transport corridors to the main playable scene.
@@ -40,6 +117,11 @@ export function createGreaterAccraPlayableWorld(
 ): GreaterAccraPlayableWorldReport {
   const firstNewMeshIndex = scene.meshes.length;
   scene.clearColor = new Color4(0.66, 0.76, 0.79, 1);
+  // Light distance haze softens the hard horizon while preserving visibility
+  // along the long Accra–Kumasi corridor.
+  scene.fogMode = Scene.FOGMODE_EXP2;
+  scene.fogColor = new Color3(0.66, 0.76, 0.79);
+  scene.fogDensity = 0.000025;
 
   const land = MeshBuilder.CreateGround("greater-accra-playable-land", {
     width: GREATER_ACCRA_MAP_EXTENT.widthM,
@@ -52,8 +134,43 @@ export function createGreaterAccraPlayableWorld(
     (GREATER_ACCRA_MAP_EXTENT.minZ + GREATER_ACCRA_MAP_EXTENT.maxZ) / 2
   );
   const landMaterial = new StandardMaterial("greater-accra-playable-land-material", scene);
-  landMaterial.diffuseColor = new Color3(0.52, 0.55, 0.43);
-  landMaterial.specularColor = new Color3(0.02, 0.02, 0.02);
+  // A single small, repeatable texture gives the large map readable ground
+  // variation without adding thousands of terrain meshes or expensive passes.
+  const terrainTexture = new DynamicTexture(
+    "greater-accra-terrain-detail",
+    { width: 512, height: 512 },
+    scene,
+    false
+  );
+  const terrainContext = terrainTexture.getContext();
+  terrainContext.fillStyle = "#777b58";
+  terrainContext.fillRect(0, 0, 512, 512);
+  const terrainPatchColours = ["#69764f", "#85805a", "#9a8b63", "#626f50", "#8b9066"];
+  for (let index = 0; index < 460; index += 1) {
+    const x = (index * 73 + 29) % 512;
+    const z = (index * 191 + 47) % 512;
+    const radiusX = 3 + (index * 17) % 13;
+    const radiusZ = 2 + (index * 11) % 9;
+    terrainContext.globalAlpha = 0.12 + (index % 5) * 0.025;
+    terrainContext.fillStyle = terrainPatchColours[index % terrainPatchColours.length];
+    terrainContext.beginPath();
+    terrainContext.ellipse(x, z, radiusX, radiusZ, (index % 7) * 0.18, 0, Math.PI * 2);
+    terrainContext.fill();
+  }
+  terrainContext.globalAlpha = 0.16;
+  for (let index = 0; index < 2600; index += 1) {
+    const x = (index * 97 + 13) % 512;
+    const z = (index * 193 + 31) % 512;
+    terrainContext.fillStyle = index % 2 === 0 ? "#4f6048" : "#c0aa76";
+    terrainContext.fillRect(x, z, 1 + (index % 3), 1);
+  }
+  terrainContext.globalAlpha = 1;
+  terrainTexture.update(false);
+  terrainTexture.uScale = 90;
+  terrainTexture.vScale = 160;
+  landMaterial.diffuseTexture = terrainTexture;
+  landMaterial.diffuseColor = new Color3(0.96, 0.97, 0.9);
+  landMaterial.specularColor = new Color3(0.015, 0.015, 0.015);
   land.material = landMaterial;
   land.isPickable = false;
   land.checkCollisions = false;
@@ -65,8 +182,33 @@ export function createGreaterAccraPlayableWorld(
   }, scene);
   ocean.position.set(2500, -0.08, -6900);
   const oceanMaterial = new StandardMaterial("greater-accra-playable-gulf-material", scene);
-  oceanMaterial.diffuseColor = new Color3(0.12, 0.36, 0.46);
-  oceanMaterial.specularColor = new Color3(0.12, 0.16, 0.18);
+  const waterTexture = new DynamicTexture(
+    "greater-accra-gulf-detail",
+    { width: 256, height: 256 },
+    scene,
+    false
+  );
+  const waterContext = waterTexture.getContext();
+  waterContext.fillStyle = "#1c5261";
+  waterContext.fillRect(0, 0, 256, 256);
+  for (let index = 0; index < 170; index += 1) {
+    const x = (index * 47 + 19) % 256;
+    const z = (index * 83 + 11) % 256;
+    waterContext.globalAlpha = 0.08 + (index % 4) * 0.025;
+    waterContext.strokeStyle = index % 2 === 0 ? "#9bc0bd" : "#477f88";
+    waterContext.lineWidth = 1 + (index % 2);
+    waterContext.beginPath();
+    waterContext.moveTo(x, z);
+    waterContext.quadraticCurveTo(x + 9, z - 4, x + 20, z + 1);
+    waterContext.stroke();
+  }
+  waterContext.globalAlpha = 1;
+  waterTexture.update(false);
+  waterTexture.uScale = 42;
+  waterTexture.vScale = 16;
+  oceanMaterial.diffuseTexture = waterTexture;
+  oceanMaterial.diffuseColor = new Color3(0.9, 0.97, 1);
+  oceanMaterial.specularColor = new Color3(0.08, 0.12, 0.14);
   ocean.material = oceanMaterial;
   ocean.isPickable = false;
   ocean.checkCollisions = false;
@@ -83,7 +225,8 @@ export function createGreaterAccraPlayableWorld(
   coast.checkCollisions = false;
 
   const roadMeshes = createGreaterAccraRoadGeometry(scene, { sampleSpacingM: 90 });
-  const roadMarkingMeshes = createGreaterAccraRoadMarkings(scene, { sampleSpacingM: 35 });
+  const roadMarkingMeshes = createGreaterAccraRoadMarkings(scene, { sampleSpacingM: 18, dashLengthM: 4.5, dashGapM: 5.5, lineHeightM: 0.095 });
+  const n6TownSignCount = createN6TownSigns(scene);
   const circle = createCircleInterchangeGeometry(scene);
   const railTracks = createGreaterAccraRailTrackGeometry(scene, { sleeperSpacingM: 1.2 });
   const railCrossingCandidates = deriveRailRoadCrossingCandidates();
@@ -133,6 +276,7 @@ export function createGreaterAccraPlayableWorld(
     plannedStationAnchorCount: GREATER_ACCRA_RAIL_STATIONS.filter((item) => item.status === "planned").length,
     circleElevatedStructureCount: Object.keys(circle.elevatedStructures).length,
     railRoadCrossingCandidateCount: railCrossingCandidates.length,
-    publicTransportCorridorCount: GREATER_ACCRA_PUBLIC_TRANSPORT_ROUTE_PLANS.length
+    publicTransportCorridorCount: GREATER_ACCRA_PUBLIC_TRANSPORT_ROUTE_PLANS.length,
+    n6TownSignCount
   };
 }
