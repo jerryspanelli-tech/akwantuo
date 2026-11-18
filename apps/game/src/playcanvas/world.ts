@@ -55,7 +55,7 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
   };
   const cylinder = (name: string, x: number, y: number, z: number, radius: number, height: number, mat: StandardMaterial) => {
     const entity = new Entity(name);
-    entity.addComponent("render", { type: "cylinder", material: mat, castShadows: true, receiveShadows: true });
+    entity.addComponent("render", { type: "cylinder", material: mat, castShadows: solid, receiveShadows: true });
     entity.setPosition(x, y, z);
     entity.setLocalScale(radius * 2, height, radius * 2);
     app.root.addChild(entity);
