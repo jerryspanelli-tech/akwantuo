@@ -88,6 +88,8 @@ const joystickStick = document.querySelector<HTMLElement>("#joystick-stick");
 const jumpButton = document.querySelector<HTMLButtonElement>("#jump-button");
 const interactButton = document.querySelector<HTMLButtonElement>("#interact-button");
 const vehicleViewButton = document.querySelector<HTMLButtonElement>("#vehicle-view-button");
+const vehiclePedals = document.querySelector<HTMLElement>("#vehicle-pedals");
+const vehicleGasButton = document.querySelector<HTMLButtonElement>("#vehicle-gas-button");
 const notice = document.querySelector<HTMLElement>("#notice");
 const characterButton = document.querySelector<HTMLButtonElement>("#character-button");
 const characterPanel = document.querySelector<HTMLElement>("#character-panel");
@@ -111,6 +113,7 @@ let jumpRequested = false;
 let hasEnteredWorld = false;
 let vehicleActionRequested = false;
 let vehicleBrake = false;
+let vehicleGas = false;
 let vehicleViewRequested = false;
 
 function readAppearanceForm(form: HTMLFormElement): CharacterAppearance {
@@ -1181,7 +1184,7 @@ async function start(): Promise<void> {
   window.addEventListener("keyup", (event: KeyboardEvent) => {
     pressedKeys.delete(event.key.toLowerCase());
   });
-  window.addEventListener("blur", () => { pressedKeys.clear(); vehicleBrake = false; });
+  window.addEventListener("blur", () => { pressedKeys.clear(); vehicleBrake = false; vehicleGas = false; });
   interactButton?.addEventListener("pointerdown", (event: PointerEvent) => {
     event.preventDefault();
     vehicleActionRequested = true;
@@ -1192,6 +1195,15 @@ async function start(): Promise<void> {
   vehicleViewButton?.addEventListener("pointerdown", (event: PointerEvent) => {
     event.preventDefault(); vehicleViewRequested = true;
   });
+  vehicleGasButton?.addEventListener("pointerdown", (event: PointerEvent) => {
+    event.preventDefault();
+    vehicleGas = true;
+    vehicleGasButton.setPointerCapture(event.pointerId);
+  });
+  const releaseVehicleGas = (): void => { vehicleGas = false; };
+  for (const eventName of ["pointerup", "pointercancel", "lostpointercapture"] as const) {
+    vehicleGasButton?.addEventListener(eventName, releaseVehicleGas);
+  }
   jumpButton?.addEventListener("pointerdown", (event: PointerEvent) => {
     event.preventDefault();
     jumpRequested = true;
@@ -1577,19 +1589,21 @@ async function start(): Promise<void> {
           camera.radius = activeWatercraftKind === "jet_ski" ? 8 : 11;
         } else {
           let steering = touchInput.x;
-          let throttle = touchInput.z;
+          let throttle = vehicleGas ? 1 : 0;
           if (pressedKeys.has("a") || pressedKeys.has("arrowleft")) steering -= 1;
           if (pressedKeys.has("d") || pressedKeys.has("arrowright")) steering += 1;
-          if (pressedKeys.has("w") || pressedKeys.has("arrowup")) throttle += 1;
-          if (pressedKeys.has("s") || pressedKeys.has("arrowdown")) throttle -= 1;
+          if (!vehicleGas && (pressedKeys.has("w") || pressedKeys.has("arrowup"))) throttle = 1;
+          if (!vehicleGas && (pressedKeys.has("s") || pressedKeys.has("arrowdown"))) throttle = -1;
           steering = Math.max(-1, Math.min(1, steering));
           throttle = Math.max(-1, Math.min(1, throttle));
+          const braking = vehicleBrake || pressedKeys.has(" ");
+          if (braking) throttle = Math.abs(vehicleState.speedMps) <= 0.35 ? -1 : 0;
           const next = advanceRoadVehicleElapsed({
             wheelbaseM: 2.65, maximumForwardSpeedMps: 16, maximumReverseSpeedMps: 4,
             maximumAccelerationMps2: 3.2, serviceBrakingMps2: 7,
             maximumSteeringAngleRadians: 0.48, rollingDragMps2: 0.45
           }, vehicleState, {
-            throttle, brake: vehicleBrake || pressedKeys.has(" ") ? 1 : 0, steering
+            throttle, brake: braking && Math.abs(vehicleState.speedMps) > 0.35 ? 1 : 0, steering
           }, rawDelta);
           const bounded = clampToWorld(next.x, next.z, {
             minX: WORLD_CONFIG.bounds.minX + 2.5, maxX: WORLD_CONFIG.bounds.maxX - 2.5,
@@ -1609,10 +1623,18 @@ async function start(): Promise<void> {
           camera.alpha = -Math.PI / 2 - vehicleState.headingRadians;
           camera.radius = 9;
         }
+        const drivingHudActive = interactionState.mode === "inside_vehicle";
+        joystick?.classList.toggle("is-driving", drivingHudActive);
+        vehiclePedals?.classList.toggle("is-hidden", !drivingHudActive);
         if (interactButton) {
           interactButton.hidden = false;
-          interactButton.textContent = passengerState.mode === "riding" ? "ALIGHT" : "EXIT";
-          interactButton.setAttribute("aria-label", passengerState.mode === "riding" ? "Alight from public transport" : "Exit vehicle");
+          if (drivingHudActive) {
+            interactButton.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V5.5A1.5 1.5 0 0 1 5.5 4H14v16M14 12h6m-3-3 3 3-3 3M7.5 7.5h3v5h-3z"/></svg><span>EXIT CAR</span>';
+            interactButton.setAttribute("aria-label", "Exit car");
+          } else {
+            interactButton.textContent = passengerState.mode === "riding" ? "ALIGHT" : "EXIT";
+            interactButton.setAttribute("aria-label", passengerState.mode === "riding" ? "Alight from public transport" : "Exit vehicle");
+          }
         }
         if (jumpButton) jumpButton.classList.add("is-hidden");
         if (vehicleViewButton) vehicleViewButton.classList.remove("is-hidden");
@@ -1639,6 +1661,12 @@ async function start(): Promise<void> {
           interactButton.hidden = !canInteract;
           interactButton.textContent = activeInterior ? "EXIT" : nearMappedRail || nearPreviewRail ? "BOARD" : "ENTER";
           interactButton.setAttribute("aria-label", activeInterior ? "Exit building" : nearMappedRail || nearPreviewRail ? "Board public transport" : "Enter nearby vehicle or building");
+        }
+        joystick?.classList.remove("is-driving");
+        vehiclePedals?.classList.add("is-hidden");
+        if (interactButton) {
+          interactButton.textContent = "ENTER";
+          interactButton.setAttribute("aria-label", "Enter nearby vehicle or building");
         }
         if (jumpButton) jumpButton.classList.remove("is-hidden");
         if (vehicleViewButton) vehicleViewButton.classList.add("is-hidden");
