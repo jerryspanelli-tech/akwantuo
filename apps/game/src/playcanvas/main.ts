@@ -160,19 +160,33 @@ async function boot() {
       void Promise.allSettled([loadClipContainer("idle.glb"), loadClipContainer("walk.glb")]).then((clipResults) => {
         const idleContainer = clipResults[0].status === "fulfilled" ? clipResults[0].value : null;
         const walkContainer = clipResults[1].status === "fulfilled" ? clipResults[1].value : null;
-        // PlayCanvas ContainerResource.animations contains AnimTrack objects
-        // directly (not Asset wrappers). Passing .resource here silently drops
-        // every clip and leaves the skinned model in its bind/T-pose.
+        // PlayCanvas ContainerResource.animations is an array of animation
+        // Assets. The AnimTrack is held in each Asset.resource; passing the
+        // Asset itself (or treating the array item as the track) leaves T-pose.
         const collectTracks = (clipContainer: any, fallbackName: string) =>
-          (clipContainer?.animations ?? []).map((track: any, index: number) => ({
-            track,
-            name: String(track?.name || (index === 0 ? fallbackName : `${fallbackName}-${index + 1}`))
-          }));
+          (clipContainer?.animations ?? []).map((animationAsset: any, index: number) => {
+            const track = animationAsset?.resource;
+            return {
+              track,
+              name: String(track?.name || animationAsset?.name ||
+                (index === 0 ? fallbackName : `${fallbackName}-${index + 1}`))
+            };
+          }).filter((entry: any) => !!entry.track);
         const namedClips = [
           ...collectTracks(idleContainer, "Idle_A"),
           ...collectTracks(walkContainer, "Walk"),
           ...collectTracks(container, "Character")
-        ].filter((entry: any) => !!entry.track);
+        ];
+        console.info("AKWANTUO animation assets loaded", {
+          idle: (idleContainer?.animations ?? []).map((asset: any) => ({
+            asset: asset?.name, track: asset?.resource?.name,
+            duration: asset?.resource?.duration, curves: asset?.resource?.curves?.length
+          })),
+          walk: (walkContainer?.animations ?? []).map((asset: any) => ({
+            asset: asset?.name, track: asset?.resource?.name,
+            duration: asset?.resource?.duration, curves: asset?.resource?.curves?.length
+          }))
+        });
         for (const entry of namedClips) {
           try {
             model.anim.assignAnimation(entry.name, entry.track);
