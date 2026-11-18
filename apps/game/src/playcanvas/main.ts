@@ -55,7 +55,10 @@ async function boot() {
   app.init(options);
   app.setCanvasFillMode(FILLMODE_FILL_WINDOW);
   app.setCanvasResolution(RESOLUTION_AUTO);
-  app.scene.ambientLight = new Color(0.38, 0.39, 0.34);
+  app.scene.ambientLight = new Color(0.48, 0.49, 0.46);
+  // Warm Accra daylight with a soft ambient fill, avoiding harsh flat lighting.
+  app.scene.gammaCorrection = 1;
+  app.scene.toneMapping = 1;
   app.start();
 
   const addBox = (name: string, x: number, y: number, z: number, sx: number, sy: number, sz: number, material: StandardMaterial, blocker = false) => {
@@ -168,10 +171,10 @@ async function boot() {
   app.assets.load(modelAsset);
 
   const camera = new Entity("Third person camera");
-  camera.addComponent("camera", { clearColor: new Color(0.55, 0.68, 0.72), fov: 62, farClip: 260 });
+  camera.addComponent("camera", { clearColor: new Color(0.68, 0.78, 0.83), fov: 62, farClip: 260 });
   app.root.addChild(camera);
   const sun = new Entity("Ghana afternoon sun");
-  sun.addComponent("light", { type: "directional", color: new Color(1, 0.88, 0.72), intensity: 1.5, castShadows: true, shadowDistance: 95, shadowResolution: 1024 });
+  sun.addComponent("light", { type: "directional", color: new Color(1, 0.82, 0.66), intensity: 1.35, castShadows: true, shadowDistance: 70, shadowResolution: 512 });
   sun.setEulerAngles(48, 32, 0);
   app.root.addChild(sun);
 
