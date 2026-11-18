@@ -113,8 +113,59 @@ async function boot() {
   player.setPosition(world.spawn.x, 0, world.spawn.z);
   app.root.addChild(player);
 
-  // Character rendering is intentionally disabled until a properly rigged and animated replacement is ready.
-  document.documentElement.dataset.akwantuoPlayerModel = "none";
+  // Load one self-contained, rigged GLB with its own idle/walk/run clips.
+  // No primitive body or T-pose fallback is created if the asset is missing.
+  let playerCharacter: Entity | null = null;
+  let playerAnimationNames = { idle: "", walk: "", run: "" };
+  let activePlayerAnimation = "";
+  document.documentElement.dataset.akwantuoPlayerModel = "loading";
+  const playerCharacterAsset = new Asset("AKWANTUO Ghanaian player", "container", {
+    url: "/assets/characters/generated/player.glb"
+  });
+  playerCharacterAsset.on("load", (loadedAsset: Asset) => {
+    try {
+      const container = loadedAsset.resource as any;
+      const animationAssets = Array.isArray(container?.animations) ? container.animations : [];
+      if (!container || animationAssets.length < 3) {
+        throw new Error(`Player GLB must contain embedded idle, walk and run clips; found ${animationAssets.length}`);
+      }
+      const character = container.instantiateRenderEntity({ castShadows: true });
+      character.name = "AKWANTUO Ghanaian 3D player";
+      player.addChild(character);
+      character.addComponent("anim", { activate: true });
+      const names: string[] = [];
+      for (const animationAsset of animationAssets) {
+        const track = animationAsset.resource;
+        const clipName = track?.name || animationAsset.name;
+        if (!track || !clipName) continue;
+        character.anim.assignAnimation(clipName, track);
+        names.push(clipName);
+      }
+      const findClip = (pattern: RegExp) => names.find((name) => pattern.test(name));
+      playerAnimationNames = {
+        idle: findClip(/idle/i) || "",
+        walk: findClip(/walk/i) || "",
+        run: findClip(/run/i) || ""
+      };
+      if (!playerAnimationNames.idle || !playerAnimationNames.walk || !playerAnimationNames.run) {
+        throw new Error(`Missing required locomotion clips. Loaded: ${names.join(", ")}`);
+      }
+      character.anim.baseLayer.play(playerAnimationNames.idle);
+      playerCharacter = character;
+      activePlayerAnimation = playerAnimationNames.idle;
+      document.documentElement.dataset.akwantuoPlayerModel = "animated-3d";
+      console.info("[AKWANTUO] Animated player ready", { clips: names, height: 1.8 });
+    } catch (error) {
+      console.error("[AKWANTUO] Player GLB could not be bound to its animations", error);
+      document.documentElement.dataset.akwantuoPlayerModel = "3d-unavailable";
+    }
+  });
+  playerCharacterAsset.on("error", (error: unknown) => {
+    console.error("[AKWANTUO] Player GLB failed to load", error);
+    document.documentElement.dataset.akwantuoPlayerModel = "3d-unavailable";
+  });
+  app.assets.add(playerCharacterAsset);
+  app.assets.load(playerCharacterAsset);
 
   const camera = new Entity("Third person camera");
   camera.addComponent("camera", { clearColor: new Color(0.68, 0.78, 0.83), fov: 62, farClip: 260 });
@@ -230,8 +281,8 @@ async function boot() {
     if (stick) stick.classList.toggle("sprinting", !inVehicle && Math.hypot(stickX, stickY) >= 0.84);
   };
   const enter = () => {
-    if (inVehicle) { inVehicle = false; const p = vehicle.getPosition(); player.setPosition(p.x - 2.4, 0, p.z); player.enabled = true; vehicleSpeed = 0; grounded = true; showNotice("You exited the taxi"); }
-    else if (canEnter()) { inVehicle = true; const p = vehicle.getPosition(); player.setPosition(p.x, 0, p.z); player.enabled = false; vehicleSpeed = 0; showNotice("Taxi entered · use accelerator, reverse and steering controls"); }
+    if (inVehicle) { inVehicle = false; const p = vehicle.getPosition(); player.setPosition(p.x - 2.4, 0, p.z); player.enabled = true; vehicleSpeed = 0; grounded = true; if (playerCharacter) playerCharacter.enabled = true; showNotice("You exited the taxi"); }
+    else if (canEnter()) { inVehicle = true; const p = vehicle.getPosition(); player.setPosition(p.x, 0, p.z); player.enabled = false; vehicleSpeed = 0; if (playerCharacter) playerCharacter.enabled = false; showNotice("Taxi entered · use accelerator, reverse and steering controls"); }
     else if (nearbyInteraction) { showNotice(nearbyInteraction.label === "USE BENCH" ? "Bench interaction selected" : nearbyInteraction.label); }
     updateButtons();
   };
@@ -300,6 +351,13 @@ async function boot() {
         if (!overlaps(player.getPosition().x, nz)) player.setPosition(player.getPosition().x, p.y, nz);
         player.setEulerAngles(0, Math.atan2(dx, dz) * 180 / Math.PI, 0);
       } else {
+      }
+      const desiredAnimation = magnitude <= 0.04
+        ? playerAnimationNames.idle
+        : sprinting ? playerAnimationNames.run : playerAnimationNames.walk;
+      if (playerCharacter?.anim && desiredAnimation && desiredAnimation !== activePlayerAnimation) {
+        playerCharacter.anim.baseLayer.transition(desiredAnimation, 0.18);
+        activePlayerAnimation = desiredAnimation;
       }
     }
     const focus = inVehicle ? vehicle.getPosition() : player.getPosition();
