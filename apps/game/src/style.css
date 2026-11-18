@@ -10,3 +10,157 @@
 .minimap{position:absolute;top:24px;right:24px;width:144px;height:144px;border:2px solid #d8b96e;border-radius:50%;background:#17231d;box-shadow:0 8px 28px #0008;display:none;z-index:3}.minimap.visible{display:block}@media(max-width:650px){.minimap{top:68px;right:14px;width:112px;height:112px}}
 
 .mission{position:absolute;left:28px;bottom:76px;width:min(310px,72vw);padding:13px 16px;background:rgba(17,31,25,.86);border-left:3px solid #d9b66d;box-shadow:0 8px 24px #0004;display:none;gap:5px}.mission.visible{display:grid}.mission span{font-size:9px;letter-spacing:.16em;color:#e4c77d;font-weight:800}.mission b{font-family:Georgia,serif;font-size:15px;color:#f2ead9;font-weight:600}.mission small{font-size:11px;color:#c6d0c3}@media(max-width:650px){.mission{left:14px;bottom:185px;width:min(260px,66vw);padding:10px 12px}.mission b{font-size:13px}}
+
+
+/* Gameplay HUD refresh: compact map, separated mission and console-style touch controls. */
+.minimap{
+  top:18px;
+  right:18px;
+  width:clamp(104px,13vw,132px);
+  height:clamp(104px,13vw,132px);
+  border:1.5px solid #d8b96e;
+  box-shadow:0 5px 18px #0007;
+  overflow:hidden;
+}
+.mission{
+  top:76px;
+  left:22px;
+  bottom:auto;
+  width:min(270px,calc(100vw - 180px));
+  padding:10px 13px;
+  gap:4px;
+}
+.mission b{font-size:14px}
+.mission small{font-size:10px}
+.hud{
+  left:50%;
+  right:auto;
+  bottom:14px;
+  transform:translateX(-50%);
+  width:max-content;
+  max-width:calc(100vw - 32px);
+  padding:9px 13px;
+  border:1px solid #ffffff30;
+  border-radius:7px;
+  background:rgba(13,25,20,.78);
+  box-shadow:0 4px 18px #0004;
+  font-size:9px;
+  letter-spacing:.08em;
+  gap:12px;
+}
+.mobile-controls{
+  left:18px;
+  right:auto;
+  bottom:18px;
+  display:none;
+  width:144px;
+  gap:5px;
+  align-items:center;
+  pointer-events:auto;
+  touch-action:none;
+  user-select:none;
+  -webkit-user-select:none;
+}
+.mobile-controls.visible{display:flex}
+.mobile-controls>button,
+.mobile-controls div button{
+  width:43px;
+  height:43px;
+  min-width:43px;
+  min-height:43px;
+  display:grid;
+  place-items:center;
+  padding:0;
+  border:1px solid #e4d4ae99;
+  border-radius:10px;
+  background:linear-gradient(145deg,rgba(43,67,54,.96),rgba(15,28,22,.96));
+  color:#fff2d6;
+  font-size:22px;
+  font-weight:700;
+  line-height:1;
+  box-shadow:0 3px 10px #0007,inset 0 1px #ffffff22;
+  touch-action:none;
+  -webkit-tap-highlight-color:transparent;
+}
+.mobile-controls>button:active,
+.mobile-controls div button:active{
+  background:#b18a43;
+  color:#18231d;
+  transform:scale(.96);
+}
+.mobile-controls div{display:flex;gap:5px}
+.interact{
+  left:auto;
+  right:18px;
+  bottom:30px;
+  transform:none;
+  border-radius:7px;
+  padding:13px 15px;
+  z-index:5;
+}
+#world{touch-action:none}
+@media(max-width:650px){
+  .minimap{
+    top:62px;
+    right:10px;
+    width:clamp(72px,22vw,88px);
+    height:clamp(72px,22vw,88px);
+    border-width:1px;
+  }
+  .mission{
+    top:66px;
+    left:10px;
+    width:min(190px,calc(100vw - 126px));
+    padding:8px 9px;
+    border-left-width:2px;
+    gap:3px;
+  }
+  .mission span{font-size:8px;letter-spacing:.1em}
+  .mission b{font-size:11px;line-height:1.2}
+  .mission small{font-size:9px;line-height:1.25}
+  .hud{
+    bottom:10px;
+    left:50%;
+    right:auto;
+    width:auto;
+    max-width:calc(100vw - 24px);
+    padding:7px 9px;
+    gap:8px;
+    font-size:8px;
+    letter-spacing:.04em;
+    white-space:nowrap;
+  }
+  .hud span:first-child{display:none}
+  .hud span:nth-child(2){font-size:9px}
+  .mobile-controls{
+    left:10px;
+    right:auto;
+    bottom:14px;
+    width:132px;
+    gap:4px;
+  }
+  .mobile-controls>button,
+  .mobile-controls div button{
+    width:40px;
+    height:40px;
+    min-width:40px;
+    min-height:40px;
+    font-size:20px;
+  }
+  .mobile-controls div{gap:4px}
+  .interact{
+    right:10px;
+    left:auto;
+    bottom:24px;
+    padding:11px 12px;
+    font-size:9px;
+  }
+  .game-panel{z-index:12}
+}
+@media(max-height:520px) and (max-width:900px){
+  .mobile-controls{bottom:8px;transform:scale(.88);transform-origin:bottom left}
+  .hud{bottom:8px}
+  .minimap{top:8px}
+  .mission{top:10px}
+  .interact{bottom:12px}
+}
