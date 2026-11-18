@@ -33,3 +33,12 @@
 .vehicle-brake-stack .vehicle-exit{min-width:116px;min-height:48px;white-space:nowrap}
 @media(max-width:390px){.vehicle-stick{width:112px;height:112px}.vehicle-stick .stick-ring{inset:18px}.vehicle-stick .stick-knob{left:31px;top:31px;width:48px;height:48px}.vehicle-pedals{gap:7px}.accelerate-control{min-width:76px;padding:8px}.reverse-control,.vehicle-brake-stack .vehicle-exit{min-width:104px;font-size:9px}}
 @media(max-height:500px){.vehicle-stick{width:104px;height:104px}.vehicle-stick .stick-ring{inset:16px}.vehicle-stick .stick-knob{left:30px;top:30px;width:44px;height:44px}.accelerate-control{min-height:56px}.reverse-control{min-height:48px}.vehicle-brake-stack .vehicle-exit{min-height:40px}}
+
+/* Final driving-state polish: preserve a clear camera-drag zone and ease HUD swaps. */
+.touch-ui.vehicle-mode #minimap{opacity:0;visibility:hidden}
+.touch-ui.vehicle-mode .mission{opacity:0;visibility:hidden}
+.touch-ui.vehicle-mode .vehicle-controls{animation:vehicle-hud-enter .18s ease-out both}
+.vehicle-stick,.vehicle-control,.vehicle-exit{ -webkit-tap-highlight-color:transparent }
+.vehicle-stick{touch-action:none}
+@keyframes vehicle-hud-enter{from{opacity:.55;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){.touch-ui *{animation:none!important;transition:none!important}}
