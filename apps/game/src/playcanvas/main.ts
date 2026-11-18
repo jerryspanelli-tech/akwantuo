@@ -161,21 +161,33 @@ async function boot() {
         const idleContainer = clipResults[0].status === "fulfilled" ? clipResults[0].value : null;
         const walkContainer = clipResults[1].status === "fulfilled" ? clipResults[1].value : null;
         const clips = [...(idleContainer?.animations ?? []), ...(walkContainer?.animations ?? []), ...(container.animations ?? [])];
-        for (const animation of clips) {
+        const namedClips = clips.map((asset: any, index: number) => ({
+          asset,
+          track: asset?.resource,
+          name: String(asset?.name || asset?.resource?.name || `clip-${index}`)
+        })).filter((entry: any) => !!entry.track);
+        for (const entry of namedClips) {
           try {
-            if (animation?.resource?.name && model.anim) model.anim.assignAnimation(animation.resource.name, animation.resource);
+            // The GLB animation Asset name is authoritative; AnimTrack.name can
+            // be empty for externally exported clips even when the asset is named.
+            model.anim.assignAnimation(entry.name, entry.track, undefined, 1, true);
           } catch (error) {
-            console.warn("Skipping incompatible character animation", animation?.resource?.name, error);
+            console.error("Could not bind character animation", entry.name, error);
           }
         }
-        idleClipName = clips.find((a: any) => /idle/i.test(a?.resource?.name ?? ""))?.resource.name ?? null;
-        walkClipName = clips.find((a: any) => /walk|run/i.test(a?.resource?.name ?? ""))?.resource.name ?? null;
+        idleClipName = namedClips.find((entry: any) => /idle/i.test(entry.name))?.name ?? null;
+        walkClipName = namedClips.find((entry: any) => /walk|run/i.test(entry.name))?.name ?? null;
         if (idleClipName && model.anim?.baseLayer) {
           model.anim.baseLayer.play(idleClipName);
           activeClipName = idleClipName;
           document.documentElement.dataset.akwantuoPlayerModel = "animated-3d";
+          console.info("AKWANTUO animation clips bound", namedClips.map((entry: any) => entry.name));
         } else {
-          console.warn("3D character is visible, but no compatible idle clip was found.");
+          console.error("Character animation setup failed: no named Idle clip.", {
+            availableClips: namedClips.map((entry: any) => entry.name),
+            idleAssetLoaded: !!idleContainer,
+            walkAssetLoaded: !!walkContainer
+          });
           document.documentElement.dataset.akwantuoPlayerModel = "3d-no-animation";
         }
       });
@@ -363,8 +375,10 @@ async function boot() {
         const angle = cameraYaw * Math.PI / 180;
         const normalizer = rawMagnitude > 1 ? 1 / rawMagnitude : 1;
         const moveForward = forward * normalizer, moveStrafe = strafe * normalizer;
-        const dx = (moveStrafe * Math.cos(angle) - moveForward * Math.sin(angle)) * speed * step;
-        const dz = (moveForward * Math.cos(angle) + moveStrafe * Math.sin(angle)) * speed * step;
+        // Camera-forward is (sin(yaw), cos(yaw)); camera-right is
+        // (cos(yaw), -sin(yaw)). Keep lateral input aligned with screen-right.
+        const dx = (moveForward * Math.sin(angle) + moveStrafe * Math.cos(angle)) * speed * step;
+        const dz = (moveForward * Math.cos(angle) - moveStrafe * Math.sin(angle)) * speed * step;
         const p = player.getPosition();
         const nx = clamp(p.x + dx, -8000, 13000), nz = clamp(p.z + dz, -4050, 8500);
         if (!overlaps(nx, p.z)) player.setPosition(nx, p.y, p.z);
