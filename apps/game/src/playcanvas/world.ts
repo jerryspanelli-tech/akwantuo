@@ -62,6 +62,47 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     return entity;
   };
 
+  const makeSignMaterial = (label: string): StandardMaterial => {
+    const signCanvas = document.createElement("canvas");
+    signCanvas.width = 512;
+    signCanvas.height = 128;
+    const context = signCanvas.getContext("2d");
+    if (!context) return mats.green;
+    context.fillStyle = "#123c2b";
+    context.fillRect(0, 0, 512, 128);
+    context.fillStyle = "#d9ad5d";
+    context.fillRect(0, 0, 512, 9);
+    context.fillRect(0, 119, 512, 9);
+    context.strokeStyle = "#f0d79e";
+    context.lineWidth = 3;
+    context.strokeRect(9, 9, 494, 110);
+    context.fillStyle = "#fff3d5";
+    context.font = "bold 38px Arial, sans-serif";
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    const words = label.split(" ");
+    if (label.length > 18 && words.length > 1) {
+      const midpoint = Math.ceil(words.length / 2);
+      context.font = "bold 31px Arial, sans-serif";
+      context.fillText(words.slice(0, midpoint).join(" "), 256, 49, 470);
+      context.fillText(words.slice(midpoint).join(" "), 256, 84, 470);
+    } else {
+      context.fillText(label, 256, 65, 470);
+    }
+    const texture = new Texture(app.graphicsDevice, {
+      name: "AKWANTUO sign " + label,
+      width: 512,
+      height: 128,
+      format: PIXELFORMAT_RGBA8,
+      mipmaps: false
+    });
+    texture.setSource(signCanvas);
+    const sign = new StandardMaterial();
+    sign.diffuseMap = texture;
+    sign.update();
+    return sign;
+  };
+
   const centerX = (GREATER_ACCRA_MAP_EXTENT.minX + GREATER_ACCRA_MAP_EXTENT.maxX) / 2;
   const centerZ = (GREATER_ACCRA_MAP_EXTENT.minZ + GREATER_ACCRA_MAP_EXTENT.maxZ) / 2;
   plane("Greater Accra landmass", centerX, -0.22, centerZ, GREATER_ACCRA_MAP_EXTENT.widthM, GREATER_ACCRA_MAP_EXTENT.depthM, mats.earth);
