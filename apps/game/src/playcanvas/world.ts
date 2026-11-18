@@ -406,13 +406,38 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
   };
   const house = (label: string,x:number,z:number,w:number,d:number,floors:number,facade:StandardMaterial) => {
     const h=floors*3.1;
+    const front=z+d/2;
+    // Ghanaian urban compound-house language: deep roof edge, shaded veranda,
+    // framed windows, security grilles, ventilated gable and a gated courtyard.
     box(label+" house",x,h/2,z,w,h,d,facade,0,true);
-    box(label+" roof",x,h+0.3,z,w+0.5,0.6,d+0.5,mats.roof);
-    for(let floor=0;floor<floors;floor++) for(const side of [-1,1])
-      box(label+" window",x+side*w*0.28,1.55+floor*3.1,z+d/2+0.06,w*0.24,1.1,0.12,mats.glass);
-    box(label+" entrance",x,1.15,z+d/2+0.08,w*0.22,2.3,0.16,mats.roof);
-    box(label+" compound wall",x,1.1,z-d/2-4,w+8,2.2,0.7,mats.concrete);
-    box(label+" gate",x,1.1,z-d/2-4,w*0.3,2.2,0.12,mats.gold);
+    box(label+" roof slab",x,h+0.22,z,w+1.1,0.44,d+1.1,mats.roof);
+    box(label+" roof fascia",x,h+0.48,z+d*0.12,w+1.35,0.16,d*0.72,mats.lightConcrete);
+    for(let floor=0;floor<floors;floor++) {
+      for(const side of [-1,1]) {
+        const wx=x+side*w*0.28, wy=1.55+floor*3.1;
+        box(label+" window recess",wx,wy,front+0.07,w*0.27,1.34,0.12,mats.concrete);
+        box(label+" dark window",wx,wy,front+0.15,w*0.21,1.05,0.12,mats.glass);
+        box(label+" security grille",wx,wy,front+0.23,w*0.19,0.92,0.06,mats.roof);
+        box(label+" window lintel",wx,wy+0.72,front+0.2,w*0.3,0.12,0.2,mats.lightConcrete);
+      }
+    }
+    box(label+" entrance",x,1.15,front+0.1,w*0.22,2.3,0.18,mats.roof);
+    box(label+" veranda canopy",x,2.65,front+1.25,w*0.72,0.24,2.7,mats.lightConcrete);
+    for(const side of [-1,1]) box(label+" veranda column",x+side*w*0.32,1.35,front+2.35,0.22,2.7,0.22,mats.concrete);
+    // A real opening is left in the front compound wall for the vehicle/person gate.
+    const wallZ=front+6.2, wallWidth=(w+9)*0.36;
+    box(label+" left compound wall",x-(w+9)*0.32,1.05,wallZ,wallWidth,2.1,0.55,mats.concrete);
+    box(label+" right compound wall",x+(w+9)*0.32,1.05,wallZ,wallWidth,2.1,0.55,mats.concrete);
+    box(label+" gate pier left",x-(w+9)*0.14,1.35,wallZ,0.55,2.7,0.75,mats.lightConcrete);
+    box(label+" gate pier right",x+(w+9)*0.14,1.35,wallZ,0.55,2.7,0.75,mats.lightConcrete);
+    box(label+" metal security gate",x,1.05,wallZ,w*0.25,1.9,0.16,mats.roof);
+    box(label+" courtyard paving",x,0.025,front+3.8,w+7,0.08,5.8,mats.lightConcrete);
+    if(floors>1) {
+      box(label+" upper balcony slab",x,3.35,front+0.9,w*0.62,0.18,1.8,mats.concrete);
+      box(label+" upper balcony rail",x,3.95,front+1.75,w*0.58,0.12,0.12,mats.roof);
+    }
+    // Roof-top water storage is common on Accra homes; keep the silhouette low.
+    box(label+" rooftop water tank",x+w*0.28,h+1.05,z-d*0.2,1.45,1.5,1.45,mats.industrial);
   };
   const strips=[
     {name:"Osu Oxford Street",x:1450,z:-1180,shops:["MOBILE MONEY","PHARMACY","GROCERY","CHOP BAR","SALON"]},
