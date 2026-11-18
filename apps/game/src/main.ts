@@ -696,9 +696,10 @@ async function start(): Promise<void> {
   const chunkRegistry = new ChunkRegistry();
   const chunkManager = new WorldChunkManager({
     chunkSize: 600,
-    // Keep the live mobile scene tightly local; expand it as the player moves.
-    loadRadius: 500,
-    unloadRadius: 800,
+    // Keep the established 850m load / 1250m unload hysteresis so adjacent
+    // 600m chunks are requested before the player reaches a visible boundary.
+    loadRadius: 850,
+    unloadRadius: 1250,
     maxConcurrentLoads: 1,
     loadChunk: (key, bounds) => {
       const result = chunkRegistry.loadChunk(scene, key, bounds);
@@ -1151,6 +1152,8 @@ async function start(): Promise<void> {
         id: "npc-" + route.id + "-saloon-rig-" + (index + 1),
         origin
       });
+      // Traffic vehicles must cast onto the road and terrain as well as the player.
+      registerAkwantuoShadowCaster(scene, rig.root);
       return {
         rig,
         routeId: route.id,
@@ -1193,6 +1196,7 @@ async function start(): Promise<void> {
     id: "playable-starter-saloon-rig",
     origin: vehicleOrigin
   });
+  registerAkwantuoShadowCaster(scene, vehicleRig.root);
   const watercraftHullMaterial = new StandardMaterial("akwantuo-marina-watercraft-hull", scene);
   watercraftHullMaterial.diffuseColor = new Color3(0.83, 0.86, 0.84);
   const watercraftTrimMaterial = new StandardMaterial("akwantuo-marina-watercraft-trim", scene);
@@ -1289,6 +1293,7 @@ async function start(): Promise<void> {
 
   const publicTaxiOrigin = { x: WORLD_CONFIG.spawn.x + 2.8, y: 0, z: WORLD_CONFIG.spawn.z };
   const publicTaxi = createPublicTransportVehicle(scene, "playable-shared-trotro", publicTaxiOrigin);
+  registerAkwantuoShadowCaster(scene, publicTaxi.root);
   let publicTaxiState: RoadVehicleDynamicsState = { x: publicTaxiOrigin.x, z: publicTaxiOrigin.z, headingRadians: Math.PI, speedMps: 0 };
   // One local wallet and one passenger session are shared across every public mode.
   let passengerState: PublicTransportPassengerState = { mode: "not_riding", balancePesewas: 10000 };

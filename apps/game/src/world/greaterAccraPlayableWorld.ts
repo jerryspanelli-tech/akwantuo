@@ -124,8 +124,11 @@ function createN6TownSigns(scene: Scene): number {
  * corridors are smoothly flattened to the established road datum.
  */
 function createGreaterAccraTerrainMesh(scene: Scene): Mesh {
-  const columns = 85;
-  const rows = 151;
+  // A 150m sampling interval replaces the former ~250m cells. This keeps
+  // broad Ghanaian terrain relief visibly 3D at medium distance without
+  // allocating a dense per-frame terrain system on mobile.
+  const columns = 140;
+  const rows = 250;
   const minX = GREATER_ACCRA_MAP_EXTENT.minX;
   const maxX = GREATER_ACCRA_MAP_EXTENT.maxX;
   const minZ = GREATER_ACCRA_MAP_EXTENT.minZ;
@@ -213,11 +216,11 @@ export function createGreaterAccraPlayableWorld(
 ): GreaterAccraPlayableWorldReport {
   const firstNewMeshIndex = scene.meshes.length;
   scene.clearColor = new Color4(0.66, 0.76, 0.79, 1);
-  // Light distance haze softens the hard horizon while preserving visibility
-  // along the long Accra–Kumasi corridor.
+  // A restrained coastal distance haze softens the horizon without hiding
+  // the road network or compressing distant Accra landmarks into a fog wall.
   scene.fogMode = Scene.FOGMODE_EXP2;
   scene.fogColor = new Color3(0.66, 0.76, 0.79);
-  scene.fogDensity = 0.00007;
+  scene.fogDensity = 0.000035;
 
   const land = createGreaterAccraTerrainMesh(scene);
   const landMaterial = new StandardMaterial("greater-accra-playable-land-material", scene);
@@ -230,7 +233,10 @@ export function createGreaterAccraPlayableWorld(
     false
   );
   const terrainContext = terrainTexture.getContext();
-  terrainContext.fillStyle = "#777b58";
+  // Use an earthy fallback colour as well as the detail texture. If a mobile
+  // WebGL context fails to upload the dynamic texture, the land must never
+  // fall back to the engine default white material.
+  terrainContext.fillStyle = "#85845f";
   terrainContext.fillRect(0, 0, 512, 512);
   const terrainPatchColours = ["#69764f", "#85805a", "#9a8b63", "#626f50", "#8b9066"];
   for (let index = 0; index < 460; index += 1) {
@@ -256,7 +262,8 @@ export function createGreaterAccraPlayableWorld(
   terrainTexture.uScale = 90;
   terrainTexture.vScale = 160;
   landMaterial.diffuseTexture = terrainTexture;
-  landMaterial.diffuseColor = new Color3(0.96, 0.97, 0.9);
+  // Slightly warm olive tint keeps the ground natural under Ghanaian daylight.
+  landMaterial.diffuseColor = new Color3(0.82, 0.81, 0.68);
   landMaterial.specularColor = new Color3(0.015, 0.015, 0.015);
   land.material = landMaterial;
   enableAkwantuoShadowReceiver(land);

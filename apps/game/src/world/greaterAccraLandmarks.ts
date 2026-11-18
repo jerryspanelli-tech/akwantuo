@@ -9,6 +9,7 @@ import {
   VertexData
 } from "@babylonjs/core";
 import type { SolidArea } from "./collision";
+import { enableAkwantuoShadowReceiver } from "./lighting";
 
 type Point = Readonly<{ x: number; z: number }>;
 type LandmarkReport = Readonly<{
@@ -94,6 +95,7 @@ function addRoad(
     vertexData.applyToMesh(mesh, false);
     mesh.material = material;
     mesh.material.backFaceCulling = false;
+    enableAkwantuoShadowReceiver(mesh);
     mesh.isPickable = false;
     mesh.checkCollisions = false;
   };
