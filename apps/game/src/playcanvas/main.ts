@@ -122,10 +122,14 @@ async function boot() {
   player.setPosition(world.spawn.x, 0, world.spawn.z);
   app.root.addChild(player);
 
-  // Load the project's own CC0 character model when it is present. The visible
-  // fallback remains until the GLB is fully instantiated and never disappears on failure.
-  const modelUrl = new URL("./assets/characters/akwantuo-male.glb", window.location.href).toString();
-  const modelAsset = new Asset("AKWANTUO player character", "container", { url: modelUrl });
+  // Load the real skinned Ghanaian character. Show the GLB as soon as its
+  // render entity exists; animation files are optional follow-up assets and
+  // must never keep the player trapped on the primitive fallback.
+  const characterAssetUrl = (file: string) =>
+    new URL(`/assets/characters/${file}`, window.location.origin).toString();
+  const modelAsset = new Asset("AKWANTUO player character", "container", {
+    url: characterAssetUrl("akwantuo-male.glb")
+  });
   let loadedCharacter: Entity | null = null;
   let idleClipName: string | null = null;
   let walkClipName: string | null = null;
@@ -134,15 +138,20 @@ async function boot() {
   modelAsset.ready(() => {
     try {
       const container = modelAsset.resource as any;
+      if (!container?.instantiateRenderEntity) throw new Error("Character GLB has no renderable container resource.");
       const model = container.instantiateRenderEntity({ castShadows: true });
-      model.name = "Loaded Ghanaian player character";
+      model.name = "AKWANTUO Ghanaian player character";
       model.setLocalScale(1, 1, 1);
-      model.enabled = false;
-      model.addComponent("anim", { activate: true });
       player.addChild(model);
       loadedCharacter = model;
+      model.addComponent("anim", { activate: true });
+      model.enabled = true;
+      fallback.enabled = false;
+      document.documentElement.dataset.akwantuoPlayerModel = "3d";
+      showNotice("3D player character loaded");
+
       const loadClipContainer = (file: string) => new Promise<any>((resolve, reject) => {
-        const clipAsset = new Asset(file, "container", { url: new URL(`./assets/characters/${file}`, window.location.href).toString() });
+        const clipAsset = new Asset(file, "container", { url: characterAssetUrl(file) });
         clipAsset.ready(() => resolve(clipAsset.resource));
         clipAsset.on("error", (error: unknown) => reject(error));
         app.assets.add(clipAsset);
@@ -152,19 +161,22 @@ async function boot() {
         const idleContainer = clipResults[0].status === "fulfilled" ? clipResults[0].value : null;
         const walkContainer = clipResults[1].status === "fulfilled" ? clipResults[1].value : null;
         const clips = [...(idleContainer?.animations ?? []), ...(walkContainer?.animations ?? []), ...(container.animations ?? [])];
-        for (const animation of clips) model.anim.assignAnimation(animation.resource.name, animation.resource);
-        idleClipName = clips.find((a: any) => /idle/i.test(a.resource.name))?.resource.name ?? null;
-        walkClipName = clips.find((a: any) => /walk|run/i.test(a.resource.name))?.resource.name ?? null;
-        if (idleClipName) {
+        for (const animation of clips) {
+          try {
+            if (animation?.resource?.name && model.anim) model.anim.assignAnimation(animation.resource.name, animation.resource);
+          } catch (error) {
+            console.warn("Skipping incompatible character animation", animation?.resource?.name, error);
+          }
+        }
+        idleClipName = clips.find((a: any) => /idle/i.test(a?.resource?.name ?? ""))?.resource.name ?? null;
+        walkClipName = clips.find((a: any) => /walk|run/i.test(a?.resource?.name ?? ""))?.resource.name ?? null;
+        if (idleClipName && model.anim?.baseLayer) {
           model.anim.baseLayer.play(idleClipName);
           activeClipName = idleClipName;
-          model.enabled = true;
-          fallback.enabled = false;
-          showNotice("Player character and idle animation loaded");
-          document.documentElement.dataset.akwantuoPlayerModel = "animated";
+          document.documentElement.dataset.akwantuoPlayerModel = "animated-3d";
         } else {
-          console.warn("No compatible idle animation was found; keeping the animated fallback visible.");
-          document.documentElement.dataset.akwantuoPlayerModel = "fallback";
+          console.warn("3D character is visible, but no compatible idle clip was found.");
+          document.documentElement.dataset.akwantuoPlayerModel = "3d-no-animation";
         }
       });
     } catch (error) {
@@ -173,7 +185,7 @@ async function boot() {
     }
   });
   modelAsset.on("error", (error: unknown) => {
-    console.warn("AKWANTUO character GLB unavailable; keeping visible fallback", error);
+    console.error("AKWANTUO character GLB failed to load", error);
     document.documentElement.dataset.akwantuoPlayerModel = "fallback";
   });
   app.assets.load(modelAsset);
