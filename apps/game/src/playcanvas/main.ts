@@ -20,6 +20,12 @@ const contextLabel = document.querySelector<HTMLElement>("#context-label");
 const healthFill = document.querySelector<HTMLElement>("#health-fill");
 const healthValue = document.querySelector<HTMLElement>("#health-value");
 const exitButton = document.querySelector<HTMLButtonElement>("#exit");
+const vehicleControls = document.querySelector<HTMLElement>("#vehicle-controls");
+const accelerateButton = document.querySelector<HTMLButtonElement>("#accelerate");
+const reverseButton = document.querySelector<HTMLButtonElement>("#reverse");
+const steerLeftButton = document.querySelector<HTMLButtonElement>("#steer-left");
+const steerRightButton = document.querySelector<HTMLButtonElement>("#steer-right");
+const touchUi = document.querySelector<HTMLElement>(".touch-ui");
 const stick = document.querySelector<HTMLElement>("#stick");
 const stickKnob = document.querySelector<HTMLElement>("#stick-knob");
 const notice = document.querySelector<HTMLElement>("#notice");
@@ -197,6 +203,26 @@ async function boot() {
   window.addEventListener("blur", () => keys.clear());
 
   let stickX = 0, stickY = 0, stickPointer: number | null = null;
+  // Vehicle pedals and steering are held independently of the on-foot joystick.
+  const vehicleInput = { accelerate: false, reverse: false, left: false, right: false };
+  const bindHold = (button: HTMLButtonElement | null, key: keyof typeof vehicleInput) => {
+    if (!button) return;
+    const release = (event: PointerEvent) => { event.preventDefault(); vehicleInput[key] = false; button.classList.remove("pressed"); };
+    button.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      vehicleInput[key] = true;
+      button.classList.add("pressed");
+      button.setPointerCapture(event.pointerId);
+    });
+    button.addEventListener("pointerup", release);
+    button.addEventListener("pointercancel", release);
+    button.addEventListener("lostpointercapture", () => { vehicleInput[key] = false; button.classList.remove("pressed"); });
+    button.addEventListener("contextmenu", (event) => event.preventDefault());
+  };
+  bindHold(accelerateButton, "accelerate");
+  bindHold(reverseButton, "reverse");
+  bindHold(steerLeftButton, "left");
+  bindHold(steerRightButton, "right");
   let jumpRequested = false, verticalVelocity = 0, grounded = true;
   const groundHeight = 0;
   const requestJump = () => { if (!inVehicle && grounded) { jumpRequested = true; jumpButton?.classList.add("pressed"); } };
@@ -260,12 +286,14 @@ async function boot() {
       contextLabel.classList.toggle("visible", !!label);
     }
     if (exitButton) exitButton.hidden = !inVehicle;
+    if (vehicleControls) vehicleControls.hidden = !inVehicle;
+    touchUi?.classList.toggle("vehicle-mode", inVehicle);
     if (jumpButton) jumpButton.hidden = inVehicle;
     if (stick) stick.classList.toggle("sprinting", !inVehicle && Math.hypot(stickX, stickY) >= 0.84);
   };
   const enter = () => {
     if (inVehicle) { inVehicle = false; const p = vehicle.getPosition(); player.setPosition(p.x - 2.4, 0, p.z); player.enabled = true; vehicleSpeed = 0; grounded = true; showNotice("You exited the taxi"); }
-    else if (canEnter()) { inVehicle = true; const p = vehicle.getPosition(); player.setPosition(p.x, 0, p.z); player.enabled = false; vehicleSpeed = 0; showNotice("Taxi entered · drive with the joystick"); }
+    else if (canEnter()) { inVehicle = true; const p = vehicle.getPosition(); player.setPosition(p.x, 0, p.z); player.enabled = false; vehicleSpeed = 0; showNotice("Taxi entered · use accelerator, reverse and steering controls"); }
     else if (nearbyInteraction) { showNotice(nearbyInteraction.label === "USE BENCH" ? "Bench interaction selected" : nearbyInteraction.label); }
     updateButtons();
   };
@@ -282,26 +310,22 @@ async function boot() {
     const forward = (keys.has("KeyW") || keys.has("ArrowUp") ? 1 : 0) - (keys.has("KeyS") || keys.has("ArrowDown") ? 1 : 0) - stickY;
     const strafe = (keys.has("KeyD") || keys.has("ArrowRight") ? 1 : 0) - (keys.has("KeyA") || keys.has("ArrowLeft") ? 1 : 0) + stickX;
     if (inVehicle) {
-      // Mobile driving: joystick up/down controls throttle and reverse;
-      // joystick left/right steers in the same direction the player pushes.
-      const throttle = clamp(forward, -1, 1);
-      const steer = clamp(strafe, -1, 1);
-      const accelerating = throttle > 0.08;
-      const reversing = throttle < -0.08;
-      const acceleration = accelerating ? 11.5 : reversing ? 8.5 : 0;
-      vehicleSpeed = clamp(
-        vehicleSpeed + throttle * acceleration * step,
-        -7,
-        17
-      );
-      // Natural coasting and stronger drag at very low speed.
-      if (Math.abs(throttle) <= 0.08) {
-        vehicleSpeed *= Math.max(0, 1 - step * (Math.abs(vehicleSpeed) < 0.45 ? 5 : 0.75));
+      // Dedicated vehicle controls: pedals set longitudinal force; steering
+      // buttons set yaw. The on-foot joystick never drives the vehicle.
+      const accelerating = vehicleInput.accelerate || keys.has("KeyW") || keys.has("ArrowUp");
+      const reversing = vehicleInput.reverse || keys.has("KeyS") || keys.has("ArrowDown");
+      const steerLeft = vehicleInput.left || keys.has("KeyA") || keys.has("ArrowLeft");
+      const steerRight = vehicleInput.right || keys.has("KeyD") || keys.has("ArrowRight");
+      const throttle = accelerating === reversing ? 0 : accelerating ? 1 : -1;
+      const acceleration = throttle > 0 ? 10.5 : throttle < 0 ? 7.5 : 0;
+      vehicleSpeed = clamp(vehicleSpeed + throttle * acceleration * step, -6.5, 16);
+      // Coasting drag, with stronger resistance near a standstill.
+      if (throttle === 0) {
+        vehicleSpeed *= Math.max(0, 1 - step * (Math.abs(vehicleSpeed) < 0.45 ? 5 : 0.68));
       }
-      // Reverse the previous steering sign: right input now turns right.
-      // Steering response builds with speed but remains controllable when slow.
-      const steeringGrip = 0.28 + Math.min(Math.abs(vehicleSpeed) / 8, 1) * 0.72;
-      vehicleYaw -= steer * steeringGrip * (vehicleSpeed >= 0 ? 1 : -1) * step * 1.9;
+      const steer = Number(steerRight) - Number(steerLeft);
+      const steeringGrip = 0.3 + Math.min(Math.abs(vehicleSpeed) / 8, 1) * 0.7;
+      vehicleYaw -= steer * steeringGrip * (vehicleSpeed >= 0 ? 1 : -1) * step * 1.75;
       const nextX = vehicle.getPosition().x + Math.sin(vehicleYaw) * vehicleSpeed * step;
       const nextZ = vehicle.getPosition().z + Math.cos(vehicleYaw) * vehicleSpeed * step;
       if (!overlaps(nextX, nextZ) && nextX > -8000 && nextX < 13000 && nextZ > -4050 && nextZ < 8500) vehicle.setPosition(nextX, 0, nextZ);
