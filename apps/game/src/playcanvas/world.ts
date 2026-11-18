@@ -482,6 +482,53 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     box(lot.name+" loading curb",lot.x,0.16,lot.z+16,44,0.32,1.2,mats.kerb);
   }
 
+  // Street-level pedestrian infrastructure: raised walks, open concrete drains,
+  // short removable-looking grate covers, bollards and zebra crossings.
+  // Keep these concentrated around showcase commercial streets to control draw calls.
+  for (const strip of strips) {
+    const half = 42;
+    for (const side of [-1, 1]) {
+      const walkZ = strip.z + side * 18;
+      box(strip.name + " pedestrian sidewalk", strip.x, 0.16, walkZ, 88, 0.28, 3.2, mats.lightConcrete);
+      box(strip.name + " roadside gutter", strip.x, 0.09, strip.z + side * 21, 88, 0.18, 0.72, mats.concrete);
+      for (let segment = 0; segment < 8; segment++) {
+        const gx = strip.x - half + segment * 12;
+        box(strip.name + " drain grate", gx, 0.205, strip.z + side * 21, 2.6, 0.055, 0.62, mats.roof);
+      }
+      for (let post = 0; post < 5; post++) {
+        cylinder(strip.name + " pedestrian bollard", strip.x - 34 + post * 17, 0.52, walkZ + side * 1.9, 0.14, 1.04, mats.gold);
+      }
+    }
+    // Litter bins and utility cabinets are placed at the ends, not repeated per shop.
+    box(strip.name + " public litter bin", strip.x - 45, 0.62, strip.z + 15, 0.82, 1.24, 0.82, mats.green);
+    box(strip.name + " electrical cabinet", strip.x + 45, 0.72, strip.z - 17, 1.1, 1.44, 0.8, mats.industrial);
+  }
+
+  // Marked pedestrian crossings at the principal urban junction approaches.
+  for (const crossing of [
+    { name: "Osu Oxford Street", x: 1450, z: -1350 },
+    { name: "Circle", x: -450, z: 450 },
+    { name: "Tetteh Quarshie", x: 3650, z: 1750 },
+    { name: "Spintex", x: 5600, z: -1150 }
+  ]) {
+    for (let stripe = 0; stripe < 7; stripe++) {
+      box(crossing.name + " zebra crossing stripe", crossing.x - 6 + stripe * 2, 0.155, crossing.z - 18, 1.05, 0.035, 6.5, mats.white);
+    }
+    box(crossing.name + " crossing approach kerb", crossing.x, 0.18, crossing.z - 23, 18, 0.32, 0.8, mats.kerb);
+  }
+
+  // A small number of roadside shade trees, with shared materials and simple crowns.
+  for (const tree of [
+    { x: 1370, z: -1145 }, { x: 1535, z: -1145 }, { x: 1695, z: -1145 },
+    { x: -520, z: 360 }, { x: -280, z: 360 },
+    { x: 4210, z: 1010 }, { x: 4390, z: 1010 },
+    { x: 4820, z: 2070 }, { x: 5000, z: 2070 },
+    { x: 5520, z: -1535 }, { x: 5700, z: -1535 }
+  ]) {
+    cylinder("Accra roadside shade tree trunk", tree.x, 2.5, tree.z, 0.28, 5, mats.roof);
+    cylinder("Accra roadside shade tree canopy", tree.x, 5.8, tree.z, 2.3, 2.8, mats.green);
+  }
+
   return {
     blockers,
     spawn: { x: 1180, z: -1500 },
