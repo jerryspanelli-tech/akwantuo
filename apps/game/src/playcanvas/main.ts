@@ -101,7 +101,6 @@ async function boot() {
     sea: mat(0.045, 0.25, 0.34), white: mat(0.85, 0.83, 0.75), gold: mat(0.78, 0.52, 0.19),
     green: mat(0.12, 0.31, 0.22), red: mat(0.55, 0.16, 0.12), blue: mat(0.12, 0.28, 0.42),
     concrete: mat(0.55, 0.53, 0.47), glass: mat(0.16, 0.29, 0.31), roof: mat(0.28, 0.20, 0.16),
-    skin: mat(0.31, 0.16, 0.095), shirt: mat(0.12, 0.29, 0.20), trousers: mat(0.07, 0.09, 0.10),
     tyre: mat(0.025, 0.03, 0.03), vehicle: mat(0.78, 0.67, 0.34)
   };
 
@@ -111,20 +110,11 @@ async function boot() {
 
   loadingMessage && (loadingMessage.textContent = "Preparing the player and vehicle…");
   const player = new Entity("Player");
-  const fallback = new Entity("Player fallback body");
-  const torso = new Entity("Torso"); torso.addComponent("render", { type: "capsule", material: materials.shirt }); torso.setLocalScale(0.55, 0.9, 0.38); torso.setPosition(0, 1.2, 0); fallback.addChild(torso);
-  const head = new Entity("Head"); head.addComponent("render", { type: "sphere", material: materials.skin }); head.setLocalScale(0.34, 0.34, 0.34); head.setPosition(0, 1.9, 0); fallback.addChild(head);
-  const leftLeg = new Entity("Left leg"); leftLeg.addComponent("render", { type: "capsule", material: materials.trousers }); leftLeg.setLocalScale(0.19, 0.58, 0.2); leftLeg.setPosition(-0.16, 0.55, 0); fallback.addChild(leftLeg);
-  const rightLeg = new Entity("Right leg"); rightLeg.addComponent("render", { type: "capsule", material: materials.trousers }); rightLeg.setLocalScale(0.19, 0.58, 0.2); rightLeg.setPosition(0.16, 0.55, 0); fallback.addChild(rightLeg);
-  const leftArm = new Entity("Left arm"); leftArm.addComponent("render", { type: "capsule", material: materials.skin }); leftArm.setLocalScale(0.15, 0.68, 0.16); leftArm.setPosition(-0.39, 1.2, 0); fallback.addChild(leftArm);
-  const rightArm = new Entity("Right arm"); rightArm.addComponent("render", { type: "capsule", material: materials.skin }); rightArm.setLocalScale(0.15, 0.68, 0.16); rightArm.setPosition(0.39, 1.2, 0); fallback.addChild(rightArm);
-  player.addChild(fallback);
   player.setPosition(world.spawn.x, 0, world.spawn.z);
   app.root.addChild(player);
 
-  // Load the real skinned Ghanaian character. Show the GLB as soon as its
-  // render entity exists; animation files are optional follow-up assets and
-  // must never keep the player trapped on the primitive fallback.
+  // The skinned Ghanaian GLB is the only player character. The old primitive
+  // capsule/sphere stand-in is removed; load failure is surfaced, not hidden.
   const characterAssetUrl = (file: string) =>
     new URL(`/assets/characters/${file}`, window.location.origin).toString();
   const modelAsset = new Asset("AKWANTUO player character", "container", {
@@ -156,7 +146,6 @@ async function boot() {
         rootBone: model.anim?.rootBone?.name ?? null
       });
       model.enabled = true;
-      fallback.enabled = false;
       document.documentElement.dataset.akwantuoPlayerModel = "3d";
       showNotice("3D player character loaded");
 
@@ -246,12 +235,12 @@ async function boot() {
       });
     } catch (error) {
       console.error("AKWANTUO character instantiation failed", error);
-      document.documentElement.dataset.akwantuoPlayerModel = "fallback";
+      document.documentElement.dataset.akwantuoPlayerModel = "3d-unavailable";
     }
   });
   modelAsset.on("error", (error: unknown) => {
     console.error("AKWANTUO character GLB failed to load", error);
-    document.documentElement.dataset.akwantuoPlayerModel = "fallback";
+    document.documentElement.dataset.akwantuoPlayerModel = "3d-unavailable";
   });
   app.assets.load(modelAsset);
 
@@ -329,7 +318,7 @@ async function boot() {
   window.addEventListener("pointerup", (event) => { if (dragPointer === event.pointerId) dragPointer = null; });
 
   const walkSpeed = 4.6, sprintSpeed = 8.2;
-  let inVehicle = false, vehicleSpeed = 0, vehicleYaw = 0, gaitTime = 0;
+  let inVehicle = false, vehicleSpeed = 0, vehicleYaw = 0;
   let nearbyInteraction: { id: string; label: string; x: number; z: number; radius: number } | null = null;
   const overlaps = (x: number, z: number) => {
     const buildingCollision = blockers.some((b) => Math.abs(x - b.x) < b.hx + 0.38 && Math.abs(z - b.z) < b.hz + 0.38);
@@ -438,16 +427,9 @@ async function boot() {
         if (!overlaps(nx, p.z)) player.setPosition(nx, p.y, p.z);
         if (!overlaps(player.getPosition().x, nz)) player.setPosition(player.getPosition().x, p.y, nz);
         player.setEulerAngles(0, Math.atan2(dx, dz) * 180 / Math.PI, 0);
-        gaitTime += step * 9;
         if (loadedCharacter?.anim && walkClipName && activeClipName !== walkClipName) { loadedCharacter.anim.baseLayer?.transition(walkClipName, 0.18); activeClipName = walkClipName; }
-        leftLeg.setLocalEulerAngles(Math.sin(gaitTime) * 26, 0, 0);
-        rightLeg.setLocalEulerAngles(-Math.sin(gaitTime) * 26, 0, 0);
-        leftArm.setLocalEulerAngles(-Math.sin(gaitTime) * 18, 0, 0);
-        rightArm.setLocalEulerAngles(Math.sin(gaitTime) * 18, 0, 0);
       } else {
         if (loadedCharacter?.anim && idleClipName && activeClipName !== idleClipName) { loadedCharacter.anim.baseLayer?.transition(idleClipName, 0.2); activeClipName = idleClipName; }
-        leftLeg.setLocalEulerAngles(0, 0, 0); rightLeg.setLocalEulerAngles(0, 0, 0);
-        leftArm.setLocalEulerAngles(0, 0, 0); rightArm.setLocalEulerAngles(0, 0, 0);
       }
     }
     const focus = inVehicle ? vehicle.getPosition() : player.getPosition();
