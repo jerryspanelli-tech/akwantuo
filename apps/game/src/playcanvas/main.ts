@@ -5,6 +5,7 @@ import {
   RESOLUTION_AUTO, Entity
 } from "playcanvas";
 import "./style.css";
+import { createGreaterAccraWorld } from "./world";
 
 const canvas = document.querySelector<HTMLCanvasElement>("#application")!;
 const loading = document.querySelector<HTMLElement>("#loading");
@@ -28,8 +29,7 @@ const showNotice = (message: string) => {
   window.setTimeout(() => notice.classList.remove("show"), 1700);
 };
 
-type Blocker = { x: number; z: number; hx: number; hz: number };
-const blockers: Blocker[] = [];
+
 const mat = (r: number, g: number, b: number) => {
   const material = new StandardMaterial();
   material.diffuse = new Color(r, g, b);
@@ -91,58 +91,9 @@ async function boot() {
     tyre: mat(0.025, 0.03, 0.03), vehicle: mat(0.78, 0.67, 0.34)
   };
 
-  loadingMessage && (loadingMessage.textContent = "Shaping the Accra coastline…");
-  addPlane("Greater Accra ground", 0, -0.16, 0, 180, 180, materials.soil);
-  addPlane("Osu green verge west", -30, -0.08, 2, 22, 100, materials.grass);
-  addPlane("Osu green verge east", 30, -0.08, 2, 22, 100, materials.grass);
-  addPlane("Gulf of Guinea", 0, -0.12, -78, 180, 70, materials.sea);
-  addPlane("Labadi beach sand", 0, -0.04, -42, 180, 22, materials.sand);
-  // A compact, connected two-street slice with Ghana-style road markings.
-  addPlane("Oxford Street / Osu", 0, 0.01, 5, 13, 112, materials.road);
-  addPlane("Coastal road", 0, 0.015, -24, 110, 10, materials.road);
-  for (let z = -48; z < 55; z += 8) addBox("Road centre dash", 0, 0.035, z, 0.16, 0.025, 3.8, materials.lane);
-  for (let x = -48; x < 50; x += 8) addBox("Coastal centre dash", x, 0.04, -24, 3.8, 0.025, 0.16, materials.lane);
-  for (const x of [-6.8, 6.8]) addBox("Raised road kerb", x, 0.12, 5, 0.28, 0.24, 112, materials.kerb);
-  for (const z of [-29, -19]) addBox("Coastal road edge", 0, 0.12, z, 110, 0.24, 0.22, materials.kerb);
-
-  loadingMessage && (loadingMessage.textContent = "Building Osu streets and landmarks…");
-  // Dense mixed-use street fronts: shops, flats, kiosks and a market court.
-  const buildings = [
-    [-15, 6, 10, 12, 9, 15, "Shop block"], [-27, 9, 10, 18, 12, 14, "Apartment block"],
-    [15, 7, 10, 13, 11, 16, "Mixed-use block"], [28, 8, 10, 18, 13, 14, "Office block"],
-    [-17, 6, -7, 12, 9, 11, "Corner shop"], [17, 6, -7, 12, 9, 11, "Restaurant"],
-    [-34, 7, -5, 15, 11, 18, "Market hall"], [35, 8, -5, 15, 13, 18, "Hotel"]
-  ] as const;
-  for (const [x, y, z, sx, sy, sz, name] of buildings) {
-    addBox(name, x, y, z, sx, sy, sz, materials.concrete, true);
-    addBox(name + " roof", x, y + sy / 2 + 0.18, z, sx + 0.3, 0.35, sz + 0.3, materials.roof);
-    for (let floor = 0; floor < Math.max(2, Math.floor(sy / 3)); floor++) {
-      addBox(name + " facade window band", x, 2.2 + floor * 2.5, z + sz / 2 + 0.025, sx * 0.72, 0.75, 0.08, materials.glass);
-    }
-  }
-  // Ghanaian roadside kiosk and fuel station forecourt.
-  addBox("Roadside kiosk", -10, 1.2, 36, 5, 2.4, 4, materials.green, true);
-  addBox("Kiosk awning", -10, 2.55, 36, 5.8, 0.22, 4.8, materials.red);
-  addPlane("Fuel station forecourt", 43, 0.02, 31, 25, 20, materials.concrete);
-  addBox("Fuel station canopy", 43, 4.5, 31, 22, 0.45, 14, materials.red);
-  for (const x of [37, 43, 49]) addBox("Fuel pump", x, 1.1, 31, 0.8, 2.2, 0.8, materials.white, true);
-  // Landmark: original AKWANTUO Creative Arts Centre, not a copy of a real venue.
-  addCylinder("Creative arts centre main hall", 0, 5, 66, 11, 10, materials.concrete);
-  addCylinder("Creative arts centre roof ring", 0, 10.3, 66, 12, 0.7, materials.gold);
-  addBox("Arts centre entrance", 0, 2.1, 54, 8, 4.2, 1.1, materials.glass);
-  // Beach access, palms, kiosks, lifeguard hut and marina.
-  for (const x of [-65, -48, 48, 65]) {
-    addCylinder("Palm trunk", x, 3.4, -42, 0.34, 6.8, materials.roof);
-    addCylinder("Palm crown", x, 7.1, -42, 2.4, 1.2, materials.green);
-  }
-  addBox("Beach kiosk", -22, 1.3, -42, 5, 2.6, 4, materials.red, true);
-  addBox("Lifeguard hut", 22, 1.8, -42, 4, 3.6, 4, materials.white, true);
-  addBox("Labadi marina pier", 42, 0.15, -58, 4, 0.3, 25, materials.roof);
-  // Sign structures; labels are also mirrored in the accessible HUD.
-  addBox("Osu district sign post", -8, 2.4, 48, 0.35, 4.8, 0.35, materials.roof);
-  addBox("Osu district sign board", -8, 4.4, 48, 6.5, 1.4, 0.25, materials.green);
-  addBox("Labadi beach sign post", 9, 2.4, -36, 0.3, 4.8, 0.3, materials.roof);
-  addBox("Labadi beach sign board", 9, 4.4, -36, 6.8, 1.4, 0.25, materials.gold);
+  loadingMessage && (loadingMessage.textContent = "Building Greater Accra roads, districts and coastline…");
+  const world = createGreaterAccraWorld(app);
+  const blockers = world.blockers;
 
   loadingMessage && (loadingMessage.textContent = "Preparing the player and vehicle…");
   const player = new Entity("Player");
@@ -154,7 +105,7 @@ async function boot() {
   const leftArm = new Entity("Left arm"); leftArm.addComponent("render", { type: "capsule", material: materials.skin }); leftArm.setLocalScale(0.15, 0.68, 0.16); leftArm.setPosition(-0.39, 1.2, 0); fallback.addChild(leftArm);
   const rightArm = new Entity("Right arm"); rightArm.addComponent("render", { type: "capsule", material: materials.skin }); rightArm.setLocalScale(0.15, 0.68, 0.16); rightArm.setPosition(0.39, 1.2, 0); fallback.addChild(rightArm);
   player.addChild(fallback);
-  player.setPosition(-1.8, 0, 28);
+  player.setPosition(world.spawn.x, 0, world.spawn.z);
   app.root.addChild(player);
 
   // Load the project's own CC0 character model when it is present. The visible
@@ -229,7 +180,7 @@ async function boot() {
   vehicleBody.setLocalPosition(0, 1.1, 0);
   const cab = new Entity("Taxi cabin"); cab.addComponent("render", { type: "box", material: materials.glass }); cab.setLocalScale(1.7, 0.8, 2); cab.setLocalPosition(0, 1.95, -0.15); vehicle.addChild(cab);
   for (const x of [-0.95, 0.95]) for (const z of [-1.35, 1.35]) { const wheel = new Entity("Taxi wheel"); wheel.addComponent("render", { type: "cylinder", material: materials.tyre }); wheel.setLocalScale(0.65, 0.22, 0.65); wheel.setLocalEulerAngles(0, 0, 90); wheel.setLocalPosition(x, 0.58, z); vehicle.addChild(wheel); }
-  vehicle.setPosition(5, 0, 16);
+  vehicle.setPosition(world.taxiSpawn.x, 0, world.taxiSpawn.z);
   app.root.addChild(vehicle);
 
   const keys = new Set<string>();
@@ -291,7 +242,7 @@ async function boot() {
       vehicleYaw += steer * (vehicleSpeed / 4.2) * step;
       const nextX = vehicle.getPosition().x + Math.sin(vehicleYaw) * vehicleSpeed * step;
       const nextZ = vehicle.getPosition().z + Math.cos(vehicleYaw) * vehicleSpeed * step;
-      if (!overlaps(nextX, nextZ) && Math.abs(nextX) < 82 && nextZ > -68 && nextZ < 82) vehicle.setPosition(nextX, 0, nextZ);
+      if (!overlaps(nextX, nextZ) && nextX > -8000 && nextX < 13000 && nextZ > -4050 && nextZ < 8500) vehicle.setPosition(nextX, 0, nextZ);
       vehicle.setEulerAngles(0, vehicleYaw * 180 / Math.PI, 0);
       const vehiclePosition = vehicle.getPosition();
       player.setPosition(vehiclePosition.x, vehiclePosition.y, vehiclePosition.z);
@@ -303,7 +254,7 @@ async function boot() {
         const dx = (strafe * Math.cos(angle) - forward * Math.sin(angle)) * playerSpeed * step;
         const dz = (forward * Math.cos(angle) + strafe * Math.sin(angle)) * playerSpeed * step;
         const p = player.getPosition();
-        const nx = clamp(p.x + dx, -82, 82), nz = clamp(p.z + dz, -65, 82);
+        const nx = clamp(p.x + dx, -8000, 13000), nz = clamp(p.z + dz, -4050, 8500);
         if (!overlaps(nx, p.z)) player.setPosition(nx, p.y, p.z);
         if (!overlaps(player.getPosition().x, nz)) player.setPosition(player.getPosition().x, p.y, nz);
         player.setEulerAngles(0, Math.atan2(dx, dz) * 180 / Math.PI, 0);
@@ -333,7 +284,7 @@ async function boot() {
   });
 
   window.addEventListener("resize", () => app.resizeCanvas());
-  if (status) status.textContent = "OSU · ACCRA";
+  if (status) status.textContent = "GREATER ACCRA · GHANA";
   loadingMessage && (loadingMessage.textContent = "Ready — welcome to Accra.");
   window.setTimeout(() => loading?.classList.add("done"), 400);
   document.documentElement.dataset.akwantuoPlayCanvasReady = "true";
