@@ -69,6 +69,15 @@ async function boot() {
   // Warm Accra daylight with a soft ambient fill, avoiding harsh flat lighting.
   app.start();
 
+  // Start downloading the unchanged player GLB immediately, in parallel with
+  // world construction. Parsing/instantiation remains asynchronous below.
+  const playerAssetPromise = new Promise<Asset>((resolve, reject) => {
+    app.assets.loadFromUrl("/assets/characters/generated/player.glb", "container", (error, asset) => {
+      if (error || !asset?.resource) reject(error ?? new Error("Player GLB returned no container resource."));
+      else resolve(asset);
+    });
+  });
+
   const addBox = (name: string, x: number, y: number, z: number, sx: number, sy: number, sz: number, material: StandardMaterial, blocker = false) => {
     const entity = new Entity(name);
     entity.addComponent("render", { type: "box", material, castShadows: true, receiveShadows: true });
@@ -127,12 +136,7 @@ async function boot() {
     showNotice("3D player failed to load");
   };
 
-  app.assets.loadFromUrl("/assets/characters/generated/player.glb", "container", (loadError, loadedAsset) => {
-    if (loadError || !loadedAsset?.resource) {
-      markPlayerUnavailable("The GLB request or container parse failed.", loadError);
-      return;
-    }
-
+  void playerAssetPromise.then((loadedAsset) => {
     const container = loadedAsset.resource as any;
     try {
       if (!Array.isArray(container.renders) || container.renders.length === 0) {
@@ -205,6 +209,8 @@ async function boot() {
     } catch (renderError) {
       markPlayerUnavailable("The GLB loaded but could not be attached as a visible render entity.", renderError);
     }
+  }).catch((loadError) => {
+    markPlayerUnavailable("The GLB request or container parse failed.", loadError);
   });
   const camera = new Entity("Third person camera");
   camera.addComponent("camera", { clearColor: new Color(0.68, 0.78, 0.83), fov: 62, farClip: 260 });
