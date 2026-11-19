@@ -116,3 +116,27 @@
 @media(max-width:390px){
   .touch-ui.vehicle-mode .vehicle-pedals{gap:10px}
 }
+
+
+/* Compact mobile driving pedals while keeping both controls easy to tap. */
+@media(max-width:799px){
+  .touch-ui.vehicle-mode .vehicle-pedals{
+    right:18px;bottom:18px;gap:10px;
+  }
+  .touch-ui.vehicle-mode .reverse-control{
+    min-width:96px;width:96px;min-height:52px;padding:7px 8px;
+    font-size:9px;line-height:1.15;border-radius:13px;
+  }
+  .touch-ui.vehicle-mode .accelerate-control{
+    min-width:88px;width:88px;min-height:60px;padding:7px 8px;
+    font-size:10px;border-radius:13px;
+  }
+}
+@media(max-width:390px){
+  .touch-ui.vehicle-mode .reverse-control{
+    min-width:88px;width:88px;min-height:48px;font-size:8px;
+  }
+  .touch-ui.vehicle-mode .accelerate-control{
+    min-width:80px;width:80px;min-height:56px;font-size:9px;
+  }
+}
