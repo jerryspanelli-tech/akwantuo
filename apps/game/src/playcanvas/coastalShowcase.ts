@@ -66,8 +66,8 @@ export function buildAccraCoastalShowcase(app: AppBase): void {
 
   // A recognisable Ghanaian coastal palm silhouette: curved segmented trunks
   // and individually modelled fronds rather than a single primitive crown.
-  for (let tree = 0; tree < 11; tree++) {
-    const x = 1510 + tree * 118;
+  for (let tree = 0; tree < 8; tree++) {
+    const x = 1510 + tree * 155;
     const z = -3140 + Math.sin(tree * 0.72) * 30;
     const lean = tree % 2 ? 0.10 : -0.08;
     for (let segment = 0; segment < 4; segment++) {
@@ -76,8 +76,8 @@ export function buildAccraCoastalShowcase(app: AppBase): void {
     }
     const crownX = x + lean * 15;
     const crownY = 8.7;
-    for (let frond = 0; frond < 9; frond++) {
-      const yaw = frond * 40;
+    for (let frond = 0; frond < 7; frond++) {
+      const yaw = frond * (360 / 7);
       const radians = yaw * Math.PI / 180;
       const length = 4.6 + (frond % 3) * 0.45;
       const leafEntity = box("Labadi palm individual frond", crownX + Math.sin(radians) * 1.6, crownY - 0.5, z + Math.cos(radians) * 1.6, 0.34, 0.12, length, frond % 2 ? leaf : leafLight, yaw, 17 + (frond % 3) * 5);
@@ -96,8 +96,8 @@ export function buildAccraCoastalShowcase(app: AppBase): void {
   box("Labadi pavilion ridge cap", pavilionX, 5.25, pavilionZ, 1.0, 0.35, 17, wood);
 
   // Three-dimensional octagonal beach umbrellas, poles and loungers.
-  for (let umbrella = 0; umbrella < 4; umbrella++) {
-    const x = 1830 + umbrella * 235;
+  for (let umbrella = 0; umbrella < 3; umbrella++) {
+    const x = 1830 + umbrella * 320;
     const z = -3300 - (umbrella % 2) * 34;
     cylinder("Labadi beach umbrella pole", x, 1.35, z, 0.075, 2.7, wood);
     for (let panel = 0; panel < 8; panel++) {
