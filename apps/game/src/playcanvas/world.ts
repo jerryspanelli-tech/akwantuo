@@ -345,6 +345,40 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     }
   }
 
+  // Black Star Square / Independence Square civic landmark.
+  // Stylised game-scale architecture: a broad ceremonial plaza, Independence Arch,
+  // open spectator terraces and flagpoles. This is not a surveyed site plan.
+  const independenceSquare = { x: 430, z: -980 };
+  plane("Black Star Square ceremonial plaza", independenceSquare.x, 0.035, independenceSquare.z, 190, 142, mats.lightConcrete);
+  plane("Black Star Square central parade ground", independenceSquare.x, 0.075, independenceSquare.z - 2, 116, 82, mats.concrete);
+  for (const side of [-1, 1]) {
+    box("Independence Square spectator terrace", independenceSquare.x + side * 76, 2.2, independenceSquare.z, 22, 4.4, 112, mats.lightConcrete);
+    for (let tier = 0; tier < 3; tier++) {
+      box("Independence Square seating tier", independenceSquare.x + side * (68 + tier * 4), 4.5 + tier * 0.72, independenceSquare.z, 7, 0.5, 100 - tier * 12, mats.roof);
+    }
+  }
+  // Monumental open arch with a broad lintel and two heavy piers.
+  box("Independence Arch left pier", independenceSquare.x - 25, 13, independenceSquare.z - 48, 8, 26, 9, mats.lightConcrete);
+  box("Independence Arch right pier", independenceSquare.x + 25, 13, independenceSquare.z - 48, 8, 26, 9, mats.lightConcrete);
+  box("Independence Arch upper lintel", independenceSquare.x, 26, independenceSquare.z - 48, 58, 5, 10, mats.lightConcrete);
+  box("Independence Arch recessed opening", independenceSquare.x, 12.5, independenceSquare.z - 42.5, 38, 21, 0.35, mats.roof);
+  box("Independence Arch crown", independenceSquare.x, 29.2, independenceSquare.z - 48, 34, 1.1, 10.5, mats.gold);
+  // A five-spoke black star emblem sits above the arch as a readable distant silhouette.
+  for (let point = 0; point < 5; point++) {
+    const angle = (point * 72 - 90) * Math.PI / 180;
+    const beam = new Entity("Black Star Square star point");
+    beam.addComponent("render", { type: "box", material: mats.roof, castShadows: false, receiveShadows: true });
+    beam.setPosition(independenceSquare.x + Math.cos(angle) * 3.1, 33.2 + Math.sin(angle) * 2.4, independenceSquare.z - 48);
+    beam.setLocalScale(1.15, 5.2, 0.8);
+    beam.setEulerAngles(0, -angle * 180 / Math.PI, 0);
+    app.root.addChild(beam);
+  }
+  for (let flag = 0; flag < 6; flag++) {
+    const x = independenceSquare.x - 52 + flag * 20.8;
+    cylinder("Independence Square flagpole", x, 8, independenceSquare.z + 52, 0.12, 16, mats.white);
+    box("Ghana national flag panel", x + 1.9, 13.4, independenceSquare.z + 52, 3.8, 2.2, 0.12, flag % 2 ? mats.red : mats.green);
+  }
+
   // Traffic-control furniture and public-transport stops at key Accra junctions.
   const junctions = [
     { name: "Osu", x: 1450, z: -1350 },
