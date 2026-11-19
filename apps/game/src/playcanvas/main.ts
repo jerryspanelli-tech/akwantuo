@@ -220,14 +220,51 @@ async function boot() {
   sun.setEulerAngles(48, 32, 0);
   app.root.addChild(sun);
 
-  // One drivable saloon/taxi prototype with separate body and wheels.
+  // Drivable Accra taxi: separate 3D body panels, glass, bumpers, lights,
+  // mirrors, door details, rubber tyres and metallic wheel hubs.
   const vehicle = new Entity("Accra taxi");
-  addBox("Taxi body", 0, 1.1, 0, 2.1, 1.05, 4.2, materials.vehicle);
-  const vehicleBody = app.root.findByName("Taxi body") as Entity;
-  vehicle.addChild(vehicleBody);
-  vehicleBody.setLocalPosition(0, 1.1, 0);
-  const cab = new Entity("Taxi cabin"); cab.addComponent("render", { type: "box", material: materials.glass }); cab.setLocalScale(1.7, 0.8, 2); cab.setLocalPosition(0, 1.95, -0.15); vehicle.addChild(cab);
-  for (const x of [-0.95, 0.95]) for (const z of [-1.35, 1.35]) { const wheel = new Entity("Taxi wheel"); wheel.addComponent("render", { type: "cylinder", material: materials.tyre }); wheel.setLocalScale(0.65, 0.22, 0.65); wheel.setLocalEulerAngles(0, 0, 90); wheel.setLocalPosition(x, 0.58, z); vehicle.addChild(wheel); }
+  const vehiclePart = (name: string, x: number, y: number, z: number, sx: number, sy: number, sz: number, material: StandardMaterial) => {
+    const part = new Entity(name);
+    part.addComponent("render", { type: "box", material, castShadows: true, receiveShadows: true });
+    part.setLocalPosition(x, y, z);
+    part.setLocalScale(sx, sy, sz);
+    vehicle.addChild(part);
+    return part;
+  };
+  const vehicleCylinder = (name: string, x: number, y: number, z: number, radius: number, height: number, material: StandardMaterial) => {
+    const part = new Entity(name);
+    part.addComponent("render", { type: "cylinder", material, castShadows: true, receiveShadows: true });
+    part.setLocalScale(radius * 2, height, radius * 2);
+    part.setLocalEulerAngles(0, 0, 90);
+    part.setLocalPosition(x, y, z);
+    vehicle.addChild(part);
+    return part;
+  };
+  vehiclePart("Taxi lower chassis", 0, 0.72, 0, 1.95, 0.36, 4.0, materials.roof);
+  vehiclePart("Taxi painted body", 0, 1.12, 0, 2.08, 0.92, 4.25, materials.vehicle);
+  vehiclePart("Taxi bonnet", 0, 1.48, 1.35, 1.9, 0.16, 1.35, materials.vehicle);
+  vehiclePart("Taxi roof", 0, 2.34, -0.18, 1.78, 0.16, 2.08, materials.vehicle);
+  vehiclePart("Taxi windscreen", 0, 1.99, 1.02, 1.66, 0.66, 0.12, materials.glass);
+  vehiclePart("Taxi rear glass", 0, 1.99, -1.27, 1.62, 0.62, 0.12, materials.glass);
+  for (const side of [-1, 1]) {
+    vehiclePart("Taxi side front window", side * 0.91, 2.0, 0.55, 0.1, 0.58, 0.86, materials.glass);
+    vehiclePart("Taxi side rear window", side * 0.91, 2.0, -0.55, 0.1, 0.58, 0.88, materials.glass);
+    vehiclePart("Taxi door handle", side * 1.055, 1.45, -0.05, 0.055, 0.09, 0.34, materials.white);
+    vehiclePart("Taxi side mirror arm", side * 1.08, 1.9, 0.88, 0.28, 0.08, 0.12, materials.roof);
+    vehiclePart("Taxi side mirror", side * 1.22, 1.96, 0.88, 0.16, 0.2, 0.22, materials.glass);
+    vehiclePart("Taxi side protective trim", side * 1.045, 0.98, -0.05, 0.045, 0.12, 2.2, materials.white);
+  }
+  vehiclePart("Taxi front bumper", 0, 0.76, 2.17, 2.05, 0.22, 0.18, materials.roof);
+  vehiclePart("Taxi rear bumper", 0, 0.76, -2.17, 2.05, 0.22, 0.18, materials.roof);
+  vehiclePart("Taxi front grille", 0, 1.13, 2.16, 0.76, 0.34, 0.08, materials.roof);
+  for (const side of [-1, 1]) {
+    vehiclePart("Taxi headlamp", side * 0.72, 1.35, 2.17, 0.42, 0.26, 0.08, materials.white);
+    vehiclePart("Taxi rear lamp", side * 0.76, 1.36, -2.17, 0.3, 0.38, 0.08, materials.red);
+    for (const z of [-1.35, 1.35]) {
+      vehicleCylinder("Taxi rubber tyre", side * 1.02, 0.62, z, 0.43, 0.28, materials.tyre);
+      vehicleCylinder("Taxi alloy wheel hub", side * 1.18, 0.62, z, 0.22, 0.035, materials.white);
+    }
+  }
   vehicle.setPosition(world.taxiSpawn.x, 0, world.taxiSpawn.z);
   app.root.addChild(vehicle);
 
