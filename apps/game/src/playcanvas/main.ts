@@ -84,7 +84,7 @@ async function boot() {
     entity.setPosition(x, y, z);
     entity.setLocalScale(sx, sy, sz);
     app.root.addChild(entity);
-    if (blocker) blockers.push({ x, z, hx: sx * 0.52, hz: sz * 0.52 });
+    if (blocker) blockers.push({ x, z, hx: sx * 0.52, hz: sz * 0.52, yaw: 0 });
     return entity;
   };
   const addPlane = (name: string, x: number, y: number, z: number, sx: number, sz: number, material: StandardMaterial) => {
@@ -358,7 +358,15 @@ async function boot() {
   let inVehicle = false, vehicleSpeed = 0, vehicleYaw = 0;
   let nearbyInteraction: { id: string; label: string; x: number; z: number; radius: number } | null = null;
   const overlaps = (x: number, z: number) => {
-    const buildingCollision = blockers.some((b) => Math.abs(x - b.x) < b.hx + 0.38 && Math.abs(z - b.z) < b.hz + 0.38);
+    // Test each rotated building in its own local footprint. Treating every
+    // building as north-facing AABB can create invisible barriers across roads.
+    const buildingCollision = blockers.some((b) => {
+      const radians = b.yaw * Math.PI / 180;
+      const dx = x - b.x, dz = z - b.z;
+      const localX = dx * Math.cos(radians) - dz * Math.sin(radians);
+      const localZ = dx * Math.sin(radians) + dz * Math.cos(radians);
+      return Math.abs(localX) < b.hx + 0.38 && Math.abs(localZ) < b.hz + 0.38;
+    });
     const vehiclePosition = vehicle.getPosition();
     const vehicleCollision = !inVehicle && Math.abs(x - vehiclePosition.x) < 1.55 && Math.abs(z - vehiclePosition.z) < 2.45;
     return buildingCollision || vehicleCollision;
