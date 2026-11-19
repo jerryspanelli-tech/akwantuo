@@ -256,6 +256,49 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     box("Coastal sand berm", (a.x + b.x) / 2, 0.08, (a.z + b.z) / 2, 7, 0.16, length, mats.sand, Math.atan2(dx, dz) * 180 / Math.PI);
   }
 
+  // Keep generated district buildings outside every drivable road corridor.
+  // Use the full building footprint plus a sidewalk/clearance margin, not just
+  // the building centre, so wide buildings cannot intrude into the carriageway.
+  const roadClearance = (x: number, z: number, radius: number): number => {
+    let clearance = Number.POSITIVE_INFINITY;
+    for (const path of GREATER_ACCRA_ROAD_PATHS) {
+      if (!path.playableInFirstRelease) continue;
+      const isMotorway = /^(n1|n4|n6)-/.test(path.roadSegmentId);
+      const width = path.roadSegmentId.startsWith("n1-tema") ? 23 :
+        path.roadSegmentId.startsWith("n1") ? 19 :
+        path.roadSegmentId.startsWith("n6") ? 19 :
+        path.roadSegmentId.startsWith("n4") ? 17 :
+        path.roadSegmentId.includes("spintex") ? 14 :
+        path.roadSegmentId.includes("ring-road") ? 13 :
+        path.roadSegmentId === "la-beach-road" ? 10 : 12;
+      const halfRoad = width / 2 + (isMotorway ? 2 : 0);
+      for (let i = 0; i < path.points.length - 1; i++) {
+        const a = path.points[i], b = path.points[i + 1];
+        const dx = b.x - a.x, dz = b.z - a.z;
+        const lengthSq = dx * dx + dz * dz || 1;
+        const t = Math.max(0, Math.min(1, ((x - a.x) * dx + (z - a.z) * dz) / lengthSq));
+        const distance = Math.hypot(x - (a.x + t * dx), z - (a.z + t * dz));
+        clearance = Math.min(clearance, distance - halfRoad - radius - 9);
+      }
+    }
+    return clearance;
+  };
+  const placeDistrictBuilding = (x: number, z: number, width: number, depth: number) => {
+    const radius = Math.hypot(width / 2, depth / 2);
+    if (roadClearance(x, z, radius) >= 0) return { x, z };
+    // Search outward in small rings. Pick the nearest safe position so district
+    // clusters retain their shape without placing a building over a road.
+    for (let ring = 1; ring <= 18; ring++) {
+      const distance = ring * 18;
+      for (let step = 0; step < 32; step++) {
+        const angle = step * Math.PI * 2 / 32;
+        const candidate = { x: x + Math.cos(angle) * distance, z: z + Math.sin(angle) * distance };
+        if (roadClearance(candidate.x, candidate.z, radius) >= 0) return candidate;
+      }
+    }
+    return { x, z };
+  };
+
   // District identity: sign structures and distinctive building clusters around real place anchors.
   const districtNames: Record<string, string> = {
     "accra-central-makola": "ACCRA CENTRAL · MAKOLA", "airport-city": "AIRPORT CITY",
@@ -275,10 +318,11 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     for (let i = 0; i < 7; i++) {
       const angle = (i / 7) * Math.PI * 2;
       const radius = 115 + (i % 3) * 28;
-      const x = anchor.x + Math.cos(angle) * radius;
-      const z = anchor.z + Math.sin(angle) * radius;
+      const rawX = anchor.x + Math.cos(angle) * radius;
+      const rawZ = anchor.z + Math.sin(angle) * radius;
       const width = isMarket ? 22 + (i % 3) * 5 : isModern ? 30 + (i % 3) * 7 : 18 + (i % 4) * 6;
       const depth = isMarket ? 18 + (i % 2) * 5 : 20 + (i % 3) * 6;
+      const { x, z } = placeDistrictBuilding(rawX, rawZ, width, depth);
       const floors = isModern ? 5 + (i % 4) : isMarket ? 1 + (i % 2) : 2 + (i % 3);
       const height = floors * 3.2;
       const yaw = (i * 23) % 360;
