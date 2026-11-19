@@ -283,7 +283,7 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     }
     return clearance;
   };
-  const placeDistrictBuilding = (x: number, z: number, width: number, depth: number) => {
+  const placeDistrictBuilding = (x: number, z: number, width: number, depth: number): { x: number; z: number } | null => {
     const radius = Math.hypot(width / 2, depth / 2);
     if (roadClearance(x, z, radius) >= 0) return { x, z };
     // Search outward in small rings. Pick the nearest safe position so district
@@ -296,7 +296,8 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
         if (roadClearance(candidate.x, candidate.z, radius) >= 0) return candidate;
       }
     }
-    return { x, z };
+    // Prefer omitting an unsafe generated building over silently blocking a road.
+    return null;
   };
 
   // District identity: sign structures and distinctive building clusters around real place anchors.
@@ -322,7 +323,9 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
       const rawZ = anchor.z + Math.sin(angle) * radius;
       const width = isMarket ? 22 + (i % 3) * 5 : isModern ? 30 + (i % 3) * 7 : 18 + (i % 4) * 6;
       const depth = isMarket ? 18 + (i % 2) * 5 : 20 + (i % 3) * 6;
-      const { x, z } = placeDistrictBuilding(rawX, rawZ, width, depth);
+      const placement = placeDistrictBuilding(rawX, rawZ, width, depth);
+      if (!placement) continue;
+      const { x, z } = placement;
       const floors = isModern ? 5 + (i % 4) : isMarket ? 1 + (i % 2) : 2 + (i % 3);
       const height = floors * 3.2;
       const yaw = (i * 23) % 360;
@@ -605,8 +608,10 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     box(label+" rooftop water tank",x+w*0.28,h+1.05,z-d*0.2,1.45,1.5,1.45,mats.industrial);
   };
   const strips=[
-    {name:"Osu Oxford Street",x:1450,z:-1180,shops:["MOBILE MONEY","PHARMACY","GROCERY","CHOP BAR","SALON"]},
-    {name:"Makola Market",x:-400,z:450,shops:["FABRICS","PROVISIONS","FRUITS","FOOD","HARDWARE"]},
+    // Keep the commercial frontage beside, not on top of, the Ring Road / Osu connector.
+    {name:"Osu Oxford Street",x:1580,z:-1180,shops:["MOBILE MONEY","PHARMACY","GROCERY","CHOP BAR","SALON"]},
+    // Makola's shop row sits north of the Circle approach, leaving the junction open.
+    {name:"Makola Market",x:-400,z:610,shops:["FABRICS","PROVISIONS","FRUITS","FOOD","HARDWARE"]},
     {name:"East Legon Shops",x:4300,z:1100,shops:["CAFE","SUPERMARKET","PHARMACY","FASHION","RESTAURANT"]},
     {name:"Madina Market",x:4900,z:2150,shops:["PROVISIONS","FOOD","FABRICS","PHONE SHOP","BARBER"]},
     {name:"Spintex Shops",x:5600,z:-1450,shops:["AUTO PARTS","FUEL","WAREHOUSE","SUPERMARKET","ELECTRICAL"]},
