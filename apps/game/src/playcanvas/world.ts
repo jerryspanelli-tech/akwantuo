@@ -376,7 +376,10 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
   for (let flag = 0; flag < 6; flag++) {
     const x = independenceSquare.x - 52 + flag * 20.8;
     cylinder("Independence Square flagpole", x, 8, independenceSquare.z + 52, 0.12, 16, mats.white);
-    box("Ghana national flag panel", x + 1.9, 13.4, independenceSquare.z + 52, 3.8, 2.2, 0.12, flag % 2 ? mats.red : mats.green);
+    box("Ghana flag red stripe", x + 1.9, 14.13, independenceSquare.z + 52, 3.8, 0.74, 0.12, mats.red);
+    box("Ghana flag gold stripe", x + 1.9, 13.4, independenceSquare.z + 52, 3.8, 0.74, 0.12, mats.gold);
+    box("Ghana flag green stripe", x + 1.9, 12.67, independenceSquare.z + 52, 3.8, 0.74, 0.12, mats.green);
+    box("Ghana flag black star", x + 1.9, 13.4, independenceSquare.z + 51.91, 0.48, 0.48, 0.08, mats.roof);
   }
 
   // Traffic-control furniture and public-transport stops at key Accra junctions.
