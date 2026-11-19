@@ -423,8 +423,21 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
   box("Accra trotro side windows", 1460, 2.15, -1560, 2.4, 0.78, 4.0, mats.glass);
   box("Accra trotro roof rack", 1460, 2.85, -1560, 1.8, 0.16, 4.0, mats.roof);
   for (const x of [1458.85, 1462.15]) for (const z of [-1561.8, -1558.2]) {
-    cylinder("Accra trotro wheel", x, 0.55, z, 0.42, 0.24, mats.roof);
+    const wheel = cylinder("Accra trotro rubber wheel", x, 0.55, z, 0.42, 0.24, mats.roof);
+    wheel.setEulerAngles(0, 0, 90);
+    const hub = cylinder("Accra trotro metal wheel hub", x + (x < 1460 ? -0.14 : 0.14), 0.55, z, 0.21, 0.04, mats.lightConcrete);
+    hub.setEulerAngles(0, 0, 90);
   }
+  box("Accra trotro front bumper", 1460, 0.72, -1557.0, 2.3, 0.22, 0.18, mats.roof);
+  box("Accra trotro front grille", 1460, 1.28, -1557.0, 0.82, 0.42, 0.08, mats.roof);
+  for (const side of [-1, 1]) {
+    box("Accra trotro headlamp", 1460 + side * 0.86, 1.42, -1557.0, 0.38, 0.3, 0.08, mats.white);
+    box("Accra trotro rear lamp", 1460 + side * 0.9, 1.42, -1562.72, 0.24, 0.42, 0.08, mats.red);
+    box("Accra trotro side door seam", 1460 + side * 1.19, 1.4, -1560.1, 0.035, 1.9, 1.25, mats.roof);
+    box("Accra trotro side mirror", 1460 + side * 1.34, 2.2, -1557.2, 0.16, 0.22, 0.24, mats.glass);
+  }
+  box("Accra trotro rear bumper", 1460, 0.72, -1563.0, 2.3, 0.22, 0.18, mats.roof);
+  box("Accra trotro destination board", 1460, 2.78, -1557.0, 1.5, 0.28, 0.12, makeSignMaterial("ACCRA · OSU"));
 
   // Ghanaian roadside service station and street lighting.
   box("Spintex fuel station forecourt", 5650, 0.03, -1040, 52, 0.12, 38, mats.lightConcrete);
