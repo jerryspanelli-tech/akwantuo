@@ -57,6 +57,7 @@ export function buildAccraCoastalShowcase(app: AppBase): void {
   // sloping shoreline instead of one flat strip of colour.
   plane("Labadi broad dry-sand beach", 2200, -0.015, -3250, 1540, 330, sand);
   plane("Labadi damp shoreline", 2200, 0.005, -3400, 1540, 34, wetSand);
+  const waveBands: Array<{ entity: Entity; x: number; y: number; z: number; phase: number; width: number; depth: number }> = [];
   for (let i = 0; i < 7; i++) {
     const z = -3414 - i * 13;
     const ribbon = plane(i % 2 ? "Labadi shore foam ribbon" : "Labadi incoming wave face", 2200, -0.035 + (i % 2) * 0.012, z, 1450, i % 2 ? 2.4 : 5.5, i % 2 ? foam : sea);
@@ -149,7 +150,6 @@ export function buildAccraCoastalShowcase(app: AppBase): void {
 
   // Foam and boats animate at low frequency to keep the scene inexpensive on
   // older mobile GPUs. No per-frame mesh creation or allocation is performed.
-  const waveBands: Array<{ entity: Entity; x: number; y: number; z: number; phase: number; width: number; depth: number }> = [];
   let elapsed = 0;
   app.on("update", (dt: number) => {
     elapsed += Math.min(dt, 0.05);
