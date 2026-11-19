@@ -172,7 +172,13 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
         }
       } else {
         box(path.roadSegmentId + " road surface", mx, 0.04, mz, roadWidth, 0.16, length + 1, mats.road, yaw);
-        box(path.roadSegmentId + " yellow centre line", mx, 0.13, mz, 0.16, 0.025, length * 0.42, mats.yellow, yaw);
+        // Broken yellow centre markings are laid out along the full road
+        // segment, rather than one oversized dash at its midpoint.
+        for (let mark = 12; mark < length - 4; mark += 34) {
+          const t = mark / length;
+          box(path.roadSegmentId + " broken yellow centre marking",
+            a.x + dx * t, 0.14, a.z + dz * t, 0.16, 0.025, 8, mats.yellow, yaw);
+        }
         for (const side of [-1, 1]) {
           const offset = side * (roadWidth / 2 - 0.28);
           const nx = Math.cos(yaw * Math.PI / 180) * offset;
@@ -266,6 +272,10 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
           const p = local(wx, depth / 2 + 0.07);
           box(name + " framed window", p.x, wy, p.z, width * 0.19, 1.45, 0.16, mats.glass, yaw);
           box(name + " window sill", p.x, wy - 0.78, p.z + 0.08, width * 0.22, 0.16, 0.3, mats.lightConcrete, yaw);
+          if (col !== 1) {
+            box(name + " exterior air conditioner", p.x, wy - 1.02, p.z + 0.3, width * 0.12, 0.3, 0.34, mats.industrial, yaw);
+            box(name + " air conditioner vent", p.x, wy - 1.02, p.z + 0.48, width * 0.075, 0.16, 0.04, mats.roof, yaw);
+          }
         }
         if (isModern) {
           const p = local(0, depth / 2 + 0.6);
