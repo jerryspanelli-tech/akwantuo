@@ -4,7 +4,7 @@ import { GREATER_ACCRA_LANDMARK_FOOTPRINTS } from "../world/greaterAccraLandmark
 import { GREATER_ACCRA_RAIL_NODES, GREATER_ACCRA_RAIL_ROUTES } from "../world/railNetwork";
 import { buildAccraCoastalShowcase } from "./coastalShowcase";
 
-export type WorldBlocker = { x: number; z: number; hx: number; hz: number };
+export type WorldBlocker = { x: number; z: number; hx: number; hz: number; yaw: number };
 type RoadPoint = Readonly<{ x: number; z: number }>;
 
 /** Smooth authored road centrelines so junction approaches do not become
@@ -95,7 +95,7 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     entity.setLocalScale(sx, sy, sz);
     if (yaw) entity.setEulerAngles(0, yaw, 0);
     app.root.addChild(entity);
-    if (solid) blockers.push({ x, z, hx: sx * 0.52, hz: sz * 0.52 });
+    if (solid) blockers.push({ x, z, hx: sx * 0.52, hz: sz * 0.52, yaw });
     return entity;
   };
   const plane = (name: string, x: number, y: number, z: number, width: number, depth: number, mat: StandardMaterial) => {
