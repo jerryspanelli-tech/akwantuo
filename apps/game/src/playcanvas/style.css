@@ -42,3 +42,66 @@
 .vehicle-stick{touch-action:none}
 @keyframes vehicle-hud-enter{from{opacity:.55;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
 @media(prefers-reduced-motion:reduce){.touch-ui *{animation:none!important;transition:none!important}}
+
+
+/* Mobile driving HUD: each control is anchored independently to the viewport. */
+@media(max-width:799px){
+  .touch-ui.vehicle-mode{
+    position:fixed;inset:0;left:0;right:0;bottom:auto;
+    display:block;padding:0;margin:0;pointer-events:none;
+  }
+  .touch-ui.vehicle-mode #minimap{opacity:1;visibility:visible}
+  .touch-ui.vehicle-mode .mission{
+    top:75px;left:20px;right:auto;bottom:auto;
+    width:max-content;max-width:min(170px,calc(100vw - 40px));
+    gap:3px;padding:7px 9px;
+    opacity:1;visibility:visible;
+  }
+  .touch-ui.vehicle-mode .mission strong{font-size:11px}
+  .touch-ui.vehicle-mode .mission span{font-size:9px;line-height:1.25}
+  .touch-ui.vehicle-mode .vehicle-controls{
+    position:fixed;inset:0;width:auto;height:auto;
+    display:block;padding:0;margin:0;pointer-events:none;
+  }
+  .touch-ui.vehicle-mode .vehicle-steering{
+    position:fixed;left:24px;bottom:24px;
+    display:block;pointer-events:auto;
+  }
+  .touch-ui.vehicle-mode .vehicle-stick{
+    width:120px;height:120px;
+  }
+  .touch-ui.vehicle-mode .vehicle-stick .stick-ring{inset:20px}
+  .touch-ui.vehicle-mode .vehicle-stick .stick-knob{
+    width:48px;height:48px;left:35px;top:35px;
+  }
+  .touch-ui.vehicle-mode .vehicle-pedals{
+    position:fixed;right:24px;bottom:24px;
+    display:flex;flex-direction:row;align-items:flex-end;
+    gap:16px;pointer-events:auto;
+  }
+  .touch-ui.vehicle-mode .vehicle-brake-stack{display:contents}
+  .touch-ui.vehicle-mode .accelerate-control{
+    order:1;min-width:112px;width:112px;min-height:76px;
+    align-self:flex-end;
+  }
+  .touch-ui.vehicle-mode .reverse-control{
+    order:2;min-width:120px;width:120px;min-height:64px;
+  }
+  .touch-ui.vehicle-mode .vehicle-brake-stack .vehicle-exit{
+    position:fixed;right:24px;bottom:130px;
+    min-width:120px;width:120px;min-height:44px;
+    z-index:5;
+  }
+}
+@media(max-width:390px){
+  .touch-ui.vehicle-mode .vehicle-pedals{gap:16px}
+  .touch-ui.vehicle-mode .accelerate-control{
+    min-width:88px;width:88px;min-height:70px;padding:8px;
+  }
+  .touch-ui.vehicle-mode .reverse-control{
+    min-width:112px;width:112px;min-height:60px;padding:8px;font-size:9px;
+  }
+  .touch-ui.vehicle-mode .vehicle-brake-stack .vehicle-exit{
+    min-width:112px;width:112px;
+  }
+}
