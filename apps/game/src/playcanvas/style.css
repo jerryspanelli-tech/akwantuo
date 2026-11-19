@@ -167,3 +167,26 @@
     min-width:70px;width:70px;min-height:44px;font-size:8px;
   }
 }
+
+
+/* Corrected mobile driving pedals: compact horizontal row, BRAKE left and GAS right. */
+@media(max-width:799px){
+  .touch-ui.vehicle-mode .vehicle-pedals{
+    position:fixed;right:18px;bottom:18px;
+    display:flex;flex-direction:row;align-items:flex-end;
+    gap:8px;pointer-events:auto;
+  }
+  .touch-ui.vehicle-mode .reverse-control{
+    order:1;min-width:68px;width:68px;min-height:42px;
+    padding:5px 6px;font-size:8px;line-height:1.1;border-radius:10px;
+  }
+  .touch-ui.vehicle-mode .accelerate-control{
+    order:2;min-width:68px;width:68px;min-height:48px;
+    padding:5px 6px;font-size:9px;border-radius:10px;
+  }
+}
+@media(max-width:390px){
+  .touch-ui.vehicle-mode .vehicle-pedals{right:14px;bottom:14px;gap:6px}
+  .touch-ui.vehicle-mode .reverse-control{min-width:62px;width:62px;min-height:40px;font-size:7px}
+  .touch-ui.vehicle-mode .accelerate-control{min-width:62px;width:62px;min-height:44px;font-size:8px}
+}
