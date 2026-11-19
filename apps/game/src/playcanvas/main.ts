@@ -252,7 +252,7 @@ async function boot() {
 
   // Driving has its own analog steering stick. Horizontal travel maps
   // continuously from full-left (-1) to full-right (+1).
-  let vehicleStickX = 0, vehicleStickPointer: number | null = null;
+  let vehicleStickX = 0, smoothedVehicleSteer = 0, vehicleStickPointer: number | null = null;
   const updateVehicleStick = (event: PointerEvent) => {
     if (!vehicleStick) return;
     const rect = vehicleStick.getBoundingClientRect();
@@ -385,8 +385,10 @@ async function boot() {
         vehicleSpeed *= Math.max(0, 1 - step * (Math.abs(vehicleSpeed) < 0.45 ? 5 : 0.68));
       }
       const steeringGrip = 0.3 + Math.min(Math.abs(vehicleSpeed) / 8, 1) * 0.7;
-      // Proportional analog steering: small thumb movements make gentle turns.
-      vehicleYaw += steer * steeringGrip * (vehicleSpeed >= 0 ? 1 : -1) * step * 1.75;
+      // Smooth the analog input slightly so proportional thumb movement produces
+      // stable, progressive steering instead of abrupt yaw changes.
+      smoothedVehicleSteer += (steer - smoothedVehicleSteer) * (1 - Math.exp(-12 * step));
+      vehicleYaw += smoothedVehicleSteer * steeringGrip * (vehicleSpeed >= 0 ? 1 : -1) * step * 1.75;
       const nextX = vehicle.getPosition().x + Math.sin(vehicleYaw) * vehicleSpeed * step;
       const nextZ = vehicle.getPosition().z + Math.cos(vehicleYaw) * vehicleSpeed * step;
       if (!overlaps(nextX, nextZ) && nextX > -8000 && nextX < 13000 && nextZ > -4050 && nextZ < 8500) vehicle.setPosition(nextX, 0, nextZ);
