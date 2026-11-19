@@ -319,6 +319,9 @@ async function boot() {
 
   const walkSpeed = 4.6, sprintSpeed = 8.2;
   let inVehicle = false, vehicleSpeed = 0, vehicleYaw = 0;
+  // First Journey destination is the existing Labadi beach public-transport stop.
+  const firstJourneyDestination = { x: 2260, z: -2380, radius: 65 };
+  let firstJourneyComplete = false;
   let nearbyInteraction: { id: string; label: string; x: number; z: number; radius: number } | null = null;
   const overlaps = (x: number, z: number) => {
     const buildingCollision = blockers.some((b) => Math.abs(x - b.x) < b.hx + 0.38 && Math.abs(z - b.z) < b.hz + 0.38);
@@ -399,6 +402,11 @@ async function boot() {
       vehicle.setEulerAngles(0, vehicleYaw * 180 / Math.PI, 0);
       const vehiclePosition = vehicle.getPosition();
       player.setPosition(vehiclePosition.x, vehiclePosition.y, vehiclePosition.z);
+      if (!firstJourneyComplete && Math.hypot(vehiclePosition.x - firstJourneyDestination.x, vehiclePosition.z - firstJourneyDestination.z) <= firstJourneyDestination.radius) {
+        firstJourneyComplete = true;
+        vehicleSpeed = 0;
+        showNotice("FIRST JOURNEY COMPLETE · Welcome to Labadi Beach!");
+      }
       if (exitButton) exitButton.hidden = false;
     } else {
       const rawMagnitude = Math.hypot(forward, strafe);
@@ -485,9 +493,9 @@ async function boot() {
       map.strokeStyle = "#fff2d2"; map.lineWidth = 1.5; map.stroke();
       map.restore();
     }
-    if (status) status.textContent = inVehicle ? "TAXI · DRIVING" : "OSU · EXPLORATION";
-    if (objective) objective.textContent = inVehicle ? "Drive towards Labadi Beach" : "Explore Osu and find the taxi";
-    if (hint) hint.textContent = inVehicle ? "Steer with the joystick · Hold GAS or BRAKE / REVERSE · Tap the door to exit · Drag anywhere above to look" : "Push fully to sprint · Tap ↑ to jump · Drag to look";
+    if (status) status.textContent = firstJourneyComplete ? "LABADI BEACH · ARRIVED" : inVehicle ? "TAXI · DRIVING" : "OSU · EXPLORATION";
+    if (objective) objective.textContent = firstJourneyComplete ? "Journey complete · Welcome to Labadi Beach!" : inVehicle ? "Drive towards Labadi Beach" : "Explore Osu and find the taxi";
+    if (hint) hint.textContent = firstJourneyComplete ? "FIRST JOURNEY complete · You can explore Labadi Beach" : inVehicle ? "Steer with the joystick · Hold GAS or BRAKE / REVERSE · Reach the Labadi Beach stop · Tap the door to exit" : "Push fully to sprint · Tap ↑ to jump · Drag to look";
     if (healthFill) healthFill.style.width = "100%";
     if (healthValue) healthValue.textContent = "100";
   });
