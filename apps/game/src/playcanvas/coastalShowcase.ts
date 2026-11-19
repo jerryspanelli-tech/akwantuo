@@ -24,6 +24,9 @@ export function buildAccraCoastalShowcase(app: AppBase): void {
   const foam = mat(0.72, 0.82, 0.79);
   const white = mat(0.86, 0.84, 0.76);
   const blue = mat(0.10, 0.31, 0.42);
+  const asphalt = mat(0.10, 0.12, 0.13);
+  const roadLine = mat(0.9, 0.78, 0.52);
+  const curb = mat(0.58, 0.57, 0.52);
   const red = mat(0.55, 0.16, 0.12);
   const yellow = mat(0.86, 0.65, 0.25);
 
@@ -57,6 +60,28 @@ export function buildAccraCoastalShowcase(app: AppBase): void {
   // sloping shoreline instead of one flat strip of colour.
   plane("Labadi broad dry-sand beach", 2200, -0.015, -3250, 1540, 330, sand);
   plane("Labadi damp shoreline", 2200, 0.005, -3400, 1540, 34, wetSand);
+
+  // A short, fully modelled access road links the existing La Beach Road
+  // corridor to the beach parking / pedestrian arrival area.
+  const beachAccess = [
+    { x: 2750, z: -2100 }, { x: 2700, z: -2400 },
+    { x: 2500, z: -2700 }, { x: 2250, z: -2980 }
+  ];
+  for (let segment = 0; segment < beachAccess.length - 1; segment++) {
+    const a = beachAccess[segment], b = beachAccess[segment + 1];
+    const dx = b.x - a.x, dz = b.z - a.z;
+    const length = Math.hypot(dx, dz);
+    const yaw = Math.atan2(dx, dz) * 180 / Math.PI;
+    const mx = (a.x + b.x) / 2, mz = (a.z + b.z) / 2;
+    box("Labadi beach access asphalt road", mx, 0.06, mz, 10, 0.18, length + 1, asphalt, yaw);
+    box("Labadi beach access centre marking", mx, 0.16, mz, 0.14, 0.025, Math.min(9, length * 0.35), roadLine, yaw);
+    for (const side of [-1, 1]) {
+      const offset = side * 5.35;
+      const nx = Math.cos(yaw * Math.PI / 180) * offset;
+      const nz = -Math.sin(yaw * Math.PI / 180) * offset;
+      box("Labadi beach access raised kerb", mx + nx, 0.16, mz + nz, 0.28, 0.24, length, curb, yaw);
+    }
+  }
   const waveBands: Array<{ entity: Entity; x: number; y: number; z: number; phase: number; width: number; depth: number }> = [];
   for (let i = 0; i < 7; i++) {
     const z = -3414 - i * 13;
