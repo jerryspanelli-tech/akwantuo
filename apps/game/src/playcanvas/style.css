@@ -46,3 +46,48 @@
 /* Compact horizontal driving pedals: BRAKE/REVERSE left, GAS right. */
 @media(max-width:799px){.vehicle-pedals{display:flex!important;flex-direction:row!important;align-items:flex-end!important;gap:8px!important}.vehicle-brake-stack{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:6px!important}.vehicle-brake-stack .vehicle-exit{min-width:68px!important;width:68px!important;min-height:38px!important;padding:6px 5px!important;font-size:8px!important}.reverse-control{min-width:68px!important;width:68px!important;min-height:42px!important;padding:7px 5px!important;font-size:8px!important}.accelerate-control{min-width:68px!important;width:68px!important;min-height:48px!important;padding:7px 5px!important;font-size:9px!important;align-self:flex-end!important}}
 @media(max-width:390px){.vehicle-pedals{gap:6px!important}.vehicle-brake-stack .vehicle-exit{min-width:62px!important;width:62px!important;min-height:36px!important}.reverse-control{min-width:62px!important;width:62px!important;min-height:40px!important}.accelerate-control{min-width:62px!important;width:62px!important;min-height:46px!important}}
+
+/* Compact vertical driving controls for narrow touch screens.
+   Keep steering at lower-left and stack GAS, EXIT CAR, BRAKE/REVERSE at lower-right. */
+@media(max-width:799px){
+  .vehicle-pedals{
+    flex-direction:column!important;
+    align-items:flex-end!important;
+    justify-content:flex-end!important;
+    gap:5px!important;
+  }
+  .accelerate-control{
+    width:72px!important;
+    min-width:72px!important;
+    min-height:42px!important;
+    padding:6px 5px!important;
+    align-self:stretch!important;
+    font-size:9px!important;
+  }
+  .vehicle-brake-stack{
+    width:72px!important;
+    gap:5px!important;
+  }
+  .vehicle-brake-stack .vehicle-exit{
+    width:72px!important;
+    min-width:72px!important;
+    min-height:34px!important;
+    padding:5px 4px!important;
+    font-size:8px!important;
+  }
+  .reverse-control{
+    width:72px!important;
+    min-width:72px!important;
+    min-height:42px!important;
+    padding:6px 4px!important;
+    font-size:8px!important;
+    line-height:1.15!important;
+  }
+}
+@media(max-width:390px){
+  .vehicle-pedals,.vehicle-brake-stack{width:66px!important}
+  .accelerate-control,.vehicle-brake-stack .vehicle-exit,.reverse-control{
+    width:66px!important;
+    min-width:66px!important;
+  }
+}
