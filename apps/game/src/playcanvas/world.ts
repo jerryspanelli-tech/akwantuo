@@ -259,10 +259,12 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
   // Keep generated district buildings outside every drivable road corridor.
   // Use the full building footprint plus a sidewalk/clearance margin, not just
   // the building centre, so wide buildings cannot intrude into the carriageway.
-  const roadClearance = (x: number, z: number, radius: number): number => {
-    let clearance = Number.POSITIVE_INFINITY;
-    for (const path of GREATER_ACCRA_ROAD_PATHS) {
-      if (!path.playableInFirstRelease) continue;
+  // Precompute the same smoothed road segments used by the renderer. This
+  // keeps building clearance aligned with the visible carriageways and avoids
+  // repeatedly resampling every road while searching for safe building sites.
+  const roadCorridors = GREATER_ACCRA_ROAD_PATHS
+    .filter((path) => path.playableInFirstRelease)
+    .flatMap((path) => {
       const isMotorway = /^(n1|n4|n6)-/.test(path.roadSegmentId);
       const width = path.roadSegmentId.startsWith("n1-tema") ? 23 :
         path.roadSegmentId.startsWith("n1") ? 19 :
@@ -271,15 +273,19 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
         path.roadSegmentId.includes("spintex") ? 14 :
         path.roadSegmentId.includes("ring-road") ? 13 :
         path.roadSegmentId === "la-beach-road" ? 10 : 12;
-      const halfRoad = width / 2 + (isMotorway ? 2 : 0);
-      for (let i = 0; i < path.points.length - 1; i++) {
-        const a = path.points[i], b = path.points[i + 1];
-        const dx = b.x - a.x, dz = b.z - a.z;
-        const lengthSq = dx * dx + dz * dz || 1;
-        const t = Math.max(0, Math.min(1, ((x - a.x) * dx + (z - a.z) * dz) / lengthSq));
-        const distance = Math.hypot(x - (a.x + t * dx), z - (a.z + t * dz));
-        clearance = Math.min(clearance, distance - halfRoad - radius - 9);
-      }
+      const points = smoothRoadCentreline(path.points);
+      return points.slice(0, -1).map((a, index) => ({
+        a, b: points[index + 1], halfRoad: width / 2 + (isMotorway ? 2 : 0)
+      }));
+    });
+  const roadClearance = (x: number, z: number, radius: number): number => {
+    let clearance = Number.POSITIVE_INFINITY;
+    for (const segment of roadCorridors) {
+      const dx = segment.b.x - segment.a.x, dz = segment.b.z - segment.a.z;
+      const lengthSq = dx * dx + dz * dz || 1;
+      const t = Math.max(0, Math.min(1, ((x - segment.a.x) * dx + (z - segment.a.z) * dz) / lengthSq));
+      const distance = Math.hypot(x - (segment.a.x + t * dx), z - (segment.a.z + t * dz));
+      clearance = Math.min(clearance, distance - segment.halfRoad - radius - 9);
     }
     return clearance;
   };
