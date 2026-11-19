@@ -27,6 +27,7 @@ jobs:
         run: npm run build
 
   supabase-connectivity:
+    if: github.event_name == 'workflow_dispatch'
     name: Supabase connectivity diagnostic
     runs-on: ubuntu-latest
     continue-on-error: true
