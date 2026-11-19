@@ -105,3 +105,14 @@
     min-width:112px;width:112px;
   }
 }
+
+
+/* Match the reference: BRAKE/REVERSE left, GAS right, with a compact footprint. */
+@media(max-width:799px){
+  .touch-ui.vehicle-mode .vehicle-pedals{gap:12px}
+  .touch-ui.vehicle-mode .reverse-control{order:1}
+  .touch-ui.vehicle-mode .accelerate-control{order:2}
+}
+@media(max-width:390px){
+  .touch-ui.vehicle-mode .vehicle-pedals{gap:10px}
+}
