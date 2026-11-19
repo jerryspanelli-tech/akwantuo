@@ -5,6 +5,29 @@ import { GREATER_ACCRA_RAIL_NODES, GREATER_ACCRA_RAIL_ROUTES } from "../world/ra
 import { buildAccraCoastalShowcase } from "./coastalShowcase";
 
 export type WorldBlocker = { x: number; z: number; hx: number; hz: number };
+type RoadPoint = Readonly<{ x: number; z: number }>;
+
+/** Smooth authored road centrelines so junction approaches do not become
+ * disconnected straight slabs. Sampling density scales with segment length. */
+function smoothRoadCentreline(points: readonly RoadPoint[]): RoadPoint[] {
+  if (points.length < 3) return [...points];
+  const result: RoadPoint[] = [points[0]];
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[Math.max(0, i - 1)];
+    const p1 = points[i];
+    const p2 = points[i + 1];
+    const p3 = points[Math.min(points.length - 1, i + 2)];
+    const span = Math.hypot(p2.x - p1.x, p2.z - p1.z);
+    const steps = Math.max(4, Math.ceil(span / 240));
+    for (let step = 1; step <= steps; step++) {
+      const t = step / steps, t2 = t * t, t3 = t2 * t;
+      const x = 0.5 * (2*p1.x + (-p0.x+p2.x)*t + (2*p0.x-5*p1.x+4*p2.x-p3.x)*t2 + (-p0.x+3*p1.x-3*p2.x+p3.x)*t3);
+      const z = 0.5 * (2*p1.z + (-p0.z+p2.z)*t + (2*p0.z-5*p1.z+4*p2.z-p3.z)*t2 + (-p0.z+3*p1.z-3*p2.z+p3.z)*t3);
+      result.push({x,z});
+    }
+  }
+  return result;
+}
 export type GreaterAccraWorld = {
   blockers: WorldBlocker[];
   spawn: { x: number; z: number };
@@ -152,8 +175,9 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
       path.roadSegmentId.includes("spintex") ? 14 :
       path.roadSegmentId.includes("ring-road") ? 13 :
       path.roadSegmentId === "la-beach-road" ? 10 : 12;
-    for (let index = 0; index < path.points.length - 1; index++) {
-      const a = path.points[index], b = path.points[index + 1];
+    const roadPoints = smoothRoadCentreline(path.points);
+    for (let index = 0; index < roadPoints.length - 1; index++) {
+      const a = roadPoints[index], b = roadPoints[index + 1];
       const dx = b.x - a.x, dz = b.z - a.z, length = Math.hypot(dx, dz);
       if (length < 1) continue;
       const yaw = Math.atan2(dx, dz) * 180 / Math.PI;
