@@ -75,8 +75,8 @@ export function addGhanaLandmarkDetails(app: AppBase): void {
       const bottom = 36;
       box("Villaggio Vista " + tower.name + " glass tower", p.x + tower.dx, bottom + tower.h / 2, p.z + tower.dz, tower.w, tower.h, tower.d, mats.glass);
       box("Villaggio Vista " + tower.name + " kente fin", p.x + tower.dx, bottom + tower.h / 2, p.z + tower.dz - tower.d / 2 - 0.18, 1.5, tower.h * 0.94, 0.35, mats.gold);
-      for (let floor = 1; floor < Math.floor(tower.h / 3.4); floor += 2) {
-        box("Villaggio Vista " + tower.name + " floor band " + floor, p.x + tower.dx, bottom + floor * 3.4, p.z + tower.dz - tower.d / 2 - 0.24, tower.w + 0.4, 0.16, 0.24, mats.pale);
+      for (const level of [0.34, 0.68]) {
+        box("Villaggio Vista " + tower.name + " facade band", p.x + tower.dx, bottom + tower.h * level, p.z + tower.dz - tower.d / 2 - 0.24, tower.w + 0.4, 0.16, 0.24, mats.pale);
       }
       box("Villaggio Vista " + tower.name + " crown", p.x + tower.dx, bottom + tower.h + 0.8, p.z + tower.dz, tower.w + 1.5, 1.6, tower.d + 1.5, mats.roof);
     }
@@ -96,8 +96,8 @@ export function addGhanaLandmarkDetails(app: AppBase): void {
       for (const side of [-1, 1]) {
         box("The Signature " + tower.name + " gold fin", p.x + tower.dx + side * (tower.w / 2 - 1.5), baseY + tower.h / 2, p.z - 15.8, 1.1, tower.h * 0.98, 0.35, mats.gold);
       }
-      for (let floor = 1; floor < Math.floor(tower.h / 3.2); floor++) {
-        box("The Signature " + tower.name + " slab " + floor, p.x + tower.dx, baseY + floor * 3.2, p.z - 15.7, tower.w + 0.25, 0.12, 0.25, mats.white);
+      for (const level of [0.25, 0.5, 0.75]) {
+        box("The Signature " + tower.name + " floor band", p.x + tower.dx, baseY + tower.h * level, p.z - 15.7, tower.w + 0.25, 0.12, 0.25, mats.white);
       }
       box("The Signature " + tower.name + " roof crown", p.x + tower.dx, baseY + tower.h + 0.8, p.z, tower.w + 1.2, 1.6, 32, mats.pale);
     }
@@ -112,12 +112,12 @@ export function addGhanaLandmarkDetails(app: AppBase): void {
     box("Accra Mall main entrance portal", p.x, 8.5, frontZ + 1.1, 30, 15, 1.2, mats.pale);
     box("Accra Mall entrance glass doors", p.x, 6.2, frontZ + 1.85, 20, 8.2, 0.18, mats.glass);
     box("Accra Mall red identity sign", p.x, 17.2, frontZ + 1.3, 46, 3.4, 0.6, mats.red);
-    for (let bay = 0; bay < 9; bay++) {
-      const x = p.x - 78 + bay * 19.5;
+    for (let bay = 0; bay < 5; bay++) {
+      const x = p.x - 62 + bay * 31;
       box("Accra Mall shop bay " + bay, x, 6.4, frontZ + 0.65, 15.5, 9.4, 0.22, bay % 2 ? mats.glass : mats.blueGlass);
       box("Accra Mall shop canopy " + bay, x, 12, frontZ + 1.25, 16.5, 0.42, 1.5, mats.pale);
     }
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 3; i++) {
       box("Accra Mall roof skylight " + i, p.x - 60 + i * 30, 19.1, p.z - 28, 18, 0.55, 24, mats.blueGlass);
     }
     box("Accra Mall parking forecourt", p.x, 0.035, p.z + 126, 190, 0.08, 34, mats.concrete);
@@ -131,8 +131,8 @@ export function addGhanaLandmarkDetails(app: AppBase): void {
     box("Kotoka terminal glass curtain wall", p.x, 10.5, p.z + 38, 350, 7, 0.5, mats.blueGlass);
     box("Kotoka terminal departure roof", p.x, 19, p.z + 16, 390, 1.6, 48, mats.roof);
     box("Kotoka terminal landside canopy", p.x, 7.7, p.z + 52, 340, 1, 18, mats.white);
-    for (let bay = 0; bay < 14; bay++) {
-      const x = p.x - 158 + bay * 24;
+    for (let bay = 0; bay < 7; bay++) {
+      const x = p.x - 144 + bay * 48;
       box("Kotoka terminal gate mullion " + bay, x, 10.5, p.z + 38.35, 0.35, 7.2, 0.18, mats.pale);
     }
     box("Kotoka terminal east pier", p.x + 190, 8, p.z - 18, 110, 14, 34, mats.concrete);
@@ -169,7 +169,7 @@ export function addGhanaLandmarkDetails(app: AppBase): void {
     box("University of Ghana Main Hall red roof", p.x, 25, p.z, 108, 2.2, 62, mats.red);
     box("University of Ghana Main Hall clock tower", p.x, 37, p.z - 26, 17, 27, 17, mats.pale);
     box("University of Ghana Main Hall clock face", p.x, 46, p.z - 35, 6.4, 6.4, 0.35, mats.dark);
-    cylinder("University of Ghana Main Hall clock dial", p.x, 46, p.z - 35.25, 5.1, 0.2, mats.white);
+    sphere("University of Ghana Main Hall clock dial", p.x, 46, p.z - 35.25, 5.1, 5.1, 0.18, mats.white);
     box("University of Ghana Main Hall clock hand vertical", p.x, 46, p.z - 35.42, 0.22, 3.6, 0.08, mats.dark);
     box("University of Ghana Main Hall clock hand horizontal", p.x + 0.9, 46, p.z - 35.44, 2, 0.2, 0.08, mats.dark);
     for (const side of [-1, 1]) {
@@ -187,12 +187,7 @@ export function addGhanaLandmarkDetails(app: AppBase): void {
     box("Kwame Nkrumah Memorial central tower", p.x, 17, p.z - 8, 7, 22, 7, mats.green);
     cylinder("Kwame Nkrumah Memorial gold star base", p.x, 30, p.z - 8, 5, 1, mats.gold);
     box("Kwame Nkrumah Memorial entrance marker", p.x, 7, p.z - 54, 3, 14, 3, mats.gold);
-    for (let i = 0; i < 8; i++) {
-      const angle = (i / 8) * Math.PI * 2;
-      const x = p.x + Math.cos(angle) * 58;
-      const z = p.z + Math.sin(angle) * 58;
-      cylinder("Kwame Nkrumah Memorial garden bollard " + i, x, 0.6, z, 1, 1.2, mats.white);
-    }
+
   }
 
   // National Theatre: its signature clustered sculptural roof shells,
