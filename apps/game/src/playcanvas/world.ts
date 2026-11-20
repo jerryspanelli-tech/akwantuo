@@ -1,6 +1,7 @@
 import { AppBase, Color, Entity, StandardMaterial, Texture, PIXELFORMAT_RGBA8 } from "playcanvas";
 import { GREATER_ACCRA_COASTLINE, GREATER_ACCRA_MAP_EXTENT, GREATER_ACCRA_REGION_ANCHORS, GREATER_ACCRA_ROAD_PATHS } from "../world/greaterAccraLayout";
 import { GREATER_ACCRA_LANDMARK_FOOTPRINTS } from "../world/greaterAccraLandmarkData";
+import { isExistingLandmarkBuildingRegisterValid } from "../world/landmarkBuildingRegister";
 import { GREATER_ACCRA_RAIL_NODES, GREATER_ACCRA_RAIL_ROUTES } from "../world/railNetwork";
 
 export type WorldBlocker = { x: number; z: number; hx: number; hz: number };
@@ -297,51 +298,169 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     box(sign.label + " directional board", sign.x, 5.4, sign.z + 24, 11, 2.1, 0.4, makeSignMaterial(sign.label));
   }
 
-  // Landmark footprints preserve the existing Greater Accra spatial catalogue.
+  // Upgrade the eight existing landmark sites in place. Their authoritative
+  // positions and footprints remain in greaterAccraLandmarkData.ts.
+  if (!isExistingLandmarkBuildingRegisterValid()) {
+    throw new Error("Existing landmark building register does not match the world footprint catalogue.");
+  }
   for (const landmark of GREATER_ACCRA_LANDMARK_FOOTPRINTS) {
     const width = landmark.maxX - landmark.minX;
     const depth = landmark.maxZ - landmark.minZ;
-    const height = landmark.id === "kotoka-airport" ? 16 :
-      landmark.id === "accra-sports-stadium" ? 22 :
-      landmark.id === "the-signature" ? 52 :
-      landmark.id === "villaggio-vista" ? 36 : 18;
-    const base = landmark.id === "accra-sports-stadium" ? mats.green :
-      landmark.id === "kotoka-airport" ? mats.lightConcrete :
-      landmark.id === "the-signature" || landmark.id === "villaggio-vista" ? mats.modern : mats.concrete;
-    if (landmark.id === "accra-sports-stadium") {
-      const stadium = new Entity("Accra Sports Stadium landmark");
-      stadium.addComponent("render", { type: "cylinder", material: base, castShadows: true, receiveShadows: true });
-      stadium.setPosition(landmark.x, height / 2, landmark.z);
-      stadium.setLocalScale(width, height, depth);
-      app.root.addChild(stadium);
-    } else {
-      box(landmark.label + " landmark", landmark.x, height / 2, landmark.z, width, height, depth, base, 0, true);
-      box(landmark.label + " roofline", landmark.x, height + 0.3, landmark.z, width + 4, 0.6, depth + 4, mats.roof);
-    }
+    const front = landmark.z + depth * 0.5;
+    const sideX = width * 0.5;
+    const sideZ = depth * 0.5;
+    const window = (label: string, x: number, y: number, z: number, w: number, h: number) =>
+      box(label, x, y, z, w, h, 0.22, mats.glass);
+    const ledge = (label: string, x: number, y: number, z: number, w: number) =>
+      box(label, x, y, z, w, 0.22, 0.48, mats.lightConcrete);
 
-    // Give the named Accra landmarks recognisable silhouettes rather than
-    // treating every footprint as another anonymous rectangular building.
-    if (landmark.id === "accra-sports-stadium") {
-      box("Accra Sports Stadium playing field", landmark.x, 0.18, landmark.z, width * 0.48, 0.12, depth * 0.42, mats.grass);
-      box("Accra Sports Stadium west stand", landmark.x - width * 0.34, 7.2, landmark.z, width * 0.16, 14.4, depth * 0.72, mats.lightConcrete);
-      box("Accra Sports Stadium east stand", landmark.x + width * 0.34, 7.2, landmark.z, width * 0.16, 14.4, depth * 0.72, mats.lightConcrete);
-      box("Accra Sports Stadium roof canopy", landmark.x, 16.2, landmark.z, width * 0.92, 0.7, depth * 0.9, mats.roof);
-    } else if (landmark.id === "kotoka-airport") {
-      box("Kotoka terminal departure canopy", landmark.x, 7.2, landmark.z + depth * 0.24, width * 0.92, 1.1, depth * 0.22, mats.white);
-      box("Kotoka terminal glazed frontage", landmark.x, 5.2, landmark.z + depth * 0.31, width * 0.82, 7.2, 0.35, mats.glass);
-      box("Kotoka air traffic control tower", landmark.x + width * 0.34, 13, landmark.z - depth * 0.18, 5.5, 18, 5.5, mats.lightConcrete);
-      box("Kotoka control room glazing", landmark.x + width * 0.34, 20.2, landmark.z - depth * 0.18, 6.1, 2.4, 6.1, mats.glass);
-      box("Kotoka control tower roof", landmark.x + width * 0.34, 21.6, landmark.z - depth * 0.18, 7, 0.35, 7, mats.roof);
-    } else if (landmark.id === "the-signature") {
-      box("The Signature lower tower setback", landmark.x, 30, landmark.z, width * 0.86, 16, depth * 0.86, mats.glass);
-      box("The Signature upper tower", landmark.x, 47, landmark.z, width * 0.64, 18, depth * 0.64, mats.modern);
-      box("The Signature crown", landmark.x, 57, landmark.z, width * 0.68, 1.2, depth * 0.68, mats.gold);
-    } else if (landmark.id === "villaggio-vista") {
+    if (landmark.id === "accra-mall") {
+      // Broad, low retail wings and a taller glazed public entrance.
+      box("Accra Mall west retail wing", landmark.x - width * 0.245, 6.2, landmark.z, width * 0.48, 12.4, depth * 0.78, mats.lightConcrete, 0, true);
+      box("Accra Mall east retail wing", landmark.x + width * 0.245, 6.2, landmark.z, width * 0.48, 12.4, depth * 0.78, mats.lightConcrete, 0, true);
+      box("Accra Mall central entrance pavilion", landmark.x, 7.4, front - depth * 0.08, width * 0.25, 14.8, depth * 0.34, mats.concrete);
+      box("Accra Mall central glazed entrance", landmark.x, 5.9, front + 0.2, width * 0.22, 10.6, 0.28, mats.glass);
+      box("Accra Mall entrance canopy", landmark.x, 11.2, front + 3.2, width * 0.3, 0.65, 7.2, mats.roof);
+      box("Accra Mall main roof edge", landmark.x, 12.7, landmark.z, width * 0.99, 0.8, depth * 0.84, mats.roof);
       for (const side of [-1, 1]) {
-        box("Villaggio Vista terraced wing", landmark.x + side * width * 0.28, 13, landmark.z, width * 0.34, 26, depth * 0.82, mats.modern);
-        box("Villaggio Vista balcony terrace", landmark.x + side * width * 0.28, 8.2, landmark.z + depth * 0.44, width * 0.31, 0.55, 2.8, mats.lightConcrete);
+        const wingX = landmark.x + side * width * 0.245;
+        box("Accra Mall glazed shopfront band", wingX, 4.1, front + depth * 0.395, width * 0.43, 5.1, 0.24, mats.glass);
+        box("Accra Mall red fascia", wingX, 8.2, front + depth * 0.405, width * 0.43, 0.55, 0.34, mats.red);
+        for (let bay = 0; bay < 5; bay++) {
+          const x = wingX - width * 0.19 + bay * width * 0.095;
+          box("Accra Mall shopfront mullion", x, 4.1, front + depth * 0.412, 0.22, 5.1, 0.28, mats.lightConcrete);
+        }
+        box("Accra Mall side entrance", wingX, 2.2, front + depth * 0.42, width * 0.07, 4.2, 0.3, mats.glass);
       }
-      box("Villaggio Vista central atrium", landmark.x, 12, landmark.z + depth * 0.46, width * 0.22, 22, 0.5, mats.glass);
+      box("Accra Mall drop-off forecourt", landmark.x, 0.035, front + depth * 0.12, width * 0.82, 0.08, depth * 0.18, mats.lightConcrete);
+      for (let i = 0; i < 7; i++) {
+        box("Accra Mall parking bay line", landmark.x - width * 0.36 + i * width * 0.12, 0.09, front + depth * 0.2, 0.16, 0.025, depth * 0.12, mats.white);
+      }
+    } else if (landmark.id === "kotoka-airport") {
+      // Broad terminal halls, departures canopy, glazed frontage and separate tower.
+      box("Kotoka terminal main hall", landmark.x, 6.4, landmark.z, width * 0.9, 12.8, depth * 0.72, mats.lightConcrete, 0, true);
+      box("Kotoka terminal east concourse", landmark.x + width * 0.29, 5.1, landmark.z - depth * 0.12, width * 0.28, 10.2, depth * 0.58, mats.concrete);
+      box("Kotoka terminal west concourse", landmark.x - width * 0.29, 5.1, landmark.z - depth * 0.12, width * 0.28, 10.2, depth * 0.58, mats.concrete);
+      box("Kotoka terminal roof", landmark.x, 13.1, landmark.z, width * 0.96, 0.75, depth * 0.78, mats.roof);
+      box("Kotoka departures curtain wall", landmark.x, 5.7, front + depth * 0.14, width * 0.84, 9.2, 0.28, mats.glass);
+      box("Kotoka departures canopy", landmark.x, 10.8, front + depth * 0.27, width * 0.94, 0.72, depth * 0.2, mats.white);
+      for (let bay = 0; bay < 12; bay++) {
+        const x = landmark.x - width * 0.39 + bay * width * 0.071;
+        box("Kotoka terminal facade mullion", x, 5.7, front + depth * 0.155, 0.32, 9.2, 0.36, mats.lightConcrete);
+      }
+      const towerX = landmark.x + width * 0.36;
+      const towerZ = landmark.z - depth * 0.22;
+      box("Kotoka air traffic control shaft", towerX, 11, towerZ, 7, 22, 7, mats.lightConcrete, 0, true);
+      box("Kotoka control room glazing", towerX, 22.5, towerZ, 8.2, 3.2, 8.2, mats.glass);
+      box("Kotoka control room sun visor", towerX, 24.3, towerZ, 9.2, 0.32, 9.2, mats.roof);
+      box("Kotoka control tower roof", towerX, 25.2, towerZ, 7.8, 0.35, 7.8, mats.lightConcrete);
+    } else if (landmark.id === "accra-sports-stadium") {
+      // Four separated grandstands keep the pitch and open centre visible.
+      plane("Accra Sports Stadium inner pitch", landmark.x, 0.12, landmark.z, width * 0.48, depth * 0.42, mats.grass);
+      box("Accra Sports Stadium running track", landmark.x, 0.17, landmark.z, width * 0.7, 0.12, depth * 0.64, mats.red);
+      plane("Accra Sports Stadium pitch surface", landmark.x, 0.245, landmark.z, width * 0.46, depth * 0.4, mats.grass);
+      for (const side of [-1, 1]) {
+        const sx = landmark.x + side * width * 0.34;
+        box("Accra Sports Stadium long stand lower tier", sx, 4.2, landmark.z, width * 0.19, 8.4, depth * 0.7, mats.concrete);
+        box("Accra Sports Stadium long stand upper tier", sx, 10.2, landmark.z, width * 0.17, 5.2, depth * 0.64, mats.lightConcrete);
+        box("Accra Sports Stadium grandstand roof", sx, 14.2, landmark.z, width * 0.22, 0.55, depth * 0.76, mats.roof);
+      }
+      for (const side of [-1, 1]) {
+        const sz = landmark.z + side * depth * 0.34;
+        box("Accra Sports Stadium end stand", landmark.x, 5.5, sz, width * 0.48, 11, depth * 0.16, mats.lightConcrete);
+        box("Accra Sports Stadium end stand canopy", landmark.x, 11.4, sz, width * 0.52, 0.45, depth * 0.19, mats.roof);
+      }
+      for (const side of [-1, 1]) {
+        for (let i = 0; i < 3; i++) {
+          const x = landmark.x + side * (width * 0.25 + i * 1.5);
+          box("Accra Sports Stadium floodlight mast", x, 17, landmark.z - depth * 0.43, 0.38, 10, 0.38, mats.lightConcrete);
+          box("Accra Sports Stadium floodlight array", x, 22.2, landmark.z - depth * 0.43, 2.6, 0.65, 0.32, mats.white);
+        }
+      }
+      box("Accra Sports Stadium centre circle marking", landmark.x, 0.32, landmark.z, 12, 0.035, 0.18, mats.white);
+      box("Accra Sports Stadium halfway line", landmark.x, 0.32, landmark.z, 0.16, 0.035, depth * 0.38, mats.white);
+    } else if (landmark.id === "the-signature") {
+      // Two slim residential towers with separate silhouettes and a shared podium.
+      box("The Signature shared podium", landmark.x, 4, landmark.z + depth * 0.12, width * 0.86, 8, depth * 0.74, mats.lightConcrete, 0, true);
+      for (const side of [-1, 1]) {
+        const tx = landmark.x + side * width * 0.205;
+        box("The Signature tower core", tx, 27, landmark.z - depth * 0.02, width * 0.31, 46, depth * 0.55, mats.modern, 0, true);
+        box("The Signature glazed facade", tx, 27, landmark.z + depth * 0.265, width * 0.3, 44, 0.28, mats.glass);
+        for (let floor = 0; floor < 12; floor++) {
+          const y = 7 + floor * 3.45;
+          box("The Signature horizontal floor band", tx, y, landmark.z + depth * 0.29, width * 0.31, 0.16, 0.4, mats.lightConcrete);
+          for (let bay = -1; bay <= 1; bay++) {
+            window("The Signature tower window", tx + bay * width * 0.085, y + 1.45, landmark.z + depth * 0.295, width * 0.065, 2.2);
+          }
+        }
+        box("The Signature vertical corner fin", tx - width * 0.15, 28, landmark.z + depth * 0.28, 0.55, 45, 0.5, mats.white);
+        box("The Signature rooftop crown", tx, 51, landmark.z - depth * 0.02, width * 0.34, 1.2, depth * 0.59, mats.roof);
+      }
+      box("The Signature landscaped entrance", landmark.x, 0.12, front - 3, width * 0.7, 0.24, 5, mats.green);
+    } else if (landmark.id === "villaggio-vista") {
+      // Three distinct stepped towers around the existing central atrium.
+      box("Villaggio Vista shared podium", landmark.x, 3.2, landmark.z, width * 0.94, 6.4, depth * 0.84, mats.lightConcrete, 0, true);
+      const towerHeights = [28, 36, 32];
+      for (let i = 0; i < 3; i++) {
+        const tx = landmark.x + (i - 1) * width * 0.29;
+        const th = towerHeights[i];
+        const tw = width * 0.23;
+        box("Villaggio Vista tower mass", tx, th / 2 + 5, landmark.z - depth * 0.04, tw, th, depth * 0.57, mats.modern, 0, true);
+        box("Villaggio Vista glazed tower face", tx, th / 2 + 5, landmark.z + depth * 0.25, tw * 0.92, th * 0.82, 0.24, mats.glass);
+        for (let floor = 0; floor < Math.floor(th / 3.6); floor++) {
+          const y = 7 + floor * 3.6;
+          ledge("Villaggio Vista balcony slab", tx, y, landmark.z + depth * 0.29, tw * 0.98);
+          box("Villaggio Vista balcony rail", tx, y + 0.52, landmark.z + depth * 0.31, tw * 0.94, 0.08, 0.08, mats.white);
+        }
+        box("Villaggio Vista tower crown", tx, th + 6, landmark.z - depth * 0.04, tw * 0.96, 0.8, depth * 0.61, mats.roof);
+      }
+      box("Villaggio Vista central atrium glazing", landmark.x, 10, front - 1.5, width * 0.18, 13, 0.24, mats.glass);
+      box("Villaggio Vista landscaped atrium floor", landmark.x, 0.12, landmark.z + depth * 0.22, width * 0.18, 0.2, depth * 0.22, mats.green);
+    } else if (landmark.id === "university-of-ghana") {
+      // Low academic wings frame a central hall and recognisable campus tower.
+      box("University of Ghana west academic wing", landmark.x - width * 0.27, 5, landmark.z, width * 0.42, 10, depth * 0.66, mats.lightConcrete, 0, true);
+      box("University of Ghana east academic wing", landmark.x + width * 0.27, 5, landmark.z, width * 0.42, 10, depth * 0.66, mats.lightConcrete, 0, true);
+      box("University of Ghana central hall", landmark.x, 6.5, landmark.z + depth * 0.04, width * 0.32, 13, depth * 0.7, mats.concrete);
+      box("University of Ghana central tower", landmark.x, 13.5, landmark.z - depth * 0.16, width * 0.12, 14, depth * 0.18, mats.lightConcrete);
+      box("University of Ghana tower cap", landmark.x, 21, landmark.z - depth * 0.16, width * 0.15, 0.8, depth * 0.2, mats.roof);
+      for (const side of [-1, 1]) {
+        const x = landmark.x + side * width * 0.27;
+        box("University of Ghana shaded arcade", x, 2.2, front + 1.2, width * 0.38, 4.4, 1.4, mats.roof);
+        for (let bay = 0; bay < 5; bay++) {
+          const wx = x - width * 0.17 + bay * width * 0.085;
+          window("University of Ghana academic window", wx, 5.2, front + depth * 0.34, width * 0.045, 2.2);
+          box("University of Ghana arcade column", wx, 2.2, front + 2.1, 0.28, 4.4, 0.28, mats.white);
+        }
+      }
+      box("University of Ghana campus forecourt", landmark.x, 0.08, front + 1.5, width * 0.68, 0.16, 5, mats.lightConcrete);
+      box("University of Ghana campus sign", landmark.x, 2.2, front + 5, width * 0.42, 1.1, 0.22, mats.green);
+    } else if (landmark.id === "kwame-nkrumah-memorial") {
+      // Keep the park open: one sculptural mausoleum, pool and formal approach.
+      box("Kwame Nkrumah Memorial Park mausoleum base", landmark.x, 3.2, landmark.z, width * 0.56, 6.4, depth * 0.58, mats.roof, 0, true);
+      box("Kwame Nkrumah Memorial Park tapering monument lower", landmark.x, 10, landmark.z, width * 0.48, 8, depth * 0.5, mats.industrial);
+      box("Kwame Nkrumah Memorial Park tapering monument upper", landmark.x, 16.2, landmark.z, width * 0.32, 5, depth * 0.34, mats.green);
+      box("Kwame Nkrumah Memorial Park star crown", landmark.x, 19.2, landmark.z, width * 0.42, 0.7, depth * 0.42, mats.gold);
+      box("Kwame Nkrumah Memorial Park reflecting pool", landmark.x, 0.08, landmark.z + depth * 0.34, width * 0.76, 0.16, depth * 0.13, mats.glass);
+      box("Kwame Nkrumah Memorial Park approach path", landmark.x, 0.07, landmark.z + depth * 0.22, width * 0.16, 0.14, depth * 0.48, mats.lightConcrete);
+      for (const side of [-1, 1]) {
+        box("Kwame Nkrumah Memorial Park lawn", landmark.x + side * width * 0.34, 0.035, landmark.z, width * 0.18, 0.07, depth * 0.78, mats.green);
+        for (let i = 0; i < 3; i++) {
+          cylinder("Kwame Nkrumah Memorial Park garden tree", landmark.x + side * width * 0.34, 2.4, landmark.z - depth * 0.28 + i * depth * 0.27, 0.45, 4.8, mats.roof);
+          cylinder("Kwame Nkrumah Memorial Park tree crown", landmark.x + side * width * 0.34, 5.2, landmark.z - depth * 0.28 + i * depth * 0.27, 1.8, 2.2, mats.green);
+        }
+      }
+    } else if (landmark.id === "national-theatre") {
+      // Sculptural overlapping shell-like volumes replace the plain rectangular block.
+      box("National Theatre central auditorium", landmark.x, 7, landmark.z, width * 0.58, 14, depth * 0.56, mats.lightConcrete, 0, true);
+      box("National Theatre west sculptural shell", landmark.x - width * 0.23, 8.5, landmark.z, width * 0.48, 17, depth * 0.72, mats.white, -18);
+      box("National Theatre east sculptural shell", landmark.x + width * 0.23, 8.5, landmark.z, width * 0.48, 17, depth * 0.72, mats.lightConcrete, 18);
+      box("National Theatre front shell fascia", landmark.x, 14.5, front - depth * 0.18, width * 0.86, 0.7, depth * 0.18, mats.white, 0);
+      box("National Theatre glazed public entrance", landmark.x, 4.2, front + depth * 0.22, width * 0.48, 8.2, 0.25, mats.glass);
+      box("National Theatre entrance canopy", landmark.x, 9, front + depth * 0.32, width * 0.62, 0.55, depth * 0.16, mats.roof);
+      box("National Theatre formal forecourt", landmark.x, 0.06, front + depth * 0.12, width * 0.84, 0.12, depth * 0.2, mats.lightConcrete);
+      for (let step = 0; step < 4; step++) {
+        box("National Theatre entrance steps", landmark.x, 0.2 + step * 0.22, front + depth * 0.3 + step * 0.75, width * (0.54 - step * 0.035), 0.22, 0.72, mats.white);
+      }
     }
   }
 
