@@ -353,14 +353,16 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     { name: "Tetteh Quarshie", x: 3650, z: 1750 },
     { name: "Spintex", x: 5600, z: -1150 }
   ];
-  for (const junction of junctions) {
+  const signalHeads: Array<{red:Entity;amber:Entity;green:Entity;offset:number}> = [];
+  for (const [junctionIndex,junction] of junctions.entries()) {
     for (const side of [-1, 1]) {
       const x = junction.x + side * 11;
       box(junction.name + " traffic signal pole", x, 4.2, junction.z + 10, 0.22, 8.4, 0.22, mats.roof);
       box(junction.name + " signal head", x, 7.8, junction.z + 10, 0.72, 1.9, 0.6, mats.roof);
-      box(junction.name + " red signal", x, 8.35, junction.z + 9.68, 0.42, 0.42, 0.08, mats.red);
-      box(junction.name + " amber signal", x, 7.8, junction.z + 9.68, 0.42, 0.42, 0.08, mats.gold);
-      box(junction.name + " green signal", x, 7.25, junction.z + 9.68, 0.42, 0.42, 0.08, mats.green);
+      const red = box(junction.name + " red signal", x, 8.35, junction.z + 9.68, 0.42, 0.42, 0.08, mats.red);
+      const amber = box(junction.name + " amber signal", x, 7.8, junction.z + 9.68, 0.42, 0.42, 0.08, mats.gold);
+      const green = box(junction.name + " green signal", x, 7.25, junction.z + 9.68, 0.42, 0.42, 0.08, mats.green);
+      signalHeads.push({red,amber,green,offset:junctionIndex*12});
     }
   }
   for (const stop of [{ name: "Osu trotro stop", x: 1110, z: -1330 }, { name: "Circle bus stop", x: -520, z: 520 }, { name: "Labadi beach stop", x: 2260, z: -2380 }]) {
@@ -690,8 +692,29 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
   }
 
   let livingClock=0;
+  let previousRainState=false;
   const updateLivingCity=(dt:number)=>{
     livingClock+=dt;
+    const weatherPhase=livingClock%240;
+    const raining=weatherPhase>=150 && weatherPhase<198;
+    // Rain darkens and wets the asphalt material without adding expensive
+    // per-road meshes; only update material state when weather changes.
+    if(raining!==previousRainState){
+      mats.road.gloss=raining?48:8;
+      mats.road.specular=raining?new Color(0.24,0.27,0.29):new Color(0.035,0.035,0.035);
+      mats.road.update();
+      previousRainState=raining;
+    }
+    // Junction lights run a staggered red/amber/green cycle. The lamps are
+    // actual scene entities, not three permanently lit coloured blocks.
+    for(const signal of signalHeads){
+      const phase=(livingClock+signal.offset)%48;
+      const redOn=phase<26;
+      const amberOn=phase>=26 && phase<31;
+      signal.red.enabled=redOn;
+      signal.amber.enabled=amberOn;
+      signal.green.enabled=phase>=31;
+    }
     // Warm practical street lighting switches on for the night portion of the
     // shared world clock. Lights are disabled during daylight to save mobile GPU work.
     const nightFactor = 0.5 + 0.5 * Math.sin((livingClock / 480) * Math.PI * 2 - Math.PI / 2);
