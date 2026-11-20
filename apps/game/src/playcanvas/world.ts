@@ -628,7 +628,7 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     ["ring-road-central","ring-road-coastal","la-beach-road","liberation-road","spintex-road","n1-tema-corridor"].includes(path.roadSegmentId)
   );
   const trafficColors=[mats.gold,mats.white,mats.red,mats.green,mats.modern,mats.glass];
-  const traffic:Array<{root:Entity;route:typeof trafficRoutes[number];distance:number;speed:number;length:number}>=[];
+  const traffic:Array<{root:Entity;route:typeof trafficRoutes[number];distance:number;speed:number;length:number;signalIndex:number|null}>=[];
   for(let i=0;i<12;i++){
     const route=trafficRoutes[i%trafficRoutes.length];
     const length=route.points.slice(1).reduce((sum,p,index)=>sum+Math.hypot(p.x-route.points[index].x,p.z-route.points[index].z),0);
@@ -677,7 +677,8 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
       makeActorPart(root,"cylinder","Vehicle wheel hub",side*(bodyWidth/2+0.16),0.42,z,0.2,0.24,0.2,mats.lightConcrete);
     }
     const offset=(i/12)*length;
-    traffic.push({root,route,distance:offset,speed:4.2+(i%5)*0.9,length});
+    const signalIndex=route.roadSegmentId==="ring-road-coastal"?0:route.roadSegmentId==="spintex-road"?3:null;
+    traffic.push({root,route,distance:offset,speed:4.2+(i%5)*0.9,length,signalIndex});
   }
 
   const cloudBanks:Array<{root:Entity;speed:number;originX:number}>=[];
@@ -741,7 +742,14 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
       person.arms[0].setLocalEulerAngles(-swing*0.65,0,0);person.arms[1].setLocalEulerAngles(swing*0.65,0,0);
     }
     for(const car of traffic){
-      car.distance=(car.distance+car.speed*dt)%car.length;
+      const approachingSignal=car.signalIndex!==null && car.distance>=car.length-20;
+      const signalPhase=car.signalIndex===null?32:(livingClock+signalHeads[car.signalIndex].offset)%48;
+      const signalRed=signalPhase<26 || (signalPhase>=26 && signalPhase<31);
+      // Traffic waits at the Osu and Spintex approaches on red/amber, then
+      // continues along the authored Greater Accra road centreline on green.
+      if(!(approachingSignal && signalRed)){
+        car.distance=(car.distance+car.speed*dt)%car.length;
+      }
       let remaining=car.distance;
       for(let i=0;i<car.route.points.length-1;i++){
         const a=car.route.points[i],b=car.route.points[i+1],segmentLength=Math.hypot(b.x-a.x,b.z-a.z);
