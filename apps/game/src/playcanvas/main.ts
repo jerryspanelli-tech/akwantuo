@@ -364,8 +364,15 @@ async function boot() {
     const py = (event.clientY - rect.top) * (worldMapCanvas.height / rect.height);
     const bounds = GREATER_ACCRA_MAP_EXTENT, pad = 54;
     const baseScale = Math.min((worldMapCanvas.width - pad * 2) / bounds.widthM, (worldMapCanvas.height - pad * 2) / bounds.depthM);
+    const mapWidth = bounds.widthM * baseScale, mapHeight = bounds.depthM * baseScale;
+    const ox = (worldMapCanvas.width - mapWidth) / 2, oy = (worldMapCanvas.height - mapHeight) / 2;
     const current = inVehicle ? vehicle.getPosition() : player.getPosition();
-    worldMapWaypoint = { x: current.x + (px - worldMapCanvas.width / 2) / (baseScale * worldMapZoom), z: current.z - (py - worldMapCanvas.height / 2) / (baseScale * worldMapZoom) };
+    const playerBaseX = ox + (current.x - bounds.minX) * baseScale;
+    const playerBaseY = oy + (bounds.maxZ - current.z) * baseScale;
+    worldMapWaypoint = {
+      x: current.x + (px - playerBaseX) / (baseScale * worldMapZoom),
+      z: current.z - (py - playerBaseY) / (baseScale * worldMapZoom)
+    };
     showNotice("Map location marked");
   });
   let nearbyInteraction: { id: string; label: string; x: number; z: number; radius: number } | null = null;
@@ -644,9 +651,20 @@ async function boot() {
       const map = worldMapContext, width = worldMapCanvas.width, height = worldMapCanvas.height;
       const bounds = GREATER_ACCRA_MAP_EXTENT, pad = 54;
       const sx = (width - pad * 2) / bounds.widthM, sy = (height - pad * 2) / bounds.depthM;
-      const baseScale = Math.min(sx, sy), scale = baseScale * worldMapZoom;
+      const baseScale = Math.min(sx, sy);
+      const mapWidth = bounds.widthM * baseScale, mapHeight = bounds.depthM * baseScale;
+      const ox = (width - mapWidth) / 2, oy = (height - mapHeight) / 2;
       const current = player.getPosition();
-      const point = (x: number, z: number) => ({ x: width / 2 + (x - current.x) * scale, y: height / 2 - (z - current.z) * scale });
+      const playerBaseX = ox + (current.x - bounds.minX) * baseScale;
+      const playerBaseY = oy + (bounds.maxZ - current.z) * baseScale;
+      const point = (x: number, z: number) => {
+        const baseX = ox + (x - bounds.minX) * baseScale;
+        const baseY = oy + (bounds.maxZ - z) * baseScale;
+        return {
+          x: playerBaseX + (baseX - playerBaseX) * worldMapZoom,
+          y: playerBaseY + (baseY - playerBaseY) * worldMapZoom
+        };
+      };
       map.clearRect(0, 0, width, height);
       map.fillStyle = "#10251f"; map.fillRect(0, 0, width, height);
       map.fillStyle = "#123b4a"; map.fillRect(0, oy + (bounds.maxZ + 3050) * scale, width, height - oy - (bounds.maxZ + 3050) * scale);
