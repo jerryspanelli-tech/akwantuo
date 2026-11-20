@@ -90,10 +90,13 @@ export function createAmbientLife(app: AppBase): void {
 
   const coastRoad: Point[] = [
     { x: 1250, z: -350 }, { x: 1450, z: -700 }, { x: 1450, z: -1050 }, { x: 1450, z: -1350 },
-    { x: 1850, z: -1650 }, { x: 2300, z: -1900 }, { x: 2750, z: -2100 }
+    { x: 1850, z: -1650 }, { x: 2300, z: -1900 }, { x: 2750, z: -2100 },
+    { x: 2300, z: -1900 }, { x: 1850, z: -1650 }, { x: 1450, z: -1350 },
+    { x: 1450, z: -1050 }, { x: 1450, z: -700 }
   ];
   const beachRoad: Point[] = [
-    { x: 1450, z: -1350 }, { x: 1850, z: -1650 }, { x: 2300, z: -1900 }, { x: 2750, z: -2100 }
+    { x: 1450, z: -1350 }, { x: 1850, z: -1650 }, { x: 2300, z: -1900 }, { x: 2750, z: -2100 },
+    { x: 2300, z: -1900 }, { x: 1850, z: -1650 }
   ];
   const traffic: TrafficUnit[] = [
     { root: createVehicle("Osu yellow taxi traffic", materials.taxi, 1.9, 4.1, 1.45), route: coastRoad, segment: 0, progress: 0.15, speed: 7.2, lane: -2.2 },
@@ -124,13 +127,13 @@ export function createAmbientLife(app: AppBase): void {
   }
 
   const walkers: Walker[] = [
-    createWalker("Osu pedestrian 01", { x: 1330, z: -1162 }, [{ x: 1330, z: -1162 }, { x: 1510, z: -1162 }], 0.78, materials.skin1, materials.shirt1, materials.trousers, 0.2),
-    createWalker("Osu pedestrian 02", { x: 1510, z: -1200 }, [{ x: 1510, z: -1200 }, { x: 1320, z: -1200 }], 0.72, materials.skin2, materials.shirt2, materials.skirt, 1.2),
-    createWalker("Osu pedestrian 03", { x: 1390, z: -1145 }, [{ x: 1390, z: -1145 }, { x: 1580, z: -1145 }], 0.66, materials.skin3, materials.shirt4, materials.trousers, 2.1),
-    createWalker("Osu pedestrian 04", { x: 1570, z: -1208 }, [{ x: 1570, z: -1208 }, { x: 1360, z: -1208 }], 0.82, materials.skin1, materials.shirt3, materials.skirt, 2.8),
-    createWalker("Labadi pedestrian 01", { x: 2220, z: -2360 }, [{ x: 2220, z: -2360 }, { x: 2360, z: -2360 }], 0.7, materials.skin2, materials.shirt5, materials.trousers, 0.7),
-    createWalker("Labadi pedestrian 02", { x: 2370, z: -2400 }, [{ x: 2370, z: -2400 }, { x: 2200, z: -2400 }], 0.62, materials.skin3, materials.shirt1, materials.skirt, 1.7),
-    createWalker("Makola pedestrian 01", { x: -480, z: 485 }, [{ x: -480, z: 485 }, { x: -350, z: 485 }], 0.58, materials.skin1, materials.shirt2, materials.trousers, 2.5)
+    createWalker("Osu pedestrian 01", { x: 1330, z: -1162 }, [{ x: 1330, z: -1162 }, { x: 1510, z: -1162 }, { x: 1330, z: -1162 }], 0.78, materials.skin1, materials.shirt1, materials.trousers, 0.2),
+    createWalker("Osu pedestrian 02", { x: 1510, z: -1200 }, [{ x: 1510, z: -1200 }, { x: 1320, z: -1200 }, { x: 1510, z: -1200 }], 0.72, materials.skin2, materials.shirt2, materials.skirt, 1.2),
+    createWalker("Osu pedestrian 03", { x: 1390, z: -1145 }, [{ x: 1390, z: -1145 }, { x: 1580, z: -1145 }, { x: 1390, z: -1145 }], 0.66, materials.skin3, materials.shirt4, materials.trousers, 2.1),
+    createWalker("Osu pedestrian 04", { x: 1570, z: -1208 }, [{ x: 1570, z: -1208 }, { x: 1360, z: -1208 }, { x: 1570, z: -1208 }], 0.82, materials.skin1, materials.shirt3, materials.skirt, 2.8),
+    createWalker("Labadi pedestrian 01", { x: 2220, z: -2360 }, [{ x: 2220, z: -2360 }, { x: 2360, z: -2360 }, { x: 2220, z: -2360 }], 0.7, materials.skin2, materials.shirt5, materials.trousers, 0.7),
+    createWalker("Labadi pedestrian 02", { x: 2370, z: -2400 }, [{ x: 2370, z: -2400 }, { x: 2200, z: -2400 }, { x: 2370, z: -2400 }], 0.62, materials.skin3, materials.shirt1, materials.skirt, 1.7),
+    createWalker("Makola pedestrian 01", { x: -480, z: 485 }, [{ x: -480, z: 485 }, { x: -350, z: 485 }, { x: -480, z: 485 }], 0.58, materials.skin1, materials.shirt2, materials.trousers, 2.5)
   ];
 
   // Update only the small ambient population; static streets and buildings never move.
@@ -147,7 +150,7 @@ export function createAmbientLife(app: AppBase): void {
       unit.progress += (unit.speed * step) / length;
       if (unit.progress >= 1) {
         unit.progress -= 1;
-        unit.segment = (unit.segment + 1) % (unit.route.length - 1);
+        unit.segment = (unit.segment + 1) % unit.route.length;
       }
       const t = unit.progress;
       const laneX = (dz / length) * unit.lane;
@@ -164,7 +167,7 @@ export function createAmbientLife(app: AppBase): void {
       walker.progress += (walker.speed * step) / length;
       if (walker.progress >= 1) {
         walker.progress = 0;
-        walker.segment = (walker.segment + 1) % (walker.route.length - 1);
+        walker.segment = (walker.segment + 1) % walker.route.length;
       }
       const t = walker.progress;
       walker.root.setPosition(a.x + dx * t, 0, a.z + dz * t);
