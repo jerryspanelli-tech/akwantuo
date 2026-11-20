@@ -9,6 +9,7 @@ export type GreaterAccraWorld = {
   spawn: { x: number; z: number };
   taxiSpawn: { x: number; z: number };
   interactables: Array<{ id: string; label: string; x: number; z: number; radius: number }>;
+  update: (dt: number) => void;
 };
 
 const material = (r: number, g: number, b: number): StandardMaterial => {
@@ -555,8 +556,119 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     cylinder("Accra roadside shade tree canopy", tree.x, 5.8, tree.z, 2.3, 2.8, mats.green);
   }
 
+
+  // Living city layer: lightweight pedestrians, moving local traffic and drifting
+  // tropical cloud banks. All actors reuse shared materials and update in-place.
+  const makeActorPart = (parent: Entity, type: "box" | "sphere" | "cylinder", name: string,
+    x: number, y: number, z: number, sx: number, sy: number, sz: number, mat: StandardMaterial) => {
+    const part = new Entity(name);
+    part.addComponent("render", { type, material: mat, castShadows: false, receiveShadows: true });
+    part.setLocalPosition(x, y, z);
+    part.setLocalScale(sx, sy, sz);
+    parent.addChild(part);
+    return part;
+  };
+
+  const peopleRoutes = [
+    [{x:1370,z:-1160},{x:1535,z:-1160},{x:1535,z:-1205},{x:1370,z:-1205}],
+    [{x:-560,z:390},{x:-300,z:390},{x:-300,z:435},{x:-560,z:435}],
+    [{x:4180,z:1060},{x:4400,z:1060},{x:4400,z:1105},{x:4180,z:1105}],
+    [{x:4820,z:2100},{x:5010,z:2100},{x:5010,z:2145},{x:4820,z:2145}],
+    [{x:5500,z:-1490},{x:5720,z:-1490},{x:5720,z:-1445},{x:5500,z:-1445}],
+    [{x:7800,z:340},{x:8020,z:340},{x:8020,z:385},{x:7800,z:385}]
+  ];
+  const clothing = [mats.green,mats.gold,mats.red,mats.blue ?? mats.modern,mats.market,mats.white,mats.roof,mats.modern];
+  const pedestrians: Array<{root:Entity; route:readonly {x:number;z:number}[]; segment:number; t:number; speed:number; phase:number; legs:Entity[]; arms:Entity[]}> = [];
+  for(let i=0;i<18;i++){
+    const route=peopleRoutes[i%peopleRoutes.length];
+    const root=new Entity("Accra pedestrian "+(i+1)); app.root.addChild(root);
+    const shirt=clothing[i%clothing.length];
+    makeActorPart(root,"box","Pedestrian torso",0,1.15,0,0.48,0.78,0.28,shirt);
+    makeActorPart(root,"sphere","Pedestrian head",0,1.78,0,0.25,0.28,0.25,mats.gold);
+    makeActorPart(root,"box","Pedestrian hair",0,1.94,-0.025,0.27,0.09,0.27,mats.roof);
+    const arms=[-1,1].map(side=>makeActorPart(root,"cylinder","Pedestrian arm",side*0.34,1.12,0,0.105,0.68,0.105,shirt));
+    const legs=[-1,1].map(side=>makeActorPart(root,"cylinder","Pedestrian leg",side*0.13,0.48,0,0.12,0.72,0.12,mats.roof));
+    const start=route[(i*3)%route.length];
+    root.setPosition(start.x,0,start.z);
+    pedestrians.push({root,route,segment:(i*3)%route.length,t:(i%5)/5,speed:0.75+(i%4)*0.16,phase:i*0.8,legs,arms});
+  }
+
+  const trafficRoutes = GREATER_ACCRA_ROAD_PATHS.filter(path =>
+    ["ring-road-central","ring-road-coastal","la-beach-road","liberation-road","spintex-road","n1-tema-corridor"].includes(path.roadSegmentId)
+  );
+  const trafficColors=[mats.gold,mats.white,mats.red,mats.green,mats.modern,mats.blue ?? mats.glass];
+  const traffic:Array<{root:Entity;route:typeof trafficRoutes[number];distance:number;speed:number;length:number}>=[];
+  for(let i=0;i<12;i++){
+    const route=trafficRoutes[i%trafficRoutes.length];
+    const length=route.points.slice(1).reduce((sum,p,index)=>sum+Math.hypot(p.x-route.points[index].x,p.z-route.points[index].z),0);
+    const root=new Entity(i%3===0?"Accra trotro traffic":i%3===1?"Accra taxi traffic":"Accra private car traffic");
+    app.root.addChild(root);
+    const bodyMat=trafficColors[i%trafficColors.length];
+    makeActorPart(root,"box","Traffic vehicle body",0,0.78,0,1.9,0.8,4.1,bodyMat);
+    makeActorPart(root,"box","Traffic vehicle cabin",0,1.42,-0.25,1.58,0.68,2.0,mats.glass);
+    makeActorPart(root,"box","Traffic vehicle roof",0,1.78,-0.25,1.45,0.12,1.8,bodyMat);
+    for(const side of [-1,1])for(const z of [-1.35,1.35]){
+      const wheel=makeActorPart(root,"cylinder","Traffic vehicle tyre",side*0.98,0.42,z,0.56,0.22,0.56,mats.roof);
+      wheel.setLocalEulerAngles(0,0,90);
+    }
+    const offset=(i/12)*length;
+    traffic.push({root,route,distance:offset,speed:4.2+(i%5)*0.9,length});
+  }
+
+  const cloudBanks:Array<{root:Entity;speed:number;originX:number}>=[];
+  for(let i=0;i<7;i++){
+    const root=new Entity("Accra coastal cumulus cloud"); app.root.addChild(root);
+    const x=-6500+i*1900, y=95+(i%3)*22, z=2600+(i%4)*850;
+    for(let puff=0;puff<4;puff++){
+      makeActorPart(root,"sphere","Soft tropical cloud", (puff-1.5)*17, (puff%2)*5, Math.sin(puff)*7, 32+(puff%2)*7, 12+(puff%2)*3, 20+(puff%2)*5, mats.white);
+    }
+    root.setPosition(x,y,z);
+    cloudBanks.push({root,speed:1.2+(i%3)*0.35,originX:x});
+  }
+
+  let livingClock=0;
+  const updateLivingCity=(dt:number)=>{
+    livingClock+=dt;
+    for(const person of pedestrians){
+      let remaining=person.speed*dt;
+      while(remaining>0){
+        const from=person.route[person.segment],to=person.route[(person.segment+1)%person.route.length];
+        const distance=Math.hypot(to.x-from.x,to.z-from.z);
+        const available=(1-person.t)*distance;
+        if(remaining<available){person.t+=remaining/distance;remaining=0;}
+        else{remaining-=available;person.segment=(person.segment+1)%person.route.length;person.t=0;}
+      }
+      const a=person.route[person.segment],b=person.route[(person.segment+1)%person.route.length];
+      const x=a.x+(b.x-a.x)*person.t,z=a.z+(b.z-a.z)*person.t;
+      person.root.setPosition(x,0,z);
+      person.root.setEulerAngles(0,Math.atan2(b.x-a.x,b.z-a.z)*180/Math.PI,0);
+      const swing=Math.sin(livingClock*5+person.phase)*24;
+      person.legs[0].setLocalEulerAngles(swing,0,0);person.legs[1].setLocalEulerAngles(-swing,0,0);
+      person.arms[0].setLocalEulerAngles(-swing*0.65,0,0);person.arms[1].setLocalEulerAngles(swing*0.65,0,0);
+    }
+    for(const car of traffic){
+      car.distance=(car.distance+car.speed*dt)%car.length;
+      let remaining=car.distance;
+      for(let i=0;i<car.route.points.length-1;i++){
+        const a=car.route.points[i],b=car.route.points[i+1],segmentLength=Math.hypot(b.x-a.x,b.z-a.z);
+        if(remaining<=segmentLength){
+          const t=segmentLength?remaining/segmentLength:0;
+          car.root.setPosition(a.x+(b.x-a.x)*t,0,a.z+(b.z-a.z)*t);
+          car.root.setEulerAngles(0,Math.atan2(b.x-a.x,b.z-a.z)*180/Math.PI,0);
+          break;
+        }
+        remaining-=segmentLength;
+      }
+    }
+    for(const cloud of cloudBanks){
+      const next=cloud.root.getPosition().x+cloud.speed*dt;
+      cloud.root.setPosition(next>14000?-8500:next,cloud.root.getPosition().y,cloud.root.getPosition().z);
+    }
+  };
+
   return {
     blockers,
+    update: updateLivingCity,
     spawn: { x: 1180, z: -1500 },
     taxiSpawn: { x: 1185, z: -1504 },
     interactables: [
