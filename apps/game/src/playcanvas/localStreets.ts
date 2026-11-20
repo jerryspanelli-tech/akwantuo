@@ -14,7 +14,7 @@ const STREETS: readonly Street[] = [
   { name: "Tema community street", width: 12, points: [{ x: 9000, z: -750 }, { x: 9000, z: -1100 }, { x: 9500, z: -1100 }] },
   { name: "Achimota residential street", width: 11, points: [{ x: -1750, z: 2100 }, { x: -2000, z: 1900 }, { x: -1600, z: 1900 }, { x: -1200, z: 1900 }] },
   { name: "Madina commercial street", width: 12, points: [{ x: 5000, z: 1750 }, { x: 5000, z: 1500 }, { x: 5500, z: 1500 }, { x: 6000, z: 1500 }] },
-  { name: "Legon campus avenue", width: 12, points: [{ x: 3350, z: 3550 }, { x: 3350, z: 3100 }, { x: 3900, z: 3100 }] }
+  { name: "Legon campus avenue", width: 12, points: [{ x: 3560, z: 3550 }, { x: 3560, z: 3100 }, { x: 3900, z: 3100 }] }
 ];
 
 export function addGreaterAccraLocalStreets(app: AppBase): void {
