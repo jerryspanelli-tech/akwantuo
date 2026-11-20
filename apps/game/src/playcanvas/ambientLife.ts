@@ -34,7 +34,6 @@ export function createAmbientLife(app: AppBase): void {
     blue: makeMaterial(0.12, 0.28, 0.48),
     red: makeMaterial(0.58, 0.15, 0.12),
     silver: makeMaterial(0.48, 0.52, 0.53),
-    orange: makeMaterial(0.82, 0.39, 0.12),
     skin1: makeMaterial(0.31, 0.17, 0.1),
     skin2: makeMaterial(0.43, 0.25, 0.16),
     skin3: makeMaterial(0.24, 0.12, 0.075),
@@ -43,7 +42,6 @@ export function createAmbientLife(app: AppBase): void {
     shirt3: makeMaterial(0.55, 0.18, 0.14),
     shirt4: makeMaterial(0.18, 0.31, 0.52),
     shirt5: makeMaterial(0.78, 0.76, 0.67),
-    cloth: makeMaterial(0.23, 0.16, 0.12),
     trousers: makeMaterial(0.12, 0.16, 0.2),
     skirt: makeMaterial(0.55, 0.16, 0.13),
     kente: makeMaterial(0.82, 0.57, 0.12)
@@ -71,9 +69,6 @@ export function createAmbientLife(app: AppBase): void {
     const root = new Entity(name);
     part(root, name + " lower body", "box", bodyMaterial, [0, height * 0.48, 0], [width, height * 0.58, length]);
     part(root, name + " cabin", "box", materials.glass, [0, height * 0.98, -length * 0.06], [width * 0.82, height * 0.56, length * (minibus ? 0.48 : 0.52)]);
-    part(root, name + " bonnet", "box", bodyMaterial, [0, height * 0.67, length * 0.32], [width * 0.92, height * 0.2, length * 0.28]);
-    part(root, name + " front bumper", "box", materials.black, [0, height * 0.24, length * 0.51], [width * 0.94, 0.18, 0.16]);
-    part(root, name + " rear bumper", "box", materials.black, [0, height * 0.24, -length * 0.51], [width * 0.94, 0.18, 0.16]);
     for (const side of [-1, 1]) {
       for (const axle of [-1, 1]) {
         const wheel = part(root, name + " wheel", "cylinder", materials.tyre, [side * width * 0.53, height * 0.27, axle * length * 0.31], [height * 0.42, 0.22, height * 0.42], [0, 0, 90]);
@@ -103,7 +98,6 @@ export function createAmbientLife(app: AppBase): void {
     { root: createVehicle("Accra trotro traffic", materials.trotro, 2.15, 5.2, 2.1, true), route: coastRoad.slice().reverse(), segment: 0, progress: 0.38, speed: 5.6, lane: 2.3 },
     { root: createVehicle("Osu private saloon traffic", materials.silver, 1.9, 4.2, 1.4), route: beachRoad, segment: 1, progress: 0.2, speed: 8.5, lane: -2.2 },
     { root: createVehicle("Labadi delivery pickup traffic", materials.blue, 2, 4.8, 1.65), route: beachRoad.slice().reverse(), segment: 1, progress: 0.62, speed: 6.1, lane: 2.2 },
-    { root: createVehicle("Accra ride-hailing car traffic", materials.white, 1.9, 4.2, 1.4), route: coastRoad, segment: 2, progress: 0.52, speed: 7.8, lane: -2.2 }
   ];
 
   function createWalker(name: string, position: Point, route: Point[], speed: number, skin: StandardMaterial, shirt: StandardMaterial, lower: StandardMaterial, phase: number): Walker {
@@ -132,7 +126,6 @@ export function createAmbientLife(app: AppBase): void {
     createWalker("Osu pedestrian 03", { x: 1390, z: -1145 }, [{ x: 1390, z: -1145 }, { x: 1580, z: -1145 }, { x: 1390, z: -1145 }], 0.66, materials.skin3, materials.shirt4, materials.trousers, 2.1),
     createWalker("Osu pedestrian 04", { x: 1570, z: -1208 }, [{ x: 1570, z: -1208 }, { x: 1360, z: -1208 }, { x: 1570, z: -1208 }], 0.82, materials.skin1, materials.shirt3, materials.skirt, 2.8),
     createWalker("Labadi pedestrian 01", { x: 2220, z: -2360 }, [{ x: 2220, z: -2360 }, { x: 2360, z: -2360 }, { x: 2220, z: -2360 }], 0.7, materials.skin2, materials.shirt5, materials.trousers, 0.7),
-    createWalker("Labadi pedestrian 02", { x: 2370, z: -2400 }, [{ x: 2370, z: -2400 }, { x: 2200, z: -2400 }, { x: 2370, z: -2400 }], 0.62, materials.skin3, materials.shirt1, materials.skirt, 1.7),
     createWalker("Makola pedestrian 01", { x: -480, z: 485 }, [{ x: -480, z: 485 }, { x: -350, z: 485 }, { x: -480, z: 485 }], 0.58, materials.skin1, materials.shirt2, materials.trousers, 2.5)
   ];
 
