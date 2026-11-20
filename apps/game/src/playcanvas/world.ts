@@ -450,8 +450,8 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     } else if (landmark.id === "national-theatre") {
       // Sculptural overlapping shell-like volumes replace the plain rectangular block.
       box("National Theatre central auditorium", landmark.x, 7, landmark.z, width * 0.58, 14, depth * 0.56, mats.lightConcrete, 0, true);
-      box("National Theatre west sculptural shell", landmark.x - width * 0.23, 8.5, landmark.z, width * 0.48, 17, depth * 0.72, mats.white, -18);
-      box("National Theatre east sculptural shell", landmark.x + width * 0.23, 8.5, landmark.z, width * 0.48, 17, depth * 0.72, mats.lightConcrete, 18);
+      box("National Theatre west sculptural shell", landmark.x - width * 0.23, 8.5, landmark.z, width * 0.36, 17, depth * 0.62, mats.white, -18);
+      box("National Theatre east sculptural shell", landmark.x + width * 0.23, 8.5, landmark.z, width * 0.36, 17, depth * 0.62, mats.lightConcrete, 18);
       box("National Theatre front shell fascia", landmark.x, 14.5, front - depth * 0.18, width * 0.86, 0.7, depth * 0.18, mats.white, 0);
       box("National Theatre glazed public entrance", landmark.x, 4.2, front + depth * 0.02, width * 0.48, 8.2, 0.25, mats.glass);
       box("National Theatre entrance canopy", landmark.x, 9, front + depth * 0.06, width * 0.62, 0.55, depth * 0.16, mats.roof);
