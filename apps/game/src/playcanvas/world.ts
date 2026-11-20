@@ -387,11 +387,17 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     box("Fuel dispenser", x, 1.25, -1040, 1.25, 2.5, 1.2, mats.white, 0, true);
     box("Fuel dispenser display", x, 1.7, -1039.35, 0.7, 0.48, 0.08, mats.glass);
   }
+  const streetLamps: Entity[] = [];
   for (let i = 0; i < 12; i++) {
     const x = 950 + i * 34;
     box("Osu streetlight pole", x, 4.5, -1320, 0.18, 9, 0.18, mats.roof);
     box("Osu streetlight arm", x + 1.8, 8.8, -1320, 3.6, 0.12, 0.12, mats.roof);
-    box("Osu streetlight lamp", x + 3.4, 8.65, -1320, 0.8, 0.22, 0.5, mats.gold);
+    const lamp = box("Osu streetlight lamp", x + 3.4, 8.65, -1320, 0.8, 0.22, 0.5, mats.gold);
+    lamp.addComponent("light", {
+      type: "omni", color: new Color(1, 0.76, 0.42), intensity: 0.85,
+      range: 22, enabled: false, castShadows: false
+    });
+    streetLamps.push(lamp);
   }
 
   // Labadi marina watercraft props: a speedboat and a personal watercraft.
@@ -629,6 +635,14 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
   let livingClock=0;
   const updateLivingCity=(dt:number)=>{
     livingClock+=dt;
+    // Warm practical street lighting switches on for the night portion of the
+    // shared world clock. Lights are disabled during daylight to save mobile GPU work.
+    const nightFactor = 0.5 + 0.5 * Math.sin((livingClock / 480) * Math.PI * 2 - Math.PI / 2);
+    const lampsOn = nightFactor < 0.28;
+    for (const lamp of streetLamps) {
+      const light = lamp.light;
+      if (light) light.enabled = lampsOn;
+    }
     for(const person of pedestrians){
       let remaining=person.speed*dt;
       while(remaining>0){
