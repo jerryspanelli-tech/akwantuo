@@ -3,7 +3,7 @@ import { AppBase, Color, Entity, StandardMaterial } from "playcanvas";
 type Point = { x: number; z: number };
 type Street = { name: string; width: number; points: readonly Point[] };
 
-const STREETS: readonly Street[] = [
+export const GREATER_ACCRA_LOCAL_STREETS: readonly Street[] = [
   { name: "Dansoman market street", width: 12, points: [{ x: -6100, z: -700 }, { x: -5900, z: -1050 }, { x: -5200, z: -1050 }, { x: -4300, z: -1050 }] },
   { name: "Kaneshie market street", width: 12, points: [{ x: -2850, z: -250 }, { x: -3200, z: -470 }, { x: -2700, z: -470 }, { x: -2200, z: -470 }] },
   { name: "Makola market street", width: 11, points: [{ x: -450, z: 450 }, { x: -450, z: 80 }, { x: 100, z: 80 }, { x: 650, z: 80 }] },
@@ -39,7 +39,7 @@ export function addGreaterAccraLocalStreets(app: AppBase): void {
     app.root.addChild(entity);
   }
 
-  for (const street of STREETS) {
+  for (const street of GREATER_ACCRA_LOCAL_STREETS) {
     for (let index = 0; index < street.points.length - 1; index++) {
       const a = street.points[index];
       const b = street.points[index + 1];
