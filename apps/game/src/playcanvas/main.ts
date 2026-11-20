@@ -7,6 +7,7 @@ import {
 import "./style.css";
 import { createGreaterAccraWorld } from "./world";
 import { createAmbientLife } from "./ambientLife";
+import { GREATER_ACCRA_LOCAL_STREETS } from "./localStreets";
 import { GREATER_ACCRA_ROAD_PATHS } from "../world/greaterAccraLayout";
 
 const canvas = document.querySelector<HTMLCanvasElement>("#application")!;
@@ -477,6 +478,17 @@ async function boot() {
         });
         map.strokeStyle = /^(n1|n4|n6)-/.test(path.roadSegmentId) ? "#d0b477" : "#82918a";
         map.lineWidth = /^(n1|n4|n6)-/.test(path.roadSegmentId) ? 3.5 : 2;
+        map.stroke();
+      }
+      for (const street of GREATER_ACCRA_LOCAL_STREETS) {
+        map.beginPath();
+        street.points.forEach((point, index) => {
+          const x = width / 2 + (point.x - center.x) * scale;
+          const y = height / 2 - (point.z - center.z) * scale;
+          if (index === 0) map.moveTo(x, y); else map.lineTo(x, y);
+        });
+        map.strokeStyle = "#64786e";
+        map.lineWidth = 1.2;
         map.stroke();
       }
       if (!inVehicle) {
