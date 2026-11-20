@@ -10,6 +10,7 @@ export const GREATER_ACCRA_LOCAL_STREETS: readonly Street[] = [
   { name: "Dansoman inner connector", width: 10, points: [{ x: -5200, z: -1050 }, { x: -5350, z: -1450 }, { x: -4850, z: -1500 }, { x: -4300, z: -1050 }] },
   { name: "Kaneshie market street", width: 12, points: [{ x: -2850, z: -250 }, { x: -3200, z: -470 }, { x: -2700, z: -470 }, { x: -2200, z: -470 }] },
   { name: "Kaneshie Abossey Okai connector", width: 10, points: [{ x: -2850, z: -250 }, { x: -2550, z: 80 }, { x: -2150, z: 300 }, { x: -1800, z: 300 }] },
+  { name: "Accra Arts Centre market link", width: 10, points: [{ x: -450, z: 450 }, { x: -800, z: 320 }, { x: -1250, z: 250 }, { x: -1800, z: 300 }] },
   { name: "Makola market street", width: 11, points: [{ x: -450, z: 450 }, { x: -450, z: 80 }, { x: 100, z: 80 }, { x: 650, z: 80 }] },
   { name: "Accra central grid road", width: 10, points: [{ x: -450, z: 450 }, { x: -100, z: 700 }, { x: 250, z: 700 }, { x: 650, z: 450 }] },
   { name: "Nima Mamobi connector", width: 11, points: [{ x: -450, z: 450 }, { x: -650, z: 750 }, { x: -950, z: 1100 }, { x: -1250, z: 1350 }] },
