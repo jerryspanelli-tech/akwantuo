@@ -22,7 +22,7 @@ type TrafficUnit = {
   lane: number;
 };
 
-export function createAmbientLife(app: AppBase): void {
+export function createAmbientLife(app: AppBase): (container: any) => void {
   const materials = {
     black: makeMaterial(0.035, 0.045, 0.045),
     glass: makeMaterial(0.12, 0.27, 0.31),
@@ -133,6 +133,46 @@ export function createAmbientLife(app: AppBase): void {
     createWalker("Makola pedestrian 01", { x: -480, z: 485 }, [{ x: -480, z: 485 }, { x: -350, z: 485 }, { x: -480, z: 485 }], 0.58, materials.skin1, materials.shirt2, materials.trousers, 2.5)
   ];
 
+  // Replace the temporary crowd stand-ins with the same rigged GLB character
+  // pipeline used by the player. Each pedestrian keeps its existing route and
+  // receives a real skeletal walk animation when the source model provides one.
+  const upgradePedestrians = (container: any): void => {
+    const animationAssets = Array.isArray(container?.animations) ? container.animations : [];
+    for (let index = 0; index < walkers.length; index++) {
+      const walker = walkers[index];
+      try {
+        const model = container.instantiateRenderEntity({ castShadows: false });
+        if (!model) continue;
+        model.name = "AKWANTUO rigged Ghana pedestrian " + (index + 1);
+        model.setPosition(walker.root.getPosition());
+        model.setLocalScale(0.92 + (index % 3) * 0.035, 0.92 + (index % 3) * 0.035, 0.92 + (index % 3) * 0.035);
+        app.root.addChild(model);
+        model.syncHierarchy();
+        walker.root.destroy();
+        walker.root = model;
+
+        if (animationAssets.length) {
+          model.addComponent("anim", { activate: true });
+          const clips: string[] = [];
+          for (const asset of animationAssets) {
+            const track = asset?.resource;
+            const name = track?.name || asset?.name;
+            if (!track || !name) continue;
+            model.anim.assignAnimation(name, track);
+            clips.push(name);
+          }
+          const walk = clips.find((name) => /walk/i.test(name));
+          const idle = clips.find((name) => /idle/i.test(name));
+          const chosen = walk || idle;
+          if (chosen) model.anim.baseLayer.play(chosen);
+          model.anim.speed = 0.9 + (index % 3) * 0.08;
+        }
+      } catch (error) {
+        console.warn("[AKWANTUO] Could not upgrade pedestrian " + (index + 1) + " to the rigged GLB model", error);
+      }
+    }
+  };
+
   // Update only the small ambient population; static streets and buildings never move.
   let clock = 0;
   app.on("update", (dt: number) => {
@@ -176,4 +216,5 @@ export function createAmbientLife(app: AppBase): void {
       walker.rightArm.setLocalEulerAngles(swing * 0.65, 0, 0);
     }
   });
+  return upgradePedestrians;
 }
