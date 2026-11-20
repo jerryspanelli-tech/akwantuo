@@ -7,6 +7,7 @@ const STREETS: readonly Street[] = [
   { name: "Dansoman market street", width: 12, points: [{ x: -6100, z: -700 }, { x: -5900, z: -1050 }, { x: -5200, z: -1050 }, { x: -4300, z: -1050 }] },
   { name: "Kaneshie market street", width: 12, points: [{ x: -2850, z: -250 }, { x: -3200, z: -470 }, { x: -2700, z: -470 }, { x: -2200, z: -470 }] },
   { name: "Makola market street", width: 11, points: [{ x: -450, z: 450 }, { x: -450, z: 80 }, { x: 100, z: 80 }, { x: 650, z: 80 }] },
+  { name: "Osu residential connector", width: 12, points: [{ x: 900, z: -1450 }, { x: 1180, z: -1450 }, { x: 1450, z: -1450 }, { x: 1450, z: -1350 }] },
   { name: "Osu Oxford Street", width: 12, points: [{ x: 1450, z: -1350 }, { x: 1450, z: -1600 }, { x: 1700, z: -1600 }] },
   { name: "Labadi beach road local", width: 12, points: [{ x: 2300, z: -1900 }, { x: 2450, z: -2250 }, { x: 3200, z: -2250 }] },
   { name: "Spintex commercial street", width: 12, points: [{ x: 5600, z: -1150 }, { x: 5600, z: -1450 }, { x: 6200, z: -1450 }] },
