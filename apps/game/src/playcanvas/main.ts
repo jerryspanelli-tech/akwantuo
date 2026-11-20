@@ -117,7 +117,7 @@ async function boot() {
 
   loadingMessage && (loadingMessage.textContent = "Building Greater Accra roads, districts and coastline…");
   const world = createGreaterAccraWorld(app);
-  createAmbientLife(app);
+  const upgradeAmbientPedestrians = createAmbientLife(app);
   const blockers = world.blockers;
 
   loadingMessage && (loadingMessage.textContent = "Preparing the player and vehicle…");
@@ -141,6 +141,7 @@ async function boot() {
 
   void playerAssetPromise.then((loadedAsset) => {
     const container = loadedAsset.resource as any;
+    upgradeAmbientPedestrians(container);
     try {
       if (!Array.isArray(container.renders) || container.renders.length === 0) {
         throw new Error("The GLB container has no render assets.");
