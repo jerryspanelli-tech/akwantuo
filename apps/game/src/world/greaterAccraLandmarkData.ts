@@ -90,7 +90,7 @@ export const GREATER_ACCRA_LANDMARK_FOOTPRINTS: readonly LandmarkFootprint[] = [
     "maxX": -10,
     "minZ": -490,
     "maxZ": -350
-  }
+  },
   {
     "id": "black-star-square",
     "label": "Black Star Square / Independence Square",
