@@ -4,7 +4,7 @@ import { GREATER_ACCRA_LANDMARK_FOOTPRINTS } from "../world/greaterAccraLandmark
 type Point = { x: number; z: number };
 
 export function addGhanaLandmarkDetails(app: AppBase): void {
-  const footprint = new Map(GREATER_ACCRA_LANDMARK_FOOTPRINTS.map((item) => [item.id, item]));
+  const footprint = new Map<string, (typeof GREATER_ACCRA_LANDMARK_FOOTPRINTS)[number]>(GREATER_ACCRA_LANDMARK_FOOTPRINTS.map((item) => [item.id, item] as const));
   const mats = {
     glass: makeMaterial(0.13, 0.31, 0.36),
     blueGlass: makeMaterial(0.17, 0.38, 0.45),
