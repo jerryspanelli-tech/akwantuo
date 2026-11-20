@@ -386,10 +386,11 @@ async function boot() {
     if (event.code === "Space" && !event.repeat) requestJump();
   });
 
-  let elapsed = 0, mapElapsed = 0;
+  let elapsed = 0, mapElapsed = 0, worldMapElapsed = 1;
   app.on("update", (dt: number) => {
     const step = Math.min(dt, 0.05);
     world.update(step);
+    worldMapElapsed += step;
     const forward = (keys.has("KeyW") || keys.has("ArrowUp") ? 1 : 0) - (keys.has("KeyS") || keys.has("ArrowDown") ? 1 : 0) - stickY;
     const strafe = (keys.has("KeyD") || keys.has("ArrowRight") ? 1 : 0) - (keys.has("KeyA") || keys.has("ArrowLeft") ? 1 : 0) + stickX;
     if (inVehicle) {
@@ -558,7 +559,8 @@ async function boot() {
     }
     if (status) status.textContent = inVehicle ? "TAXI · DRIVING" : "GREATER ACCRA · GHANA";
 
-    if (worldMapOpen && worldMapContext && worldMapCanvas) {
+    if (worldMapOpen && worldMapContext && worldMapCanvas && worldMapElapsed >= 0.25) {
+      worldMapElapsed = 0;
       const map = worldMapContext, width = worldMapCanvas.width, height = worldMapCanvas.height;
       const bounds = GREATER_ACCRA_MAP_EXTENT, pad = 54;
       const sx = (width - pad * 2) / bounds.widthM, sy = (height - pad * 2) / bounds.depthM;
