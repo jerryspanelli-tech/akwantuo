@@ -61,6 +61,6 @@
 .world-map-panel footer span:first-child{color:#7be2a9}
 body.world-map-open .top-hud,body.world-map-open .health-hud,body.world-map-open .map-toggle,body.world-map-open .touch-ui,body.world-map-open .crosshair{visibility:hidden}
 .mission{display:none!important}
-@media(min-width:800px){.map-toggle{left:auto;right:24px;bottom:width:112px;height:122px}#minimap{width:104px!important;height:104px!important}}
+@media(min-width:800px){.map-toggle{left:auto;right:24px;bottom:150px;width:112px;height:122px}#minimap{width:104px!important;height:104px!important}}
 
 .world-map-tools{display:flex;align-items:center;gap:8px}.world-map-tools button{min-width:38px;min-height:34px;padding:5px 10px;border:1px solid #d9b77788;border-radius:9px;background:#1a3028;color:#fff;font-weight:800}.world-map-tools button:active{background:#8a693c}.world-map-panel footer{align-items:center;flex-wrap:wrap}
