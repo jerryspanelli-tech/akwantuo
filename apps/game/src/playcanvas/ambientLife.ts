@@ -93,9 +93,13 @@ export function createAmbientLife(app: AppBase): void {
     { x: 1450, z: -1350 }, { x: 1850, z: -1650 }, { x: 2300, z: -1900 }, { x: 2750, z: -2100 },
     { x: 2300, z: -1900 }, { x: 1850, z: -1650 }
   ];
+  const spawnRoad: Point[] = [
+    { x: 900, z: -1450 }, { x: 1180, z: -1450 }, { x: 1450, z: -1450 },
+    { x: 1450, z: -1350 }, { x: 1450, z: -1450 }, { x: 1180, z: -1450 }
+  ];
   const traffic: TrafficUnit[] = [
-    { root: createVehicle("Osu yellow taxi traffic", materials.taxi, 1.9, 4.1, 1.45), route: coastRoad, segment: 0, progress: 0.15, speed: 7.2, lane: -2.2 },
-    { root: createVehicle("Accra trotro traffic", materials.trotro, 2.15, 5.2, 2.1, true), route: coastRoad.slice().reverse(), segment: 0, progress: 0.38, speed: 5.6, lane: 2.3 },
+    { root: createVehicle("Osu yellow taxi traffic", materials.taxi, 1.9, 4.1, 1.45), route: spawnRoad, segment: 0, progress: 0.15, speed: 7.2, lane: -2.2 },
+    { root: createVehicle("Accra trotro traffic", materials.trotro, 2.15, 5.2, 2.1, true), route: spawnRoad.slice().reverse(), segment: 0, progress: 0.38, speed: 5.6, lane: 2.3 },
     { root: createVehicle("Osu private saloon traffic", materials.silver, 1.9, 4.2, 1.4), route: beachRoad, segment: 1, progress: 0.2, speed: 8.5, lane: -2.2 },
     { root: createVehicle("Labadi delivery pickup traffic", materials.blue, 2, 4.8, 1.65), route: beachRoad.slice().reverse(), segment: 1, progress: 0.62, speed: 6.1, lane: 2.2 },
   ];
@@ -121,8 +125,8 @@ export function createAmbientLife(app: AppBase): void {
   }
 
   const walkers: Walker[] = [
-    createWalker("Osu pedestrian 01", { x: 1330, z: -1162 }, [{ x: 1330, z: -1162 }, { x: 1510, z: -1162 }, { x: 1330, z: -1162 }], 0.78, materials.skin1, materials.shirt1, materials.trousers, 0.2),
-    createWalker("Osu pedestrian 02", { x: 1510, z: -1200 }, [{ x: 1510, z: -1200 }, { x: 1320, z: -1200 }, { x: 1510, z: -1200 }], 0.72, materials.skin2, materials.shirt2, materials.skirt, 1.2),
+    createWalker("Osu pedestrian 01", { x: 1020, z: -1432 }, [{ x: 1020, z: -1432 }, { x: 1330, z: -1432 }, { x: 1020, z: -1432 }], 0.78, materials.skin1, materials.shirt1, materials.trousers, 0.2),
+    createWalker("Osu pedestrian 02", { x: 1320, z: -1468 }, [{ x: 1320, z: -1468 }, { x: 1000, z: -1468 }, { x: 1320, z: -1468 }], 0.72, materials.skin2, materials.shirt2, materials.skirt, 1.2),
     createWalker("Osu pedestrian 03", { x: 1390, z: -1145 }, [{ x: 1390, z: -1145 }, { x: 1580, z: -1145 }, { x: 1390, z: -1145 }], 0.66, materials.skin3, materials.shirt4, materials.trousers, 2.1),
     createWalker("Osu pedestrian 04", { x: 1570, z: -1208 }, [{ x: 1570, z: -1208 }, { x: 1360, z: -1208 }, { x: 1570, z: -1208 }], 0.82, materials.skin1, materials.shirt3, materials.skirt, 2.8),
     createWalker("Labadi pedestrian 01", { x: 2220, z: -2360 }, [{ x: 2220, z: -2360 }, { x: 2360, z: -2360 }, { x: 2220, z: -2360 }], 0.7, materials.skin2, materials.shirt5, materials.trousers, 0.7),
