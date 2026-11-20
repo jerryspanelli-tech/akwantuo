@@ -2,86 +2,17 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#101a1b" />
-    <meta name="description" content="AKWANTUO — A realistic Ghanaian open-world life simulation." />
-    <title>AKWANTUO — A World of Your Own</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#14251f" />
+    <meta name="description" content="AKWANTUO — Ghana-inspired PlayCanvas open-world game." />
+    <meta http-equiv="refresh" content="0; url=/playcanvas.html" />
+    <title>AKWANTUO</title>
+    <script>
+      window.location.replace("/playcanvas.html");
+    </script>
   </head>
   <body>
-    <main id="app">
-      <section class="boot-screen" id="boot-screen" aria-live="polite">
-        <div class="boot-mark">A</div>
-        <p class="eyebrow">A GHANAIAN OPEN-WORLD EXPERIENCE</p>
-        <h1>AKWANTUO</h1>
-        <p class="boot-caption">A World of Your Own</p>
-        <div class="boot-track"><span></span></div>
-        <p class="boot-status" id="boot-status">Preparing your world…</p>
-      </section>
-      <section class="game-shell is-hidden" id="game-shell">
-        <canvas id="world-canvas" aria-label="AKWANTUO 3D world"></canvas>
-        <section class="game-hud is-hidden" id="game-hud" aria-label="Game controls">
-          <div class="hud-top"><span class="hud-location">AKWANTUO <i>·</i> ACCRA DISTRICT</span><span class="hud-mode">EXPLORATION</span></div>
-          <div class="touch-controls" id="touch-controls">
-            <div class="joystick" id="joystick" aria-label="Movement joystick"><div class="joystick-stick" id="joystick-stick"></div></div>
-            <div class="hud-actions"><button class="interact-button" id="interact-button" type="button" hidden>ENTER</button><button class="vehicle-view-button is-hidden" id="vehicle-view-button" type="button">VIEW</button><button class="jump-button" id="jump-button" type="button">JUMP</button><button class="vehicle-brake-button" id="vehicle-brake-button" type="button">BRAKE</button></div>
-          </div>
-          <div class="control-hint" id="control-hint">WASD / ARROWS MOVE · E ENTER / EXIT · SPACE BRAKE / JUMP</div>
-        </section>
-        <div class="world-vignette"></div>
-        <header class="topbar">
-          <a class="wordmark" href="#" aria-label="AKWANTUO home">AKWANTUO<span>.</span></a>
-          <span class="online-label"><i></i> WORLD PREVIEW</span>
-        </header>
-        <section class="menu-panel" id="main-menu">
-          <p class="eyebrow">YOUR STORY STARTS HERE</p>
-          <h1>AKWANTUO</h1>
-          <p class="menu-subtitle">A World of Your Own.</p>
-          <div class="menu-actions">
-            <button class="primary-action" id="play-button" type="button">ENTER WORLD <span>↗</span></button>
-            <button class="secondary-action" id="character-button" type="button">CHARACTER <small>CREATE / EDIT</small></button>
-            <button class="secondary-action" id="account-button" type="button">ACCOUNT <small>ONLINE SAVE</small></button>
-            <button class="secondary-action" type="button" disabled>SETTINGS <small>COMING SOON</small></button>
-          </div>
-          <p class="build-note">EARLY DEVELOPMENT BUILD <span>•</span> GHANA</p>
-        </section>
-        <section class="character-panel is-hidden" id="character-panel" aria-hidden="true" aria-labelledby="character-title">
-          <div class="character-card">
-            <div class="character-heading"><div><p class="eyebrow">MAKE THIS WORLD YOURS</p><h2 id="character-title">Create your character</h2></div><button class="character-close" id="character-close" type="button" aria-label="Close character creator">×</button></div>
-            <form id="character-form">
-              <label>Character presentation<select name="presentation"><option value="masculine">Masculine</option><option value="feminine">Feminine</option></select></label>
-              <label>Age <span class="field-note">Adults only · 18–80</span><input name="age" type="number" min="18" max="80" value="25" required /></label>
-              <label>Complexion<select name="complexion"><option value="deep">Deep brown</option><option value="dark" selected>Dark brown</option><option value="medium">Medium brown</option><option value="golden">Golden brown</option><option value="light">Light brown</option></select></label>
-              <label>Body build<select name="build"><option value="slim">Slim</option><option value="average" selected>Average</option><option value="broad">Broad</option></select></label>
-              <label>Starting hairstyle<select name="hairstyle"><option value="short-natural">Short natural</option><option value="low-cut">Low cut</option><option value="fade">Classic fade</option><option value="afro">Natural afro</option></select><span class="field-note">More styles will be available at barbershops and salons.</span></label>
-              <label>Clothing<select name="outfit"><option value="street-green">Accra streetwear</option><option value="street-blue">Everyday casual</option><option value="fugu">Northern fugu-inspired</option><option value="kente">Kente-inspired</option><option value="workwear">Workwear</option></select></label>
-              <p class="character-footnote">Your choices update the temporary 3D preview. Detailed gender-specific models, clothing meshes and hairstyles will be added as the character art system develops.</p>
-              <button class="primary-action character-save" id="character-save" type="submit">SAVE APPEARANCE <span>✓</span></button>
-            </form>
-          </div>
-        </section>
-        <section class="character-panel is-hidden" id="account-panel" aria-hidden="true" aria-labelledby="account-title">
-          <div class="character-card">
-            <div class="character-heading"><div><p class="eyebrow">YOUR AKWANTUO ID</p><h2 id="account-title">Player account</h2></div><button class="character-close" id="account-close" type="button" aria-label="Close account panel">×</button></div>
-            <form id="account-form">
-              <label>Email address<input id="account-email" name="email" type="email" autocomplete="email" required /></label>
-              <label>Password<input id="account-password" name="password" type="password" minlength="8" autocomplete="current-password" required /></label>
-              <label>Player name <span class="field-note">Used when creating a new account</span><input id="account-display-name" name="displayName" type="text" maxlength="32" autocomplete="nickname" /></label>
-              <p class="character-footnote" id="account-status" role="status">Sign in to sync your character profile to AKWANTUO cloud saves.</p>
-              <div class="menu-actions">
-                <button class="primary-action" id="account-signin" type="submit">SIGN IN <span>↗</span></button>
-                <button class="secondary-action" id="account-signup" type="button">CREATE ACCOUNT</button>
-                <button class="secondary-action is-hidden" id="account-signout" type="button">SIGN OUT</button>
-              </div>
-            </form>
-          </div>
-        </section>
-        <footer class="footer-bar">
-          <span>BUILT FOR GHANA. OPEN TO THE WORLD.</span>
-          <span>PHASE 1 · FOUNDATION</span>
-        </footer>
-        <div class="notice" id="notice" role="status"></div>
-      </section>
-    </main>
-    <script type="module" src="/src/main.ts"></script>
+    <p>Opening the PlayCanvas version of AKWANTUO…</p>
+    <p><a href="/playcanvas.html">Tap here if the game does not open automatically.</a></p>
   </body>
 </html>
