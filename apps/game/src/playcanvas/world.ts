@@ -353,17 +353,18 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     { name: "Tetteh Quarshie", x: 3650, z: 1750 },
     { name: "Spintex", x: 5600, z: -1150 }
   ];
-  const signalHeads: Array<{red:Entity;amber:Entity;green:Entity;offset:number}> = [];
+  const signalHeads: Array<{red:Entity[];amber:Entity[];green:Entity[];offset:number}> = [];
   for (const [junctionIndex,junction] of junctions.entries()) {
+    const red:Entity[]=[], amber:Entity[]=[], green:Entity[]=[];
     for (const side of [-1, 1]) {
       const x = junction.x + side * 11;
       box(junction.name + " traffic signal pole", x, 4.2, junction.z + 10, 0.22, 8.4, 0.22, mats.roof);
       box(junction.name + " signal head", x, 7.8, junction.z + 10, 0.72, 1.9, 0.6, mats.roof);
-      const red = box(junction.name + " red signal", x, 8.35, junction.z + 9.68, 0.42, 0.42, 0.08, mats.red);
-      const amber = box(junction.name + " amber signal", x, 7.8, junction.z + 9.68, 0.42, 0.42, 0.08, mats.gold);
-      const green = box(junction.name + " green signal", x, 7.25, junction.z + 9.68, 0.42, 0.42, 0.08, mats.green);
-      signalHeads.push({red,amber,green,offset:junctionIndex*12});
+      red.push(box(junction.name + " red signal", x, 8.35, junction.z + 9.68, 0.42, 0.42, 0.08, mats.red));
+      amber.push(box(junction.name + " amber signal", x, 7.8, junction.z + 9.68, 0.42, 0.42, 0.08, mats.gold));
+      green.push(box(junction.name + " green signal", x, 7.25, junction.z + 9.68, 0.42, 0.42, 0.08, mats.green));
     }
+    signalHeads.push({red,amber,green,offset:junctionIndex*12});
   }
   for (const stop of [{ name: "Osu trotro stop", x: 1110, z: -1330 }, { name: "Circle bus stop", x: -520, z: 520 }, { name: "Labadi beach stop", x: 2260, z: -2380 }]) {
     box(stop.name + " shelter", stop.x, 2.2, stop.z, 7.5, 4.4, 3.2, mats.green);
@@ -712,9 +713,9 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
       const phase=(livingClock+signal.offset)%48;
       const redOn=phase<26;
       const amberOn=phase>=26 && phase<31;
-      signal.red.enabled=redOn;
-      signal.amber.enabled=amberOn;
-      signal.green.enabled=phase>=31;
+      signal.red.forEach((lamp)=>lamp.enabled=redOn);
+      signal.amber.forEach((lamp)=>lamp.enabled=amberOn);
+      signal.green.forEach((lamp)=>lamp.enabled=phase>=31);
     }
     // Warm practical street lighting switches on for the night portion of the
     // shared world clock. Lights are disabled during daylight to save mobile GPU work.
