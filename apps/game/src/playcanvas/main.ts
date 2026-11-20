@@ -360,8 +360,18 @@ async function boot() {
     if (!worldMapCanvas || !worldMapOpen) return;
     event.preventDefault();
     const rect = worldMapCanvas.getBoundingClientRect();
-    const px = (event.clientX - rect.left) * (worldMapCanvas.width / rect.width);
-    const py = (event.clientY - rect.top) * (worldMapCanvas.height / rect.height);
+    // Account for object-fit:contain letterboxing so taps map to the
+    // same coordinates the player sees on both narrow phones and desktop.
+    const aspect = worldMapCanvas.width / worldMapCanvas.height;
+    const displayWidth = Math.min(rect.width, rect.height * aspect);
+    const displayHeight = displayWidth / aspect;
+    const offsetX = (rect.width - displayWidth) / 2;
+    const offsetY = (rect.height - displayHeight) / 2;
+    const localX = event.clientX - rect.left - offsetX;
+    const localY = event.clientY - rect.top - offsetY;
+    if (localX < 0 || localY < 0 || localX > displayWidth || localY > displayHeight) return;
+    const px = localX * (worldMapCanvas.width / displayWidth);
+    const py = localY * (worldMapCanvas.height / displayHeight);
     const bounds = GREATER_ACCRA_MAP_EXTENT, pad = 54;
     const baseScale = Math.min((worldMapCanvas.width - pad * 2) / bounds.widthM, (worldMapCanvas.height - pad * 2) / bounds.depthM);
     const mapWidth = bounds.widthM * baseScale, mapHeight = bounds.depthM * baseScale;
@@ -628,11 +638,32 @@ async function boot() {
           map.fillText(place.name, p.x, p.y - 6); map.shadowBlur = 0;
         }
       }
-      if (!inVehicle) {
-        const vp = vehicle.getPosition();
-        const p = plot(vp.x - center.x, vp.z - center.z);
-        map.fillStyle = "#65d19a"; map.beginPath(); map.arc(p.x, p.y, 4, 0, Math.PI * 2); map.fill();
-        map.strokeStyle = "#eafff2"; map.lineWidth = 1; map.stroke();
+      // Active waypoint guidance: the radar rotates with the player, so
+      // this line and marker always point toward the selected destination.
+      if (worldMapWaypoint) {
+        const dx = worldMapWaypoint.x - center.x;
+        const dz = worldMapWaypoint.z - center.z;
+        const distance = Math.hypot(dx, dz);
+        const target = plot(dx, dz);
+        const targetLength = Math.hypot(target.x, target.y) || 1;
+        const visibleLength = Math.min(targetLength, radius - 15);
+        const endX = target.x / targetLength * visibleLength;
+        const endY = target.y / targetLength * visibleLength;
+        map.save();
+        map.beginPath(); map.arc(0, 0, radius - 2, 0, Math.PI * 2); map.clip();
+        map.beginPath(); map.moveTo(0, 0); map.lineTo(endX, endY);
+        map.strokeStyle = "#ffdf76"; map.lineWidth = 3; map.setLineDash([5, 4]); map.stroke(); map.setLineDash([]);
+        map.restore();
+        map.save(); map.translate(endX, endY);
+        map.fillStyle = "#ffdf76"; map.strokeStyle = "#342710"; map.lineWidth = 2;
+        map.beginPath(); map.arc(0, 0, 6, 0, Math.PI * 2); map.fill(); map.stroke();
+        map.beginPath(); map.moveTo(0, -11); map.lineTo(0, -19); map.stroke();
+        map.restore();
+        map.save(); map.rotate(heading);
+        map.fillStyle = "#ffdf76"; map.font = "bold 10px system-ui,sans-serif";
+        map.textAlign = "center"; map.textBaseline = "bottom";
+        map.fillText(distance >= 1000 ? `${(distance / 1000).toFixed(1)} KM TO MARK` : `${Math.round(distance)} M TO MARK`, 0, radius - 5);
+        map.restore();
       }
       map.restore();
       // Player direction arrow remains fixed at the centre of the rotating map.
@@ -703,11 +734,14 @@ async function boot() {
       map.fillStyle = "#f4f0e4"; map.font = "bold 14px system-ui,sans-serif"; map.fillText("YOU",you.x+13,you.y);
       if (worldMapWaypoint) {
         const marked = point(worldMapWaypoint.x, worldMapWaypoint.z);
-        map.strokeStyle = "#ffdf76"; map.lineWidth = 3;
-        map.beginPath(); map.arc(marked.x,marked.y,9,0,Math.PI*2); map.stroke();
-        map.beginPath(); map.moveTo(marked.x-13,marked.y); map.lineTo(marked.x+13,marked.y);
-        map.moveTo(marked.x,marked.y-13); map.lineTo(marked.x,marked.y+13); map.stroke();
-        map.fillStyle = "#ffdf76"; map.font = "bold 13px system-ui,sans-serif"; map.fillText("MARKED",marked.x+13,marked.y-9);
+        map.save();
+        map.strokeStyle = "#ffdf76"; map.lineWidth = 4;
+        map.beginPath(); map.arc(marked.x,marked.y,11,0,Math.PI*2); map.stroke();
+        map.beginPath(); map.moveTo(marked.x-16,marked.y); map.lineTo(marked.x+16,marked.y);
+        map.moveTo(marked.x,marked.y-16); map.lineTo(marked.x,marked.y+16); map.stroke();
+        map.fillStyle = "#ffdf76"; map.font = "bold 14px system-ui,sans-serif";
+        map.textAlign = "left"; map.textBaseline = "bottom"; map.fillText("WAYPOINT",marked.x+15,marked.y-10);
+        map.restore();
       }
       const topLeft=point(bounds.minX,bounds.maxZ), bottomRight=point(bounds.maxX,bounds.minZ);
       map.strokeStyle = "#d3b477"; map.lineWidth = 2; map.strokeRect(topLeft.x,topLeft.y,bottomRight.x-topLeft.x,bottomRight.y-topLeft.y);
