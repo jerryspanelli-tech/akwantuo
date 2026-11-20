@@ -104,6 +104,33 @@ export function createAmbientLife(app: AppBase): (container: any) => void {
     { root: createVehicle("Labadi delivery pickup traffic", materials.blue, 2, 4.8, 1.65), route: beachRoad.slice().reverse(), segment: 1, progress: 0.62, speed: 6.1, lane: 2.2 },
   ];
 
+  // Replace the temporary traffic stand-ins with optimized, CC0 GLB vehicle assets.
+  // LOD2 keeps the moving fleet light enough for mobile WebGL.
+  const replaceTrafficWithGlb = (unit: TrafficUnit, url: string, scale: [number, number, number]): void => {
+    app.assets.loadFromUrl(url, "container", (error, asset) => {
+      if (error || !asset?.resource) {
+        console.warn("[AKWANTUO] Traffic GLB could not be loaded; keeping fallback vehicle", url, error);
+        return;
+      }
+      try {
+        const container = asset.resource as any;
+        if (!Array.isArray(container.renders) || container.renders.length === 0) return;
+        const model = container.instantiateRenderEntity({ castShadows: false });
+        model.name = unit.root.name + " detailed GLB";
+        model.setLocalScale(scale[0], scale[1], scale[2]);
+        app.root.addChild(model);
+        unit.root.destroy();
+        unit.root = model;
+      } catch (modelError) {
+        console.warn("[AKWANTUO] Traffic GLB could not be instantiated; keeping fallback vehicle", url, modelError);
+      }
+    });
+  };
+  replaceTrafficWithGlb(traffic[0], "https://tevy.dev/models/yellow-taxi/v1/lod2.glb", [0.89, 0.87, 0.81]);
+  replaceTrafficWithGlb(traffic[1], "https://tevy.dev/models/kei-van/v1/lod2.glb", [1.45, 1.04, 1.53]);
+  replaceTrafficWithGlb(traffic[2], "https://tevy.dev/models/city-taxi/v1/lod2.glb", [1.09, 0.81, 0.87]);
+  replaceTrafficWithGlb(traffic[3], "https://tevy.dev/models/pickup-truck/v1/lod2.glb", [0.91, 0.91, 0.91]);
+
   function createWalker(name: string, position: Point, route: Point[], speed: number, skin: StandardMaterial, shirt: StandardMaterial, lower: StandardMaterial, phase: number): Walker {
     const root = new Entity(name);
     const torso = part(root, name + " torso", "box", shirt, [0, 1.52, 0], [0.58, 0.86, 0.32]);
