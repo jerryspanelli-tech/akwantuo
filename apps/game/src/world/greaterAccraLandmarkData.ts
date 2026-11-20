@@ -121,4 +121,15 @@ export const GREATER_ACCRA_LANDMARK_FOOTPRINTS: readonly LandmarkFootprint[] = [
     "minZ": -2160,
     "maxZ": -2040
   }
+  ,
+  {
+    "id": "accra-arts-centre",
+    "label": "Accra Arts Centre",
+    "x": -1250,
+    "z": 250,
+    "minX": -1280,
+    "maxX": -1220,
+    "minZ": 210,
+    "maxZ": 290
+  }
 ];
