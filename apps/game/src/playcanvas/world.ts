@@ -307,8 +307,6 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     const width = landmark.maxX - landmark.minX;
     const depth = landmark.maxZ - landmark.minZ;
     const front = landmark.z + depth * 0.5;
-    const sideX = width * 0.5;
-    const sideZ = depth * 0.5;
     const window = (label: string, x: number, y: number, z: number, w: number, h: number) =>
       box(label, x, y, z, w, h, 0.22, mats.glass);
     const ledge = (label: string, x: number, y: number, z: number, w: number) =>
