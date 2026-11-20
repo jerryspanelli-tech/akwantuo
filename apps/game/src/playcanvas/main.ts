@@ -235,6 +235,20 @@ async function boot() {
   sun.setEulerAngles(48, 32, 0);
   app.root.addChild(sun);
 
+  // A slow tropical day/night cycle: keep the same sun direction but let the
+  // daylight, ambient fill and sky tone change smoothly over an eight-minute loop.
+  let worldClock = 0;
+  const rainMaterial = mat(0.48, 0.66, 0.78);
+  const rainDrops: Entity[] = [];
+  for (let i = 0; i < 36; i++) {
+    const drop = new Entity("Tropical rain streak");
+    drop.addComponent("render", { type: "box", material: rainMaterial, castShadows: false, receiveShadows: false });
+    drop.setLocalScale(0.035, 1.15, 0.035);
+    drop.enabled = false;
+    app.root.addChild(drop);
+    rainDrops.push(drop);
+  }
+
   // One drivable saloon/taxi prototype with separate body and wheels.
   const vehicle = new Entity("Accra taxi");
   addBox("Taxi body", 0, 1.1, 0, 2.1, 1.05, 4.2, materials.vehicle);
@@ -390,6 +404,52 @@ async function boot() {
   app.on("update", (dt: number) => {
     const step = Math.min(dt, 0.05);
     world.update(step);
+    worldClock += step;
+    const daylight = 0.5 + 0.5 * Math.sin((worldClock / 480) * Math.PI * 2 - Math.PI / 2);
+    if (sun.light) sun.light.intensity = 0.22 + daylight * 1.16;
+    app.scene.ambientLight = new Color(
+      0.12 + daylight * 0.36,
+      0.14 + daylight * 0.35,
+      0.20 + daylight * 0.27
+    );
+    if (camera.camera) {
+      camera.camera.clearColor = new Color(
+        0.025 + daylight * 0.63,
+        0.045 + daylight * 0.70,
+        0.085 + daylight * 0.72
+      );
+    }
+    // Short tropical showers recur during the weather cycle. Keep the particle
+    // count deliberately low for older mobile GPUs and move drops around the player.
+    const weatherPhase = worldClock % 240;
+    const raining = weatherPhase >= 150 && weatherPhase < 198;
+    const weatherFocus = inVehicle ? vehicle.getPosition() : player.getPosition();
+    for (const drop of rainDrops) {
+      if (!raining) {
+        if (drop.enabled) drop.enabled = false;
+        continue;
+      }
+      if (!drop.enabled) {
+        drop.enabled = true;
+        drop.setPosition(
+          weatherFocus.x + (Math.random() - 0.5) * 34,
+          weatherFocus.y + 7 + Math.random() * 17,
+          weatherFocus.z + (Math.random() - 0.5) * 34
+        );
+      } else {
+        const position = drop.getPosition();
+        const nextY = position.y - 24 * step;
+        if (nextY < weatherFocus.y + 0.6) {
+          drop.setPosition(
+            weatherFocus.x + (Math.random() - 0.5) * 34,
+            weatherFocus.y + 7 + Math.random() * 17,
+            weatherFocus.z + (Math.random() - 0.5) * 34
+          );
+        } else {
+          drop.setPosition(position.x - 1.5 * step, nextY, position.z + 0.8 * step);
+        }
+      }
+    }
     worldMapElapsed += step;
     const forward = (keys.has("KeyW") || keys.has("ArrowUp") ? 1 : 0) - (keys.has("KeyS") || keys.has("ArrowDown") ? 1 : 0) - stickY;
     const strafe = (keys.has("KeyD") || keys.has("ArrowRight") ? 1 : 0) - (keys.has("KeyA") || keys.has("ArrowLeft") ? 1 : 0) + stickX;
