@@ -32,7 +32,7 @@ export function addGhanaLandmarkDetails(app: AppBase): void {
   }
   function box(name: string, x: number, y: number, z: number, w: number, h: number, d: number, material: StandardMaterial, yaw = 0): Entity {
     const entity = new Entity(name);
-    entity.addComponent("render", { type: "box", material, castShadows: true, receiveShadows: true });
+    entity.addComponent("render", { type: "box", material, castShadows: false, receiveShadows: true });
     entity.setPosition(x, y, z);
     entity.setLocalScale(w, h, d);
     if (yaw) entity.setEulerAngles(0, yaw, 0);
@@ -41,7 +41,7 @@ export function addGhanaLandmarkDetails(app: AppBase): void {
   }
   function cylinder(name: string, x: number, y: number, z: number, diameter: number, height: number, material: StandardMaterial): Entity {
     const entity = new Entity(name);
-    entity.addComponent("render", { type: "cylinder", material, castShadows: true, receiveShadows: true });
+    entity.addComponent("render", { type: "cylinder", material, castShadows: false, receiveShadows: true });
     entity.setPosition(x, y, z);
     entity.setLocalScale(diameter, height, diameter);
     app.root.addChild(entity);
@@ -49,7 +49,7 @@ export function addGhanaLandmarkDetails(app: AppBase): void {
   }
   function sphere(name: string, x: number, y: number, z: number, sx: number, sy: number, sz: number, material: StandardMaterial): Entity {
     const entity = new Entity(name);
-    entity.addComponent("render", { type: "sphere", material, castShadows: true, receiveShadows: true });
+    entity.addComponent("render", { type: "sphere", material, castShadows: false, receiveShadows: true });
     entity.setPosition(x, y, z);
     entity.setLocalScale(sx, sy, sz);
     app.root.addChild(entity);
@@ -65,6 +65,7 @@ export function addGhanaLandmarkDetails(app: AppBase): void {
   // gold/green vertical fins. The registered footprint and map position stay unchanged.
   {
     const p = at("villaggio-vista");
+    box("Villaggio Vista retail podium", p.x, 18, p.z, 132, 36, 110, mats.pale);
     box("Villaggio Vista podium glazing", p.x, 20, p.z + 58, 112, 12, 2, mats.blueGlass);
     const towers = [
       { name: "Aqua", dx: -39, dz: 0, w: 27, d: 28, h: 58 },
@@ -86,6 +87,7 @@ export function addGhanaLandmarkDetails(app: AppBase): void {
   // vertical fins, roof crowns and a shared entrance podium.
   {
     const p = at("the-signature");
+    box("The Signature residential podium", p.x, 26, p.z, 126, 52, 128, mats.pale);
     box("The Signature entrance canopy", p.x, 10, p.z + 48, 72, 1.2, 16, mats.gold);
     for (const tower of [
       { name: "North", dx: -25, w: 31, h: 74 },
@@ -107,6 +109,7 @@ export function addGhanaLandmarkDetails(app: AppBase): void {
   // roof skylights and a proper forecourt within the existing mall footprint.
   {
     const p = at("accra-mall");
+    box("Accra Mall retail volume", p.x, 9, p.z, 190, 18, 188, mats.concrete);
     const frontZ = p.z + 101;
     box("Accra Mall continuous glazed frontage", p.x, 7.5, frontZ, 174, 13, 0.65, mats.blueGlass);
     box("Accra Mall main entrance portal", p.x, 8.5, frontZ + 1.1, 30, 15, 1.2, mats.pale);
@@ -127,6 +130,7 @@ export function addGhanaLandmarkDetails(app: AppBase): void {
   // departure canopy, air-traffic control tower and apron-side service wing.
   {
     const p = at("kotoka-airport");
+    box("Kotoka terminal main building", p.x, 8, p.z + 8, 390, 16, 96, mats.concrete);
     box("Kotoka terminal main concourse", p.x, 13, p.z + 18, 370, 10, 38, mats.pale);
     box("Kotoka terminal glass curtain wall", p.x, 10.5, p.z + 38, 350, 7, 0.5, mats.blueGlass);
     box("Kotoka terminal departure roof", p.x, 19, p.z + 16, 390, 1.6, 48, mats.roof);
@@ -165,6 +169,7 @@ export function addGhanaLandmarkDetails(app: AppBase): void {
   // red hipped roof and the formal campus entrance axis.
   {
     const p = at("university-of-ghana");
+    box("University of Ghana Main Hall main block", p.x, 11, p.z, 100, 22, 62, mats.stone);
     box("University of Ghana Main Hall frontage", p.x, 12, p.z + 35, 100, 24, 2.2, mats.stone);
     box("University of Ghana Main Hall red roof", p.x, 25, p.z, 108, 2.2, 62, mats.red);
     box("University of Ghana Main Hall clock tower", p.x, 37, p.z - 26, 17, 27, 17, mats.pale);
