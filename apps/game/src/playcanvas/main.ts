@@ -461,29 +461,81 @@ async function boot() {
       mapElapsed = 0;
       const map = minimapContext;
       const center = inVehicle ? vehicle.getPosition() : player.getPosition();
-      const width = minimap.width, height = minimap.height, scale = 0.105;
+      const width = minimap.width, height = minimap.height;
+      const radius = Math.min(width, height) * 0.47;
+      const scale = 0.16;
+      const heading = (inVehicle ? vehicle.getEulerAngles().y : player.getEulerAngles().y) * Math.PI / 180;
       map.clearRect(0, 0, width, height);
-      map.fillStyle = "#10231d"; map.fillRect(0, 0, width, height);
-      map.save(); map.beginPath(); map.arc(width / 2, height / 2, width * 0.46, 0, Math.PI * 2); map.clip();
-      for (const path of GREATER_ACCRA_ROAD_PATHS) {
-        if (!path.playableInFirstRelease) continue;
+      map.fillStyle = "#091511"; map.fillRect(0, 0, width, height);
+      map.save();
+      map.beginPath(); map.arc(width / 2, height / 2, radius, 0, Math.PI * 2); map.clip();
+      map.fillStyle = "#182a22"; map.fillRect(0, 0, width, height);
+      // Rotate the world around the player so the direction of travel stays up,
+      // as in a GTA radar. Coordinates are the same metres used by the 3D world.
+      map.translate(width / 2, height / 2);
+      map.rotate(-heading);
+      const plot = (x: number, z: number) => ({ x: x * scale, y: -z * scale });
+      // Major Greater Accra routes.
+      for (const road of GREATER_ACCRA_ROAD_PATHS) {
+        if (!road.playableInFirstRelease) continue;
         map.beginPath();
-        path.points.forEach((point, index) => {
-          const x = width / 2 + (point.x - center.x) * scale;
-          const y = height / 2 - (point.z - center.z) * scale;
-          if (index === 0) map.moveTo(x, y); else map.lineTo(x, y);
+        road.points.forEach((point, index) => {
+          const p = plot(point.x - center.x, point.z - center.z);
+          if (index === 0) map.moveTo(p.x, p.y); else map.lineTo(p.x, p.y);
         });
-        map.strokeStyle = /^(n1|n4|n6)-/.test(path.roadSegmentId) ? "#d0b477" : "#82918a";
-        map.lineWidth = /^(n1|n4|n6)-/.test(path.roadSegmentId) ? 3.5 : 2;
-        map.stroke();
+        const highway = /^(n1|n4|n6)-/.test(road.roadSegmentId);
+        map.strokeStyle = highway ? "#c6a66c" : "#87958b";
+        map.lineWidth = highway ? 3.2 : 2;
+        map.lineCap = "round"; map.lineJoin = "round"; map.stroke();
+      }
+      // Local street grid around the active Osu / Accra districts, drawn as
+      // fine secondary streets to give the radar a readable city-map texture.
+      map.strokeStyle = "#52675c"; map.lineWidth = 1;
+      for (let i = -5; i <= 5; i++) {
+        map.beginPath(); map.moveTo(i * 15 * scale, -82 * scale); map.lineTo(i * 15 * scale, 82 * scale); map.stroke();
+        map.beginPath(); map.moveTo(-82 * scale, i * 15 * scale); map.lineTo(82 * scale, i * 15 * scale); map.stroke();
+      }
+      const poi = [
+        { name: "OSU", x: 1450, z: -1180, kind: "district" },
+        { name: "MAKOLA", x: -400, z: 450, kind: "market" },
+        { name: "CIRCLE", x: -450, z: 450, kind: "transport" },
+        { name: "37", x: 1250, z: -350, kind: "district" },
+        { name: "AIRPORT CITY", x: 1050, z: 850, kind: "landmark" },
+        { name: "TETTEH QUARSHIE", x: 3650, z: 1750, kind: "transport" },
+        { name: "EAST LEGON", x: 3900, z: 2100, kind: "district" },
+        { name: "MADINA", x: 5000, z: 1750, kind: "market" },
+        { name: "LABADI BEACH", x: 2750, z: -2100, kind: "beach" },
+        { name: "SPINTEX", x: 5600, z: -1150, kind: "district" },
+        { name: "TEMA", x: 8700, z: -850, kind: "district" }
+      ];
+      for (const place of poi) {
+        const p = plot(place.x - center.x, place.z - center.z);
+        if (Math.hypot(p.x, p.y) > radius - 8) continue;
+        map.beginPath(); map.arc(p.x, p.y, place.kind === "landmark" || place.kind === "beach" ? 4 : 3, 0, Math.PI * 2);
+        map.fillStyle = place.kind === "market" ? "#f0bd67" : place.kind === "beach" ? "#58c5d1" : place.kind === "transport" ? "#a7c8ef" : "#e9e5d8";
+        map.fill();
+        if (Math.hypot(p.x, p.y) < radius - 22) {
+          map.font = "bold 7px system-ui, sans-serif";
+          map.textAlign = "center"; map.textBaseline = "bottom";
+          map.fillStyle = "#f2eee2"; map.shadowColor = "#06100c"; map.shadowBlur = 3;
+          map.fillText(place.name, p.x, p.y - 6); map.shadowBlur = 0;
+        }
       }
       if (!inVehicle) {
         const vp = vehicle.getPosition();
-        map.fillStyle = "#61b88b"; map.beginPath(); map.arc(width / 2 + (vp.x - center.x) * scale, height / 2 - (vp.z - center.z) * scale, 4, 0, Math.PI * 2); map.fill();
+        const p = plot(vp.x - center.x, vp.z - center.z);
+        map.fillStyle = "#65d19a"; map.beginPath(); map.arc(p.x, p.y, 4, 0, Math.PI * 2); map.fill();
+        map.strokeStyle = "#eafff2"; map.lineWidth = 1; map.stroke();
       }
-      map.fillStyle = "#f0c36e"; map.beginPath(); map.arc(width / 2, height / 2, 5, 0, Math.PI * 2); map.fill();
-      map.strokeStyle = "#fff2d2"; map.lineWidth = 1.5; map.stroke();
       map.restore();
+      // Player direction arrow remains fixed at the centre of the rotating map.
+      map.save(); map.translate(width / 2, height / 2);
+      map.beginPath(); map.moveTo(0, -9); map.lineTo(6, 7); map.lineTo(0, 4); map.lineTo(-6, 7); map.closePath();
+      map.fillStyle = "#f3c56f"; map.fill(); map.strokeStyle = "#fff4d8"; map.lineWidth = 1.3; map.stroke();
+      map.restore();
+      // Radar rim and north/heading tick.
+      map.beginPath(); map.arc(width / 2, height / 2, radius, 0, Math.PI * 2);
+      map.strokeStyle = "#e3bd7a"; map.lineWidth = 3; map.stroke();
     }
     if (status) status.textContent = inVehicle ? "TAXI · DRIVING" : "OSU · EXPLORATION";
     if (objective) objective.textContent = inVehicle ? "Drive towards Labadi Beach" : "Explore Osu and find the taxi";
