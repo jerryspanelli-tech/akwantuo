@@ -51,12 +51,6 @@ export function addGreaterAccraLocalStreets(app: AppBase): void {
       const z = (a.z + b.z) / 2;
       box(street.name + " asphalt", x, 0.035, z, street.width, 0.14, length + 1, asphalt, yaw);
       box(street.name + " centre marking", x, 0.12, z, 0.16, 0.025, length * 0.88, yellow, yaw);
-      for (const side of [-1, 1]) {
-        const offset = side * (street.width / 2 + 0.22);
-        const nx = Math.cos(yaw * Math.PI / 180) * offset;
-        const nz = -Math.sin(yaw * Math.PI / 180) * offset;
-        box(street.name + " raised kerb", x + nx, 0.13, z + nz, 0.3, 0.22, length, concrete, yaw);
-      }
     }
   }
 }
