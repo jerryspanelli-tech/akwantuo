@@ -6,7 +6,7 @@ import {
 } from "playcanvas";
 import "./style.css";
 import { createGreaterAccraWorld } from "./world";
-import { GREATER_ACCRA_ROAD_PATHS } from "../world/greaterAccraLayout";
+import { GREATER_ACCRA_ROAD_PATHS, GREATER_ACCRA_MAP_EXTENT, GREATER_ACCRA_REGION_ANCHORS } from "../world/greaterAccraLayout";
 
 const canvas = document.querySelector<HTMLCanvasElement>("#application")!;
 const loading = document.querySelector<HTMLElement>("#loading");
@@ -31,6 +31,21 @@ const stickKnob = document.querySelector<HTMLElement>("#stick-knob");
 const notice = document.querySelector<HTMLElement>("#notice");
 const minimap = document.querySelector<HTMLCanvasElement>("#minimap");
 const minimapContext = minimap?.getContext("2d") ?? null;
+const mapToggle = document.querySelector<HTMLButtonElement>("#map-toggle");
+const worldMapPanel = document.querySelector<HTMLElement>("#world-map-panel");
+const worldMapCanvas = document.querySelector<HTMLCanvasElement>("#world-map-canvas");
+const worldMapContext = worldMapCanvas?.getContext("2d") ?? null;
+const worldMapClose = document.querySelector<HTMLButtonElement>("#world-map-close");
+let worldMapOpen = false;
+const setWorldMapOpen = (open: boolean) => {
+  worldMapOpen = open;
+  if (worldMapPanel) worldMapPanel.hidden = !open;
+  if (mapToggle) mapToggle.setAttribute("aria-expanded", String(open));
+  document.body.classList.toggle("world-map-open", open);
+};
+mapToggle?.addEventListener("click", () => setWorldMapOpen(!worldMapOpen));
+worldMapClose?.addEventListener("click", () => setWorldMapOpen(false));
+window.addEventListener("keydown", (event) => { if (event.key === "Escape" && worldMapOpen) setWorldMapOpen(false); });
 
 if (!canvas) throw new Error("AKWANTUO PlayCanvas canvas is missing.");
 
@@ -540,9 +555,55 @@ async function boot() {
       map.beginPath(); map.arc(width / 2, height / 2, radius, 0, Math.PI * 2);
       map.strokeStyle = "#e3bd7a"; map.lineWidth = 3; map.stroke();
     }
-    if (status) status.textContent = inVehicle ? "TAXI · DRIVING" : "OSU · EXPLORATION";
-    if (objective) objective.textContent = inVehicle ? "Drive towards Labadi Beach" : "Explore Osu and find the taxi";
-    if (hint) hint.textContent = inVehicle ? "Steer with the joystick · Hold GAS or BRAKE / REVERSE · Tap the door to exit · Drag anywhere above to look" : "Push fully to sprint · Tap ↑ to jump · Drag to look";
+    if (status) status.textContent = inVehicle ? "TAXI · DRIVING" : "GREATER ACCRA · GHANA";
+
+    if (worldMapOpen && worldMapContext && worldMapCanvas) {
+      const map = worldMapContext, width = worldMapCanvas.width, height = worldMapCanvas.height;
+      const bounds = GREATER_ACCRA_MAP_EXTENT, pad = 54;
+      const sx = (width - pad * 2) / bounds.widthM, sy = (height - pad * 2) / bounds.depthM;
+      const scale = Math.min(sx, sy);
+      const mapWidth = bounds.widthM * scale, mapHeight = bounds.depthM * scale;
+      const ox = (width - mapWidth) / 2, oy = (height - mapHeight) / 2;
+      const point = (x: number, z: number) => ({ x: ox + (x - bounds.minX) * scale, y: oy + (bounds.maxZ - z) * scale });
+      map.clearRect(0, 0, width, height);
+      map.fillStyle = "#10251f"; map.fillRect(0, 0, width, height);
+      map.fillStyle = "#123b4a"; map.fillRect(0, oy + (bounds.maxZ + 3050) * scale, width, height - oy - (bounds.maxZ + 3050) * scale);
+      map.fillStyle = "#263c2d"; map.fillRect(ox, oy, mapWidth, mapHeight);
+      map.strokeStyle = "#3a5543"; map.lineWidth = 1;
+      for (let x = 0; x <= width; x += 55) { map.beginPath(); map.moveTo(x, oy); map.lineTo(x, oy + mapHeight); map.stroke(); }
+      for (let y = oy; y <= oy + mapHeight; y += 55) { map.beginPath(); map.moveTo(ox, y); map.lineTo(ox + mapWidth, y); map.stroke(); }
+      for (const road of GREATER_ACCRA_ROAD_PATHS) {
+        if (!road.playableInFirstRelease) continue;
+        map.beginPath();
+        road.points.forEach((p, index) => { const q = point(p.x, p.z); if (index === 0) map.moveTo(q.x, q.y); else map.lineTo(q.x, q.y); });
+        map.strokeStyle = /^(n1|n4|n6)-/.test(road.roadSegmentId) ? "#e0bd79" : "#aeb9aa";
+        map.lineWidth = /^(n1|n4|n6)-/.test(road.roadSegmentId) ? 5 : 2.6;
+        map.lineCap = "round"; map.lineJoin = "round"; map.stroke();
+      }
+      const locations = [
+        { name:"MAKOLA MARKET",x:-500,z:350 }, { name:"KANESHIE",x:-2800,z:-250 },
+        { name:"CIRCLE",x:-450,z:450 }, { name:"37 / RIDGE",x:1250,z:-350 },
+        { name:"AIRPORT CITY",x:1100,z:350 }, { name:"OSU",x:1100,z:-1250 },
+        { name:"LABADI BEACH",x:2550,z:-1950 }, { name:"CANTONMENTS",x:1850,z:-250 },
+        { name:"EAST LEGON",x:3900,z:2100 }, { name:"TETTEH QUARSHIE",x:3650,z:1750 },
+        { name:"MADINA",x:5700,z:1700 }, { name:"ACHIMOTA",x:-1800,z:2200 },
+        { name:"DANSOMAN",x:-5100,z:-850 }, { name:"SPINTEX",x:5400,z:-1200 },
+        { name:"TEMA",x:8700,z:-850 }, { name:"LEGON",x:3300,z:3400 }
+      ];
+      for (const place of locations) {
+        const p = point(place.x, place.z);
+        map.fillStyle = "#f0c574"; map.beginPath(); map.arc(p.x,p.y,5,0,Math.PI*2); map.fill();
+        map.font = "bold 13px system-ui,sans-serif"; map.textAlign = "left"; map.textBaseline = "middle";
+        map.fillStyle = "#fff4dc"; map.shadowColor = "#07130f"; map.shadowBlur = 4;
+        map.fillText(place.name,p.x+9,p.y-2); map.shadowBlur = 0;
+      }
+      const current = inVehicle ? vehicle.getPosition() : player.getPosition();
+      const you = point(current.x,current.z);
+      map.fillStyle = "#68e2a0"; map.beginPath(); map.arc(you.x,you.y,9,0,Math.PI*2); map.fill();
+      map.strokeStyle = "#f3fff7"; map.lineWidth = 3; map.stroke();
+      map.fillStyle = "#f4f0e4"; map.font = "bold 14px system-ui,sans-serif"; map.fillText("YOU",you.x+13,you.y);
+      map.strokeStyle = "#d3b477"; map.lineWidth = 2; map.strokeRect(ox,oy,mapWidth,mapHeight);
+    }
     if (healthFill) healthFill.style.width = "100%";
     if (healthValue) healthValue.textContent = "100";
   });
