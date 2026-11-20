@@ -7,10 +7,10 @@ type Walker = {
   segment: number;
   progress: number;
   speed: number;
-  leftLeg: Entity;
-  rightLeg: Entity;
-  leftArm: Entity;
-  rightArm: Entity;
+  leftLeg: Entity | null;
+  rightLeg: Entity | null;
+  leftArm: Entity | null;
+  rightArm: Entity | null;
   phase: number;
 };
 type TrafficUnit = {
@@ -177,6 +177,12 @@ export function createAmbientLife(app: AppBase): (container: any) => void {
         model.syncHierarchy();
         walker.root.destroy();
         walker.root = model;
+        // The primitive limbs were destroyed with the old root. The imported
+        // skeletal animation now owns the pedestrian's movement pose.
+        walker.leftLeg = null;
+        walker.rightLeg = null;
+        walker.leftArm = null;
+        walker.rightArm = null;
 
         if (animationAssets.length) {
           model.addComponent("anim", { activate: true });
@@ -236,11 +242,13 @@ export function createAmbientLife(app: AppBase): (container: any) => void {
       const t = walker.progress;
       walker.root.setPosition(a.x + dx * t, 0, a.z + dz * t);
       walker.root.setEulerAngles(0, Math.atan2(dx, dz) * 180 / Math.PI, 0);
-      const swing = Math.sin(clock * 5 + walker.phase) * 24;
-      walker.leftLeg.setLocalEulerAngles(swing, 0, 0);
-      walker.rightLeg.setLocalEulerAngles(-swing, 0, 0);
-      walker.leftArm.setLocalEulerAngles(-swing * 0.65, 0, 0);
-      walker.rightArm.setLocalEulerAngles(swing * 0.65, 0, 0);
+      if (walker.leftLeg && walker.rightLeg && walker.leftArm && walker.rightArm) {
+        const swing = Math.sin(clock * 5 + walker.phase) * 24;
+        walker.leftLeg.setLocalEulerAngles(swing, 0, 0);
+        walker.rightLeg.setLocalEulerAngles(-swing, 0, 0);
+        walker.leftArm.setLocalEulerAngles(-swing * 0.65, 0, 0);
+        walker.rightArm.setLocalEulerAngles(swing * 0.65, 0, 0);
+      }
     }
   });
   return upgradePedestrians;
