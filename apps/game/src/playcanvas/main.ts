@@ -389,6 +389,7 @@ async function boot() {
   let elapsed = 0, mapElapsed = 0;
   app.on("update", (dt: number) => {
     const step = Math.min(dt, 0.05);
+    world.update(step);
     const forward = (keys.has("KeyW") || keys.has("ArrowUp") ? 1 : 0) - (keys.has("KeyS") || keys.has("ArrowDown") ? 1 : 0) - stickY;
     const strafe = (keys.has("KeyD") || keys.has("ArrowRight") ? 1 : 0) - (keys.has("KeyA") || keys.has("ArrowLeft") ? 1 : 0) + stickX;
     if (inVehicle) {
