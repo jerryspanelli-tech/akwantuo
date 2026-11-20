@@ -488,13 +488,6 @@ async function boot() {
         map.lineWidth = highway ? 3.2 : 2;
         map.lineCap = "round"; map.lineJoin = "round"; map.stroke();
       }
-      // Local street grid around the active Osu / Accra districts, drawn as
-      // fine secondary streets to give the radar a readable city-map texture.
-      map.strokeStyle = "#52675c"; map.lineWidth = 1;
-      for (let i = -5; i <= 5; i++) {
-        map.beginPath(); map.moveTo(i * 15 * scale, -82 * scale); map.lineTo(i * 15 * scale, 82 * scale); map.stroke();
-        map.beginPath(); map.moveTo(-82 * scale, i * 15 * scale); map.lineTo(82 * scale, i * 15 * scale); map.stroke();
-      }
       const poi = [
         { name: "OSU", x: 1450, z: -1180, kind: "district" },
         { name: "MAKOLA", x: -400, z: 450, kind: "market" },
