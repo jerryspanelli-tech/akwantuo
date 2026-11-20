@@ -298,55 +298,13 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     box(sign.label + " directional board", sign.x, 5.4, sign.z + 24, 11, 2.1, 0.4, makeSignMaterial(sign.label));
   }
 
-  // Landmark footprints preserve the existing Greater Accra spatial catalogue.
+  // Keep the eight registered landmark footprints as collision bounds only.
+  // Their visible architecture is built by the PlayCanvas-specific landmark module.
   for (const landmark of GREATER_ACCRA_LANDMARK_FOOTPRINTS) {
     const width = landmark.maxX - landmark.minX;
     const depth = landmark.maxZ - landmark.minZ;
-    const height = landmark.id === "kotoka-airport" ? 16 :
-      landmark.id === "accra-sports-stadium" ? 22 :
-      landmark.id === "the-signature" ? 52 :
-      landmark.id === "villaggio-vista" ? 36 : 18;
-    const base = landmark.id === "accra-sports-stadium" ? mats.green :
-      landmark.id === "kotoka-airport" ? mats.lightConcrete :
-      landmark.id === "the-signature" || landmark.id === "villaggio-vista" ? mats.modern : mats.concrete;
-    if (landmark.id === "accra-sports-stadium") {
-      const stadium = new Entity("Accra Sports Stadium landmark");
-      stadium.addComponent("render", { type: "cylinder", material: base, castShadows: true, receiveShadows: true });
-      stadium.setPosition(landmark.x, height / 2, landmark.z);
-      stadium.setLocalScale(width, height, depth);
-      app.root.addChild(stadium);
-    } else {
-      box(landmark.label + " landmark", landmark.x, height / 2, landmark.z, width, height, depth, base, 0, true);
-      box(landmark.label + " roofline", landmark.x, height + 0.3, landmark.z, width + 4, 0.6, depth + 4, mats.roof);
-    }
-
-    // Give the named Accra landmarks recognisable silhouettes rather than
-    // treating every footprint as another anonymous rectangular building.
-    if (landmark.id === "accra-sports-stadium") {
-      box("Accra Sports Stadium playing field", landmark.x, 0.18, landmark.z, width * 0.48, 0.12, depth * 0.42, mats.grass);
-      box("Accra Sports Stadium west stand", landmark.x - width * 0.34, 7.2, landmark.z, width * 0.16, 14.4, depth * 0.72, mats.lightConcrete);
-      box("Accra Sports Stadium east stand", landmark.x + width * 0.34, 7.2, landmark.z, width * 0.16, 14.4, depth * 0.72, mats.lightConcrete);
-      box("Accra Sports Stadium roof canopy", landmark.x, 16.2, landmark.z, width * 0.92, 0.7, depth * 0.9, mats.roof);
-    } else if (landmark.id === "kotoka-airport") {
-      box("Kotoka terminal departure canopy", landmark.x, 7.2, landmark.z + depth * 0.24, width * 0.92, 1.1, depth * 0.22, mats.white);
-      box("Kotoka terminal glazed frontage", landmark.x, 5.2, landmark.z + depth * 0.31, width * 0.82, 7.2, 0.35, mats.glass);
-      box("Kotoka air traffic control tower", landmark.x + width * 0.34, 13, landmark.z - depth * 0.18, 5.5, 18, 5.5, mats.lightConcrete);
-      box("Kotoka control room glazing", landmark.x + width * 0.34, 20.2, landmark.z - depth * 0.18, 6.1, 2.4, 6.1, mats.glass);
-      box("Kotoka control tower roof", landmark.x + width * 0.34, 21.6, landmark.z - depth * 0.18, 7, 0.35, 7, mats.roof);
-    } else if (landmark.id === "the-signature") {
-      box("The Signature lower tower setback", landmark.x, 30, landmark.z, width * 0.86, 16, depth * 0.86, mats.glass);
-      box("The Signature upper tower", landmark.x, 47, landmark.z, width * 0.64, 18, depth * 0.64, mats.modern);
-      box("The Signature crown", landmark.x, 57, landmark.z, width * 0.68, 1.2, depth * 0.68, mats.gold);
-    } else if (landmark.id === "villaggio-vista") {
-      for (const side of [-1, 1]) {
-        box("Villaggio Vista terraced wing", landmark.x + side * width * 0.28, 13, landmark.z, width * 0.34, 26, depth * 0.82, mats.modern);
-        box("Villaggio Vista balcony terrace", landmark.x + side * width * 0.28, 8.2, landmark.z + depth * 0.44, width * 0.31, 0.55, 2.8, mats.lightConcrete);
-      }
-      box("Villaggio Vista central atrium", landmark.x, 12, landmark.z + depth * 0.46, width * 0.22, 22, 0.5, mats.glass);
-    }
+    blockers.push({ x: landmark.x, z: landmark.z, hx: width * 0.52, hz: depth * 0.52 });
   }
-
-  // Add detailed architecture to the same eight registered landmark footprints.
   addGhanaLandmarkDetails(app);
 
   // Traffic-control furniture and public-transport stops at key Accra junctions.
