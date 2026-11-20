@@ -284,4 +284,33 @@ export function addGhanaLandmarkDetails(app: AppBase): void {
     box("Osu Castle seafront parapet", p.x, 2.4, p.z - 46, 110, 0.8, 2, mats.stone);
   }
 
+
+  // Accra Arts Centre: a walkable open-air craft market beside the Kwame
+  // Nkrumah Memorial Park, with low pavilions, timber stalls and kente canopies.
+  {
+    const p = at("accra-arts-centre");
+    box("Accra Arts Centre market courtyard", p.x, 0.05, p.z, 170, 0.1, 118, mats.concrete);
+    box("Accra Arts Centre north market pavilion", p.x, 3.2, p.z + 43, 58, 6.4, 17, mats.stone);
+    box("Accra Arts Centre north pavilion roof", p.x, 6.6, p.z + 43, 62, 0.7, 21, mats.red);
+    box("Accra Arts Centre east craft pavilion", p.x + 63, 2.8, p.z, 28, 5.6, 65, mats.pale);
+    box("Accra Arts Centre east pavilion roof", p.x + 63, 5.8, p.z, 32, 0.65, 70, mats.green);
+    box("Accra Arts Centre west craft pavilion", p.x - 63, 2.8, p.z, 28, 5.6, 65, mats.pale);
+    box("Accra Arts Centre west pavilion roof", p.x - 63, 5.8, p.z, 32, 0.65, 70, mats.gold);
+    box("Accra Arts Centre central craft hall", p.x, 3.2, p.z - 35, 48, 6.4, 24, mats.stone);
+    box("Accra Arts Centre central hall roof", p.x, 6.7, p.z - 35, 52, 0.7, 28, mats.red);
+    for (let i = 0; i < 5; i++) {
+      const x = p.x - 40 + i * 20;
+      box("Accra Arts Centre kente stall counter", x, 1.1, p.z + 4, 12, 2.2, 7, i % 2 ? mats.gold : mats.red);
+      box("Accra Arts Centre kente stall canopy", x, 3.3, p.z + 4, 14, 0.35, 9, i % 2 ? mats.green : mats.gold);
+      box("Accra Arts Centre craft display", x, 2.35, p.z + 0.2, 5, 0.8, 0.55, mats.dark);
+    }
+    for (let i = 0; i < 4; i++) {
+      const x = p.x - 48 + i * 32;
+      cylinder("Accra Arts Centre carved sculpture plinth", x, 0.7, p.z - 12, 3.2, 1.4, mats.stone);
+      sphere("Accra Arts Centre carved sculpture", x, 2.2, p.z - 12, 1.8, 2.2, 1.1, mats.dark);
+    }
+    box("Accra Arts Centre entrance sign", p.x, 4.5, p.z + 62, 35, 2.4, 0.6, mats.green);
+    box("Accra Arts Centre entrance sign gold trim", p.x, 5.75, p.z + 62, 36, 0.14, 0.72, mats.gold);
+  }
+
 }
