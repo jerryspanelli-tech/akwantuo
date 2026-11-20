@@ -475,6 +475,16 @@ async function boot() {
       map.translate(width / 2, height / 2);
       map.rotate(-heading);
       const plot = (x: number, z: number) => ({ x: x * scale, y: -z * scale });
+      // Draw nearby authored building / landmark footprints from the same
+      // collision bounds used by gameplay, so the radar reflects the 3D city.
+      map.fillStyle = "#34483d";
+      for (const building of blockers) {
+        const p = plot(building.x - center.x, building.z - center.z);
+        const footprintWidth = building.hx * 2 * scale;
+        const footprintDepth = building.hz * 2 * scale;
+        if (Math.abs(p.x) > radius + footprintWidth || Math.abs(p.y) > radius + footprintDepth) continue;
+        map.fillRect(p.x - footprintWidth / 2, p.y - footprintDepth / 2, footprintWidth, footprintDepth);
+      }
       // Major Greater Accra routes.
       for (const road of GREATER_ACCRA_ROAD_PATHS) {
         if (!road.playableInFirstRelease) continue;
