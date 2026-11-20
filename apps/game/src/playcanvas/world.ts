@@ -589,11 +589,34 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     const route=peopleRoutes[i%peopleRoutes.length];
     const root=new Entity("Accra pedestrian "+(i+1)); app.root.addChild(root);
     const shirt=clothing[i%clothing.length];
+    // Layered low-poly character silhouettes: varied shirts, trousers, footwear,
+    // hair/headwear and small carried items. Shared materials keep draw cost bounded.
+    const isVendor = i % 6 === 0;
+    const isCommuter = i % 4 === 0;
     makeActorPart(root,"box","Pedestrian torso",0,1.15,0,0.48,0.78,0.28,shirt);
+    makeActorPart(root,"box","Pedestrian shirt hem",0,0.78,0,0.5,0.16,0.3,shirt);
     makeActorPart(root,"sphere","Pedestrian head",0,1.78,0,0.25,0.28,0.25,mats.gold);
     makeActorPart(root,"box","Pedestrian hair",0,1.94,-0.025,0.27,0.09,0.27,mats.roof);
-    const arms=[-1,1].map(side=>makeActorPart(root,"cylinder","Pedestrian arm",side*0.34,1.12,0,0.105,0.68,0.105,shirt));
-    const legs=[-1,1].map(side=>makeActorPart(root,"cylinder","Pedestrian leg",side*0.13,0.48,0,0.12,0.72,0.12,mats.roof));
+    if (isVendor) {
+      makeActorPart(root,"cylinder","Pedestrian headwrap",0,1.99,0,0.17,0.12,0.17,i%2?mats.red:mats.gold);
+    } else {
+      makeActorPart(root,"box","Pedestrian cap brim",0,1.91,0.06,0.31,0.045,0.22,mats.roof);
+    }
+    makeActorPart(root,"box","Pedestrian waist",0,0.72,0,0.42,0.16,0.27,mats.roof);
+    const arms=[-1,1].map(side=>{
+      const arm=makeActorPart(root,"cylinder","Pedestrian arm",side*0.34,1.12,0,0.105,0.68,0.105,shirt);
+      makeActorPart(root,"sphere","Pedestrian hand",side*0.34,0.76,0,0.095,0.1,0.095,mats.gold);
+      return arm;
+    });
+    const legs=[-1,1].map(side=>{
+      const trouser=makeActorPart(root,"cylinder","Pedestrian trouser leg",side*0.13,0.48,0,0.13,0.72,0.13,i%3===0?mats.modern:mats.roof);
+      makeActorPart(root,"box","Pedestrian shoe",side*0.13,0.08,0.09,0.2,0.13,0.34,mats.roof);
+      return trouser;
+    });
+    if (isCommuter) {
+      makeActorPart(root,"box","Pedestrian shoulder bag",0.34,1.02,-0.16,0.22,0.34,0.18,mats.market);
+      makeActorPart(root,"cylinder","Pedestrian bag strap",0.16,1.28,0.02,0.035,0.62,0.035,mats.roof);
+    }
     const start=route[(i*3)%route.length];
     root.setPosition(start.x,0,start.z);
     pedestrians.push({root,route,segment:(i*3)%route.length,t:(i%5)/5,speed:0.75+(i%4)*0.16,phase:i*0.8,legs,arms});
@@ -609,13 +632,47 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     const length=route.points.slice(1).reduce((sum,p,index)=>sum+Math.hypot(p.x-route.points[index].x,p.z-route.points[index].z),0);
     const root=new Entity(i%3===0?"Accra trotro traffic":i%3===1?"Accra taxi traffic":"Accra private car traffic");
     app.root.addChild(root);
-    const bodyMat=trafficColors[i%trafficColors.length];
-    makeActorPart(root,"box","Traffic vehicle body",0,0.78,0,1.9,0.8,4.1,bodyMat);
-    makeActorPart(root,"box","Traffic vehicle cabin",0,1.42,-0.25,1.58,0.68,2.0,mats.glass);
-    makeActorPart(root,"box","Traffic vehicle roof",0,1.78,-0.25,1.45,0.12,1.8,bodyMat);
-    for(const side of [-1,1])for(const z of [-1.35,1.35]){
-      const wheel=makeActorPart(root,"cylinder","Traffic vehicle tyre",side*0.98,0.42,z,0.56,0.22,0.56,mats.roof);
+    const isTrotro = i%3===0;
+    const isTaxi = i%3===1;
+    const bodyMat=isTaxi?mats.yellow:trafficColors[i%trafficColors.length];
+    const bodyLength=isTrotro?4.8:4.15;
+    const bodyHeight=isTrotro?1.0:0.78;
+    const bodyWidth=isTrotro?2.05:1.9;
+    makeActorPart(root,"box","Traffic vehicle chassis",0,0.62,0,bodyWidth*0.92,0.3,bodyLength*0.92,mats.roof);
+    makeActorPart(root,"box",isTrotro?"Ghana trotro minibus body":isTaxi?"Accra taxi body":"Accra private car body",0,0.78,0,bodyWidth,bodyHeight,bodyLength,bodyMat);
+    const cabinZ=isTrotro?-0.18:-0.25;
+    makeActorPart(root,"box","Vehicle cabin glass",0,isTrotro?1.55:1.42,cabinZ,bodyWidth*0.82,isTrotro?0.78:0.68,isTrotro?2.7:2.0,mats.glass);
+    makeActorPart(root,"box","Vehicle roof",0,isTrotro?1.98:1.78,cabinZ,bodyWidth*0.78,0.14,isTrotro?2.5:1.8,bodyMat);
+    // Separate front/rear glazing and side passenger windows make the silhouette
+    // read as a minibus/trotro rather than a generic moving block.
+    makeActorPart(root,"box","Vehicle windscreen",0,isTrotro?1.52:1.4,bodyLength*0.5+0.012,bodyWidth*0.7,0.52,0.055,mats.glass);
+    makeActorPart(root,"box","Vehicle rear window",0,isTrotro?1.5:1.38,-bodyLength*0.5-0.012,bodyWidth*0.62,0.42,0.055,mats.glass);
+    for(const side of [-1,1]){
+      for(const z of (isTrotro?[-1.45,-0.48,0.52,1.42]:[-0.82,0.72])){
+        makeActorPart(root,"box","Vehicle side passenger window",side*(bodyWidth/2+0.018),isTrotro?1.55:1.45,z,0.055,isTrotro?0.48:0.42,isTrotro?0.78:0.92,mats.glass);
+      }
+      makeActorPart(root,"box","Vehicle side mirror",side*(bodyWidth/2+0.16),1.42,bodyLength*0.34,0.24,0.12,0.2,mats.roof);
+      makeActorPart(root,"box","Vehicle side rubbing strip",side*(bodyWidth/2+0.025),0.82,0,0.055,0.13,bodyLength*0.76,mats.white);
+    }
+    makeActorPart(root,"box","Vehicle front bumper",0,0.38,bodyLength*0.51,bodyWidth*0.96,0.18,0.18,mats.roof);
+    makeActorPart(root,"box","Vehicle rear bumper",0,0.38,-bodyLength*0.51,bodyWidth*0.96,0.18,0.18,mats.roof);
+    makeActorPart(root,"box","Vehicle front grille",0,0.78,bodyLength*0.51+0.02,bodyWidth*0.28,0.24,0.06,mats.roof);
+    for(const side of [-1,1]){
+      makeActorPart(root,"box","Vehicle headlamp",side*bodyWidth*0.34,0.91,bodyLength*0.51+0.035,0.28,0.2,0.07,mats.white);
+      makeActorPart(root,"box","Vehicle tail lamp",side*bodyWidth*0.36,0.9,-bodyLength*0.51-0.035,0.24,0.28,0.07,mats.red);
+    }
+    if(isTaxi){
+      makeActorPart(root,"box","Accra taxi roof marker",0,2.02,-0.15,0.72,0.16,0.34,mats.gold);
+      makeActorPart(root,"box","Accra taxi side stripe",bodyWidth/2+0.035,0.82,0,0.06,0.16,bodyLength*0.72,mats.roof);
+    }
+    if(isTrotro){
+      makeActorPart(root,"box","Trotro roof luggage rack",0,2.12,-0.12,1.55,0.12,2.65,mats.roof);
+      makeActorPart(root,"box","Trotro route board",0,2.04,bodyLength*0.5+0.08,0.86,0.24,0.08,mats.gold);
+    }
+    for(const side of [-1,1])for(const z of [-bodyLength*0.34,bodyLength*0.34]){
+      const wheel=makeActorPart(root,"cylinder","Traffic vehicle tyre",side*(bodyWidth/2+0.035),0.42,z,0.56,0.22,0.56,mats.roof);
       wheel.setLocalEulerAngles(0,0,90);
+      makeActorPart(root,"cylinder","Vehicle wheel hub",side*(bodyWidth/2+0.16),0.42,z,0.2,0.24,0.2,mats.lightConcrete);
     }
     const offset=(i/12)*length;
     traffic.push({root,route,distance:offset,speed:4.2+(i%5)*0.9,length});
