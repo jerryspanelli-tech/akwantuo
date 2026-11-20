@@ -37,6 +37,14 @@ const worldMapCanvas = document.querySelector<HTMLCanvasElement>("#world-map-can
 const worldMapContext = worldMapCanvas?.getContext("2d") ?? null;
 const worldMapClose = document.querySelector<HTMLButtonElement>("#world-map-close");
 let worldMapOpen = false;
+let worldMapZoom = 1;
+let worldMapWaypoint: { x: number; z: number } | null = null;
+const mapZoomIn = document.querySelector<HTMLButtonElement>("#map-zoom-in");
+const mapZoomOut = document.querySelector<HTMLButtonElement>("#map-zoom-out");
+const mapMarkClear = document.querySelector<HTMLButtonElement>("#map-mark-clear");
+mapZoomIn?.addEventListener("click", () => { worldMapZoom = clamp(worldMapZoom * 1.25, 1, 4); });
+mapZoomOut?.addEventListener("click", () => { worldMapZoom = clamp(worldMapZoom / 1.25, 1, 4); });
+mapMarkClear?.addEventListener("click", () => { worldMapWaypoint = null; });
 const setWorldMapOpen = (open: boolean) => {
   worldMapOpen = open;
   if (worldMapPanel) worldMapPanel.hidden = !open;
@@ -348,6 +356,18 @@ async function boot() {
 
   const walkSpeed = 4.6, sprintSpeed = 8.2;
   let inVehicle = false, vehicleSpeed = 0, vehicleYaw = 0;
+  worldMapCanvas?.addEventListener("pointerdown", (event) => {
+    if (!worldMapCanvas || !worldMapOpen) return;
+    event.preventDefault();
+    const rect = worldMapCanvas.getBoundingClientRect();
+    const px = (event.clientX - rect.left) * (worldMapCanvas.width / rect.width);
+    const py = (event.clientY - rect.top) * (worldMapCanvas.height / rect.height);
+    const bounds = GREATER_ACCRA_MAP_EXTENT, pad = 54;
+    const baseScale = Math.min((worldMapCanvas.width - pad * 2) / bounds.widthM, (worldMapCanvas.height - pad * 2) / bounds.depthM);
+    const current = inVehicle ? vehicle.getPosition() : player.getPosition();
+    worldMapWaypoint = { x: current.x + (px - worldMapCanvas.width / 2) / (baseScale * worldMapZoom), z: current.z - (py - worldMapCanvas.height / 2) / (baseScale * worldMapZoom) };
+    showNotice("Map location marked");
+  });
   let nearbyInteraction: { id: string; label: string; x: number; z: number; radius: number } | null = null;
   const overlaps = (x: number, z: number) => {
     const buildingCollision = blockers.some((b) => Math.abs(x - b.x) < b.hx + 0.38 && Math.abs(z - b.z) < b.hz + 0.38);
@@ -537,7 +557,7 @@ async function boot() {
     if (mapElapsed > 0.14 && minimapContext && minimap) {
       mapElapsed = 0;
       const map = minimapContext;
-      const center = inVehicle ? vehicle.getPosition() : player.getPosition();
+      const center = player.getPosition();
       const width = minimap.width, height = minimap.height;
       const radius = Math.min(width, height) * 0.47;
       const scale = 0.16;
@@ -624,10 +644,9 @@ async function boot() {
       const map = worldMapContext, width = worldMapCanvas.width, height = worldMapCanvas.height;
       const bounds = GREATER_ACCRA_MAP_EXTENT, pad = 54;
       const sx = (width - pad * 2) / bounds.widthM, sy = (height - pad * 2) / bounds.depthM;
-      const scale = Math.min(sx, sy);
-      const mapWidth = bounds.widthM * scale, mapHeight = bounds.depthM * scale;
-      const ox = (width - mapWidth) / 2, oy = (height - mapHeight) / 2;
-      const point = (x: number, z: number) => ({ x: ox + (x - bounds.minX) * scale, y: oy + (bounds.maxZ - z) * scale });
+      const baseScale = Math.min(sx, sy), scale = baseScale * worldMapZoom;
+      const current = player.getPosition();
+      const point = (x: number, z: number) => ({ x: width / 2 + (x - current.x) * scale, y: height / 2 - (z - current.z) * scale });
       map.clearRect(0, 0, width, height);
       map.fillStyle = "#10251f"; map.fillRect(0, 0, width, height);
       map.fillStyle = "#123b4a"; map.fillRect(0, oy + (bounds.maxZ + 3050) * scale, width, height - oy - (bounds.maxZ + 3050) * scale);
@@ -660,12 +679,20 @@ async function boot() {
         map.fillStyle = "#fff4dc"; map.shadowColor = "#07130f"; map.shadowBlur = 4;
         map.fillText(place.name,p.x+9,p.y-2); map.shadowBlur = 0;
       }
-      const current = inVehicle ? vehicle.getPosition() : player.getPosition();
       const you = point(current.x,current.z);
       map.fillStyle = "#68e2a0"; map.beginPath(); map.arc(you.x,you.y,9,0,Math.PI*2); map.fill();
       map.strokeStyle = "#f3fff7"; map.lineWidth = 3; map.stroke();
       map.fillStyle = "#f4f0e4"; map.font = "bold 14px system-ui,sans-serif"; map.fillText("YOU",you.x+13,you.y);
-      map.strokeStyle = "#d3b477"; map.lineWidth = 2; map.strokeRect(ox,oy,mapWidth,mapHeight);
+      if (worldMapWaypoint) {
+        const marked = point(worldMapWaypoint.x, worldMapWaypoint.z);
+        map.strokeStyle = "#ffdf76"; map.lineWidth = 3;
+        map.beginPath(); map.arc(marked.x,marked.y,9,0,Math.PI*2); map.stroke();
+        map.beginPath(); map.moveTo(marked.x-13,marked.y); map.lineTo(marked.x+13,marked.y);
+        map.moveTo(marked.x,marked.y-13); map.lineTo(marked.x,marked.y+13); map.stroke();
+        map.fillStyle = "#ffdf76"; map.font = "bold 13px system-ui,sans-serif"; map.fillText("MARKED",marked.x+13,marked.y-9);
+      }
+      const topLeft=point(bounds.minX,bounds.maxZ), bottomRight=point(bounds.maxX,bounds.minZ);
+      map.strokeStyle = "#d3b477"; map.lineWidth = 2; map.strokeRect(topLeft.x,topLeft.y,bottomRight.x-topLeft.x,bottomRight.y-topLeft.y);
     }
     if (healthFill) healthFill.style.width = "100%";
     if (healthValue) healthValue.textContent = "100";
