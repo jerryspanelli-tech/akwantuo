@@ -306,7 +306,7 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
   for (const landmark of GREATER_ACCRA_LANDMARK_FOOTPRINTS) {
     const width = landmark.maxX - landmark.minX;
     const depth = landmark.maxZ - landmark.minZ;
-    const front = landmark.z + depth * 0.5;
+    const front = landmark.z + depth * 0.32;
     const window = (label: string, x: number, y: number, z: number, w: number, h: number) =>
       box(label, x, y, z, w, h, 0.22, mats.glass);
     const ledge = (label: string, x: number, y: number, z: number, w: number) =>
@@ -322,17 +322,17 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
       box("Accra Mall main roof edge", landmark.x, 12.7, landmark.z, width * 0.99, 0.8, depth * 0.84, mats.roof);
       for (const side of [-1, 1]) {
         const wingX = landmark.x + side * width * 0.245;
-        box("Accra Mall glazed shopfront band", wingX, 4.1, front + depth * 0.395, width * 0.43, 5.1, 0.24, mats.glass);
-        box("Accra Mall red fascia", wingX, 8.2, front + depth * 0.405, width * 0.43, 0.55, 0.34, mats.red);
+        box("Accra Mall glazed shopfront band", wingX, 4.1, front + 2.2, width * 0.43, 5.1, 0.24, mats.glass);
+        box("Accra Mall red fascia", wingX, 8.2, front + 2.3, width * 0.43, 0.55, 0.34, mats.red);
         for (let bay = 0; bay < 5; bay++) {
           const x = wingX - width * 0.19 + bay * width * 0.095;
-          box("Accra Mall shopfront mullion", x, 4.1, front + depth * 0.412, 0.22, 5.1, 0.28, mats.lightConcrete);
+          box("Accra Mall shopfront mullion", x, 4.1, front + 2.5, 0.22, 5.1, 0.28, mats.lightConcrete);
         }
-        box("Accra Mall side entrance", wingX, 2.2, front + depth * 0.42, width * 0.07, 4.2, 0.3, mats.glass);
+        box("Accra Mall side entrance", wingX, 2.2, front + 2.6, width * 0.07, 4.2, 0.3, mats.glass);
       }
       box("Accra Mall drop-off forecourt", landmark.x, 0.035, front + depth * 0.12, width * 0.82, 0.08, depth * 0.18, mats.lightConcrete);
       for (let i = 0; i < 7; i++) {
-        box("Accra Mall parking bay line", landmark.x - width * 0.36 + i * width * 0.12, 0.09, front + depth * 0.2, 0.16, 0.025, depth * 0.12, mats.white);
+        box("Accra Mall parking bay line", landmark.x - width * 0.36 + i * width * 0.12, 0.09, front + depth * 0.08, 0.16, 0.025, depth * 0.12, mats.white);
       }
     } else if (landmark.id === "kotoka-airport") {
       // Broad terminal halls, departures canopy, glazed frontage and separate tower.
@@ -341,7 +341,7 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
       box("Kotoka terminal west concourse", landmark.x - width * 0.29, 5.1, landmark.z - depth * 0.12, width * 0.28, 10.2, depth * 0.58, mats.concrete);
       box("Kotoka terminal roof", landmark.x, 13.1, landmark.z, width * 0.96, 0.75, depth * 0.78, mats.roof);
       box("Kotoka departures curtain wall", landmark.x, 5.7, front + depth * 0.14, width * 0.84, 9.2, 0.28, mats.glass);
-      box("Kotoka departures canopy", landmark.x, 10.8, front + depth * 0.27, width * 0.94, 0.72, depth * 0.2, mats.white);
+      box("Kotoka departures canopy", landmark.x, 10.8, front + depth * 0.08, width * 0.94, 0.72, depth * 0.2, mats.white);
       for (let bay = 0; bay < 12; bay++) {
         const x = landmark.x - width * 0.39 + bay * width * 0.071;
         box("Kotoka terminal facade mullion", x, 5.7, front + depth * 0.155, 0.32, 9.2, 0.36, mats.lightConcrete);
@@ -426,7 +426,7 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
         box("University of Ghana shaded arcade", x, 2.2, front + 1.2, width * 0.38, 4.4, 1.4, mats.roof);
         for (let bay = 0; bay < 5; bay++) {
           const wx = x - width * 0.17 + bay * width * 0.085;
-          window("University of Ghana academic window", wx, 5.2, front + depth * 0.34, width * 0.045, 2.2);
+          window("University of Ghana academic window", wx, 5.2, front + depth * 0.1, width * 0.045, 2.2);
           box("University of Ghana arcade column", wx, 2.2, front + 2.1, 0.28, 4.4, 0.28, mats.white);
         }
       }
@@ -453,11 +453,11 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
       box("National Theatre west sculptural shell", landmark.x - width * 0.23, 8.5, landmark.z, width * 0.48, 17, depth * 0.72, mats.white, -18);
       box("National Theatre east sculptural shell", landmark.x + width * 0.23, 8.5, landmark.z, width * 0.48, 17, depth * 0.72, mats.lightConcrete, 18);
       box("National Theatre front shell fascia", landmark.x, 14.5, front - depth * 0.18, width * 0.86, 0.7, depth * 0.18, mats.white, 0);
-      box("National Theatre glazed public entrance", landmark.x, 4.2, front + depth * 0.22, width * 0.48, 8.2, 0.25, mats.glass);
-      box("National Theatre entrance canopy", landmark.x, 9, front + depth * 0.32, width * 0.62, 0.55, depth * 0.16, mats.roof);
-      box("National Theatre formal forecourt", landmark.x, 0.06, front + depth * 0.12, width * 0.84, 0.12, depth * 0.2, mats.lightConcrete);
+      box("National Theatre glazed public entrance", landmark.x, 4.2, front + depth * 0.02, width * 0.48, 8.2, 0.25, mats.glass);
+      box("National Theatre entrance canopy", landmark.x, 9, front + depth * 0.06, width * 0.62, 0.55, depth * 0.16, mats.roof);
+      box("National Theatre formal forecourt", landmark.x, 0.06, front + depth * 0.04, width * 0.84, 0.12, depth * 0.2, mats.lightConcrete);
       for (let step = 0; step < 4; step++) {
-        box("National Theatre entrance steps", landmark.x, 0.2 + step * 0.22, front + depth * 0.3 + step * 0.75, width * (0.54 - step * 0.035), 0.22, 0.72, mats.white);
+        box("National Theatre entrance steps", landmark.x, 0.2 + step * 0.22, front + depth * 0.08 + step * 0.5, width * (0.54 - step * 0.035), 0.22, 0.72, mats.white);
       }
     }
   }
