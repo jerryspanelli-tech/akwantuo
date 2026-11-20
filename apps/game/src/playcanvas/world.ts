@@ -577,7 +577,7 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     [{x:5500,z:-1490},{x:5720,z:-1490},{x:5720,z:-1445},{x:5500,z:-1445}],
     [{x:7800,z:340},{x:8020,z:340},{x:8020,z:385},{x:7800,z:385}]
   ];
-  const clothing = [mats.green,mats.gold,mats.red,mats.blue ?? mats.modern,mats.market,mats.white,mats.roof,mats.modern];
+  const clothing = [mats.green,mats.gold,mats.red,mats.modern,mats.market,mats.white,mats.roof,mats.modern];
   const pedestrians: Array<{root:Entity; route:readonly {x:number;z:number}[]; segment:number; t:number; speed:number; phase:number; legs:Entity[]; arms:Entity[]}> = [];
   for(let i=0;i<18;i++){
     const route=peopleRoutes[i%peopleRoutes.length];
@@ -596,7 +596,7 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
   const trafficRoutes = GREATER_ACCRA_ROAD_PATHS.filter(path =>
     ["ring-road-central","ring-road-coastal","la-beach-road","liberation-road","spintex-road","n1-tema-corridor"].includes(path.roadSegmentId)
   );
-  const trafficColors=[mats.gold,mats.white,mats.red,mats.green,mats.modern,mats.blue ?? mats.glass];
+  const trafficColors=[mats.gold,mats.white,mats.red,mats.green,mats.modern,mats.glass];
   const traffic:Array<{root:Entity;route:typeof trafficRoutes[number];distance:number;speed:number;length:number}>=[];
   for(let i=0;i<12;i++){
     const route=trafficRoutes[i%trafficRoutes.length];
