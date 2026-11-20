@@ -3,6 +3,7 @@ import { GREATER_ACCRA_COASTLINE, GREATER_ACCRA_MAP_EXTENT, GREATER_ACCRA_REGION
 import { GREATER_ACCRA_LANDMARK_FOOTPRINTS } from "../world/greaterAccraLandmarkData";
 import { GREATER_ACCRA_RAIL_NODES, GREATER_ACCRA_RAIL_ROUTES } from "../world/railNetwork";
 import { addGhanaLandmarkDetails } from "./landmarkDetails";
+import { addGreaterAccraLocalStreets } from "./localStreets";
 
 export type WorldBlocker = { x: number; z: number; hx: number; hz: number };
 export type GreaterAccraWorld = {
@@ -191,6 +192,9 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
       }
     }
   }
+
+  // Add the local market, residential and coastal streets that connect into the main corridors.
+  addGreaterAccraLocalStreets(app);
 
   // The 1067 mm Cape-gauge corridor is a schematic game route, not surveyed track.
   for (const route of GREATER_ACCRA_RAIL_ROUTES.filter((item) => item.firstRelease)) {
