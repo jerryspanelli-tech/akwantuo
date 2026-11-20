@@ -2,6 +2,7 @@ import { AppBase, Color, Entity, StandardMaterial, Texture, PIXELFORMAT_RGBA8 } 
 import { GREATER_ACCRA_COASTLINE, GREATER_ACCRA_MAP_EXTENT, GREATER_ACCRA_REGION_ANCHORS, GREATER_ACCRA_ROAD_PATHS } from "../world/greaterAccraLayout";
 import { GREATER_ACCRA_LANDMARK_FOOTPRINTS } from "../world/greaterAccraLandmarkData";
 import { GREATER_ACCRA_RAIL_NODES, GREATER_ACCRA_RAIL_ROUTES } from "../world/railNetwork";
+import { addGhanaLandmarkDetails } from "./landmarkDetails";
 
 export type WorldBlocker = { x: number; z: number; hx: number; hz: number };
 export type GreaterAccraWorld = {
@@ -344,6 +345,9 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
       box("Villaggio Vista central atrium", landmark.x, 12, landmark.z + depth * 0.46, width * 0.22, 22, 0.5, mats.glass);
     }
   }
+
+  // Add detailed architecture to the same eight registered landmark footprints.
+  addGhanaLandmarkDetails(app);
 
   // Traffic-control furniture and public-transport stops at key Accra junctions.
   const junctions = [
