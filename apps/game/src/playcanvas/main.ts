@@ -6,6 +6,7 @@ import {
 } from "playcanvas";
 import "./style.css";
 import { createGreaterAccraWorld } from "./world";
+import { createAmbientLife } from "./ambientLife";
 import { GREATER_ACCRA_ROAD_PATHS } from "../world/greaterAccraLayout";
 
 const canvas = document.querySelector<HTMLCanvasElement>("#application")!;
@@ -115,6 +116,7 @@ async function boot() {
 
   loadingMessage && (loadingMessage.textContent = "Building Greater Accra roads, districts and coastline…");
   const world = createGreaterAccraWorld(app);
+  createAmbientLife(app);
   const blockers = world.blockers;
 
   loadingMessage && (loadingMessage.textContent = "Preparing the player and vehicle…");
