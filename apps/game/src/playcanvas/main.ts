@@ -667,7 +667,7 @@ async function boot() {
       };
       map.clearRect(0, 0, width, height);
       map.fillStyle = "#10251f"; map.fillRect(0, 0, width, height);
-      map.fillStyle = "#123b4a"; map.fillRect(0, oy + (bounds.maxZ + 3050) * scale, width, height - oy - (bounds.maxZ + 3050) * scale);
+      map.fillStyle = "#123b4a"; map.fillRect(0, oy + (bounds.maxZ + 3050) * baseScale, width, height - oy - (bounds.maxZ + 3050) * baseScale);
       map.fillStyle = "#263c2d"; map.fillRect(ox, oy, mapWidth, mapHeight);
       map.strokeStyle = "#3a5543"; map.lineWidth = 1;
       for (let x = 0; x <= width; x += 55) { map.beginPath(); map.moveTo(x, oy); map.lineTo(x, oy + mapHeight); map.stroke(); }
