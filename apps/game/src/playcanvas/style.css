@@ -220,5 +220,5 @@ body.world-map-open .top-hud,body.world-map-open .health-hud,body.world-map-open
 .chale-composer{display:flex;align-items:flex-end;gap:7px;padding:8px 9px max(9px,env(safe-area-inset-bottom));border-top:1px solid #e1eae4;background:#fff}
 .chale-composer textarea{flex:1;min-width:0;max-height:90px;min-height:40px;box-sizing:border-box;resize:none;padding:11px 12px;border:1px solid #dce7e0;border-radius:18px;background:#f7faf8;color:#19372c;font:inherit;font-size:11px;outline:none}
 .chale-send{display:grid;place-items:center;flex:0 0 40px;width:40px;height:40px;border:0;border-radius:50%;background:#087e59;color:#fff;font-size:16px}
-.zenvia-app-content:has(.chale-app){display:flex;flex-direction:column;min-height:0;padding:0!important;overflow:hidden}
+.zenvia-app-content.chale-app{display:flex;flex-direction:column;min-height:0;padding:0!important;overflow:hidden}
 .zenvia-app-content:has(.chale-chat-screen){display:flex;flex-direction:column;min-height:0;overflow:hidden}
