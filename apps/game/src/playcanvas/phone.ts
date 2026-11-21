@@ -1,4 +1,5 @@
 import { mountWayGoApp } from "./waygo";
+import { getZenviaModel, ZENVIA_MODELS, formatZenviaPrice } from "./zenvia-device";
 const phone = document.getElementById("zenvia-phone");
 const launcher = document.getElementById("phone-launcher");
 const lockScreen = document.getElementById("zenvia-lock");
@@ -590,6 +591,38 @@ async function openApp(name: string) {
     "Settings": [["Zenvia settings", "Display, wallpaper, notifications, security and phone preferences."], ["Device PIN", "The local phone PIN is a convenience lock for this browser/device, not your AKWANTUO account password. Fingerprint unlock is a simulated game animation and never accesses device biometrics."]]
   };
   for (const [title, body] of (pages[name] || [["Coming soon", "This application will be connected to its full gameplay system in a later phase."]])) card(title, body);
+  if (appKey === "settings") {
+    const model = getZenviaModel();
+    const device = document.createElement("section");
+    device.className = "zenvia-app-card zenvia-device-card";
+    const heading = document.createElement("strong");
+    heading.textContent = "Your Zenvia device";
+    const identity = document.createElement("p");
+    identity.textContent = `${model.name} · ${model.tier} · ${formatZenviaPrice(model.pricePesewas)}`;
+    const specs = document.createElement("div");
+    specs.className = "zenvia-device-specs";
+    for (const [label, value] of [["Storage", model.storage], ["Camera", model.camera], ["Performance", model.performance]] as const) {
+      const line = document.createElement("p");
+      line.textContent = `${label}: ${value}`;
+      specs.append(line);
+    }
+    const features = document.createElement("p");
+    features.textContent = "Included features: " + model.exclusiveFeatures.join(" · ");
+    const catalogue = document.createElement("div");
+    catalogue.className = "zenvia-device-catalogue";
+    const catalogueTitle = document.createElement("strong");
+    catalogueTitle.textContent = "Zenvia model range";
+    catalogue.append(catalogueTitle);
+    for (const item of ZENVIA_MODELS) {
+      const row = document.createElement("p");
+      row.textContent = `${item.name} — ${formatZenviaPrice(item.pricePesewas)} · ${item.storage}`;
+      catalogue.append(row);
+    }
+    const note = document.createElement("small");
+    note.textContent = "Phone purchases and upgrades will be completed at in-game phone shops. Your current model is shown here; no purchase has been charged.";
+    device.append(heading, identity, specs, features, catalogue, note);
+    appContent.append(device);
+  }
   if (homeScreen) homeScreen.hidden = true;
   if (lockScreen) lockScreen.hidden = true;
   if (appView) appView.hidden = false;
