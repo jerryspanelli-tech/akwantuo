@@ -1,5 +1,6 @@
 import { findShortestRoadRoute, isRoadRouteValid } from "./roadRouting";
 import { GREATER_ACCRA_ROAD_PATHS } from "./greaterAccraLayout";
+import { buildGpsRoute } from "./gpsNavigation";
 import { findNearestRoadProjection, getRoadLaneCenterOffset, getRoadLaneCenterPoint, isPointOnRoadNetwork, isRoadProjectionValid } from "./roadNavigation";
 import { isGreaterAccraMapLayoutValid } from "./greaterAccraLayout";
 import { isGreaterAccraRailNetworkValid } from "./railNetwork";
@@ -63,6 +64,10 @@ export function runTransportSmokeChecks(): void {
   assert(DISTRICT_BUILDINGS.every((building) => !building.interiorId || interiorIds.has(building.interiorId)),
     "every advertised building interior resolves to a known interior blueprint");
   assert(isGreaterAccraMapLayoutValid(), "Greater Accra map nodes, roads and coastline validate");
+  const circleToSignatureGps = buildGpsRoute({ x: -450, z: 450 }, { x: 3750, z: 2260 });
+  assert(!!circleToSignatureGps && circleToSignatureGps.destinationRoadId === "signature-access-road" &&
+    circleToSignatureGps.distanceM > 0 && circleToSignatureGps.points.length >= 4,
+    "GPS builds a connected road-following route from Central Accra to The Signature entrance");
   assert(isGreaterAccraRailNetworkValid(), "Greater Accra Cape-gauge rail routes and station nodes validate");
   assert(isGreaterAccraTrackDesignValid(), "Greater Accra rail track design assignments validate");
   assert(isGreaterAccraRoadDesignCatalogueValid(), "Greater Accra road cross-section assignments validate");
