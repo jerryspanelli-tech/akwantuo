@@ -43,7 +43,8 @@ document.querySelector(".zenvia-dock")?.addEventListener("click", event => {
 function openApp(name: string) {
   if (!unlocked) return;
   if (appTitle) appTitle.textContent = name;
-  if (!appContent) return;\n  appContent.replaceChildren();
+  if (!appContent) return;
+  appContent.replaceChildren();
   const card = (title: string, body: string) => {
     const section = document.createElement("section");
     section.className = "zenvia-app-card";
