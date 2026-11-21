@@ -34,24 +34,24 @@ powerButton?.addEventListener("click", showLock);
 backButton?.addEventListener("click", showHome);
 document.getElementById("zenvia-app-grid")?.addEventListener("click", event => {
   const button = event.target instanceof Element ? event.target.closest<HTMLButtonElement>("button[data-app]") : null;
-  if (button) openApp(button.dataset.app);
+  if (button?.dataset.app) openApp(button.dataset.app);
 });
 document.querySelector(".zenvia-dock")?.addEventListener("click", event => {
-  const button = event.target.closest("button[data-app]");
-  if (button) openApp(button.dataset.app);
+  const button = event.target instanceof Element ? event.target.closest<HTMLButtonElement>("button[data-app]") : null;
+  if (button?.dataset.app) openApp(button.dataset.app);
 });
-function openApp(name) {
+function openApp(name: string) {
   if (!unlocked) return;
   if (appTitle) appTitle.textContent = name;
   if (!appContent) return;\n  appContent.replaceChildren();
-  const card = (title, body) => {
+  const card = (title: string, body: string) => {
     const section = document.createElement("section");
     section.className = "zenvia-app-card";
     const heading = document.createElement("strong"); heading.textContent = title;
     const paragraph = document.createElement("p"); paragraph.textContent = body;
     section.append(heading, paragraph); appContent.append(section);
   };
-  const pages = {
+  const pages: Record<string, [string, string][]> = {
     "AKWANTUO News": [["Top stories","Official announcements, Accra stories and world events will appear here."],["Market bulletin","Virtual company and cryptocurrency market updates will connect to the game economy."],["Admin updates","Verified AKWANTUO administration announcements and event alerts."]],
     "WayGo": [["3D Accra navigation","Search Greater Accra destinations and follow road-based GPS directions. The full 3D phone map is the next implementation phase."],["Location sharing","Share your live or one-time location with friends when multiplayer location services are enabled."]],
     "AppBay": [["Discover apps","Browse, install, update and remove apps. Downloadable app management is planned for the next phase."],["Your phone","Zenvia One · Powered by AKWANTUO OS"]],
@@ -73,7 +73,7 @@ function openApp(name) {
 }
 document.addEventListener("keydown", event => {
   if (event.key === "Escape" && opened) closePhone();
-  if ((event.key === "p" || event.key === "P") && !event.repeat && !event.target instanceof Element && event.target.matches("input,textarea")) {
+  if ((event.key === "p" || event.key === "P") && !event.repeat && !(event.target instanceof Element && event.target.matches("input,textarea"))) {
     if (opened) closePhone(); else openPhone();
   }
 });
