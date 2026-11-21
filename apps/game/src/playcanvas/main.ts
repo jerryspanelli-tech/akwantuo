@@ -663,8 +663,9 @@ async function boot() {
         map.fillText(distance >= 1000 ? `${(distance / 1000).toFixed(1)} KM TO MARK` : `${Math.round(distance)} M TO MARK`, 0, radius - 5);
       }
       map.restore();
-      // Player arrow stays centred but rotates with the player's heading.
-      map.save(); map.translate(width / 2, height / 2); map.rotate(heading);
+      // Canvas rotation is clockwise-positive, opposite to the game's
+      // world yaw convention. Negate yaw so the arrow matches the character.
+      map.save(); map.translate(width / 2, height / 2); map.rotate(-heading);
       map.beginPath(); map.moveTo(0, -9); map.lineTo(6, 7); map.lineTo(0, 4); map.lineTo(-6, 7); map.closePath();
       map.fillStyle = "#f3c56f"; map.fill(); map.strokeStyle = "#fff4d8"; map.lineWidth = 1.3; map.stroke();
       map.restore();
