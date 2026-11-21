@@ -584,10 +584,9 @@ async function boot() {
       map.save();
       map.beginPath(); map.arc(width / 2, height / 2, radius, 0, Math.PI * 2); map.clip();
       map.fillStyle = "#182a22"; map.fillRect(0, 0, width, height);
-      // Rotate the world around the player so the direction of travel stays up,
-      // as in a GTA radar. Coordinates are the same metres used by the 3D world.
+      // Keep the radar world north-up. Rotate only the player arrow below,
+      // so its nose follows the player's actual facing direction.
       map.translate(width / 2, height / 2);
-      map.rotate(-heading);
       const plot = (x: number, z: number) => ({ x: x * scale, y: -z * scale });
       // Draw nearby authored building / landmark footprints from the same
       // collision bounds used by gameplay, so the radar reflects the 3D city.
@@ -659,15 +658,13 @@ async function boot() {
         map.beginPath(); map.arc(0, 0, 6, 0, Math.PI * 2); map.fill(); map.stroke();
         map.beginPath(); map.moveTo(0, -11); map.lineTo(0, -19); map.stroke();
         map.restore();
-        map.save(); map.rotate(heading);
         map.fillStyle = "#ffdf76"; map.font = "bold 10px system-ui,sans-serif";
         map.textAlign = "center"; map.textBaseline = "bottom";
         map.fillText(distance >= 1000 ? `${(distance / 1000).toFixed(1)} KM TO MARK` : `${Math.round(distance)} M TO MARK`, 0, radius - 5);
-        map.restore();
       }
       map.restore();
-      // Player direction arrow remains fixed at the centre of the rotating map.
-      map.save(); map.translate(width / 2, height / 2);
+      // Player arrow stays centred but rotates with the player's heading.
+      map.save(); map.translate(width / 2, height / 2); map.rotate(heading);
       map.beginPath(); map.moveTo(0, -9); map.lineTo(6, 7); map.lineTo(0, 4); map.lineTo(-6, 7); map.closePath();
       map.fillStyle = "#f3c56f"; map.fill(); map.strokeStyle = "#fff4d8"; map.lineWidth = 1.3; map.stroke();
       map.restore();
