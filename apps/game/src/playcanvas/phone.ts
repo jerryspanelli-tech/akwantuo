@@ -152,7 +152,7 @@ document.querySelector(".zenvia-dock")?.addEventListener("click", event => {
 import { getAkwantuoSession, loadEconomyState, loadGameNews, loadGameNotifications, markGameNotificationRead, publishGameNews, getChalePhoneNumber, addChaleContact, loadChaleContacts, loadChaleMessages, sendChaleMessage, blockChalePlayer, type ChaleContact, type ChaleMessage } from "../services/supabase";
 
 
-function makeNewsElement(tag: "div" | "p" | "strong" | "small" | "button" | "input" | "textarea" | "select" | "section" | "article", className = ""): HTMLElement {
+function makeNewsElement(tag: "div" | "p" | "strong" | "small" | "button" | "input" | "textarea" | "select" | "section" | "article" | "form" | "span", className = ""): HTMLElement {
   const element = document.createElement(tag);
   if (className) element.className = className;
   return element;
