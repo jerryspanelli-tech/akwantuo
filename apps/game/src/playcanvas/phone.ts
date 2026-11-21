@@ -1,3 +1,4 @@
+import { mountWayGoApp } from "./waygo";
 const phone = document.getElementById("zenvia-phone");
 const launcher = document.getElementById("phone-launcher");
 const lockScreen = document.getElementById("zenvia-lock");
@@ -323,11 +324,14 @@ async function openCediPayApp() {
   }
 }
 
+let disposeWayGoApp: (() => void) | null = null;
+
 async function openApp(name: string) {
   if (!unlocked || !appContent) return;
+  disposeWayGoApp?.();
+  disposeWayGoApp = null;
   if (appTitle) appTitle.textContent = name;
   appContent.replaceChildren();
-async function openApp(name: string) {
   if (!unlocked || !appContent) return;
   if (appTitle) appTitle.textContent = name;
   appContent.replaceChildren();
@@ -343,6 +347,13 @@ async function openApp(name: string) {
     if (lockScreen) lockScreen.hidden = true;
     if (appView) appView.hidden = false;
     await openNewsApp();
+    return;
+  }
+  if (name === "WayGo") {
+    if (homeScreen) homeScreen.hidden = true;
+    if (lockScreen) lockScreen.hidden = true;
+    if (appView) appView.hidden = false;
+    disposeWayGoApp = mountWayGoApp(appContent);
     return;
   }
   const card = (title: string, body: string) => {
