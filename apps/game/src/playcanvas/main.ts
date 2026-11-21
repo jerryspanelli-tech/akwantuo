@@ -581,7 +581,7 @@ async function boot() {
       // Use the visible actor's actual world-forward vector. This avoids
       // Euler-angle wrapping / imported-model yaw ambiguity and follows the
       // character continuously through every direction, including behind.
-      const facing = inVehicle ? vehicle.getForward() : (playerCharacter ?? player).getForward();
+      const facing = inVehicle ? vehicle.forward : (playerCharacter ?? player).forward;
       const heading = Math.atan2(facing.x, facing.z);
       map.clearRect(0, 0, width, height);
       map.fillStyle = "#091511"; map.fillRect(0, 0, width, height);
