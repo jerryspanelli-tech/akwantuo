@@ -2,52 +2,52 @@ import { mountWayGoApp } from "./waygo";
 import { getZenviaModel, ZENVIA_MODELS, formatZenviaPrice } from "./zenvia-device";
 const phone = document.getElementById("zenvia-phone");
 const launcher = document.getElementById("phone-launcher");
-const lockScreen = document.getElementById("zenvia-lock");
+const setupScreen = document.getElementById("zenvia-setup");
 const homeScreen = document.getElementById("zenvia-home");
 const appView = document.getElementById("zenvia-app-view");
 const appTitle = document.getElementById("zenvia-app-title");
 const appContent = document.getElementById("zenvia-app-content");
 const closeButton = document.getElementById("zenvia-close");
 const backButton = document.getElementById("zenvia-back");
-const fingerprint = document.getElementById("zenvia-fingerprint") as HTMLButtonElement | null;
 const powerButton = document.getElementById("zenvia-power");
-const pinButton = document.getElementById("zenvia-pin-unlock");
-const PIN_HASH_KEY = "akwantuo.zenvia.pin.hash.v1";
-const PIN_SALT_KEY = "akwantuo.zenvia.pin.salt.v1";
+const SETUP_KEY = "akwantuo.zenvia.setup.v2";
+const PROFILE_KEY = "akwantuo.zenvia.profile.v1";
 let unlocked = false;
 let opened = false;
-let pinPanel: HTMLElement | null = null;
+let disposeWayGoApp: (() => void) | null = null;
 
 const clockFormatter = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit" });
 const time = () => clockFormatter.format(new Date());
 const updateTime = () => {
-  const value = time();
   const statusTime = document.getElementById("zenvia-status-time");
-  if (statusTime) statusTime.textContent = value;
+  if (statusTime) statusTime.textContent = time();
+};
+const showSetup = () => {
+  disposeWayGoApp?.();
+  disposeWayGoApp = null;
+  unlocked = false;
+  if (setupScreen) setupScreen.hidden = false;
+  if (homeScreen) homeScreen.hidden = true;
+  if (appView) appView.hidden = true;
 };
 const showHome = () => {
   disposeWayGoApp?.();
   disposeWayGoApp = null;
-  if (lockScreen) lockScreen.hidden = true;
+  unlocked = true;
+  if (setupScreen) setupScreen.hidden = true;
   if (homeScreen) homeScreen.hidden = false;
   if (appView) appView.hidden = true;
 };
-const showLock = () => {
-  disposeWayGoApp?.();
-  disposeWayGoApp = null;
-  unlocked = false;
-  if (lockScreen) lockScreen.hidden = false;
-  if (homeScreen) homeScreen.hidden = true;
-  if (appView) appView.hidden = true;
-  pinPanel?.remove();
-  pinPanel = null;
+const setupComplete = () => {
+  try { return localStorage.getItem(SETUP_KEY) === "complete"; }
+  catch { return false; }
 };
 const openPhone = () => {
   if (!phone) return;
   opened = true;
   phone.hidden = false;
-  showLock();
-  // Let the phone become visible before refreshing its clock text.
+  if (setupComplete()) showHome();
+  else showSetup();
   window.requestAnimationFrame(updateTime);
 };
 const closePhone = () => {
@@ -57,90 +57,31 @@ const closePhone = () => {
   opened = false;
   phone.hidden = true;
 };
+const finishSetup = (guest: boolean) => {
+  const language = (document.getElementById("zenvia-language") as HTMLSelectElement | null)?.value || "English";
+  const nameInput = document.getElementById("zenvia-player-name") as HTMLInputElement | null;
+  const handleInput = document.getElementById("zenvia-player-handle") as HTMLInputElement | null;
+  const name = guest ? "Guest" : (nameInput?.value.trim() || "");
+  const handle = guest ? "guest" : (handleInput?.value.trim().replace(/^@/, "") || "");
+  const feedback = document.getElementById("zenvia-setup-feedback");
+  if (!guest && (!name || !/^[a-zA-Z0-9_]{3,16}$/.test(handle))) {
+    if (feedback) feedback.textContent = "Enter your name and a handle of 3–16 letters, numbers or underscores.";
+    return;
+  }
+  try {
+    localStorage.setItem(PROFILE_KEY, JSON.stringify({ name, handle, language, guest, createdAt: new Date().toISOString() }));
+    localStorage.setItem(SETUP_KEY, "complete");
+    showHome();
+  } catch {
+    if (feedback) feedback.textContent = "Phone setup could not be saved in this browser. Please try again.";
+  }
+};
+document.getElementById("zenvia-setup-finish")?.addEventListener("click", () => finishSetup(false));
+document.getElementById("zenvia-setup-guest")?.addEventListener("click", () => finishSetup(true));
 launcher?.addEventListener("click", openPhone);
 closeButton?.addEventListener("click", closePhone);
-fingerprint?.addEventListener("click", () => {
-  if (!fingerprint) return;
-  fingerprint.disabled = true;
-  fingerprint.classList.add("scanning");
-  const hint = lockScreen?.querySelector("small");
-  if (hint) hint.textContent = "Simulated fingerprint scan…";
-  window.setTimeout(() => {
-    fingerprint.classList.remove("scanning");
-    fingerprint.disabled = false;
-    if (hint) hint.textContent = "Touch fingerprint to unlock";
-    unlocked = true;
-    showHome();
-  }, 850);
-});
-pinButton?.addEventListener("click", () => showPinPanel());
-powerButton?.addEventListener("click", showLock);
+powerButton?.addEventListener("click", showHome);
 backButton?.addEventListener("click", showHome);
-
-async function hashPin(pin: string, salt: Uint8Array): Promise<string> {
-  const material = await crypto.subtle.importKey("raw", new TextEncoder().encode(pin), "PBKDF2", false, ["deriveBits"]);
-  const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", salt: salt.slice().buffer as ArrayBuffer, iterations: 120000, hash: "SHA-256" }, material, 256);
-  return Array.from(new Uint8Array(bits), byte => byte.toString(16).padStart(2, "0")).join("");
-}
-function showPinPanel() {
-  if (!lockScreen || pinPanel) return;
-  const existingHash = localStorage.getItem(PIN_HASH_KEY);
-  const panel = document.createElement("div");
-  panel.className = "zenvia-pin-panel";
-  const heading = document.createElement("strong");
-  heading.textContent = existingHash ? "Enter your phone PIN" : "Create a phone PIN";
-  const note = document.createElement("small");
-  note.textContent = existingHash ? "This PIN is saved on this device." : "Choose 4–6 digits for this device.";
-  const input = document.createElement("input");
-  input.type = "password";
-  input.inputMode = "numeric";
-  input.autocomplete = "off";
-  input.maxLength = 6;
-  input.placeholder = "••••";
-  input.setAttribute("aria-label", "Phone PIN");
-  const confirm = document.createElement("input");
-  confirm.type = "password";
-  confirm.inputMode = "numeric";
-  confirm.autocomplete = "off";
-  confirm.maxLength = 6;
-  confirm.placeholder = "Confirm PIN";
-  confirm.setAttribute("aria-label", "Confirm phone PIN");
-  confirm.hidden = Boolean(existingHash);
-  const message = document.createElement("small");
-  message.setAttribute("role", "status");
-  const submit = document.createElement("button");
-  submit.type = "button";
-  submit.textContent = existingHash ? "Unlock" : "Save PIN";
-  const cancel = document.createElement("button");
-  cancel.type = "button";
-  cancel.textContent = "Cancel";
-  submit.addEventListener("click", async () => {
-    const pin = input.value;
-    if (!/^\d{4,6}$/.test(pin)) { message.textContent = "Use 4 to 6 digits."; return; }
-    try {
-      if (existingHash) {
-        const saltText = localStorage.getItem(PIN_SALT_KEY);
-        if (!saltText) throw new Error("PIN setup needs to be reset.");
-        const salt = Uint8Array.from(atob(saltText), char => char.charCodeAt(0));
-        if (await hashPin(pin, salt) !== existingHash) { message.textContent = "That PIN is incorrect."; input.value = ""; return; }
-      } else {
-        if (confirm.value !== pin) { message.textContent = "The PINs do not match."; return; }
-        const salt = crypto.getRandomValues(new Uint8Array(16));
-        localStorage.setItem(PIN_SALT_KEY, btoa(String.fromCharCode(...salt)));
-        localStorage.setItem(PIN_HASH_KEY, await hashPin(pin, salt));
-      }
-      unlocked = true;
-      showHome();
-    } catch {
-      message.textContent = "PIN storage is unavailable in this browser.";
-    }
-  });
-  cancel.addEventListener("click", () => { panel.remove(); pinPanel = null; });
-  panel.append(heading, note, input, confirm, message, submit, cancel);
-  lockScreen.append(panel);
-  pinPanel = panel;
-  input.focus();
-}
 
 // Delegate app taps from the phone document so taps on icons, labels, and
 // nested elements all reach the same app router even if the home layout changes.
@@ -539,22 +480,19 @@ async function openApp(name: string) {
   appContent.replaceChildren();
   if (appKey === "chale" || appKey.startsWith("chale ")) {
     if (homeScreen) homeScreen.hidden = true;
-    if (lockScreen) lockScreen.hidden = true;
     if (appView) appView.hidden = false;
     await openChaleApp();
     return;
   }
   if (appKey === "cedipay") {
     if (homeScreen) homeScreen.hidden = true;
-    if (lockScreen) lockScreen.hidden = true;
     if (appView) appView.hidden = false;
     await openCediPayApp();
     return;
   }
   if (appKey === "akwantuo news") {
     if (homeScreen) homeScreen.hidden = true;
-    if (lockScreen) lockScreen.hidden = true;
-    if (appView) appView.hidden = false;
+      if (appView) appView.hidden = false;
     await openNewsApp();
     return;
   }
@@ -588,7 +526,7 @@ async function openApp(name: string) {
     "Phone": [["Recent calls", "Your calls and contacts will appear here when calling is implemented."]],
     "Camera": [["Camera", "Capture and save moments from your AKWANTUO life."]],
     "Contacts": [["Contacts", "Friends, businesses and saved numbers."]],
-    "Settings": [["Zenvia settings", "Display, wallpaper, notifications, security and phone preferences."], ["Device PIN", "The local phone PIN is a convenience lock for this browser/device, not your AKWANTUO account password. Fingerprint unlock is a simulated game animation and never accesses device biometrics."]]
+    "Settings": [["Zenvia settings", "Display, wallpaper, notifications, security and phone preferences."]]
   };
   for (const [title, body] of (pages[name] || [["Coming soon", "This application will be connected to its full gameplay system in a later phase."]])) card(title, body);
   if (appKey === "settings") {
@@ -622,6 +560,17 @@ async function openApp(name: string) {
     note.textContent = "Phone purchases and upgrades will be completed at in-game phone shops. Your current model is shown here; no purchase has been charged.";
     device.append(heading, identity, specs, features, catalogue, note);
     appContent.append(device);
+    const reset = document.createElement("button");
+    reset.type = "button";
+    reset.className = "zenvia-reset-phone";
+    reset.textContent = "Reset phone";
+    reset.addEventListener("click", () => {
+      if (!window.confirm("Reset Zenvia setup on this device? Your online AKWANTUO account and player data will not be deleted.")) return;
+      localStorage.removeItem(SETUP_KEY);
+      localStorage.removeItem(PROFILE_KEY);
+      showSetup();
+    });
+    appContent.append(reset);
   }
   if (homeScreen) homeScreen.hidden = true;
   if (lockScreen) lockScreen.hidden = true;
