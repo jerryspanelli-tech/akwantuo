@@ -502,7 +502,7 @@ async function boot() {
     if (event.code === "Space" && !event.repeat) requestJump();
   });
 
-  let elapsed = 0, mapElapsed = 0, worldMapElapsed = 1;
+  let elapsed = 0, mapElapsed = 0, worldMapElapsed = 1, gpsRerouteElapsed = 0;
   app.on("update", (dt: number) => {
     const step = Math.min(dt, 0.05);
     worldClock = (worldClock + step * 60) % 86400;
@@ -666,6 +666,17 @@ async function boot() {
       const playerPosition = player.getPosition();
       playerCharacter.setPosition(playerPosition.x, playerPosition.y, playerPosition.z);
       playerCharacter.setEulerAngles(player.getEulerAngles());
+    }
+    gpsRerouteElapsed += step;
+    if (activeGpsRoute && worldMapWaypoint && gpsRerouteElapsed >= 2.5) {
+      gpsRerouteElapsed = 0;
+      const routeOrigin = inVehicle ? vehicle.getPosition() : player.getPosition();
+      const rerouted = buildGpsRoute(
+        { x: routeOrigin.x, z: routeOrigin.z },
+        worldMapWaypoint,
+        { maxStartSnapM: 1200, maxDestinationSnapM: 120 }
+      );
+      if (rerouted) activeGpsRoute = rerouted;
     }
     const focus = inVehicle ? vehicle.getPosition() : player.getPosition();
     const yaw = cameraYaw * Math.PI / 180;
