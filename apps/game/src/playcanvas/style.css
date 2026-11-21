@@ -404,3 +404,174 @@ body.world-map-open .top-hud,body.world-map-open .health-hud,body.world-map-open
   .zenvia-app-grid button{font-size:8px}
   .zenvia-app-content{font-size:12px}
 }
+
+
+/* Final Zenvia app-wide text layout: readable labels, natural word wrapping and unclipped controls. */
+.zenvia-app-view,
+.zenvia-app-content,
+.zenvia-app-content > * {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.zenvia-app-content {
+  overflow-x: hidden;
+  overflow-y: auto;
+  overflow-wrap: break-word;
+  word-break: normal;
+  line-break: auto;
+  text-align: left;
+}
+.zenvia-app-content :where(p, h1, h2, h3, h4, label, strong, span, small, li) {
+  min-width: 0;
+  max-width: 100%;
+  word-break: normal;
+  overflow-wrap: break-word;
+  line-height: 1.45;
+}
+.zenvia-app-content :where(button, a) {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  word-break: normal;
+  overflow-wrap: normal;
+  hyphens: none;
+  line-height: 1.3;
+}
+.zenvia-app-content :where(input, textarea, select) {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding-inline: 12px;
+  font-size: 16px !important;
+  line-height: 1.35;
+  text-overflow: clip;
+}
+.zenvia-app-card {
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+.zenvia-app-card :where(strong, p) {
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+/* Chale sign-in, account creation, contacts and chat must fit the phone viewport. */
+.chale-app .chale-auth-screen {
+  width: 100%;
+  min-height: 100%;
+  height: auto;
+  justify-content: center;
+  gap: 14px;
+  padding: 16px 14px;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+.chale-app .chale-auth-switch {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: stretch;
+  gap: 6px;
+  padding: 4px;
+}
+.chale-app .chale-auth-switch button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  padding: 7px 5px;
+  white-space: normal;
+  word-break: normal;
+  overflow-wrap: normal;
+  hyphens: none;
+  text-align: center;
+  font-size: 11px;
+  line-height: 1.25;
+}
+.chale-app .chale-auth-form {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  gap: 10px;
+}
+.chale-app .chale-auth-form input,
+.chale-app .chale-add-panel input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  padding: 0 12px;
+  font-size: 16px !important;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: visible;
+}
+.chale-app .chale-auth-form input::placeholder,
+.chale-app .chale-add-panel input::placeholder {
+  opacity: 1;
+  color: #7b8982;
+  font-size: 14px;
+  letter-spacing: 0;
+}
+.chale-app .chale-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  padding: 10px 12px;
+  white-space: normal;
+  word-break: normal;
+  overflow-wrap: normal;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.3;
+}
+.chale-app .chale-auth-privacy,
+.chale-app .chale-feedback {
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-break: normal;
+  line-height: 1.45;
+}
+.chale-app .chale-shell,
+.chale-app .chale-chat-screen {
+  width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+}
+.chale-app .chale-home-tools {
+  display: flex;
+  flex-wrap: nowrap;
+  width: 100%;
+  min-width: 0;
+}
+.chale-app .chale-search {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 100%;
+}
+.chale-app .chale-add-toggle {
+  flex: 0 0 auto;
+  max-width: 45%;
+  white-space: normal;
+  overflow-wrap: normal;
+}
+.chale-app .chale-message p {
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+@media (max-width: 360px) {
+  .chale-app .chale-auth-screen { padding: 13px 11px; gap: 12px; }
+  .chale-app .chale-auth-intro strong { font-size: 18px; }
+  .chale-app .chale-auth-switch button { font-size: 10px; padding-inline: 3px; }
+  .chale-app .chale-auth-form input { padding-inline: 10px; }
+}
