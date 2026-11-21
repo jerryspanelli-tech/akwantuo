@@ -465,8 +465,6 @@ async function openChaleApp() {
 
   if(!session)renderAuth();else await initialiseChale();
 }
-let disposeWayGoApp: (() => void) | null = null;
-
 async function openApp(name: string) {
   if (!unlocked || !appContent) return;
   const appKey = name.trim().toLowerCase();
@@ -498,7 +496,6 @@ async function openApp(name: string) {
   }
   if (appKey === "waygo") {
     if (homeScreen) homeScreen.hidden = true;
-    if (lockScreen) lockScreen.hidden = true;
     if (appView) appView.hidden = false;
     disposeWayGoApp = mountWayGoApp(appContent);
     return;
@@ -573,7 +570,6 @@ async function openApp(name: string) {
     appContent.append(reset);
   }
   if (homeScreen) homeScreen.hidden = true;
-  if (lockScreen) lockScreen.hidden = true;
   if (appView) appView.hidden = false;
 }
 document.addEventListener("keydown", event => {
