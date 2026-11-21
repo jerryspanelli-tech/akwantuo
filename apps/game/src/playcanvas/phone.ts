@@ -142,7 +142,7 @@ document.querySelector(".zenvia-dock")?.addEventListener("click", event => {
   const button = event.target instanceof Element ? event.target.closest<HTMLButtonElement>("button[data-app]") : null;
   if (button?.dataset.app) openApp(button.dataset.app);
 });
-import { getAkwantuoSession, loadGameNews, loadGameNotifications, markGameNotificationRead, publishGameNews } from "../services/supabase";
+import { getAkwantuoSession, loadEconomyState, loadGameNews, loadGameNotifications, markGameNotificationRead, publishGameNews } from "../services/supabase";
 
 
 function makeNewsElement(tag: "div" | "p" | "strong" | "small" | "button" | "input" | "textarea" | "select", className = ""): HTMLElement {
@@ -283,10 +283,61 @@ async function openNewsApp() {
   }
 }
 
+async function openCediPayApp() {
+  if (!appContent) return;
+  const status = makeNewsElement("p", "zenvia-news-status");
+  status.textContent = "Loading your wallet…";
+  appContent.append(status);
+  try {
+    const session = await getAkwantuoSession();
+    if (!session) {
+      status.textContent = "Sign in to view your AKWANTUO wallet.";
+      return;
+    }
+    const economy = await loadEconomyState(session);
+    appContent.replaceChildren();
+    const wallet = makeNewsElement("section", "zenvia-app-card");
+    const label = makeNewsElement("small");
+    label.textContent = "AVAILABLE BALANCE";
+    const balance = makeNewsElement("strong");
+    balance.textContent = `GH₵${((economy.wallet?.balance_pesewas ?? 0) / 100).toFixed(2)}`;
+    wallet.append(label, balance);
+    appContent.append(wallet);
+    const inventory = makeNewsElement("section", "zenvia-app-card");
+    const heading = makeNewsElement("strong");
+    heading.textContent = "Your inventory";
+    inventory.append(heading);
+    if (!economy.inventory.length) {
+      const empty = makeNewsElement("p");
+      empty.textContent = "Your bag is empty. Visit a shop in the world to buy supplies.";
+      inventory.append(empty);
+    }
+    for (const item of economy.inventory) {
+      const line = makeNewsElement("p");
+      line.textContent = `${item.name} · ${item.quantity}`;
+      inventory.append(line);
+    }
+    appContent.append(inventory);
+  } catch (error) {
+    status.textContent = error instanceof Error ? error.message : "Wallet is temporarily unavailable.";
+  }
+}
+
 async function openApp(name: string) {
   if (!unlocked || !appContent) return;
   if (appTitle) appTitle.textContent = name;
   appContent.replaceChildren();
+async function openApp(name: string) {
+  if (!unlocked || !appContent) return;
+  if (appTitle) appTitle.textContent = name;
+  appContent.replaceChildren();
+  if (name === "CediPay") {
+    if (homeScreen) homeScreen.hidden = true;
+    if (lockScreen) lockScreen.hidden = true;
+    if (appView) appView.hidden = false;
+    await openCediPayApp();
+    return;
+  }
   if (name === "AKWANTUO News") {
     if (homeScreen) homeScreen.hidden = true;
     if (lockScreen) lockScreen.hidden = true;
