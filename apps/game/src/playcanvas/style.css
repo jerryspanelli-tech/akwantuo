@@ -91,3 +91,35 @@ body.world-map-open .top-hud,body.world-map-open .health-hud,body.world-map-open
 .zenvia-pin-panel button:last-child{background:transparent}
 .zenvia-fingerprint.scanning{animation:zenvia-scan .85s ease-in-out infinite alternate;box-shadow:0 0 0 5px #d8b56f22,0 0 26px #d8b56f88}
 @keyframes zenvia-scan{from{transform:scale(.96);filter:brightness(.9)}to{transform:scale(1.06);filter:brightness(1.5)}}
+
+
+/* ZENVIA proportional sizing: app UI scales with the physical phone screen. */
+.zenvia-screen{container-type:inline-size}
+.zenvia-lock,.zenvia-home,.zenvia-app-view{inset:14cqi 5.5cqi 9.5cqi}
+.zenvia-brand{font-size:clamp(15px,6.5cqi,19px);margin-bottom:clamp(14px,7cqi,28px);letter-spacing:.3em}
+.zenvia-welcome{display:block;margin:0 0 5px;color:#f5f1e8;font-size:clamp(14px,5.3cqi,17px);font-weight:750;letter-spacing:.01em}
+.zenvia-lock-subtitle{display:block;margin:0 0 clamp(14px,6cqi,23px);color:#c9cfc7;font-size:clamp(8px,3.1cqi,10px)}
+.zenvia-fingerprint{width:clamp(38px,16.5cqi,48px);height:clamp(38px,16.5cqi,48px);font-size:clamp(21px,9.3cqi,27px)}
+.zenvia-lock small:not(.zenvia-lock-subtitle){margin-top:clamp(8px,4cqi,12px);font-size:clamp(8px,3.1cqi,10px)}
+.zenvia-text-button{margin-top:clamp(12px,6cqi,18px);font-size:clamp(9px,3.5cqi,11px)}
+.zenvia-home{gap:clamp(8px,4.8cqi,14px);padding-top:clamp(5px,3.4cqi,10px)}
+.zenvia-home-header{min-height:clamp(30px,13cqi,38px)}
+.zenvia-home-header strong{font-size:clamp(14px,6.2cqi,18px)}
+.zenvia-home-header small{font-size:clamp(7px,3.1cqi,9px)}
+.zenvia-home-header button{width:clamp(28px,11.7cqi,34px);height:clamp(28px,11.7cqi,34px)}
+.zenvia-app-grid{gap:clamp(5px,3.1cqi,9px) clamp(2px,1cqi,3px);padding:1px 0}
+.zenvia-app-grid button{gap:clamp(2px,1.4cqi,4px);font-size:clamp(6px,2.45cqi,7px)}
+.app-icon{width:clamp(24px,11.6cqi,34px);height:clamp(24px,11.6cqi,34px);border-radius:clamp(8px,3.8cqi,11px);font-size:clamp(12px,5.8cqi,17px)}
+.zenvia-dock{gap:clamp(2px,1.7cqi,5px);padding:clamp(6px,3.1cqi,9px) clamp(3px,1.7cqi,5px);border-radius:clamp(12px,5.8cqi,17px)}
+.zenvia-dock button{font-size:clamp(7px,3.1cqi,9px)}
+.zenvia-status{top:clamp(9px,4.1cqi,12px);left:clamp(13px,6.2cqi,18px);right:clamp(13px,6.2cqi,18px);font-size:clamp(8px,3.4cqi,10px)}
+.zenvia-app-view{gap:clamp(8px,4.1cqi,12px)}
+.zenvia-app-view header{gap:clamp(7px,3.4cqi,10px);min-height:clamp(30px,12.3cqi,36px)}
+.zenvia-app-view header button{width:clamp(27px,11cqi,32px);height:clamp(27px,11cqi,32px);font-size:clamp(20px,8.6cqi,25px)}
+.zenvia-app-view header strong{font-size:clamp(12px,4.8cqi,14px)}
+.zenvia-app-view header span{font-size:clamp(8px,3.1cqi,9px)}
+.zenvia-app-content{padding:clamp(5px,2.7cqi,8px) 1px;font-size:clamp(10px,4.1cqi,12px)}
+.zenvia-app-card{margin-bottom:clamp(7px,3.4cqi,10px);padding:clamp(9px,4.5cqi,13px);border-radius:clamp(10px,4.8cqi,14px)}
+.zenvia-app-card strong{margin-bottom:clamp(4px,2cqi,6px);font-size:clamp(11px,4.5cqi,13px)}
+.zenvia-app-card p{line-height:1.5}
+.zenvia-home-indicator{bottom:clamp(5px,2.4cqi,7px);left:calc(50% - clamp(32px,16.5cqi,48px));width:clamp(64px,33cqi,96px);height:clamp(3px,1.4cqi,4px)}
