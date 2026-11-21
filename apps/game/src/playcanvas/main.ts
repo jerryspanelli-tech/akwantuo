@@ -7,6 +7,8 @@ import {
 import "./style.css";
 import { createGreaterAccraWorld } from "./world";
 import { GREATER_ACCRA_ROAD_PATHS, GREATER_ACCRA_MAP_EXTENT, GREATER_ACCRA_REGION_ANCHORS } from "../world/greaterAccraLayout";
+import { buildGpsRoute, getRemainingRouteDistance, type GpsRoute } from "../world/gpsNavigation";
+import { persistWorldClock, restoreWorldClock } from "../world/worldClock";
 
 const canvas = document.querySelector<HTMLCanvasElement>("#application")!;
 const loading = document.querySelector<HTMLElement>("#loading");
@@ -39,12 +41,18 @@ const worldMapClose = document.querySelector<HTMLButtonElement>("#world-map-clos
 let worldMapOpen = false;
 let worldMapZoom = 1;
 let worldMapWaypoint: { x: number; z: number } | null = null;
+let activeGpsRoute: GpsRoute | null = null;
+let gpsDestinationLabel = "MARKED LOCATION";
 const mapZoomIn = document.querySelector<HTMLButtonElement>("#map-zoom-in");
 const mapZoomOut = document.querySelector<HTMLButtonElement>("#map-zoom-out");
 const mapMarkClear = document.querySelector<HTMLButtonElement>("#map-mark-clear");
 mapZoomIn?.addEventListener("click", () => { worldMapZoom = clamp(worldMapZoom * 1.25, 1, 4); });
 mapZoomOut?.addEventListener("click", () => { worldMapZoom = clamp(worldMapZoom / 1.25, 1, 4); });
-mapMarkClear?.addEventListener("click", () => { worldMapWaypoint = null; });
+mapMarkClear?.addEventListener("click", () => {
+  worldMapWaypoint = null;
+  activeGpsRoute = null;
+  gpsDestinationLabel = "MARKED LOCATION";
+});
 const setWorldMapOpen = (open: boolean) => {
   worldMapOpen = open;
   if (worldMapPanel) worldMapPanel.hidden = !open;
@@ -277,14 +285,15 @@ async function boot() {
     stars.push(star);
   }
 
-  // Start at the real local time in Accra (GMT), then run the in-game clock
-  // at 60x so a complete Ghana day/night cycle lasts 24 real-world minutes.
-  const accraTimeParts = new Intl.DateTimeFormat("en-GB", {
-    timeZone: "Africa/Accra", hour: "2-digit", minute: "2-digit",
-    second: "2-digit", hourCycle: "h23"
-  }).formatToParts(new Date());
-  const timePart = (type: string) => Number(accraTimeParts.find((part) => part.type === type)?.value ?? 0);
-  let worldClock = timePart("hour") * 3600 + timePart("minute") * 60 + timePart("second");
+  // Restore AKWANTUO's own persistent clock. It advances while offline and
+  // does not reset to the real-world hour on every launch.
+  let worldClock = restoreWorldClock();
+  let worldClockSaveElapsed = 0;
+  window.addEventListener("pagehide", () => persistWorldClock(worldClock));
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) persistWorldClock(worldClock);
+    else worldClock = restoreWorldClock();
+  });
   const rainMaterial = mat(0.48, 0.66, 0.78);
   const rainDrops: Entity[] = [];
   for (let i = 0; i < 36; i++) {
@@ -420,11 +429,26 @@ async function boot() {
     const current = inVehicle ? vehicle.getPosition() : player.getPosition();
     const playerBaseX = ox + (current.x - bounds.minX) * baseScale;
     const playerBaseY = oy + (bounds.maxZ - current.z) * baseScale;
-    worldMapWaypoint = {
+    const selectedPoint = {
       x: current.x + (px - playerBaseX) / (baseScale * worldMapZoom),
       z: current.z - (py - playerBaseY) / (baseScale * worldMapZoom)
     };
-    showNotice("Map location marked");
+    const signature = { x: 3750, z: 2260 };
+    gpsDestinationLabel = Math.hypot(selectedPoint.x - signature.x, selectedPoint.z - signature.z) < 260
+      ? "THE SIGNATURE" : "MARKED LOCATION";
+    const route = buildGpsRoute(
+      { x: current.x, z: current.z },
+      selectedPoint
+    );
+    if (!route) {
+      activeGpsRoute = null;
+      worldMapWaypoint = null;
+      showNotice("No connected drivable road near that location");
+      return;
+    }
+    activeGpsRoute = route;
+    worldMapWaypoint = route.points[route.points.length - 1];
+    showNotice(`GPS route set · ${(route.distanceM / 1000).toFixed(1)} km`);
   });
   let nearbyInteraction: { id: string; label: string; x: number; z: number; radius: number } | null = null;
   const overlaps = (x: number, z: number) => {
@@ -481,8 +505,13 @@ async function boot() {
   let elapsed = 0, mapElapsed = 0, worldMapElapsed = 1;
   app.on("update", (dt: number) => {
     const step = Math.min(dt, 0.05);
-    world.update(step);
     worldClock = (worldClock + step * 60) % 86400;
+    world.update(step, worldClock);
+    worldClockSaveElapsed += step;
+    if (worldClockSaveElapsed >= 5) {
+      persistWorldClock(worldClock);
+      worldClockSaveElapsed = 0;
+    }
     const hourOfDay = worldClock / 3600;
     // Accra sunrise is around 06:00 and sunset around 18:00. Smooth the
     // transition through golden hour and twilight rather than switching abruptly.
@@ -723,30 +752,34 @@ async function boot() {
           map.fillText(place.name, p.x, p.y - 6); map.shadowBlur = 0;
         }
       }
-      // Active waypoint guidance: the radar rotates with the player, so
-      // this line and marker always point toward the selected destination.
-      if (worldMapWaypoint) {
+      // Draw the actual road route on the north-up radar; do not use a
+      // straight-line bearing that can send the player through buildings.
+      if (activeGpsRoute && worldMapWaypoint) {
+        map.save();
+        map.beginPath();
+        activeGpsRoute.points.forEach((point, index) => {
+          const p = plot(point.x - center.x, point.z - center.z);
+          if (index === 0) map.moveTo(p.x, p.y); else map.lineTo(p.x, p.y);
+        });
+        map.strokeStyle = "#ffdf76"; map.lineWidth = 3.2;
+        map.lineCap = "round"; map.lineJoin = "round"; map.stroke();
+        map.restore();
         const dx = worldMapWaypoint.x - center.x;
         const dz = worldMapWaypoint.z - center.z;
-        const distance = Math.hypot(dx, dz);
         const target = plot(dx, dz);
         const targetLength = Math.hypot(target.x, target.y) || 1;
         const visibleLength = Math.min(targetLength, radius - 15);
         const endX = target.x / targetLength * visibleLength;
         const endY = target.y / targetLength * visibleLength;
-        map.save();
-        map.beginPath(); map.arc(0, 0, radius - 2, 0, Math.PI * 2); map.clip();
-        map.beginPath(); map.moveTo(0, 0); map.lineTo(endX, endY);
-        map.strokeStyle = "#ffdf76"; map.lineWidth = 3; map.setLineDash([5, 4]); map.stroke(); map.setLineDash([]);
-        map.restore();
         map.save(); map.translate(endX, endY);
         map.fillStyle = "#ffdf76"; map.strokeStyle = "#342710"; map.lineWidth = 2;
         map.beginPath(); map.arc(0, 0, 6, 0, Math.PI * 2); map.fill(); map.stroke();
         map.beginPath(); map.moveTo(0, -11); map.lineTo(0, -19); map.stroke();
         map.restore();
+        const remaining = getRemainingRouteDistance(activeGpsRoute.points, center);
         map.fillStyle = "#ffdf76"; map.font = "bold 10px system-ui,sans-serif";
         map.textAlign = "center"; map.textBaseline = "bottom";
-        map.fillText(distance >= 1000 ? `${(distance / 1000).toFixed(1)} KM TO MARK` : `${Math.round(distance)} M TO MARK`, 0, radius - 5);
+        map.fillText(`${(remaining / 1000).toFixed(1)} KM · ${gpsDestinationLabel}`, 0, radius - 5);
       }
       map.restore();
       // Draw the marker directly from the same world-space facing vector
@@ -764,7 +797,25 @@ async function boot() {
       map.beginPath(); map.arc(width / 2, height / 2, radius, 0, Math.PI * 2);
       map.strokeStyle = "#e3bd7a"; map.lineWidth = 3; map.stroke();
     }
-    if (status) status.textContent = inVehicle ? "TAXI · DRIVING" : "GREATER ACCRA · GHANA";
+    if (activeGpsRoute) {
+      const position = inVehicle ? vehicle.getPosition() : player.getPosition();
+      const remaining = getRemainingRouteDistance(activeGpsRoute.points, { x: position.x, z: position.z });
+      const destination = activeGpsRoute.points[activeGpsRoute.points.length - 1];
+      if (Math.hypot(position.x - destination.x, position.z - destination.z) < 38) {
+        showNotice(`Arrived at ${gpsDestinationLabel}`);
+        activeGpsRoute = null;
+        worldMapWaypoint = null;
+      }
+    }
+    if (status) {
+      if (activeGpsRoute) {
+        const position = inVehicle ? vehicle.getPosition() : player.getPosition();
+        const remaining = getRemainingRouteDistance(activeGpsRoute.points, { x: position.x, z: position.z });
+        status.textContent = `GPS · ${gpsDestinationLabel} · ${(remaining / 1000).toFixed(1)} KM`;
+      } else {
+        status.textContent = inVehicle ? "TAXI · DRIVING" : "GREATER ACCRA · GHANA";
+      }
+    }
 
     if (worldMapOpen && worldMapContext && worldMapCanvas && worldMapElapsed >= 0.25) {
       worldMapElapsed = 0;
@@ -802,6 +853,7 @@ async function boot() {
       }
       const locations = [
         { name:"MAKOLA MARKET",x:-500,z:350 }, { name:"KANESHIE",x:-2800,z:-250 },
+        { name:"THE SIGNATURE",x:3750,z:2260 },
         { name:"CIRCLE",x:-450,z:450 }, { name:"37 / RIDGE",x:1250,z:-350 },
         { name:"AIRPORT CITY",x:1100,z:350 }, { name:"OSU",x:1100,z:-1250 },
         { name:"LABADI BEACH",x:2550,z:-1950 }, { name:"CANTONMENTS",x:1850,z:-250 },
@@ -810,6 +862,15 @@ async function boot() {
         { name:"DANSOMAN",x:-5100,z:-850 }, { name:"SPINTEX",x:5400,z:-1200 },
         { name:"TEMA",x:8700,z:-850 }, { name:"LEGON",x:3300,z:3400 }
       ];
+      if (activeGpsRoute) {
+        map.beginPath();
+        activeGpsRoute.points.forEach((routePoint, index) => {
+          const p = point(routePoint.x, routePoint.z);
+          if (index === 0) map.moveTo(p.x, p.y); else map.lineTo(p.x, p.y);
+        });
+        map.strokeStyle = "#ffdf76"; map.lineWidth = 8;
+        map.lineCap = "round"; map.lineJoin = "round"; map.stroke();
+      }
       for (const place of locations) {
         const p = point(place.x, place.z);
         map.fillStyle = "#f0c574"; map.beginPath(); map.arc(p.x,p.y,5,0,Math.PI*2); map.fill();
