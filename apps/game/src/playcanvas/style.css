@@ -82,3 +82,12 @@ body.world-map-open .top-hud,body.world-map-open .health-hud,body.world-map-open
 .zenvia-close{border:1px solid #d8b56f88;border-radius:14px;padding:5px 9px;background:#17271f;color:#f3dfb7;font-size:9px;font-weight:800;pointer-events:auto}.zenvia-home-indicator{position:absolute;bottom:7px;left:calc(50% - 48px);width:96px;height:4px;border-radius:5px;background:#ffffffaa}
 @keyframes zenvia-rise{from{opacity:0;transform:translateY(22px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
 @media(max-height:650px){.zenvia-device{height:min(380px,55dvh)}.zenvia-app-grid{gap:7px 3px}.app-icon{width:30px;height:30px}.zenvia-widget{min-height:52px}}
+
+/* Compact ZENVIA security panel and simulated fingerprint feedback. */
+.zenvia-pin-panel{position:absolute;z-index:5;left:8px;right:8px;bottom:10px;display:flex;flex-direction:column;gap:7px;padding:12px;border:1px solid #d9b77788;border-radius:15px;background:#0b1714f5;box-shadow:0 8px 28px #000b;text-align:left}
+.zenvia-pin-panel strong{font-size:12px}.zenvia-pin-panel small{font-size:9px;color:#d1c9b7;line-height:1.35}
+.zenvia-pin-panel input{width:100%;min-height:34px;padding:7px 9px;border:1px solid #d9b77788;border-radius:8px;background:#17271f;color:#fff;font-size:14px;letter-spacing:.22em;outline:none}
+.zenvia-pin-panel button{min-height:31px;border:1px solid #d9b77788;border-radius:9px;background:#244b3c;color:#fff;font-size:10px;font-weight:800}
+.zenvia-pin-panel button:last-child{background:transparent}
+.zenvia-fingerprint.scanning{animation:zenvia-scan .85s ease-in-out infinite alternate;box-shadow:0 0 0 5px #d8b56f22,0 0 26px #d8b56f88}
+@keyframes zenvia-scan{from{transform:scale(.96);filter:brightness(.9)}to{transform:scale(1.06);filter:brightness(1.5)}}
