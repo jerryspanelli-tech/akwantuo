@@ -358,7 +358,7 @@ async function openChaleApp() {
     const numberValue = makeNewsElement("strong");
     numberValue.textContent = myNumber;
     const numberHint = makeNewsElement("p");
-    numberHint.textContent = "Share this number with players you want to chat with. It is not your real phone number.";
+    numberHint.textContent = "Share this number with a player you trust. Both players must save each other’s number before chatting. This is not your real phone number."
     numberCard.append(numberLabel, numberValue, numberHint);
 
     const addCard = makeNewsElement("form", "zenvia-app-card chale-add-form") as HTMLFormElement;
