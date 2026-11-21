@@ -34,7 +34,9 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     lightConcrete: material(0.69, 0.66, 0.58), roof: material(0.29, 0.21, 0.16),
     market: material(0.63, 0.35, 0.19), industrial: material(0.38, 0.42, 0.39),
     modern: material(0.35, 0.43, 0.45), residential: material(0.68, 0.55, 0.39),
-    palm: material(0.23, 0.31, 0.17)
+    palm: material(0.23, 0.31, 0.17),
+    skinDeep: material(0.20, 0.095, 0.055), skinRich: material(0.31, 0.15, 0.085),
+    skinWarm: material(0.43, 0.23, 0.13), skinLight: material(0.56, 0.34, 0.22)
   };
 
   // Lightweight procedural surface grain: subtle pixel variation gives asphalt, concrete,
@@ -592,13 +594,16 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     const route=peopleRoutes[i%peopleRoutes.length];
     const root=new Entity("Accra pedestrian "+(i+1)); app.root.addChild(root);
     const shirt=clothing[i%clothing.length];
+    // Shared Ghanaian skin-tone palette keeps the street crowd visually varied
+    // while reusing materials and preserving the existing mobile-friendly rig.
+    const skinTone=[mats.skinDeep,mats.skinRich,mats.skinWarm,mats.skinLight][i%4];
     // Layered low-poly character silhouettes: varied shirts, trousers, footwear,
     // hair/headwear and small carried items. Shared materials keep draw cost bounded.
     const isVendor = i % 6 === 0;
     const isCommuter = i % 4 === 0;
     makeActorPart(root,"box","Pedestrian torso",0,1.15,0,0.48,0.78,0.28,shirt);
     makeActorPart(root,"box","Pedestrian shirt hem",0,0.78,0,0.5,0.16,0.3,shirt);
-    makeActorPart(root,"sphere","Pedestrian head",0,1.78,0,0.25,0.28,0.25,mats.gold);
+    makeActorPart(root,"sphere","Pedestrian head",0,1.78,0,0.25,0.28,0.25,skinTone);
     makeActorPart(root,"box","Pedestrian hair",0,1.94,-0.025,0.27,0.09,0.27,mats.roof);
     if (isVendor) {
       makeActorPart(root,"cylinder","Pedestrian headwrap",0,1.99,0,0.17,0.12,0.17,i%2?mats.red:mats.gold);
@@ -608,7 +613,7 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     makeActorPart(root,"box","Pedestrian waist",0,0.72,0,0.42,0.16,0.27,mats.roof);
     const arms=[-1,1].map(side=>{
       const arm=makeActorPart(root,"cylinder","Pedestrian arm",side*0.34,1.12,0,0.105,0.68,0.105,shirt);
-      makeActorPart(root,"sphere","Pedestrian hand",side*0.34,0.76,0,0.095,0.1,0.095,mats.gold);
+      makeActorPart(root,"sphere","Pedestrian hand",side*0.34,0.76,0,0.095,0.1,0.095,skinTone);
       return arm;
     });
     const legs=[-1,1].map(side=>{
