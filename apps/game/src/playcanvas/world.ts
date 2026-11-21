@@ -9,7 +9,7 @@ export type GreaterAccraWorld = {
   spawn: { x: number; z: number };
   taxiSpawn: { x: number; z: number };
   interactables: Array<{ id: string; label: string; x: number; z: number; radius: number }>;
-  update: (dt: number) => void;
+  update: (dt: number, worldTimeSeconds?: number) => void;
 };
 
 const material = (r: number, g: number, b: number): StandardMaterial => {
@@ -808,7 +808,7 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
 
   let livingClock=0;
   let previousRainState=false;
-  const updateLivingCity=(dt:number)=>{
+  const updateLivingCity=(dt:number, worldTimeSeconds?:number)=>{
     livingClock+=dt;
     const weatherPhase=livingClock%240;
     const raining=weatherPhase>=150 && weatherPhase<198;
@@ -832,8 +832,10 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     }
     // Warm practical street lighting switches on for the night portion of the
     // shared world clock. Lights are disabled during daylight to save mobile GPU work.
-    const nightFactor = 0.5 + 0.5 * Math.sin((livingClock / 480) * Math.PI * 2 - Math.PI / 2);
-    const lampsOn = nightFactor < 0.28;
+    const worldHour = worldTimeSeconds === undefined
+      ? ((livingClock / 480) * 24) % 24
+      : (((worldTimeSeconds % 86400) + 86400) % 86400) / 3600;
+    const lampsOn = worldHour < 6.15 || worldHour >= 18.15;
     for (const lamp of streetLamps) {
       const light = lamp.light;
       if (light) light.enabled = lampsOn;
