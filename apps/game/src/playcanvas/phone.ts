@@ -537,6 +537,7 @@ let disposeWayGoApp: (() => void) | null = null;
 
 async function openApp(name: string) {
   if (!unlocked || !appContent) return;
+  const appKey = name.trim().toLowerCase();
   disposeWayGoApp?.();
   disposeWayGoApp = null;
   if (appTitle) appTitle.textContent = name;
@@ -544,28 +545,28 @@ async function openApp(name: string) {
   if (!unlocked || !appContent) return;
   if (appTitle) appTitle.textContent = name;
   appContent.replaceChildren();
-  if (name === "Chale") {
+  if (appKey === "chale") {
     if (homeScreen) homeScreen.hidden = true;
     if (lockScreen) lockScreen.hidden = true;
     if (appView) appView.hidden = false;
     await openChaleApp();
     return;
   }
-  if (name === "CediPay") {
+  if (appKey === "cedipay") {
     if (homeScreen) homeScreen.hidden = true;
     if (lockScreen) lockScreen.hidden = true;
     if (appView) appView.hidden = false;
     await openCediPayApp();
     return;
   }
-  if (name === "AKWANTUO News") {
+  if (appKey === "akwantuo news") {
     if (homeScreen) homeScreen.hidden = true;
     if (lockScreen) lockScreen.hidden = true;
     if (appView) appView.hidden = false;
     await openNewsApp();
     return;
   }
-  if (name === "WayGo") {
+  if (appKey === "waygo") {
     if (homeScreen) homeScreen.hidden = true;
     if (lockScreen) lockScreen.hidden = true;
     if (appView) appView.hidden = false;
