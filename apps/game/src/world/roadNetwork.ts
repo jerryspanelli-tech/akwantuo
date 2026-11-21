@@ -16,6 +16,7 @@ export const GREATER_ACCRA_ROAD_NETWORK: RoadNetwork = {
     { id: "circle-junction", name: "Kwame Nkrumah Circle", kind: "interchange", regionId: "accra-central-makola", status: "planned" },
     { id: "37-junction", name: "37 / Ridge Junction", kind: "junction", regionId: "airport-city", status: "planned" },
     { id: "airport-city-anchor", name: "Airport City Connection", kind: "area_anchor", regionId: "airport-city", status: "planned" },
+    { id: "signature-access", name: "The Signature Access", kind: "junction", regionId: "east-legon", status: "planned" },
     { id: "tetteh-quarshie-interchange", name: "Tetteh Quarshie Interchange", kind: "interchange", regionId: "east-legon", status: "planned" },
     { id: "achimota-interchange", name: "Achimota Interchange", kind: "interchange", regionId: "achimota", status: "planned" },
     { id: "ofankor-junction", name: "Ofankor Junction", kind: "junction", regionId: "achimota", status: "planned" },
@@ -100,6 +101,24 @@ export const GREATER_ACCRA_ROAD_NETWORK: RoadNetwork = {
       fromNodeId: "airport-city-anchor",
       toNodeId: "37-junction",
       regionIds: ["greater-accra", "airport-city"],
+      status: "planned"
+    },
+    {
+      id: "airport-city-tetteh-quarshie",
+      name: "Airport City–Tetteh Quarshie Connector",
+      roadClass: "urban_road",
+      fromNodeId: "airport-city-anchor",
+      toNodeId: "tetteh-quarshie-interchange",
+      regionIds: ["greater-accra", "airport-city", "east-legon"],
+      status: "planned"
+    },
+    {
+      id: "signature-access-road",
+      name: "The Signature Access Road",
+      roadClass: "urban_road",
+      fromNodeId: "tetteh-quarshie-interchange",
+      toNodeId: "signature-access",
+      regionIds: ["greater-accra", "east-legon"],
       status: "planned"
     },
     {
