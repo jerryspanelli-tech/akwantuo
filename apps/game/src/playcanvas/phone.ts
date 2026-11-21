@@ -142,10 +142,158 @@ document.querySelector(".zenvia-dock")?.addEventListener("click", event => {
   const button = event.target instanceof Element ? event.target.closest<HTMLButtonElement>("button[data-app]") : null;
   if (button?.dataset.app) openApp(button.dataset.app);
 });
-function openApp(name: string) {
+import { getAkwantuoSession, loadGameNews, loadGameNotifications, markGameNotificationRead, publishGameNews } from "../services/supabase";
+
+
+function makeNewsElement(tag: "div" | "p" | "strong" | "small" | "button" | "input" | "textarea" | "select", className = ""): HTMLElement {
+  const element = document.createElement(tag);
+  if (className) element.className = className;
+  return element;
+}
+
+async function openNewsApp() {
+  if (!appContent) return;
+  const status = makeNewsElement("p", "zenvia-news-status");
+  status.textContent = "Loading AKWANTUO updates…";
+  appContent.append(status);
+  try {
+    const session = await getAkwantuoSession();
+    if (!session) {
+      status.textContent = "Sign in to your AKWANTUO account to view live news and notifications.";
+      return;
+    }
+    const [stories, notifications] = await Promise.all([
+      loadGameNews(session),
+      loadGameNotifications(session)
+    ]);
+    appContent.replaceChildren();
+
+    const feed = makeNewsElement("section", "zenvia-app-card");
+    const feedTitle = makeNewsElement("strong");
+    feedTitle.textContent = "Latest updates";
+    feed.append(feedTitle);
+    if (!stories.length) {
+      const empty = makeNewsElement("p");
+      empty.textContent = "No announcements have been published yet.";
+      feed.append(empty);
+    }
+    for (const story of stories) {
+      const item = makeNewsElement("article", "zenvia-news-item");
+      const category = makeNewsElement("small");
+      category.textContent = story.category;
+      const headline = makeNewsElement("strong");
+      headline.textContent = story.headline;
+      const body = makeNewsElement("p");
+      body.textContent = story.announcement;
+      const date = makeNewsElement("small");
+      date.textContent = story.published_at ? new Date(story.published_at).toLocaleString() : "";
+      item.append(category, headline, body, date);
+      feed.append(item);
+    }
+    appContent.append(feed);
+
+    const inbox = makeNewsElement("section", "zenvia-app-card");
+    const inboxTitle = makeNewsElement("strong");
+    inboxTitle.textContent = `Notifications · ${notifications.filter(item => !item.read_at).length} unread`;
+    inbox.append(inboxTitle);
+    if (!notifications.length) {
+      const empty = makeNewsElement("p");
+      empty.textContent = "You’re all caught up.";
+      inbox.append(empty);
+    }
+    for (const notification of notifications) {
+      const item = makeNewsElement("article", "zenvia-news-item");
+      const title = makeNewsElement("strong");
+      title.textContent = notification.title;
+      const body = makeNewsElement("p");
+      body.textContent = notification.message;
+      const meta = makeNewsElement("small");
+      meta.textContent = `${notification.category} · ${new Date(notification.created_at).toLocaleString()}`;
+      item.append(title, body, meta);
+      if (!notification.read_at) {
+        const read = makeNewsElement("button", "zenvia-news-button") as HTMLButtonElement;
+        read.type = "button";
+        read.textContent = "Mark as read";
+        read.addEventListener("click", async () => {
+          read.disabled = true;
+          try {
+            await markGameNotificationRead(session, notification.id);
+            await openNewsApp();
+          } catch {
+            read.disabled = false;
+            read.textContent = "Could not update — retry";
+          }
+        });
+        item.append(read);
+      }
+      inbox.append(item);
+    }
+    appContent.append(inbox);
+
+    if (session.user.app_metadata?.role === "admin") {
+      const composer = makeNewsElement("section", "zenvia-app-card");
+      const heading = makeNewsElement("strong");
+      heading.textContent = "Admin · Publish update";
+      const category = makeNewsElement("select") as HTMLSelectElement;
+      for (const value of ["Official announcement", "Accra stories", "Market news", "Events", "World news"]) {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = value;
+        category.append(option);
+      }
+      const headline = makeNewsElement("input") as HTMLInputElement;
+      headline.placeholder = "Headline";
+      headline.maxLength = 120;
+      const announcement = makeNewsElement("textarea") as HTMLTextAreaElement;
+      announcement.placeholder = "Write the announcement…";
+      announcement.maxLength = 3000;
+      announcement.rows = 4;
+      const target = makeNewsElement("input") as HTMLInputElement;
+      target.placeholder = "Optional player user ID (leave blank for everyone)";
+      const publish = makeNewsElement("button", "zenvia-news-button") as HTMLButtonElement;
+      publish.type = "button";
+      publish.textContent = "Publish to players";
+      const feedback = makeNewsElement("small");
+      feedback.setAttribute("role", "status");
+      publish.addEventListener("click", async () => {
+        if (headline.value.trim().length < 3 || !announcement.value.trim()) {
+          feedback.textContent = "Add a headline and announcement first.";
+          return;
+        }
+        publish.disabled = true;
+        feedback.textContent = "Publishing…";
+        try {
+          await publishGameNews(session, {
+            category: category.value,
+            headline: headline.value,
+            announcement: announcement.value,
+            targetPlayerId: target.value.trim() || undefined
+          });
+          await openNewsApp();
+        } catch (error) {
+          feedback.textContent = error instanceof Error ? error.message : "Could not publish update.";
+          publish.disabled = false;
+        }
+      });
+      composer.append(heading, category, headline, announcement, target, publish, feedback);
+      appContent.append(composer);
+    }
+  } catch (error) {
+    status.textContent = error instanceof Error ? error.message : "News is temporarily unavailable.";
+  }
+}
+
+async function openApp(name: string) {
   if (!unlocked || !appContent) return;
   if (appTitle) appTitle.textContent = name;
   appContent.replaceChildren();
+  if (name === "AKWANTUO News") {
+    if (homeScreen) homeScreen.hidden = true;
+    if (lockScreen) lockScreen.hidden = true;
+    if (appView) appView.hidden = false;
+    await openNewsApp();
+    return;
+  }
   const card = (title: string, body: string) => {
     const section = document.createElement("section");
     section.className = "zenvia-app-card";
@@ -157,7 +305,6 @@ function openApp(name: string) {
     appContent.append(section);
   };
   const pages: Record<string, [string, string][]> = {
-    "AKWANTUO News": [["Top stories", "Official announcements, Accra stories and world events will appear here."], ["Market bulletin", "Virtual company and cryptocurrency market updates will connect to the game economy."], ["Admin updates", "Verified AKWANTUO administration announcements and event alerts."]],
     "WayGo": [["3D Accra navigation", "Search Greater Accra destinations and follow road-based GPS directions. The existing road-route engine is being prepared for this in-phone map."], ["Location sharing", "Share your live or one-time location with friends when multiplayer location services are enabled."]],
     "AppBay": [["Discover apps", "Browse, install, update and remove apps. The app catalogue and installation flow are still being built."], ["Your phone", "Zenvia One · Powered by AKWANTUO OS"]],
     "Chale": [["Your conversations", "Private messages, group chats, voice notes and player location sharing."], ["Contacts", "Your in-game contacts and online friends will appear here."]],
