@@ -284,3 +284,54 @@ export async function publishGameNews(
     session.access_token
   );
 }
+
+
+export interface ChaleContact {
+  contact_id: string;
+  display_name: string;
+  phone_number: string;
+  last_message: string | null;
+  last_message_at: string | null;
+}
+export interface ChaleMessage {
+  id: string;
+  sender_id: string;
+  recipient_id: string;
+  body: string;
+  created_at: string;
+  read_at: string | null;
+}
+export async function getChalePhoneNumber(session: AkwantuoSession): Promise<string> {
+  return request<string>("/rest/v1/rpc/akwantuo_chale_get_my_number", {
+    method: "POST", body: "{}"
+  }, session.access_token);
+}
+export async function addChaleContact(session: AkwantuoSession, phoneNumber: string, label = ""): Promise<Pick<ChaleContact, "contact_id" | "display_name" | "phone_number">> {
+  const rows = await request<Array<Pick<ChaleContact, "contact_id" | "display_name" | "phone_number">>>(
+    "/rest/v1/rpc/akwantuo_chale_add_contact",
+    { method: "POST", body: JSON.stringify({ p_phone_number: phoneNumber, p_label: label }) },
+    session.access_token
+  );
+  if (!rows[0]) throw new Error("Could not save this contact.");
+  return rows[0];
+}
+export async function loadChaleContacts(session: AkwantuoSession): Promise<ChaleContact[]> {
+  return request<ChaleContact[]>("/rest/v1/rpc/akwantuo_chale_list_contacts", {
+    method: "POST", body: "{}"
+  }, session.access_token);
+}
+export async function loadChaleMessages(session: AkwantuoSession, otherPlayerId: string): Promise<ChaleMessage[]> {
+  return request<ChaleMessage[]>("/rest/v1/rpc/akwantuo_chale_list_messages", {
+    method: "POST", body: JSON.stringify({ p_other_player_id: otherPlayerId })
+  }, session.access_token);
+}
+export async function sendChaleMessage(session: AkwantuoSession, recipientId: string, body: string): Promise<string> {
+  return request<string>("/rest/v1/rpc/akwantuo_chale_send_message", {
+    method: "POST", body: JSON.stringify({ p_recipient_id: recipientId, p_body: body })
+  }, session.access_token);
+}
+export async function blockChalePlayer(session: AkwantuoSession, otherPlayerId: string): Promise<void> {
+  await request<unknown>("/rest/v1/rpc/akwantuo_chale_block_player", {
+    method: "POST", body: JSON.stringify({ p_other_player_id: otherPlayerId })
+  }, session.access_token);
+}
