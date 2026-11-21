@@ -18,8 +18,8 @@ const updateTime = () => {
     const node = document.getElementById(id); if (node) node.textContent = value;
   }
 };
-const showHome = () => { lockScreen.hidden = true; homeScreen.hidden = false; appView.hidden = true; };
-const showLock = () => { unlocked = false; lockScreen.hidden = false; homeScreen.hidden = true; appView.hidden = true; };
+const showHome = () => { if (lockScreen) lockScreen.hidden = true; if (homeScreen) homeScreen.hidden = false; if (appView) appView.hidden = true; };
+const showLock = () => { unlocked = false; if (lockScreen) lockScreen.hidden = false; if (homeScreen) homeScreen.hidden = true; if (appView) appView.hidden = true; };
 const openPhone = () => { if (!phone) return; opened = true; phone.hidden = false; showLock(); updateTime(); };
 const closePhone = () => { if (!phone) return; opened = false; phone.hidden = true; };
 launcher?.addEventListener("click", openPhone);
@@ -69,7 +69,7 @@ function openApp(name: string) {
     "Settings": [["Zenvia settings","Display, wallpaper, notifications, security, fingerprint and phone preferences."],["Security","Fingerprint unlock and phone PIN are visual prototypes here; account-grade security will be connected to the authenticated player profile."]]
   };
   for (const [title, body] of (pages[name] || [["Coming soon","This application will be connected to its full gameplay system in a later phase."]])) card(title, body);
-  homeScreen.hidden = true; lockScreen.hidden = true; appView.hidden = false;
+  if (homeScreen) homeScreen.hidden = true; if (lockScreen) lockScreen.hidden = true; if (appView) appView.hidden = false;
 }
 document.addEventListener("keydown", event => {
   if (event.key === "Escape" && opened) closePhone();
