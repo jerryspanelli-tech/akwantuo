@@ -799,7 +799,6 @@ async function boot() {
     }
     if (activeGpsRoute) {
       const position = inVehicle ? vehicle.getPosition() : player.getPosition();
-      const remaining = getRemainingRouteDistance(activeGpsRoute.points, { x: position.x, z: position.z });
       const destination = activeGpsRoute.points[activeGpsRoute.points.length - 1];
       if (Math.hypot(position.x - destination.x, position.z - destination.z) < 38) {
         showNotice(`Arrived at ${gpsDestinationLabel}`);
