@@ -1,6 +1,8 @@
 import {
   GREATER_ACCRA_MAP_EXTENT,
   GREATER_ACCRA_ROAD_PATHS,
+  GREATER_ACCRA_REGION_ANCHORS,
+  GREATER_ACCRA_COASTLINE,
   type MapPoint
 } from "../world/greaterAccraLayout";
 import { getRemainingRouteDistance, type GpsRoute } from "../world/gpsNavigation";
@@ -58,100 +60,120 @@ function drawMap(canvas: HTMLCanvasElement, state: WayGoState): void {
   if (!context) return;
   const width = canvas.width, height = canvas.height;
   const bounds = GREATER_ACCRA_MAP_EXTENT;
-  const pad = 26;
-  const scale = Math.min((width - pad * 2) / bounds.widthM, (height - pad * 2) / bounds.depthM);
-  const mapWidth = bounds.widthM * scale, mapHeight = bounds.depthM * scale;
-  const ox = (width - mapWidth) / 2, oy = (height - mapHeight) / 2;
-  const point = (value: MapPoint) => ({
-    x: ox + (value.x - bounds.minX) * scale,
-    y: oy + (bounds.maxZ - value.z) * scale
+  const rawProject = (value: MapPoint) => ({
+    x: (value.x - value.z) * 0.72,
+    y: (value.x + value.z) * 0.36
   });
-
-  context.clearRect(0, 0, width, height);
-  context.fillStyle = "#10251f";
-  context.fillRect(0, 0, width, height);
-  const coastY = point({ x: 0, z: -3050 }).y;
-  context.fillStyle = "#123c50";
-  context.fillRect(0, coastY, width, height - coastY);
-  context.fillStyle = "#20382b";
-  context.fillRect(ox, oy, mapWidth, mapHeight);
-
-  context.save();
-  context.beginPath();
-  context.rect(ox, oy, mapWidth, mapHeight);
-  context.clip();
-  for (const road of GREATER_ACCRA_ROAD_PATHS) {
-    if (!road.playableInFirstRelease) continue;
+  const corners = [
+    rawProject({ x: bounds.minX, z: bounds.minZ }),
+    rawProject({ x: bounds.minX, z: bounds.maxZ }),
+    rawProject({ x: bounds.maxX, z: bounds.minZ }),
+    rawProject({ x: bounds.maxX, z: bounds.maxZ })
+  ];
+  const minX = Math.min(...corners.map(p => p.x)), maxX = Math.max(...corners.map(p => p.x));
+  const minY = Math.min(...corners.map(p => p.y)), maxY = Math.max(...corners.map(p => p.y));
+  const pad = 30;
+  const scale = Math.min((width - pad * 2) / (maxX - minX), (height - pad * 2) / (maxY - minY));
+  const project = (value: MapPoint) => {
+    const p = rawProject(value);
+    return { x: (width - (maxX-minX)*scale)/2 + (p.x-minX)*scale,
+      y: (height - (maxY-minY)*scale)/2 + (p.y-minY)*scale };
+  };
+  const polygon = (points: readonly MapPoint[]) => points.map(project);
+  const path = (points: readonly MapPoint[]) => {
+    const projected = polygon(points);
     context.beginPath();
-    road.points.forEach((coordinate, index) => {
-      const p = point(coordinate);
-      if (index === 0) context.moveTo(p.x, p.y);
-      else context.lineTo(p.x, p.y);
-    });
-    const highway = /^(n1|n4|n6)-/.test(road.roadSegmentId);
-    context.strokeStyle = highway ? "#c7a66f" : "#84988a";
-    context.lineWidth = highway ? 4 : 2;
-    context.lineCap = "round";
-    context.lineJoin = "round";
-    context.stroke();
+    projected.forEach((p,i) => i ? context.lineTo(p.x,p.y) : context.moveTo(p.x,p.y));
+  };
+  context.clearRect(0,0,width,height);
+  context.fillStyle="#e9eee8"; context.fillRect(0,0,width,height);
+
+  // Pale land and a blue Gulf of Guinea coastline, projected in the same map space.
+  const coast = polygon(GREATER_ACCRA_COASTLINE);
+  context.beginPath();
+  coast.forEach((p,i)=>i?context.lineTo(p.x,p.y):context.moveTo(p.x,p.y));
+  context.lineTo(width+20,height+20); context.lineTo(-20,height+20); context.closePath();
+  context.fillStyle="#a9d9e8"; context.fill();
+  context.save();
+  context.beginPath(); context.rect(0,0,width,height); context.clip();
+
+  // Soft green parks/open areas around the urban districts.
+  for (const [x,z,w,d] of [[-6000,1700,1500,900],[-1200,3200,1200,1000],[3000,3900,1300,900],[7000,900,900,700]] as const) {
+    const c=project({x,z}), a=project({x:x+w,z}), b=project({x:x+w,z:z+d}), e=project({x,z:z+d});
+    context.beginPath(); context.moveTo(c.x,c.y); context.lineTo(a.x,a.y); context.lineTo(b.x,b.y); context.lineTo(e.x,e.y); context.closePath();
+    context.fillStyle="#d2e6c9"; context.fill();
   }
 
-  if (state.route) {
-    context.beginPath();
-    state.route.points.forEach((coordinate, index) => {
-      const p = point(coordinate);
-      if (index === 0) context.moveTo(p.x, p.y);
-      else context.lineTo(p.x, p.y);
-    });
-    context.strokeStyle = "#ffcf62";
-    context.lineWidth = 6;
-    context.lineCap = "round";
-    context.lineJoin = "round";
-    context.stroke();
-    const destination = state.route.points[state.route.points.length - 1];
-    if (destination) {
-      const p = point(destination);
-      context.fillStyle = "#ffcf62";
-      context.beginPath();
-      context.arc(p.x, p.y, 7, 0, Math.PI * 2);
-      context.fill();
+  // Small raised building blocks: a light 3D/isometric city texture, deterministic and lightweight.
+  const districts = GREATER_ACCRA_REGION_ANCHORS;
+  for (let districtIndex=0; districtIndex<districts.length; districtIndex++) {
+    const district=districts[districtIndex];
+    for(let row=-3;row<=3;row++) for(let col=-3;col<=3;col++) {
+      const x=district.x+col*155+((row+districtIndex)%2)*34;
+      const z=district.z+row*145;
+      const base=project({x,z});
+      const bw=(13+(Math.abs(row*3+col+districtIndex)%9))*scale;
+      const bh=(9+(Math.abs(col*5-row+districtIndex)%8))*scale;
+      const lift=(7+(Math.abs(row+col+districtIndex)%14))*scale;
+      if(base.x<-20||base.x>width+20||base.y<-25||base.y>height+25) continue;
+      const topY=base.y-lift;
+      context.fillStyle="#b9c6c0";
+      context.beginPath(); context.moveTo(base.x-bw/2,base.y); context.lineTo(base.x,base.y+bh/2); context.lineTo(base.x,topY+bh/2); context.lineTo(base.x-bw/2,topY); context.closePath(); context.fill();
+      context.fillStyle="#dce4df";
+      context.beginPath(); context.moveTo(base.x,base.y+bh/2); context.lineTo(base.x+bw/2,base.y); context.lineTo(base.x+bw/2,topY); context.lineTo(base.x,topY+bh/2); context.closePath(); context.fill();
+      context.fillStyle="#f7f8f4";
+      context.beginPath(); context.moveTo(base.x-bw/2,topY); context.lineTo(base.x,topY-bh/2); context.lineTo(base.x+bw/2,topY); context.lineTo(base.x,topY+bh/2); context.closePath(); context.fill();
     }
   }
 
-  for (const place of PLACES) {
-    const p = point(place);
-    context.fillStyle = "#f0c77e";
-    context.beginPath();
-    context.arc(p.x, p.y, 3.5, 0, Math.PI * 2);
-    context.fill();
+  // Local roads first, then main highways on top for clear hierarchy.
+  for (const road of GREATER_ACCRA_ROAD_PATHS) {
+    if (!road.playableInFirstRelease) continue;
+    path(road.points);
+    context.lineCap="round"; context.lineJoin="round";
+    context.strokeStyle="#ffffff"; context.lineWidth=Math.max(2.2,road.roadSegmentId.match(/^(n1|n4|n6)-/)?5.5:3.1)*Math.max(.7,scale*2.4);
+    context.stroke();
+    path(road.points);
+    context.strokeStyle=/^(n1|n4|n6)-/.test(road.roadSegmentId)?"#f2c66f":"#d4d9d4";
+    context.lineWidth=Math.max(1.2,(/^(n1|n4|n6)-/.test(road.roadSegmentId)?3.1:1.45)*Math.max(.7,scale*2.4));
+    context.stroke();
   }
 
-  const current = point(state.position);
-  context.save();
-  context.translate(current.x, current.y);
-  context.rotate(state.headingRadians);
-  context.fillStyle = "#6ce0a3";
-  context.strokeStyle = "#f4fff8";
-  context.lineWidth = 2;
-  context.beginPath();
-  context.moveTo(0, -10);
-  context.lineTo(7, 8);
-  context.lineTo(0, 5);
-  context.lineTo(-7, 8);
-  context.closePath();
-  context.fill();
-  context.stroke();
-  context.restore();
+  // Destination route is deliberately high contrast against the light map.
+  if(state.route) {
+    path(state.route.points); context.strokeStyle="#ffffff"; context.lineWidth=7; context.lineCap="round"; context.lineJoin="round"; context.stroke();
+    path(state.route.points); context.strokeStyle="#287de0"; context.lineWidth=4.2; context.lineCap="round"; context.lineJoin="round"; context.stroke();
+    const destination=state.route.points[state.route.points.length-1];
+    if(destination){const p=project(destination);context.beginPath();context.arc(p.x,p.y,7,0,Math.PI*2);context.fillStyle="#287de0";context.fill();context.lineWidth=2;context.strokeStyle="#fff";context.stroke();}
+  }
+
+  // Readable destination pins and district labels.
+  for(const place of PLACES) {
+    const p=project(place);
+    context.beginPath();context.arc(p.x,p.y,3.1,0,Math.PI*2);context.fillStyle="#d35d42";context.fill();
+    context.lineWidth=1.2;context.strokeStyle="#fff";context.stroke();
+  }
+  for(const district of districts) {
+    const p=project(district);
+    const label=district.regionId.replace(/-/g," ").toUpperCase();
+    context.font="700 8px system-ui,sans-serif";
+    context.textAlign="center";
+    context.lineWidth=3;context.strokeStyle="#ffffffdd";context.strokeText(label,p.x,p.y-14);
+    context.fillStyle="#52645c";context.fillText(label,p.x,p.y-14);
+  }
+
+  const current=project(state.position);
+  context.save();context.translate(current.x,current.y);context.rotate(state.headingRadians);
+  context.beginPath();context.moveTo(0,-12);context.lineTo(8,8);context.lineTo(0,4);context.lineTo(-8,8);context.closePath();
+  context.fillStyle="#1684ee";context.fill();context.lineWidth=2.5;context.strokeStyle="#fff";context.stroke();context.restore();
   context.restore();
 
-  context.fillStyle = "#f3eee2";
-  context.font = "600 13px system-ui, sans-serif";
-  context.fillText("GREATER ACCRA · GHANA", 16, 22);
-  context.fillStyle = "#9cc8b1";
-  context.font = "11px system-ui, sans-serif";
-  context.fillText("N ↑", width - 30, 22);
+  // Subtle map controls / scale cue.
+  context.textAlign="left";context.fillStyle="#344b43";context.font="800 12px system-ui,sans-serif";
+  context.fillText("WAYGO  ·  GREATER ACCRA",12,18);
+  context.textAlign="right";context.fillStyle="#53675d";context.font="700 10px system-ui,sans-serif";
+  context.fillText("N ↑",width-12,18);
 }
-
 function nextTurn(route: GpsRoute, position: MapPoint): string {
   const points = route.points;
   if (points.length < 3) return "Continue on the road";
