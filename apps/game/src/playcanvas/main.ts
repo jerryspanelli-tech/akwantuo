@@ -668,9 +668,10 @@ async function boot() {
         map.fillText(distance >= 1000 ? `${(distance / 1000).toFixed(1)} KM TO MARK` : `${Math.round(distance)} M TO MARK`, 0, radius - 5);
       }
       map.restore();
-      // Canvas rotation is clockwise-positive, opposite to the game's
-      // world yaw convention. Negate yaw so the arrow matches the character.
-      map.save(); map.translate(width / 2, height / 2); map.rotate(heading);
+      // The imported player model's authored forward axis is opposite
+      // PlayCanvas' +Z controller forward. Apply a half-turn so the radar
+      // arrow tracks the direction the visible character is actually facing.
+      map.save(); map.translate(width / 2, height / 2); map.rotate(heading + Math.PI);
       map.beginPath(); map.moveTo(0, -9); map.lineTo(6, 7); map.lineTo(0, 4); map.lineTo(-6, 7); map.closePath();
       map.fillStyle = "#f3c56f"; map.fill(); map.strokeStyle = "#fff4d8"; map.lineWidth = 1.3; map.stroke();
       map.restore();
