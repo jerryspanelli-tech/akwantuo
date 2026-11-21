@@ -527,6 +527,7 @@ let disposeWayGoApp: (() => void) | null = null;
 async function openApp(name: string) {
   if (!unlocked || !appContent) return;
   const appKey = name.trim().toLowerCase();
+  appContent.classList.remove("chale-app");
   disposeWayGoApp?.();
   disposeWayGoApp = null;
   if (appTitle) appTitle.textContent = name;
