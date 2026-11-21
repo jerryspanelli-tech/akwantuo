@@ -348,6 +348,109 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     }
   }
 
+  // AKWANTUO ACCRA LANDMARK DETAIL PASS
+  // Distinctive, landmark-specific silhouettes replace the anonymous-box look.
+  // These additions use shared materials and the existing surveyed game anchors;
+  // the Greater Accra road/map coordinates are deliberately untouched.
+  const addEllipsoid = (name: string, x: number, y: number, z: number,
+    sx: number, sy: number, sz: number, surface: StandardMaterial, yaw = 0) => {
+    const entity = new Entity(name);
+    entity.addComponent("render", { type: "sphere", material: surface, castShadows: true, receiveShadows: true });
+    entity.setPosition(x, y, z);
+    entity.setLocalScale(sx, sy, sz);
+    entity.setEulerAngles(0, yaw, 0);
+    app.root.addChild(entity);
+    return entity;
+  };
+
+  const nationalTheatre = GREATER_ACCRA_LANDMARK_FOOTPRINTS.find((item) => item.id === "national-theatre");
+  if (nationalTheatre) {
+    const { x, z } = nationalTheatre;
+    cylinder("National Theatre circular forecourt", x, 0.07, z, 54, 0.14, mats.lightConcrete);
+    cylinder("National Theatre raised plinth", x, 0.42, z, 38, 0.7, mats.concrete);
+    // The real building's sculptural, overlapping roof forms are represented
+    // with smooth shell volumes instead of a single rectangular block.
+    addEllipsoid("National Theatre west sculptural roof shell", x - 17, 13.5, z, 43, 9, 30, mats.white, -12);
+    addEllipsoid("National Theatre central sculptural roof shell", x + 4, 16.5, z - 1, 39, 10, 27, mats.lightConcrete, 8);
+    addEllipsoid("National Theatre east sculptural roof shell", x + 23, 12.5, z + 4, 34, 8, 25, mats.white, 19);
+    box("National Theatre glazed entrance", x, 5.2, z + 23, 47, 9.8, 1.1, mats.glass);
+    box("National Theatre entrance canopy", x, 10.3, z + 30, 51, 0.7, 13, mats.white);
+    for (let i = 0; i < 8; i++) {
+      const px = x - 28 + i * 8;
+      cylinder("National Theatre entrance column", px, 4.6, z + 30, 0.48, 9.2, mats.lightConcrete);
+    }
+    box("National Theatre front steps", x, 0.42, z + 38, 36, 0.8, 8, mats.lightConcrete);
+    box("National Theatre Ghana flag mast", x - 47, 8, z - 22, 0.22, 16, 0.22, mats.roof);
+    box("National Theatre flag red stripe", x - 44, 14.5, z - 22, 5.2, 1.05, 0.08, mats.red);
+    box("National Theatre flag gold stripe", x - 44, 13.45, z - 22, 5.2, 1.05, 0.08, mats.gold);
+    box("National Theatre flag green stripe", x - 44, 12.4, z - 22, 5.2, 1.05, 0.08, mats.green);
+  }
+
+  const nkrumahPark = GREATER_ACCRA_LANDMARK_FOOTPRINTS.find((item) => item.id === "kwame-nkrumah-memorial");
+  if (nkrumahPark) {
+    const { x, z } = nkrumahPark;
+    cylinder("Kwame Nkrumah Memorial circular plaza", x, 0.08, z, 48, 0.16, mats.lightConcrete);
+    cylinder("Kwame Nkrumah Memorial outer garden ring", x, 0.18, z, 39, 0.18, mats.green);
+    cylinder("Kwame Nkrumah Memorial inner paving", x, 0.3, z, 32, 0.22, mats.concrete);
+    // Tiered dark mausoleum roof and raised central monument, with four
+    // outward-sloping fins to give the memorial its distinctive profile.
+    cylinder("Kwame Nkrumah Memorial lower podium", x, 1.1, z, 19, 1.5, mats.roof);
+    cylinder("Kwame Nkrumah Memorial upper podium", x, 2.3, z, 15, 1.0, mats.concrete);
+    addEllipsoid("Kwame Nkrumah Memorial curved roof", x, 5.2, z, 19, 4.2, 19, mats.roof);
+    cylinder("Kwame Nkrumah Memorial lantern base", x, 8.3, z, 3.2, 2.0, mats.gold);
+    addEllipsoid("Kwame Nkrumah Memorial crown", x, 9.7, z, 4.2, 1.2, 4.2, mats.roof);
+    for (let i = 0; i < 4; i++) {
+      const angle = (Math.PI / 2) * i;
+      const fin = box("Kwame Nkrumah Memorial radial fin",
+        x + Math.cos(angle) * 15, 4.8, z + Math.sin(angle) * 15,
+        1.1, 8.8, 13, mats.lightConcrete, -angle * 180 / Math.PI);
+      fin.setEulerAngles(0, -angle * 180 / Math.PI, angle % 2 === 0 ? -8 : 8);
+    }
+    for (let i = 0; i < 8; i++) {
+      const angle = (Math.PI * 2 * i) / 8;
+      cylinder("Kwame Nkrumah Memorial garden bollard",
+        x + Math.cos(angle) * 35, 0.55, z + Math.sin(angle) * 35, 0.22, 1.1, mats.gold);
+    }
+    box("Kwame Nkrumah Memorial entrance walk", x, 0.16, z + 52, 9, 0.2, 25, mats.lightConcrete);
+  }
+
+  const accraMall = GREATER_ACCRA_LANDMARK_FOOTPRINTS.find((item) => item.id === "accra-mall");
+  if (accraMall) {
+    const { x, z } = accraMall;
+    // Broad low-rise retail wings, glazed atrium and shaded entrance forecourt.
+    box("Accra Mall west retail wing", x - 47, 8, z, 86, 16, 142, mats.lightConcrete);
+    box("Accra Mall east retail wing", x + 48, 8, z, 88, 16, 142, mats.concrete);
+    box("Accra Mall central glass atrium", x, 10, z + 8, 18, 20, 102, mats.glass);
+    box("Accra Mall continuous roof canopy", x, 17, z, 198, 1.2, 151, mats.roof);
+    box("Accra Mall front entrance glazing", x, 6, z + 76, 72, 11, 0.8, mats.glass);
+    box("Accra Mall entrance canopy", x, 12, z + 87, 84, 1.1, 17, mats.white);
+    for (let i = 0; i < 7; i++) {
+      const px = x - 30 + i * 10;
+      cylinder("Accra Mall entrance column", px, 5.7, z + 87, 0.42, 11.4, mats.lightConcrete);
+    }
+    box("Accra Mall rooftop sign fascia", x, 18.2, z + 76, 62, 2.4, 1.1, mats.green);
+    box("Accra Mall drop-off paving", x, 0.04, z + 108, 160, 0.12, 36, mats.lightConcrete);
+    for (let i = 0; i < 9; i++) {
+      box("Accra Mall drop-off lane marking", x - 68 + i * 17, 0.12, z + 108, 0.18, 0.025, 25, mats.white);
+    }
+  }
+
+  const signature = GREATER_ACCRA_LANDMARK_FOOTPRINTS.find((item) => item.id === "the-signature");
+  if (signature) {
+    const { x, z } = signature;
+    for (let i = 0; i < 8; i++) {
+      const angle = (Math.PI * 2 * i) / 8;
+      const px = x + Math.cos(angle) * 38;
+      const pz = z + Math.sin(angle) * 38;
+      box("The Signature vertical facade fin", px, 28, pz, 1.4, 54, 1.4, mats.lightConcrete, -angle * 180 / Math.PI);
+    }
+    for (let floor = 1; floor <= 12; floor++) {
+      const y = floor * 4.1;
+      box("The Signature continuous balcony band", x, y, z + 37, 83 - floor * 1.6, 0.22, 1.2, mats.white);
+    }
+    box("The Signature landscaped arrival court", x, 0.06, z + 58, 100, 0.12, 26, mats.green);
+  }
+
   // Traffic-control furniture and public-transport stops at key Accra junctions.
   const junctions = [
     { name: "Osu", x: 1450, z: -1350 },
