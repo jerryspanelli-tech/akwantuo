@@ -785,3 +785,25 @@ body {
 .zenvia-setup-feedback{font-size:9px;color:#ffcc9d;line-height:1.35}
 .zenvia-reset-phone{width:100%;min-height:36px;margin-top:8px;border:1px solid #ffffff30;border-radius:10px;background:#ffffff0c;color:#f0d5a2;font-size:10px;font-weight:750}
 @media(max-height:650px){.zenvia-setup{inset:35px 12px 20px;gap:6px;padding:5px 2px}.zenvia-setup input,.zenvia-setup select{height:32px}.zenvia-setup button{min-height:34px}}
+
+/* New Zenvia OS home experience */
+.zenvia-home{gap:clamp(8px,3.4cqi,13px);padding-top:clamp(6px,3cqi,10px)}
+.zenvia-home-header{min-height:40px;display:flex;align-items:center;justify-content:space-between;padding:0 1px}
+.zenvia-home-brand{display:flex!important;align-items:center!important;grid-template-columns:none!important;gap:9px!important}
+.zenvia-home-mark{display:grid;place-items:center;width:32px;height:32px;border-radius:11px;background:linear-gradient(145deg,#e8c987,#a77b3c);color:#14251e;font-size:17px;font-weight:950;letter-spacing:0}
+.zenvia-home-brand div{display:grid;gap:3px}
+.zenvia-home-brand strong{font-size:12px!important;letter-spacing:.16em!important;color:#f5e5c1!important}
+.zenvia-home-brand small{font-size:7px!important;letter-spacing:.12em;color:#aebdb2!important}
+.zenvia-home-header>button{width:31px;height:31px;border:1px solid #ffffff28;border-radius:50%;background:#ffffff0d;color:#fff;font-size:20px}
+.zenvia-home-widget{display:flex;flex-direction:column;gap:4px;padding:13px 14px;border:1px solid #d8b56f3d;border-radius:15px;background:linear-gradient(120deg,#29483b,#172b24 70%,#26382e);box-shadow:0 8px 22px #0002}
+.zenvia-home-widget small{font-size:7px;font-weight:850;letter-spacing:.16em;color:#e8c987}
+.zenvia-home-widget strong{font-size:clamp(20px,8cqi,27px);line-height:1.08;letter-spacing:-.035em}
+.zenvia-home-widget span{font-size:8px;color:#c4d0c6}
+.zenvia-home-section{display:flex;justify-content:space-between;align-items:center;margin-top:1px}
+.zenvia-home-section strong{font-size:8px;letter-spacing:.14em;color:#e8c987}
+.zenvia-home-section span{font-size:7px;color:#aebbb2}
+.zenvia-app-grid{flex:1;align-content:start;gap:clamp(9px,4cqi,13px) 3px;padding:2px 0 5px}
+.zenvia-app-grid button{gap:5px;font-size:clamp(7px,2.9cqi,9px);font-weight:650}
+.app-icon{width:clamp(36px,15cqi,43px);height:clamp(36px,15cqi,43px);border-radius:14px;font-size:18px}
+.zenvia-dock{padding:8px 5px;border:1px solid #ffffff1d;border-radius:15px;background:#ffffff10;backdrop-filter:blur(12px)}
+.zenvia-dock button{font-size:8px;font-weight:700}
