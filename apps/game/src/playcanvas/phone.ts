@@ -33,7 +33,7 @@ document.getElementById("zenvia-pin-unlock")?.addEventListener("click", () => {
 powerButton?.addEventListener("click", showLock);
 backButton?.addEventListener("click", showHome);
 document.getElementById("zenvia-app-grid")?.addEventListener("click", event => {
-  const button = event.target.closest("button[data-app]");
+  const button = event.target instanceof Element ? event.target.closest<HTMLButtonElement>("button[data-app]") : null;
   if (button) openApp(button.dataset.app);
 });
 document.querySelector(".zenvia-dock")?.addEventListener("click", event => {
@@ -42,8 +42,8 @@ document.querySelector(".zenvia-dock")?.addEventListener("click", event => {
 });
 function openApp(name) {
   if (!unlocked) return;
-  appTitle.textContent = name;
-  appContent.replaceChildren();
+  if (appTitle) appTitle.textContent = name;
+  if (!appContent) return;\n  appContent.replaceChildren();
   const card = (title, body) => {
     const section = document.createElement("section");
     section.className = "zenvia-app-card";
@@ -73,7 +73,7 @@ function openApp(name) {
 }
 document.addEventListener("keydown", event => {
   if (event.key === "Escape" && opened) closePhone();
-  if ((event.key === "p" || event.key === "P") && !event.repeat && !event.target.matches("input,textarea")) {
+  if ((event.key === "p" || event.key === "P") && !event.repeat && !event.target instanceof Element && event.target.matches("input,textarea")) {
     if (opened) closePhone(); else openPhone();
   }
 });
