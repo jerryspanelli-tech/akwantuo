@@ -186,3 +186,7 @@ body.world-map-open .top-hud,body.world-map-open .health-hud,body.world-map-open
 .chale-composer{display:flex;gap:7px;align-items:center;padding-top:8px;border-top:1px solid #ffffff24}
 .chale-composer input{flex:1}
 .chale-composer .chale-action{min-width:58px}
+
+.zenvia-app-content:has(.chale-chat-header){display:flex;flex-direction:column;min-height:0}
+.zenvia-app-content:has(.chale-chat-header) .chale-messages{flex:1;min-height:120px}
+.chale-chat-header{flex-shrink:0}.chale-composer{flex-shrink:0}
