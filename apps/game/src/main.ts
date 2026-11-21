@@ -786,6 +786,16 @@ async function start(): Promise<void> {
     document.documentElement.dataset.akwantuoOwnedAssetCount = String(ownedGameAssetIds.size);
     document.documentElement.dataset.akwantuoInventoryItemCount = String(economy.inventory.reduce((sum, item) => sum + item.quantity, 0));
   };
+  window.addEventListener("akwantuo:session-updated", event => {
+    const nextSession = (event as CustomEvent<AkwantuoSession>).detail;
+    if (!nextSession) return;
+    activeAccountSession = nextSession;
+    if (accountButton) accountButton.innerHTML = "ACCOUNT <small>CONNECTED</small>";
+    if (accountSignOut) accountSignOut.classList.remove("is-hidden");
+    if (accountStatus) accountStatus.textContent = "Signed in as " + (nextSession.user.email || "AKWANTUO player") + ". Cloud saves are enabled.";
+    void refreshPlayerEconomy().catch(error => console.error("AKWANTUO account sync after Chale sign-in failed:", error));
+  });
+
   retailBrowseButton.addEventListener("click", () => {
     if (activeInterior?.roomId !== "convenience-store") return;
     const visible = AKWANTUO_RETAIL_PRODUCTS.slice(retailBrowseIndex, retailBrowseIndex + 4);
