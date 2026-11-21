@@ -388,7 +388,7 @@ async function boot() {
     const length = Math.hypot(dx, dy);
     const scale = length > radius ? radius / length : 1;
     const x = dx * scale, y = dy * scale;
-    stickX = Math.abs(x / radius) < 0.12 ? 0 : -x / radius;
+    stickX = Math.abs(x / radius) < 0.12 ? 0 : x / radius;
     stickY = Math.abs(y / radius) < 0.12 ? 0 : y / radius;
     stickKnob!.style.transform = `translate(${x}px,${y}px)`;
   };
