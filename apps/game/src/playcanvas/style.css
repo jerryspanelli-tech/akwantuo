@@ -153,40 +153,72 @@ body.world-map-open .top-hud,body.world-map-open .health-hud,body.world-map-open
 .waygo-clear[hidden]{display:none}
 
 /* Chale — private, number-based in-game messaging. */
-.chale-status,.chale-feedback{display:block;margin:6px 2px;color:#e8c987;font-size:10px;line-height:1.45}
-.chale-number-card{background:linear-gradient(135deg,#174b38,#10271f)!important;border-color:#4cc58b!important}
-.chale-number-card small{display:block;color:#b8e8cc;font-size:9px;letter-spacing:.12em}
-.chale-number-card strong{font-size:23px!important;letter-spacing:.12em;color:#fff}
-.chale-number-card p{margin-top:6px!important;font-size:10px}
-.chale-add-form{display:grid;gap:9px}
-.chale-add-form input,.chale-composer input{width:100%;min-width:0;min-height:42px;padding:0 11px;border:1px solid #ffffff30;border-radius:10px;background:#07150f;color:#f5f1e8;font:inherit;font-size:12px;outline:none}
-.chale-add-form input:focus,.chale-composer input:focus{border-color:#53d69a}
-.chale-action{min-height:40px;padding:0 14px;border:0;border-radius:10px;background:#25a86b;color:#fff;font-size:11px;font-weight:800}
-.chale-action:disabled{opacity:.55}
-.chale-section-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.chale-section-heading strong{margin:0!important}
-.chale-refresh{border:1px solid #ffffff35;border-radius:8px;background:#ffffff10;color:#f4e8cf;padding:6px 9px;font-size:10px}
-.chale-contact-list{display:grid;gap:7px;margin-top:8px}
-.chale-contact-item{display:grid;grid-template-columns:1fr auto;gap:3px 8px;width:100%;padding:10px;border:1px solid #ffffff20;border-radius:10px;background:#ffffff09;color:#f5f1e8;text-align:left}
-.chale-contact-item strong{margin:0!important;font-size:12px!important}
-.chale-contact-item small{font-size:9px;color:#d6bd86}
-.chale-contact-item span{grid-column:1/-1;overflow:hidden;color:#c8d1c9;font-size:10px;text-overflow:ellipsis;white-space:nowrap}
-.chale-chat-header{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px;padding:5px 0 10px;border-bottom:1px solid #ffffff24}
-.chale-chat-header>div{display:grid;gap:3px;min-width:0}
-.chale-chat-header strong{margin:0!important;font-size:12px!important}
-.chale-chat-header small{font-size:9px;color:#d6bd86}
-.chale-back,.chale-block{border:1px solid #ffffff30;border-radius:8px;background:#ffffff0d;color:#f5f1e8;padding:7px 8px;font-size:10px}
-.chale-block{color:#f0a59a;border-color:#c85c4d66}
-.chale-messages{display:flex;flex:1;min-height:100px;flex-direction:column;gap:8px;overflow:auto;padding:10px 2px}
-.chale-messages>p{margin:auto;color:#c9d0c8;font-size:11px}
-.chale-message{align-self:flex-start;max-width:86%;padding:8px 10px;border:1px solid #ffffff20;border-radius:12px 12px 12px 3px;background:#ffffff12}
-.chale-message.mine{align-self:flex-end;border-color:#3b9f6d66;border-radius:12px 12px 3px 12px;background:#17563b}
-.chale-message p{margin:0;color:#fff;line-height:1.45;overflow-wrap:anywhere}
-.chale-message small{display:block;margin-top:4px;color:#c6d7cb;font-size:8px;text-align:right}
-.chale-composer{display:flex;gap:7px;align-items:center;padding-top:8px;border-top:1px solid #ffffff24}
-.chale-composer input{flex:1}
-.chale-composer .chale-action{min-width:58px}
-
-.zenvia-app-content:has(.chale-chat-header){display:flex;flex-direction:column;min-height:0}
-.zenvia-app-content:has(.chale-chat-header) .chale-messages{flex:1;min-height:120px}
-.chale-chat-header{flex-shrink:0}.chale-composer{flex-shrink:0}
+/* Chale — polished in-phone private messaging */
+.chale-app{padding:0!important;overflow:hidden!important;background:#f6f8f7!important;color:#172b25!important}
+.chale-app .chale-auth-screen,.chale-app .chale-shell,.chale-app .chale-chat-screen{min-height:100%;height:100%;box-sizing:border-box}
+.chale-auth-screen{display:flex;flex-direction:column;justify-content:center;gap:18px;padding:22px 18px;background:#f6f8f7;color:#172b25}
+.chale-brand,.chale-top-brand{display:flex;align-items:center;gap:11px}
+.chale-brand-mark{display:grid;place-items:center;flex:0 0 38px;width:38px;height:38px;border-radius:13px;background:#087e59;color:#fff;font-size:20px;font-weight:900}
+.chale-brand strong,.chale-top-brand strong{display:block;color:#17392d;font-size:18px}
+.chale-brand small,.chale-top-brand small{display:block;margin-top:2px;color:#73837c;font-size:10px}
+.chale-auth-intro strong{display:block;color:#18392e;font-size:20px}
+.chale-auth-intro p{margin:7px 0 0;color:#6b7c74;font-size:12px;line-height:1.55}
+.chale-auth-switch{display:grid;grid-template-columns:1fr 1fr;padding:4px;border-radius:12px;background:#e8efeb;gap:4px}
+.chale-auth-switch button{min-height:36px;border:0;border-radius:9px;background:transparent;color:#65776e;font-size:11px;font-weight:700}
+.chale-auth-switch button.is-active{background:#fff;color:#087e59;box-shadow:0 1px 4px #153d2a16}
+.chale-auth-form{display:grid;gap:10px}
+.chale-auth-form input,.chale-add-panel input{width:100%;min-width:0;min-height:44px;box-sizing:border-box;padding:0 13px;border:1px solid #dce6e0;border-radius:11px;background:#fff;color:#19372c;font:inherit;font-size:12px;outline:none}
+.chale-auth-form input:focus,.chale-add-panel input:focus,.chale-search:focus,.chale-composer textarea:focus{border-color:#15966a;box-shadow:0 0 0 3px #15966a18}
+.chale-primary{min-height:44px;padding:0 15px;border:0;border-radius:11px;background:#087e59;color:#fff;font-size:12px;font-weight:800}
+.chale-primary:disabled,.chale-send:disabled{opacity:.55}
+.chale-feedback{display:block;min-height:14px;color:#6d7d75;font-size:10px;line-height:1.45}
+.chale-feedback.is-error{color:#c13e37}
+.chale-auth-privacy{color:#89968f;font-size:10px;line-height:1.5}
+.chale-loading{display:grid;place-items:center;min-height:180px;color:#6d7d75;font-size:12px}
+.chale-shell{display:flex;flex-direction:column;gap:12px;padding:12px;background:#f6f8f7;color:#19372c;overflow:auto}
+.chale-topbar{display:flex;align-items:center;justify-content:space-between}
+.chale-top-brand .chale-brand-mark{width:34px;height:34px;flex-basis:34px;border-radius:11px;font-size:17px}
+.chale-top-brand strong{font-size:16px}.chale-top-brand small{font-size:9px}
+.chale-icon-btn{display:grid;place-items:center;width:34px;height:34px;border:0;border-radius:50%;background:#e8efeb;color:#24483a;font-size:21px}
+.chale-number-strip{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;border:1px solid #dce9e1;border-radius:13px;background:#eaf4ee}
+.chale-number-strip small{display:block;color:#638072;font-size:8px;font-weight:800;letter-spacing:.09em}
+.chale-number-strip strong{display:block;margin-top:3px;color:#087e59;font-size:16px;letter-spacing:.09em}
+.chale-copy-btn{min-height:31px;padding:0 11px;border:1px solid #c6dfd0;border-radius:9px;background:#fff;color:#087e59;font-size:10px;font-weight:800}
+.chale-home-tools{display:flex;align-items:center;gap:7px}
+.chale-search{flex:1;min-width:0;height:38px;box-sizing:border-box;padding:0 12px;border:1px solid #e0e8e3;border-radius:11px;background:#edf2ef;color:#19372c;font:inherit;font-size:11px;outline:none}
+.chale-add-toggle{height:38px;padding:0 11px;border:0;border-radius:11px;background:#087e59;color:#fff;font-size:10px;font-weight:800;white-space:nowrap}
+.chale-add-panel{display:grid;gap:8px;padding:12px;border:1px solid #dfe9e3;border-radius:13px;background:#fff}
+.chale-add-panel[hidden]{display:none}.chale-add-panel strong{color:#234638;font-size:12px}
+.chale-list-heading{display:flex;align-items:center;justify-content:space-between;padding:2px 1px 0}
+.chale-list-heading strong{color:#1d3d30;font-size:14px}.chale-list-heading small{color:#84948b;font-size:10px}
+.chale-contact-list{display:grid;gap:1px;min-height:100px}
+.chale-contact-row{display:grid;grid-template-columns:42px minmax(0,1fr) auto;align-items:center;gap:10px;width:100%;min-height:64px;padding:8px 5px;border:0;border-bottom:1px solid #e7ede9;background:transparent;color:#19372c;text-align:left}
+.chale-contact-row:disabled{opacity:.78}
+.chale-avatar{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:#dceee4;color:#087e59;font-size:12px;font-weight:900}
+.chale-contact-copy{display:grid;gap:5px;min-width:0}
+.chale-contact-firstline{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}
+.chale-contact-firstline strong{overflow:hidden;color:#203d31;font-size:12px;text-overflow:ellipsis;white-space:nowrap}
+.chale-contact-firstline small{flex-shrink:0;color:#8b9991;font-size:9px}
+.chale-contact-preview{overflow:hidden;color:#7b8982;font-size:10px;text-overflow:ellipsis;white-space:nowrap}
+.chale-online-dot{width:7px;height:7px;border-radius:50%;background:#19a56e}
+.chale-pending{color:#a17a32;font-size:9px}
+.chale-empty{display:flex;flex-direction:column;align-items:center;gap:7px;padding:25px 15px;text-align:center}
+.chale-empty-mark{display:grid;place-items:center;width:46px;height:46px;border-radius:50%;background:#e4f1e9;color:#087e59;font-size:20px;font-weight:900}
+.chale-empty strong{color:#284638;font-size:13px}.chale-empty p{max-width:230px;margin:0;color:#829087;font-size:10px;line-height:1.5}
+.chale-chat-screen{display:flex;flex-direction:column;min-height:100%;height:100%;background:#f3f7f4;color:#19372c}
+.chale-chat-topbar{display:flex;align-items:center;gap:9px;min-height:54px;padding:7px 10px;border-bottom:1px solid #e1eae4;background:#fff}
+.chale-chat-identity{display:grid;flex:1;gap:3px;min-width:0}
+.chale-chat-identity strong{overflow:hidden;color:#1c3d30;font-size:12px;text-overflow:ellipsis;white-space:nowrap}
+.chale-chat-identity small{color:#819087;font-size:9px}
+.chale-messages{display:flex;flex:1;min-height:100px;flex-direction:column;gap:8px;overflow:auto;padding:13px 10px;background-color:#f1f6f2;background-image:radial-gradient(#dfe9e2 .7px,transparent .7px);background-size:14px 14px}
+.chale-message-empty{align-self:center;max-width:80%;margin:auto;padding:9px 12px;border-radius:10px;background:#fff;color:#829087;font-size:10px;text-align:center;line-height:1.5}
+.chale-message{align-self:flex-start;max-width:84%;padding:8px 10px;border:1px solid #e3eae5;border-radius:12px 12px 12px 3px;background:#fff;box-shadow:0 1px 1px #19372c08}
+.chale-message.mine{align-self:flex-end;border-color:#c8e5d4;border-radius:12px 12px 3px 12px;background:#dff3e6}
+.chale-message p{margin:0;color:#244235;font-size:11px;line-height:1.5;overflow-wrap:anywhere}
+.chale-message small{display:block;margin-top:4px;color:#84948b;font-size:8px;text-align:right}
+.chale-chat-screen>.chale-feedback{padding:0 10px;background:#f3f7f4}
+.chale-composer{display:flex;align-items:flex-end;gap:7px;padding:8px 9px max(9px,env(safe-area-inset-bottom));border-top:1px solid #e1eae4;background:#fff}
+.chale-composer textarea{flex:1;min-width:0;max-height:90px;min-height:40px;box-sizing:border-box;resize:none;padding:11px 12px;border:1px solid #dce7e0;border-radius:18px;background:#f7faf8;color:#19372c;font:inherit;font-size:11px;outline:none}
+.chale-send{display:grid;place-items:center;flex:0 0 40px;width:40px;height:40px;border:0;border-radius:50%;background:#087e59;color:#fff;font-size:16px}
+.zenvia-app-content:has(.chale-app){display:flex;flex-direction:column;min-height:0;padding:0!important;overflow:hidden}
+.zenvia-app-content:has(.chale-chat-screen){display:flex;flex-direction:column;min-height:0;overflow:hidden}
