@@ -402,6 +402,7 @@ async function openChaleApp() {
           if(!result.session){authMode="signin";renderAuth("Account created. Check your email to confirm it, then sign in here.");return;}
           session=result.session;
         }
+        if (session) window.dispatchEvent(new CustomEvent("akwantuo:session-updated", { detail: session }));
         await initialiseChale();
       }catch(error){feedback(status,error instanceof Error?error.message:"Could not connect. Please try again.",true);submit.disabled=false;}
     });
