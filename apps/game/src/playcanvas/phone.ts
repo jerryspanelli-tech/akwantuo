@@ -16,7 +16,8 @@ let unlocked = false;
 let opened = false;
 let pinPanel: HTMLElement | null = null;
 
-const time = () => new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit" }).format(new Date());
+const clockFormatter = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit" });
+const time = () => clockFormatter.format(new Date());
 const updateTime = () => {
   const value = time();
   for (const id of ["zenvia-status-time", "zenvia-lock-time", "zenvia-widget-time"]) {
@@ -42,7 +43,8 @@ const openPhone = () => {
   opened = true;
   phone.hidden = false;
   showLock();
-  updateTime();
+  // Let the phone become visible before refreshing its clock text.
+  window.requestAnimationFrame(updateTime);
 };
 const closePhone = () => {
   if (!phone) return;
