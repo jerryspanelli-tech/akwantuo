@@ -162,7 +162,7 @@ document.addEventListener("click", event => {
     void openApp(button.dataset.app);
   }
 });
-import { getAkwantuoSession, loadEconomyState, loadGameNews, loadGameNotifications, markGameNotificationRead, publishGameNews, getChalePhoneNumber, addChaleContact, loadChaleContacts, loadChaleMessages, sendChaleMessage, blockChalePlayer, type ChaleContact, type ChaleMessage } from "../services/supabase";
+import { getAkwantuoSession, signInAkwantuo, signUpAkwantuo, loadEconomyState, loadGameNews, loadGameNotifications, markGameNotificationRead, publishGameNews, getChalePhoneNumber, addChaleContact, loadChaleContacts, loadChaleMessages, sendChaleMessage, blockChalePlayer, type ChaleContact, type ChaleMessage } from "../services/supabase";
 
 
 function makeNewsElement(tag: "div" | "p" | "strong" | "small" | "button" | "input" | "textarea" | "select" | "section" | "article" | "form" | "span", className = ""): HTMLElement {
@@ -347,213 +347,181 @@ async function openCediPayApp() {
 async function openChaleApp() {
   if (!appContent) return;
   appContent.replaceChildren();
-  const status = makeNewsElement("p", "chale-status");
-  status.textContent = "Opening Chale…";
-  appContent.append(status);
-  try {
-    const session = await getAkwantuoSession();
-    if (!session) {
-      status.textContent = "Chale needs your AKWANTUO player account. Sign in or create an account first; your game number will then be linked automatically.";
-      const signInButton = makeNewsElement("button", "chale-action") as HTMLButtonElement;
-      signInButton.type = "button";
-      signInButton.textContent = "Sign in / Create account";
-      signInButton.addEventListener("click", () => {
-        closePhone();
-        document.querySelector<HTMLButtonElement>("#account-button")?.click();
-      });
-      const hint = makeNewsElement("small", "chale-feedback");
-      hint.textContent = "Your account screen will open after you put the phone away. Return to Chale after signing in.";
-      appContent.append(signInButton, hint);
-      return;
-    }
-    status.textContent = "Connecting to Chale…";
+  appContent.classList.add("chale-app");
+  let session = await getAkwantuoSession().catch(() => null);
   let myNumber = "";
   let activeContact: ChaleContact | null = null;
+  let contactsCache: ChaleContact[] = [];
+  let authMode: "signin" | "signup" = "signin";
+  const el = (tag: "div"|"section"|"p"|"strong"|"small"|"span"|"button"|"input"|"form"|"textarea", cls = "") => makeNewsElement(tag, cls);
+  const btn = (label: string, cls = "chale-btn") => {
+    const b = el("button", cls) as HTMLButtonElement; b.type = "button"; b.textContent = label; return b;
+  };
+  const feedback = (target: HTMLElement, message: string, error = false) => {
+    target.textContent = message; target.classList.toggle("is-error", error);
+  };
+  const initials = (name: string) => name.trim().split(/\s+/).slice(0,2).map(x => x[0] || "").join("").toUpperCase() || "C";
+
+  const renderAuth = (notice = "") => {
+    if (!appContent) return;
+    appContent.replaceChildren();
+    const screen = el("div","chale-auth-screen");
+    const brand = el("div","chale-brand");
+    const mark = el("span","chale-brand-mark"); mark.textContent = "C";
+    const brandText = el("div");
+    const brandName = el("strong"); brandName.textContent = "Chale";
+    const tagline = el("small"); tagline.textContent = "Your people. Your conversations.";
+    brandText.append(brandName,tagline); brand.append(mark,brandText);
+    const intro = el("div","chale-auth-intro");
+    const heading = el("strong"); heading.textContent = authMode === "signin" ? "Welcome back" : "Join Chale";
+    const desc = el("p"); desc.textContent = authMode === "signin"
+      ? "Sign in with your AKWANTUO account to message people you know in the game."
+      : "Create an AKWANTUO account. Your private Chale number will be set up automatically.";
+    intro.append(heading,desc);
+    const tabs = el("div","chale-auth-switch");
+    const tabIn = btn("Sign in",authMode === "signin" ? "is-active" : "");
+    const tabUp = btn("Create account",authMode === "signup" ? "is-active" : "");
+    tabIn.addEventListener("click",()=>{authMode="signin";renderAuth();});
+    tabUp.addEventListener("click",()=>{authMode="signup";renderAuth();});
+    tabs.append(tabIn,tabUp);
+    const form = el("form","chale-auth-form") as HTMLFormElement;
+    const email = el("input") as HTMLInputElement; email.type="email"; email.placeholder="Email address"; email.autocomplete="email"; email.required=true;
+    const password = el("input") as HTMLInputElement; password.type="password"; password.placeholder="Password"; password.minLength=8; password.required=true; password.autocomplete=authMode==="signin"?"current-password":"new-password";
+    let playerName: HTMLInputElement | null = null;
+    if(authMode==="signup"){playerName=el("input") as HTMLInputElement;playerName.placeholder="Player name";playerName.maxLength=40;playerName.required=true;form.append(playerName);}
+    form.append(email,password);
+    const status=el("small","chale-feedback");status.setAttribute("role","status");if(notice)feedback(status,notice);
+    const submit=el("button","chale-primary") as HTMLButtonElement;submit.type="submit";submit.textContent=authMode==="signin"?"Sign in to Chale":"Create account";
+    form.append(submit,status);
+    form.addEventListener("submit",async event=>{
+      event.preventDefault();submit.disabled=true;feedback(status,authMode==="signin"?"Signing in…":"Creating your account…");
+      try{
+        if(authMode==="signin") session=await signInAkwantuo(email.value.trim(),password.value);
+        else{
+          const result=await signUpAkwantuo(email.value.trim(),password.value,playerName?.value.trim()||"");
+          if(!result.session){authMode="signin";renderAuth("Account created. Check your email to confirm it, then sign in here.");return;}
+          session=result.session;
+        }
+        await initialiseChale();
+      }catch(error){feedback(status,error instanceof Error?error.message:"Could not connect. Please try again.",true);submit.disabled=false;}
+    });
+    const privacy=el("small","chale-auth-privacy");privacy.textContent="Your real phone number is never shared with other players.";
+    screen.append(brand,intro,tabs,form,privacy);appContent.append(screen);email.focus();
+  };
+
+  const initialiseChale = async () => {
+    if(!session){renderAuth();return;}
+    appContent?.replaceChildren();
+    const loading=el("div","chale-loading");loading.textContent="Setting up your private Chale space…";appContent?.append(loading);
+    try{myNumber=await getChalePhoneNumber(session);await renderHome();}
+    catch(error){renderAuth(error instanceof Error?error.message:"Chale could not load.");}
+  };
 
   const renderHome = async () => {
-    activeContact = null;
-    appContent?.replaceChildren();
-    if (!appContent) return;
-    const numberCard = makeNewsElement("section", "zenvia-app-card chale-number-card");
-    const numberLabel = makeNewsElement("small");
-    numberLabel.textContent = "YOUR AKWANTUO GAME NUMBER";
-    const numberValue = makeNewsElement("strong");
-    numberValue.textContent = myNumber;
-    const numberHint = makeNewsElement("p");
-    numberHint.textContent = "Share this number with a player you trust. Both players must save each other’s number before chatting. This is not your real phone number."
-    numberCard.append(numberLabel, numberValue, numberHint);
-
-    const addCard = makeNewsElement("form", "zenvia-app-card chale-add-form") as HTMLFormElement;
-    const addTitle = makeNewsElement("strong");
-    addTitle.textContent = "Add a contact";
-    const numberInput = makeNewsElement("input") as HTMLInputElement;
-    numberInput.placeholder = "Enter their AKWANTUO number";
-    numberInput.autocomplete = "off";
-    numberInput.maxLength = 11;
-    numberInput.required = true;
-    const labelInput = makeNewsElement("input") as HTMLInputElement;
-    labelInput.placeholder = "Save name (optional)";
-    labelInput.maxLength = 40;
-    const addButton = makeNewsElement("button", "chale-action") as HTMLButtonElement;
-    addButton.type = "submit";
-    addButton.textContent = "Save number";
-    const addFeedback = makeNewsElement("small", "chale-feedback");
-    addCard.append(addTitle, numberInput, labelInput, addButton, addFeedback);
-    addCard.addEventListener("submit", async event => {
-      event.preventDefault();
-      if (!numberInput.value.trim()) return;
-      addButton.disabled = true;
-      addFeedback.textContent = "Checking number…";
-      try {
-        await addChaleContact(session, numberInput.value.trim(), labelInput.value.trim());
-        await renderHome();
-      } catch (error) {
-        addFeedback.textContent = error instanceof Error ? error.message : "Could not save this number.";
-        addButton.disabled = false;
-      }
+    if(!appContent||!session)return;
+    activeContact=null;appContent.replaceChildren();
+    const shell=el("div","chale-shell");
+    const top=el("div","chale-topbar");
+    const brand=el("div","chale-top-brand");
+    const mark=el("span","chale-brand-mark");mark.textContent="C";
+    const brandText=el("div");const title=el("strong");title.textContent="Chale";
+    const sub=el("small");sub.textContent="Private player messaging";brandText.append(title,sub);brand.append(mark,brandText);
+    const refresh=btn("↻","chale-icon-btn");refresh.setAttribute("aria-label","Refresh chats");refresh.addEventListener("click",()=>{void renderHome();});top.append(brand,refresh);
+    const number=el("div","chale-number-strip");const numberText=el("div");
+    const caption=el("small");caption.textContent="YOUR CHALE NUMBER";const value=el("strong");value.textContent=myNumber;numberText.append(caption,value);
+    const copy=btn("Copy","chale-copy-btn");copy.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(myNumber);copy.textContent="Copied";window.setTimeout(()=>copy.textContent="Copy",1400);}catch{copy.textContent=myNumber;}});
+    number.append(numberText,copy);
+    const tools=el("div","chale-home-tools");const search=el("input","chale-search") as HTMLInputElement;search.type="search";search.placeholder="Search contacts";
+    const add=btn("+ Add contact","chale-add-toggle");tools.append(search,add);
+    const addForm=el("form","chale-add-panel") as HTMLFormElement;addForm.hidden=true;
+    const addTitle=el("strong");addTitle.textContent="Add someone by Chale number";
+    const addNumber=el("input") as HTMLInputElement;addNumber.placeholder="AK-12345678";addNumber.maxLength=11;addNumber.required=true;addNumber.autocomplete="off";
+    const addName=el("input") as HTMLInputElement;addName.placeholder="Name (optional)";addName.maxLength=40;
+    const addSubmit=el("button","chale-primary") as HTMLButtonElement;addSubmit.type="submit";addSubmit.textContent="Save contact";
+    const addStatus=el("small","chale-feedback");addForm.append(addTitle,addNumber,addName,addSubmit,addStatus);
+    add.addEventListener("click",()=>{addForm.hidden=!addForm.hidden;if(!addForm.hidden)addNumber.focus();});
+    addForm.addEventListener("submit",async event=>{
+      event.preventDefault();if(!session||!addNumber.value.trim())return;addSubmit.disabled=true;feedback(addStatus,"Checking Chale number…");
+      try{await addChaleContact(session,addNumber.value.trim(),addName.value.trim());await renderHome();}
+      catch(error){feedback(addStatus,error instanceof Error?error.message:"Could not add contact.",true);addSubmit.disabled=false;}
     });
-
-    const contactsCard = makeNewsElement("section", "zenvia-app-card chale-contacts");
-    const contactsHeading = makeNewsElement("strong");
-    contactsHeading.textContent = "Your contacts";
-    const refresh = makeNewsElement("button", "chale-refresh") as HTMLButtonElement;
-    refresh.type = "button";
-    refresh.textContent = "Refresh";
-    const contactHeader = makeNewsElement("div", "chale-section-heading");
-    contactHeader.append(contactsHeading, refresh);
-    contactsCard.append(contactHeader);
-    const contactList = makeNewsElement("div", "chale-contact-list");
-    contactsCard.append(contactList);
-    refresh.addEventListener("click", async () => {
-      refresh.disabled = true;
-      await renderHome();
-    });
-    try {
-      const contacts = await loadChaleContacts(session);
-      if (!contacts.length) {
-        const empty = makeNewsElement("p");
-        empty.textContent = "No contacts yet. Ask a player for their in-game number, then add it above.";
-        contactList.append(empty);
-      }
-      for (const contact of contacts) {
-        const item = makeNewsElement("button", "chale-contact-item") as HTMLButtonElement;
-        item.type = "button";
-        const name = makeNewsElement("strong");
-        name.textContent = contact.display_name;
-        const detail = makeNewsElement("small");
-        detail.textContent = contact.phone_number;
-        const preview = makeNewsElement("span");
-        preview.textContent = contact.is_mutual ? (contact.last_message || "Tap to start chatting") : "Waiting for them to save your number";
-        item.append(name, detail, preview);
-        item.disabled = !contact.is_mutual;
-        item.addEventListener("click", () => { if (contact.is_mutual) void renderConversation(contact); });
-        contactList.append(item);
-      }
-    } catch (error) {
-      const failed = makeNewsElement("p");
-      failed.textContent = error instanceof Error ? error.message : "Could not load contacts.";
-      contactList.append(failed);
-    }
-    appContent.append(numberCard, addCard, contactsCard);
+    const heading=el("div","chale-list-heading");const chats=el("strong");chats.textContent="Chats";const count=el("small");heading.append(chats,count);
+    const list=el("div","chale-contact-list");const listStatus=el("small","chale-feedback");
+    shell.append(top,number,tools,addForm,heading,list,listStatus);appContent.append(shell);
+    try{
+      contactsCache=await loadChaleContacts(session);count.textContent=String(contactsCache.length);
+      const draw=()=>{
+        list.replaceChildren();const query=search.value.trim().toLowerCase();
+        const rows=contactsCache.filter(c=>(c.display_name+" "+c.phone_number+" "+(c.last_message||"")).toLowerCase().includes(query));
+        if(!rows.length){
+          const empty=el("div","chale-empty");const symbol=el("div","chale-empty-mark");symbol.textContent=query?"⌕":"C";
+          const title=el("strong");title.textContent=query?"No matches found":"Your chats start here";
+          const copy=el("p");copy.textContent=query?"Try another name or Chale number.":"Add a player's Chale number. You can chat when you have both saved each other's number.";
+          empty.append(symbol,title,copy);list.append(empty);return;
+        }
+        for(const contact of rows){
+          const item=btn("","chale-contact-row");const avatar=el("span","chale-avatar");avatar.textContent=initials(contact.display_name);
+          const text=el("span","chale-contact-copy");const first=el("span","chale-contact-firstline");
+          const name=el("strong");name.textContent=contact.display_name;const date=el("small");
+          date.textContent=contact.last_message_at?new Date(contact.last_message_at).toLocaleDateString([],{day:"numeric",month:"short"}):"";
+          first.append(name,date);const preview=el("span","chale-contact-preview");
+          preview.textContent=contact.is_mutual?(contact.last_message||"Start a private conversation"):"Waiting for them to save your number";
+          text.append(first,preview);const state=el("span",contact.is_mutual?"chale-online-dot":"chale-pending");
+          if(!contact.is_mutual)state.textContent="Pending";
+          item.append(avatar,text,state);item.disabled=!contact.is_mutual;
+          item.addEventListener("click",()=>{if(contact.is_mutual)void renderConversation(contact);});list.append(item);
+        }
+      };
+      search.addEventListener("input",draw);draw();
+    }catch(error){feedback(listStatus,error instanceof Error?error.message:"Could not load contacts.",true);}
   };
 
-  const renderConversation = async (contact: ChaleContact) => {
-    activeContact = contact;
-    appContent?.replaceChildren();
-    if (!appContent) return;
-    const header = makeNewsElement("section", "chale-chat-header");
-    const back = makeNewsElement("button", "chale-back") as HTMLButtonElement;
-    back.type = "button";
-    back.textContent = "‹ Contacts";
-    back.addEventListener("click", () => renderHome());
-    const identity = makeNewsElement("div");
-    const name = makeNewsElement("strong");
-    name.textContent = contact.display_name;
-    const number = makeNewsElement("small");
-    number.textContent = contact.phone_number;
-    identity.append(name, number);
-    const block = makeNewsElement("button", "chale-block") as HTMLButtonElement;
-    block.type = "button";
-    block.textContent = "Block";
-    block.addEventListener("click", async () => {
-      if (!window.confirm("Block this player? They will no longer be able to contact you through Chale.")) return;
-      block.disabled = true;
-      try {
-        await blockChalePlayer(session, contact.contact_id);
-        await renderHome();
-      } catch (error) {
-        block.disabled = false;
-        const note = makeNewsElement("p", "chale-feedback");
-        note.textContent = error instanceof Error ? error.message : "Could not block player.";
-        header.append(note);
-      }
+  const renderConversation = async (contact:ChaleContact) => {
+    if(!appContent||!session)return;activeContact=contact;appContent.replaceChildren();
+    const chat=el("div","chale-chat-screen");const header=el("div","chale-chat-topbar");
+    const back=btn("‹","chale-icon-btn");back.setAttribute("aria-label","Back to chats");back.addEventListener("click",()=>{void renderHome();});
+    const avatar=el("span","chale-avatar");avatar.textContent=initials(contact.display_name);
+    const identity=el("div","chale-chat-identity");const name=el("strong");name.textContent=contact.display_name;
+    const number=el("small");number.textContent=contact.phone_number;identity.append(name,number);
+    const block=btn("⋮","chale-icon-btn");block.setAttribute("aria-label","Conversation options");
+    const messages=el("div","chale-messages");const status=el("small","chale-feedback");
+    const form=el("form","chale-composer") as HTMLFormElement;const input=el("textarea") as HTMLTextAreaElement;
+    input.placeholder="Message";input.maxLength=2000;input.rows=1;input.required=true;input.autocomplete="off";
+    const send=btn("➤","chale-send") as HTMLButtonElement;send.type="submit";send.setAttribute("aria-label","Send message");
+    form.append(input,send);header.append(back,avatar,identity,block);chat.append(header,messages,status,form);appContent.append(chat);
+    block.addEventListener("click",async()=>{
+      if(!session||!window.confirm("Block "+contact.display_name+"? They will no longer be able to contact you through Chale."))return;
+      block.disabled=true;try{await blockChalePlayer(session,contact.contact_id);await renderHome();}
+      catch(error){feedback(status,error instanceof Error?error.message:"Could not block player.",true);block.disabled=false;}
     });
-    header.append(back, identity, block);
-
-    const messagesPane = makeNewsElement("div", "chale-messages");
-    const composer = makeNewsElement("form", "chale-composer");
-    const input = makeNewsElement("input") as HTMLInputElement;
-    input.placeholder = "Message…";
-    input.maxLength = 2000;
-    input.autocomplete = "off";
-    input.required = true;
-    const send = makeNewsElement("button", "chale-action") as HTMLButtonElement;
-    send.type = "submit";
-    send.textContent = "Send";
-    const feedback = makeNewsElement("small", "chale-feedback");
-    composer.append(input, send);
-    appContent.append(header, messagesPane, composer, feedback);
-
-    const loadMessages = async () => {
-      messagesPane.replaceChildren();
-      const messages: ChaleMessage[] = await loadChaleMessages(session, contact.contact_id);
-      if (!messages.length) {
-        const empty = makeNewsElement("p");
-        empty.textContent = "This is the start of your conversation.";
-        messagesPane.append(empty);
-      }
-      for (const message of messages) {
-        const bubble = makeNewsElement("article", message.sender_id === session.user.id ? "chale-message mine" : "chale-message");
-        const body = makeNewsElement("p");
-        body.textContent = message.body;
-        const time = makeNewsElement("small");
-        time.textContent = new Date(message.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-        bubble.append(body, time);
-        messagesPane.append(bubble);
-      }
-      messagesPane.scrollTop = messagesPane.scrollHeight;
+    const loadMessages=async()=>{
+      if(!session||activeContact?.contact_id!==contact.contact_id)return;
+      messages.replaceChildren();
+      try{
+        const rows:ChaleMessage[]=await loadChaleMessages(session,contact.contact_id);
+        if(!rows.length){const empty=el("p","chale-message-empty");empty.textContent="This is the beginning of your conversation with "+contact.display_name+".";messages.append(empty);}
+        for(const row of rows){
+          const bubble=el("article",row.sender_id===session.user.id?"chale-message mine":"chale-message");
+          const body=el("p");body.textContent=row.body;const time=el("small");
+          time.textContent=new Date(row.created_at).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
+          bubble.append(body,time);messages.append(bubble);
+        }
+        messages.scrollTop=messages.scrollHeight;
+      }catch(error){feedback(status,error instanceof Error?error.message:"Could not load messages.",true);}
     };
-    try {
-      await loadMessages();
-    } catch (error) {
-      feedback.textContent = error instanceof Error ? error.message : "Could not load conversation.";
-    }
-    composer.addEventListener("submit", async event => {
-      event.preventDefault();
-      const body = input.value.trim();
-      if (!body || !activeContact) return;
-      send.disabled = true;
-      feedback.textContent = "Sending…";
-      try {
-        await sendChaleMessage(session, contact.contact_id, body);
-        input.value = "";
-        feedback.textContent = "";
-        await loadMessages();
-      } catch (error) {
-        feedback.textContent = error instanceof Error ? error.message : "Message could not be sent.";
-      } finally {
-        send.disabled = false;
-      }
+    await loadMessages();
+    form.addEventListener("submit",async event=>{
+      event.preventDefault();const body=input.value.trim();if(!body||!session||activeContact?.contact_id!==contact.contact_id)return;
+      send.disabled=true;
+      try{await sendChaleMessage(session,contact.contact_id,body);input.value="";feedback(status,"");await loadMessages();}
+      catch(error){feedback(status,error instanceof Error?error.message:"Message could not be sent.",true);}
+      finally{send.disabled=false;}
     });
+    input.focus();
   };
 
-    myNumber = await getChalePhoneNumber(session);
-    await renderHome();
-  } catch (error) {
-    status.textContent = error instanceof Error ? error.message : "Chale is temporarily unavailable.";
-  }
+  if(!session)renderAuth();else await initialiseChale();
 }
-
 let disposeWayGoApp: (() => void) | null = null;
 
 async function openApp(name: string) {
