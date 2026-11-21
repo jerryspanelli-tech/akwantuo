@@ -152,7 +152,7 @@ document.querySelector(".zenvia-dock")?.addEventListener("click", event => {
 import { getAkwantuoSession, loadEconomyState, loadGameNews, loadGameNotifications, markGameNotificationRead, publishGameNews } from "../services/supabase";
 
 
-function makeNewsElement(tag: "div" | "p" | "strong" | "small" | "button" | "input" | "textarea" | "select", className = ""): HTMLElement {
+function makeNewsElement(tag: "div" | "p" | "strong" | "small" | "button" | "input" | "textarea" | "select" | "section" | "article", className = ""): HTMLElement {
   const element = document.createElement(tag);
   if (className) element.className = className;
   return element;
