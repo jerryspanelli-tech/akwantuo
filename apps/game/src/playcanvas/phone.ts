@@ -20,10 +20,8 @@ const clockFormatter = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minut
 const time = () => clockFormatter.format(new Date());
 const updateTime = () => {
   const value = time();
-  for (const id of ["zenvia-status-time", "zenvia-lock-time", "zenvia-widget-time"]) {
-    const node = document.getElementById(id);
-    if (node) node.textContent = value;
-  }
+  const statusTime = document.getElementById("zenvia-status-time");
+  if (statusTime) statusTime.textContent = value;
 };
 const showHome = () => {
   if (lockScreen) lockScreen.hidden = true;
