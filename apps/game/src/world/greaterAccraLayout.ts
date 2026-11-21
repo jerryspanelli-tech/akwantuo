@@ -55,6 +55,7 @@ export const GREATER_ACCRA_MAP_NODES: readonly MapNodePosition[] = [
   { nodeId: "circle-junction", x: -450, z: 450 },
   { nodeId: "37-junction", x: 1250, z: -350 },
   { nodeId: "airport-city-anchor", x: 1050, z: 850 },
+  { nodeId: "signature-access", x: 3750, z: 2160 },
   { nodeId: "tetteh-quarshie-interchange", x: 3650, z: 1750 },
   { nodeId: "achimota-interchange", x: -1750, z: 2100 },
   { nodeId: "ofankor-junction", x: -2150, z: 3950 },
@@ -138,6 +139,18 @@ export const GREATER_ACCRA_ROAD_PATHS: readonly MapRoadPath[] = [
     points: [{ x: 1050, z: 850 }, { x: 1150, z: 450 }, { x: 1250, z: -350 }],
     playableInFirstRelease: true,
     designNote: "Airport City connection to the 37 / Ridge junction."
+  },
+  {
+    roadSegmentId: "airport-city-tetteh-quarshie",
+    points: [{ x: 1050, z: 850 }, { x: 1650, z: 970 }, { x: 2250, z: 1190 }, { x: 2900, z: 1510 }, { x: 3650, z: 1750 }],
+    playableInFirstRelease: true,
+    designNote: "Airport City eastbound connector to Tetteh Quarshie, authored for continuous in-game GPS routing."
+  },
+  {
+    roadSegmentId: "signature-access-road",
+    points: [{ x: 3650, z: 1750 }, { x: 3720, z: 1860 }, { x: 3780, z: 1980 }, { x: 3780, z: 2090 }, { x: 3750, z: 2160 }],
+    playableInFirstRelease: true,
+    designNote: "Local access road ending at the public approach to The Signature, outside its collision footprint."
   },
   {
     roadSegmentId: "ring-road-central",
