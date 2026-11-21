@@ -578,7 +578,11 @@ async function boot() {
       const width = minimap.width, height = minimap.height;
       const radius = Math.min(width, height) * 0.47;
       const scale = 0.16;
-      const heading = (inVehicle ? vehicle.getEulerAngles().y : player.getEulerAngles().y) * Math.PI / 180;
+      // Read the visible character's orientation (not just its movement root),
+      // then wrap it into a full 0–360° compass heading for the radar arrow.
+      const facingYaw = inVehicle ? vehicle.getEulerAngles().y : (playerCharacter ?? player).getEulerAngles().y;
+      const headingDegrees = ((facingYaw % 360) + 360) % 360;
+      const heading = headingDegrees * Math.PI / 180;
       map.clearRect(0, 0, width, height);
       map.fillStyle = "#091511"; map.fillRect(0, 0, width, height);
       map.save();
