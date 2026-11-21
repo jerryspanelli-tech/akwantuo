@@ -3,7 +3,7 @@ import {
   GREATER_ACCRA_ROAD_PATHS,
   type MapPoint
 } from "../world/greaterAccraLayout";
-import type { GpsRoute } from "../world/gpsNavigation";
+import { getRemainingRouteDistance, type GpsRoute } from "../world/gpsNavigation";
 
 export type WayGoPlace = Readonly<{ name: string; district: string; x: number; z: number }>;
 export type WayGoState = Readonly<{
@@ -130,7 +130,7 @@ function drawMap(canvas: HTMLCanvasElement, state: WayGoState): void {
   const current = point(state.position);
   context.save();
   context.translate(current.x, current.y);
-  context.rotate(-state.headingRadians);
+  context.rotate(state.headingRadians);
   context.fillStyle = "#6ce0a3";
   context.strokeStyle = "#f4fff8";
   context.lineWidth = 2;
@@ -151,6 +151,42 @@ function drawMap(canvas: HTMLCanvasElement, state: WayGoState): void {
   context.fillStyle = "#9cc8b1";
   context.font = "11px system-ui, sans-serif";
   context.fillText("N ↑", width - 30, 22);
+}
+
+function nextTurn(route: GpsRoute, position: MapPoint): string {
+  const points = route.points;
+  if (points.length < 3) return "Continue on the road";
+  let closestIndex = 0, closestGap = Number.POSITIVE_INFINITY, closestT = 0;
+  for (let index = 0; index < points.length - 1; index += 1) {
+    const a = points[index], b = points[index + 1];
+    const dx = b.x - a.x, dz = b.z - a.z;
+    const lengthSquared = dx * dx + dz * dz;
+    const t = lengthSquared ? Math.max(0, Math.min(1,
+      ((position.x - a.x) * dx + (position.z - a.z) * dz) / lengthSquared)) : 0;
+    const gap = Math.hypot(position.x - (a.x + dx * t), position.z - (a.z + dz * t));
+    if (gap < closestGap) { closestGap = gap; closestIndex = index; closestT = t; }
+  }
+  let distanceToTurn = Math.hypot(
+    points[closestIndex + 1].x - points[closestIndex].x,
+    points[closestIndex + 1].z - points[closestIndex].z
+  ) * (1 - closestT);
+  let previousHeading = Math.atan2(
+    points[closestIndex + 1].x - points[closestIndex].x,
+    points[closestIndex + 1].z - points[closestIndex].z
+  );
+  for (let index = closestIndex + 1; index < points.length - 1; index += 1) {
+    const a = points[index], b = points[index + 1];
+    const heading = Math.atan2(b.x - a.x, b.z - a.z);
+    let change = heading - previousHeading;
+    while (change > Math.PI) change -= Math.PI * 2;
+    while (change < -Math.PI) change += Math.PI * 2;
+    if (Math.abs(change) > 0.38 && distanceToTurn > 18) {
+      return `${change > 0 ? "Turn right" : "Turn left"} in ${Math.round(distanceToTurn)} m`;
+    }
+    distanceToTurn += Math.hypot(b.x - a.x, b.z - a.z);
+    previousHeading = heading;
+  }
+  return "Continue on the road";
 }
 
 export function mountWayGoApp(container: HTMLElement): () => void {
@@ -221,9 +257,12 @@ export function mountWayGoApp(container: HTMLElement): () => void {
     const state = adapter.getState();
     drawMap(map, state);
     if (state.route) {
-      const remaining = Math.max(0, state.route.distanceM);
+      const remaining = getRemainingRouteDistance(state.route.points, state.position);
       const routeName = selected?.name ?? state.destinationLabel;
-      status.textContent = `Navigating to ${routeName} · ${(remaining / 1000).toFixed(1)} km total`;
+      const averageSpeed = state.isDriving ? 8.3 : 1.35;
+      const etaMinutes = Math.max(1, Math.round(remaining / averageSpeed / 60));
+      const turn = nextTurn(state.route, state.position);
+      status.textContent = `To ${routeName} · ${(remaining / 1000).toFixed(1)} km · ~${etaMinutes} min · ${turn}`;
       clear.hidden = false;
     } else {
       status.textContent = "Choose a destination to plan a road route from your current position.";
