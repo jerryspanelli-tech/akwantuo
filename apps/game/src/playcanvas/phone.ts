@@ -108,7 +108,7 @@ function showPinPanel() {
   cancel.textContent = "Cancel";
   submit.addEventListener("click", async () => {
     const pin = input.value;
-    if (!/^\\d{4,6}$/.test(pin)) { message.textContent = "Use 4 to 6 digits."; return; }
+    if (!/^\d{4,6}$/.test(pin)) { message.textContent = "Use 4 to 6 digits."; return; }
     try {
       if (existingHash) {
         const saltText = localStorage.getItem(PIN_SALT_KEY);
