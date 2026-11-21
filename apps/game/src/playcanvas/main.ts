@@ -356,6 +356,8 @@ async function boot() {
 
   const walkSpeed = 4.6, sprintSpeed = 8.2;
   let inVehicle = false, vehicleSpeed = 0, vehicleYaw = 0;
+  // One authoritative world-space facing vector drives both actor yaw and the minimap marker.
+  let minimapFacingX = 0, minimapFacingZ = 1;
   worldMapCanvas?.addEventListener("pointerdown", (event) => {
     if (!worldMapCanvas || !worldMapOpen) return;
     event.preventDefault();
@@ -511,6 +513,8 @@ async function boot() {
       const nextZ = vehicle.getPosition().z + Math.cos(vehicleYaw) * vehicleSpeed * step;
       if (!overlaps(nextX, nextZ) && nextX > -8000 && nextX < 13000 && nextZ > -4050 && nextZ < 8500) vehicle.setPosition(nextX, 0, nextZ);
       vehicle.setEulerAngles(0, vehicleYaw * 180 / Math.PI, 0);
+      minimapFacingX = Math.sin(vehicleYaw);
+      minimapFacingZ = Math.cos(vehicleYaw);
       const vehiclePosition = vehicle.getPosition();
       player.setPosition(vehiclePosition.x, vehiclePosition.y, vehiclePosition.z);
       if (exitButton) exitButton.hidden = false;
@@ -541,7 +545,10 @@ async function boot() {
         const nx = clamp(p.x + dx, -8000, 13000), nz = clamp(p.z + dz, -4050, 8500);
         if (!overlaps(nx, p.z)) player.setPosition(nx, p.y, p.z);
         if (!overlaps(player.getPosition().x, nz)) player.setPosition(player.getPosition().x, p.y, nz);
-        player.setEulerAngles(0, Math.atan2(dx, dz) * 180 / Math.PI, 0);
+        const playerHeading = Math.atan2(dx, dz);
+        player.setEulerAngles(0, playerHeading * 180 / Math.PI, 0);
+        minimapFacingX = Math.sin(playerHeading);
+        minimapFacingZ = Math.cos(playerHeading);
       } else {
       }
       const desiredAnimation = magnitude <= 0.04
@@ -578,12 +585,11 @@ async function boot() {
       const width = minimap.width, height = minimap.height;
       const radius = Math.min(width, height) * 0.47;
       const scale = 0.16;
-      // Use the rendered actor as the heading authority. On foot the visible
-      // GLB is the character the player sees; in a vehicle the taxi is the
-      // visible actor. Both are updated from the same world rotation used by
-      // gameplay, so the marker has no guessed 180-degree model correction.
-      const facingActor = inVehicle ? vehicle : (playerCharacter ?? player);
-      const heading = facingActor.getEulerAngles().y * Math.PI / 180;
+      // The marker uses the exact world-space direction used to rotate the
+      // player/vehicle, rather than re-reading Euler angles or rotating the map.
+      const facingLength = Math.hypot(minimapFacingX, minimapFacingZ) || 1;
+      const facingX = minimapFacingX / facingLength;
+      const facingY = -minimapFacingZ / facingLength; // canvas Y points down
       map.clearRect(0, 0, width, height);
       map.fillStyle = "#091511"; map.fillRect(0, 0, width, height);
       map.save();
@@ -668,13 +674,17 @@ async function boot() {
         map.fillText(distance >= 1000 ? `${(distance / 1000).toFixed(1)} KM TO MARK` : `${Math.round(distance)} M TO MARK`, 0, radius - 5);
       }
       map.restore();
-      // Canvas' local arrow points north (screen -Y). Its positive rotation
-      // is clockwise, matching PlayCanvas' positive world yaw (+Z toward +X).
-      // Apply the rendered actor's yaw directly: no guessed axis flip.
-      map.save(); map.translate(width / 2, height / 2); map.rotate(heading);
-      map.beginPath(); map.moveTo(0, -9); map.lineTo(6, 7); map.lineTo(0, 4); map.lineTo(-6, 7); map.closePath();
+      // Draw the marker directly from the same world-space facing vector
+      // used by movement. No canvas rotation, sign conversion or 180° guess.
+      const markerX = width / 2, markerY = height / 2;
+      const perpendicularX = -facingY, perpendicularY = facingX;
+      map.beginPath();
+      map.moveTo(markerX + facingX * 10, markerY + facingY * 10);
+      map.lineTo(markerX - facingX * 5 + perpendicularX * 5, markerY - facingY * 5 + perpendicularY * 5);
+      map.lineTo(markerX + facingX * 1, markerY + facingY * 1);
+      map.lineTo(markerX - facingX * 5 - perpendicularX * 5, markerY - facingY * 5 - perpendicularY * 5);
+      map.closePath();
       map.fillStyle = "#f3c56f"; map.fill(); map.strokeStyle = "#fff4d8"; map.lineWidth = 1.3; map.stroke();
-      map.restore();
       // Radar rim and north/heading tick.
       map.beginPath(); map.arc(width / 2, height / 2, radius, 0, Math.PI * 2);
       map.strokeStyle = "#e3bd7a"; map.lineWidth = 3; map.stroke();
