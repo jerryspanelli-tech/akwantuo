@@ -317,6 +317,11 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
       stadium.setPosition(landmark.x, height / 2, landmark.z);
       stadium.setLocalScale(width, height, depth);
       app.root.addChild(stadium);
+    } else if (["national-theatre", "kwame-nkrumah-memorial", "accra-mall"].includes(landmark.id)) {
+      // These locations receive dedicated architectural assemblies below.
+      // Keep their collision footprint without burying the detailed model
+      // inside the former generic solid landmark block.
+      blockers.push({ x: landmark.x, z: landmark.z, hx: width * 0.52, hz: depth * 0.52 });
     } else {
       box(landmark.label + " landmark", landmark.x, height / 2, landmark.z, width, height, depth, base, 0, true);
       box(landmark.label + " roofline", landmark.x, height + 0.3, landmark.z, width + 4, 0.6, depth + 4, mats.roof);
