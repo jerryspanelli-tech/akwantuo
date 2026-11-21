@@ -28,7 +28,7 @@ export function setWayGoNavigationAdapter(value: WayGoAdapter): void {
 
 const PLACES: readonly WayGoPlace[] = [
   { name: "Accra Mall", district: "Tetteh Quarshie", x: 3650, z: 1750 },
-  { name: "Kotoka International Airport", district: "Airport City", x: 1050, z: 850 },
+  { name: "Airport City", district: "Airport City", x: 1050, z: 850 },
   { name: "Osu", district: "Osu", x: 1450, z: -1350 },
   { name: "Makola Market", district: "Accra Central", x: -500, z: 350 },
   { name: "The Signature", district: "East Legon", x: 3750, z: 2160 },
@@ -36,7 +36,6 @@ const PLACES: readonly WayGoPlace[] = [
   { name: "Labadi Beach", district: "Labadi", x: 2750, z: -2100 },
   { name: "Circle", district: "Accra Central", x: -450, z: 450 },
   { name: "Kaneshie", district: "Kaneshie", x: -2850, z: -250 },
-  { name: "Achimota", district: "Achimota", x: -1750, z: 2100 },
   { name: "Madina", district: "Madina", x: 5000, z: 1750 },
   { name: "Spintex", district: "Spintex", x: 5600, z: -1150 },
   { name: "Tema", district: "Tema", x: 9000, z: -750 },
