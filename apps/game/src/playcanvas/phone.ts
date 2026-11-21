@@ -25,11 +25,15 @@ const updateTime = () => {
   if (statusTime) statusTime.textContent = value;
 };
 const showHome = () => {
+  disposeWayGoApp?.();
+  disposeWayGoApp = null;
   if (lockScreen) lockScreen.hidden = true;
   if (homeScreen) homeScreen.hidden = false;
   if (appView) appView.hidden = true;
 };
 const showLock = () => {
+  disposeWayGoApp?.();
+  disposeWayGoApp = null;
   unlocked = false;
   if (lockScreen) lockScreen.hidden = false;
   if (homeScreen) homeScreen.hidden = true;
@@ -47,6 +51,8 @@ const openPhone = () => {
 };
 const closePhone = () => {
   if (!phone) return;
+  disposeWayGoApp?.();
+  disposeWayGoApp = null;
   opened = false;
   phone.hidden = true;
 };
