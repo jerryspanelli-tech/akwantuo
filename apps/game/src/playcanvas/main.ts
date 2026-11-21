@@ -588,7 +588,7 @@ async function boot() {
       // The marker uses the exact world-space direction used to rotate the
       // player/vehicle, rather than re-reading Euler angles or rotating the map.
       const facingLength = Math.hypot(minimapFacingX, minimapFacingZ) || 1;
-      const facingX = minimapFacingX / facingLength;
+      const facingX = -minimapFacingX / facingLength; // Match the character's horizontal screen-facing direction.
       const facingY = -minimapFacingZ / facingLength; // canvas Y points down
       map.clearRect(0, 0, width, height);
       map.fillStyle = "#091511"; map.fillRect(0, 0, width, height);
