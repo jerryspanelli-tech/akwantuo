@@ -47,8 +47,17 @@ let gpsDestinationLabel = "MARKED LOCATION";
 const mapZoomIn = document.querySelector<HTMLButtonElement>("#map-zoom-in");
 const mapZoomOut = document.querySelector<HTMLButtonElement>("#map-zoom-out");
 const mapMarkClear = document.querySelector<HTMLButtonElement>("#map-mark-clear");
-mapZoomIn?.addEventListener("click", () => { worldMapZoom = clamp(worldMapZoom * 1.25, 1, 4); });
-mapZoomOut?.addEventListener("click", () => { worldMapZoom = clamp(worldMapZoom / 1.25, 1, 4); });
+// Allow zooming both closer and farther than the default full-map view.
+const MIN_WORLD_MAP_ZOOM = 0.35;
+const MAX_WORLD_MAP_ZOOM = 4;
+mapZoomIn?.addEventListener("click", () => { worldMapZoom = clamp(worldMapZoom * 1.25, MIN_WORLD_MAP_ZOOM, MAX_WORLD_MAP_ZOOM); });
+mapZoomOut?.addEventListener("click", () => { worldMapZoom = clamp(worldMapZoom / 1.25, MIN_WORLD_MAP_ZOOM, MAX_WORLD_MAP_ZOOM); });
+worldMapCanvas?.addEventListener("wheel", (event) => {
+  if (!worldMapOpen) return;
+  event.preventDefault();
+  const factor = event.deltaY < 0 ? 1.15 : 1 / 1.15;
+  worldMapZoom = clamp(worldMapZoom * factor, MIN_WORLD_MAP_ZOOM, MAX_WORLD_MAP_ZOOM);
+}, { passive: false });
 mapMarkClear?.addEventListener("click", () => {
   worldMapWaypoint = null;
   activeGpsRoute = null;
