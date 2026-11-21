@@ -143,11 +143,24 @@ function showPinPanel() {
 
 // Delegate app taps from the phone document so taps on icons, labels, and
 // nested elements all reach the same app router even if the home layout changes.
+// Give Chale its own button handlers instead of relying on the generic
+// app-grid delegation. This covers both the home-screen icon and dock shortcut.
+phone?.querySelectorAll<HTMLButtonElement>('button[data-app="Chale"]').forEach(button => {
+  button.addEventListener("click", event => {
+    event.preventDefault();
+    event.stopPropagation();
+    void openApp("Chale");
+  });
+});
+
+// Keep delegated routing for the other Zenvia apps.
 document.addEventListener("click", event => {
   const button = event.target instanceof Element
     ? event.target.closest<HTMLButtonElement>("#zenvia-phone button[data-app]")
     : null;
-  if (button?.dataset.app) void openApp(button.dataset.app);
+  if (button?.dataset.app && button.dataset.app.toLowerCase() !== "chale") {
+    void openApp(button.dataset.app);
+  }
 });
 import { getAkwantuoSession, loadEconomyState, loadGameNews, loadGameNotifications, markGameNotificationRead, publishGameNews, getChalePhoneNumber, addChaleContact, loadChaleContacts, loadChaleMessages, sendChaleMessage, blockChalePlayer, type ChaleContact, type ChaleMessage } from "../services/supabase";
 
@@ -333,18 +346,17 @@ async function openCediPayApp() {
 
 async function openChaleApp() {
   if (!appContent) return;
-  const session = await getAkwantuoSession();
   appContent.replaceChildren();
-  if (!session) {
-    const notice = makeNewsElement("p", "zenvia-news-status");
-    notice.textContent = "Sign in to your AKWANTUO account to use Chale. Your game number is linked to your player account.";
-    appContent.append(notice);
-    return;
-  }
-
   const status = makeNewsElement("p", "chale-status");
-  status.textContent = "Connecting to Chale…";
+  status.textContent = "Opening Chale…";
   appContent.append(status);
+  try {
+    const session = await getAkwantuoSession();
+    if (!session) {
+      status.textContent = "Sign in to your AKWANTUO account to use Chale. Your game number is linked to your player account.";
+      return;
+    }
+    status.textContent = "Connecting to Chale…";
   let myNumber = "";
   let activeContact: ChaleContact | null = null;
 
@@ -525,7 +537,6 @@ async function openChaleApp() {
     });
   };
 
-  try {
     myNumber = await getChalePhoneNumber(session);
     await renderHome();
   } catch (error) {
