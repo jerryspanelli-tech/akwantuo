@@ -578,11 +578,12 @@ async function boot() {
       const width = minimap.width, height = minimap.height;
       const radius = Math.min(width, height) * 0.47;
       const scale = 0.16;
-      // Use the visible actor's actual world-forward vector. This avoids
-      // Euler-angle wrapping / imported-model yaw ambiguity and follows the
-      // character continuously through every direction, including behind.
-      const facing = inVehicle ? vehicle.forward : (playerCharacter ?? player).forward;
-      const heading = Math.atan2(facing.x, facing.z);
+      // The movement controller is the authoritative facing source: the
+      // visible GLB copies this exact yaw each frame, but its imported local
+      // forward axis may differ from PlayCanvas +Z. Read controller yaw so
+      // the radar follows the same 0–360° direction used to turn the actor.
+      const actor = inVehicle ? vehicle : player;
+      const heading = actor.getEulerAngles().y * Math.PI / 180;
       map.clearRect(0, 0, width, height);
       map.fillStyle = "#091511"; map.fillRect(0, 0, width, height);
       map.save();
@@ -669,7 +670,7 @@ async function boot() {
       map.restore();
       // Canvas rotation is clockwise-positive, opposite to the game's
       // world yaw convention. Negate yaw so the arrow matches the character.
-      map.save(); map.translate(width / 2, height / 2); map.rotate(-heading);
+      map.save(); map.translate(width / 2, height / 2); map.rotate(heading);
       map.beginPath(); map.moveTo(0, -9); map.lineTo(6, 7); map.lineTo(0, 4); map.lineTo(-6, 7); map.closePath();
       map.fillStyle = "#f3c56f"; map.fill(); map.strokeStyle = "#fff4d8"; map.lineWidth = 1.3; map.stroke();
       map.restore();
