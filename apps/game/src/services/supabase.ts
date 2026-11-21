@@ -8,6 +8,7 @@ export interface AkwantuoUser {
   id: string;
   email?: string;
   user_metadata?: Record<string, unknown>;
+  app_metadata?: Record<string, unknown>;
 }
 
 export interface AkwantuoSession {
@@ -210,4 +211,76 @@ export async function purchaseGameAsset(
     method: "POST",
     body: JSON.stringify({ p_asset_id: assetId })
   }, session.access_token);
+}
+
+export interface GameNewsRecord {
+  id: string;
+  category: string;
+  headline: string;
+  announcement: string;
+  audience: "all" | "player";
+  published_at: string | null;
+  created_at: string;
+}
+
+export interface GameNotificationRecord {
+  id: string;
+  news_id: string;
+  title: string;
+  message: string;
+  category: string;
+  read_at: string | null;
+  created_at: string;
+}
+
+export async function loadGameNews(session: AkwantuoSession): Promise<GameNewsRecord[]> {
+  return request<GameNewsRecord[]>(
+    "/rest/v1/game_news?select=id,category,headline,announcement,audience,published_at,created_at&status=eq.published&order=published_at.desc&limit=30",
+    { method: "GET" },
+    session.access_token
+  );
+}
+
+export async function loadGameNotifications(session: AkwantuoSession): Promise<GameNotificationRecord[]> {
+  return request<GameNotificationRecord[]>(
+    "/rest/v1/game_notifications?select=id,news_id,title,message,category,read_at,created_at&order=created_at.desc&limit=30",
+    { method: "GET" },
+    session.access_token
+  );
+}
+
+export async function markGameNotificationRead(session: AkwantuoSession, notificationId: string): Promise<void> {
+  await request<unknown>(
+    `/rest/v1/game_notifications?id=eq.${encodeURIComponent(notificationId)}&player_id=eq.${encodeURIComponent(session.user.id)}`,
+    {
+      method: "PATCH",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({ read_at: new Date().toISOString() })
+    },
+    session.access_token
+  );
+}
+
+export async function publishGameNews(
+  session: AkwantuoSession,
+  item: { category: string; headline: string; announcement: string; targetPlayerId?: string }
+): Promise<void> {
+  if (session.user.app_metadata?.role !== "admin") throw new Error("Admin authorization required.");
+  await request<unknown>(
+    "/rest/v1/game_news",
+    {
+      method: "POST",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({
+        category: item.category,
+        headline: item.headline.trim(),
+        announcement: item.announcement.trim(),
+        audience: item.targetPlayerId ? "player" : "all",
+        target_player_id: item.targetPlayerId || null,
+        status: "published",
+        published_by: session.user.id
+      })
+    },
+    session.access_token
+  );
 }
