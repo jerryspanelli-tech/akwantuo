@@ -353,7 +353,17 @@ async function openChaleApp() {
   try {
     const session = await getAkwantuoSession();
     if (!session) {
-      status.textContent = "Sign in to your AKWANTUO account to use Chale. Your game number is linked to your player account.";
+      status.textContent = "Chale needs your AKWANTUO player account. Sign in or create an account first; your game number will then be linked automatically.";
+      const signInButton = makeNewsElement("button", "chale-action") as HTMLButtonElement;
+      signInButton.type = "button";
+      signInButton.textContent = "Sign in / Create account";
+      signInButton.addEventListener("click", () => {
+        closePhone();
+        document.querySelector<HTMLButtonElement>("#account-button")?.click();
+      });
+      const hint = makeNewsElement("small", "chale-feedback");
+      hint.textContent = "Your account screen will open after you put the phone away. Return to Chale after signing in.";
+      appContent.append(signInButton, hint);
       return;
     }
     status.textContent = "Connecting to Chale…";
