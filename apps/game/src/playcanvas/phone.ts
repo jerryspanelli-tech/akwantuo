@@ -421,9 +421,10 @@ async function openChaleApp() {
         const detail = makeNewsElement("small");
         detail.textContent = contact.phone_number;
         const preview = makeNewsElement("span");
-        preview.textContent = contact.last_message || "Tap to start chatting";
+        preview.textContent = contact.is_mutual ? (contact.last_message || "Tap to start chatting") : "Waiting for them to save your number";
         item.append(name, detail, preview);
-        item.addEventListener("click", () => renderConversation(contact));
+        item.disabled = !contact.is_mutual;
+        item.addEventListener("click", () => { if (contact.is_mutual) void renderConversation(contact); });
         contactList.append(item);
       }
     } catch (error) {
