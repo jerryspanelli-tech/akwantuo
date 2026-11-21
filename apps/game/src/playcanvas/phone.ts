@@ -7,7 +7,7 @@ const appTitle = document.getElementById("zenvia-app-title");
 const appContent = document.getElementById("zenvia-app-content");
 const closeButton = document.getElementById("zenvia-close");
 const backButton = document.getElementById("zenvia-back");
-const fingerprint = document.getElementById("zenvia-fingerprint");
+const fingerprint = document.getElementById("zenvia-fingerprint") as HTMLButtonElement | null;
 const powerButton = document.getElementById("zenvia-power");
 const pinButton = document.getElementById("zenvia-pin-unlock");
 const PIN_HASH_KEY = "akwantuo.zenvia.pin.hash.v1";
@@ -71,7 +71,7 @@ backButton?.addEventListener("click", showHome);
 
 async function hashPin(pin: string, salt: Uint8Array): Promise<string> {
   const material = await crypto.subtle.importKey("raw", new TextEncoder().encode(pin), "PBKDF2", false, ["deriveBits"]);
-  const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", salt, iterations: 120000, hash: "SHA-256" }, material, 256);
+  const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", new Uint8Array(salt).buffer as ArrayBuffer, iterations: 120000, hash: "SHA-256" }, material, 256);
   return Array.from(new Uint8Array(bits), byte => byte.toString(16).padStart(2, "0")).join("");
 }
 function showPinPanel() {
