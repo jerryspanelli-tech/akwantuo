@@ -141,13 +141,13 @@ function showPinPanel() {
   input.focus();
 }
 
-document.getElementById("zenvia-app-grid")?.addEventListener("click", event => {
-  const button = event.target instanceof Element ? event.target.closest<HTMLButtonElement>("button[data-app]") : null;
-  if (button?.dataset.app) openApp(button.dataset.app);
-});
-document.querySelector(".zenvia-dock")?.addEventListener("click", event => {
-  const button = event.target instanceof Element ? event.target.closest<HTMLButtonElement>("button[data-app]") : null;
-  if (button?.dataset.app) openApp(button.dataset.app);
+// Delegate app taps from the phone document so taps on icons, labels, and
+// nested elements all reach the same app router even if the home layout changes.
+document.addEventListener("click", event => {
+  const button = event.target instanceof Element
+    ? event.target.closest<HTMLButtonElement>("#zenvia-phone button[data-app]")
+    : null;
+  if (button?.dataset.app) void openApp(button.dataset.app);
 });
 import { getAkwantuoSession, loadEconomyState, loadGameNews, loadGameNotifications, markGameNotificationRead, publishGameNews, getChalePhoneNumber, addChaleContact, loadChaleContacts, loadChaleMessages, sendChaleMessage, blockChalePlayer, type ChaleContact, type ChaleMessage } from "../services/supabase";
 
@@ -545,7 +545,7 @@ async function openApp(name: string) {
   if (!unlocked || !appContent) return;
   if (appTitle) appTitle.textContent = name;
   appContent.replaceChildren();
-  if (appKey === "chale") {
+  if (appKey === "chale" || appKey.startsWith("chale ")) {
     if (homeScreen) homeScreen.hidden = true;
     if (lockScreen) lockScreen.hidden = true;
     if (appView) appView.hidden = false;
@@ -586,7 +586,6 @@ async function openApp(name: string) {
   const pages: Record<string, [string, string][]> = {
     "WayGo": [["3D Accra navigation", "Search Greater Accra destinations and follow road-based GPS directions. The existing road-route engine is being prepared for this in-phone map."], ["Location sharing", "Share your live or one-time location with friends when multiplayer location services are enabled."]],
     "AppBay": [["Discover apps", "Browse, install, update and remove apps. The app catalogue and installation flow are still being built."], ["Your phone", "Zenvia One · Powered by AKWANTUO OS"]],
-    "Chale": [["Your conversations", "Private messages, group chats, voice notes and player location sharing."], ["Contacts", "Your in-game contacts and online friends will appear here."]],
     "Vibez": [["Your social feed", "Player posts, photos, stories, likes and comments."], ["Explore", "Discover creators and happenings around Accra."]],
     "CoinVest": [["Your portfolio", "Track simulated cryptocurrency investments using in-game GH₵."], ["Market risk", "Prices can rise or fall. No real-money trading is connected."]],
     "TradeMarket": [["Ghana Exchange", "Buy and sell shares in fictional in-game companies."], ["Market watch", "Prices and company news will be linked to the simulated game economy."]],
