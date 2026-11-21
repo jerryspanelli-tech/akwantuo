@@ -684,3 +684,90 @@ body.world-map-open .top-hud,body.world-map-open .health-hud,body.world-map-open
 @media (max-height: 650px) {
   .zenvia-setup :is(input, select, textarea) { min-height: 42px; }
 }
+
+
+/* Zenvia Chale auth layout: landscape-safe notch clearance and single-line controls. */
+.zenvia-device {
+  overflow: hidden;
+}
+.zenvia-screen {
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.zenvia-screen::-webkit-scrollbar { display: none; }
+
+.chale-app .chale-auth-screen {
+  box-sizing: border-box;
+  min-height: 100%;
+  padding: 54px 14px 18px;
+  overflow-x: hidden;
+  overflow-y: visible;
+}
+.chale-app .chale-auth-switch {
+  display: grid;
+  width: 100%;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 5px;
+  align-items: stretch;
+}
+.chale-app .chale-auth-switch button,
+.chale-app .chale-auth-switch button:first-child,
+.chale-app .chale-auth-switch button:last-child {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  min-height: 40px;
+  padding: 7px 4px;
+  font-size: clamp(10px, 1.3vw, 13px);
+  line-height: 1.2;
+  text-align: center;
+  white-space: nowrap;
+  word-break: keep-all;
+  overflow-wrap: normal;
+  hyphens: none;
+}
+.chale-app .chale-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px 12px;
+  font-size: clamp(11px, 1.4vw, 14px);
+  line-height: 1.25;
+  text-align: center;
+  white-space: nowrap;
+  word-break: keep-all;
+  overflow-wrap: normal;
+  hyphens: none;
+}
+
+/* Keep a useful phone width, while respecting the height of landscape devices. */
+@media (orientation: landscape) and (max-height: 650px) {
+  .zenvia-phone {
+    width: min(clamp(240px, 32vw, 310px),
+      calc((100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 32px) * 9 / 16.5));
+    max-width: calc(100vw - 16px);
+    max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 16px);
+    right: max(8px, env(safe-area-inset-right, 0px));
+    bottom: max(8px, env(safe-area-inset-bottom, 0px));
+  }
+  .zenvia-device {
+    width: 100%;
+    max-height: 88dvh;
+  }
+  .chale-app .chale-auth-screen {
+    padding-top: 52px;
+    padding-bottom: 14px;
+    justify-content: flex-start;
+  }
+}
