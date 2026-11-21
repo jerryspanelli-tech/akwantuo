@@ -18,6 +18,23 @@
     </section>
     <button id="map-toggle" class="map-toggle" type="button" aria-label="Open Greater Accra world map" title="Open world map"><canvas id="minimap" width="160" height="160" aria-label="Local area minimap"></canvas><span>MAP</span></button>
     <section id="world-map-panel" class="world-map-panel" aria-label="Greater Accra world map" hidden><header class="world-map-header"><div><strong>GREATER ACCRA</strong><small>WORLD MAP · GHANA</small></div></header><canvas id="world-map-canvas" width="1100" height="720" aria-label="Map of Greater Accra with roads, districts and locations"></canvas><footer><span>● YOU ARE HERE · TAP MAP TO MARK A LOCATION</span><div class="world-map-tools"><button id="map-zoom-out" type="button" aria-label="Zoom out">−</button><button id="map-zoom-in" type="button" aria-label="Zoom in">+</button><button id="map-mark-clear" type="button">CLEAR MARK</button><button id="world-map-close" type="button" aria-label="Close world map">×</button></div></footer></section>
+    <button id="phone-launcher" class="phone-launcher" type="button" aria-label="Open Zenvia phone">▣<span>ZENVIA</span></button>
+    <section id="zenvia-phone" class="zenvia-phone" aria-label="Zenvia smartphone" hidden>
+      <div class="zenvia-device"><div class="zenvia-screen">
+        <div class="zenvia-status"><span id="zenvia-status-time">08:00</span><span>● 5G ▰</span></div>
+        <section id="zenvia-lock" class="zenvia-lock"><div class="zenvia-brand">ZENVIA</div><div class="zenvia-lock-time" id="zenvia-lock-time">08:00</div><p>Powered by AKWANTUO OS</p><button id="zenvia-fingerprint" class="zenvia-fingerprint" type="button" aria-label="Unlock with fingerprint">◎</button><small>Touch fingerprint to unlock</small><button id="zenvia-pin-unlock" class="zenvia-text-button" type="button">Use phone PIN</button></section>
+        <section id="zenvia-home" class="zenvia-home" hidden><header class="zenvia-home-header"><div><strong>Good morning</strong><small>Welcome to your Zenvia</small></div><button id="zenvia-power" aria-label="Lock phone">◉</button></header><div class="zenvia-widget"><strong>AKWANTUO</strong><span>YOUR WORLD. YOUR LIFE.</span><b id="zenvia-widget-time">08:00</b></div>
+          <div class="zenvia-app-grid" id="zenvia-app-grid">
+            <button data-app="Chale"><i class="app-icon chale">C</i><span>Chale</span></button><button data-app="Vibez"><i class="app-icon vibez">V</i><span>Vibez</span></button><button data-app="WayGo"><i class="app-icon waygo">↗</i><span>WayGo</span></button><button data-app="AppBay"><i class="app-icon appbay">A</i><span>AppBay</span></button>
+            <button data-app="CediPay"><i class="app-icon cedipay">₵</i><span>CediPay</span></button><button data-app="CoinVest"><i class="app-icon coinvest">₿</i><span>CoinVest</span></button><button data-app="TradeMarket"><i class="app-icon market">M</i><span>TradeMarket</span></button><button data-app="AKWANTUO News"><i class="app-icon news">N</i><span>News</span></button>
+            <button data-app="BetZone"><i class="app-icon betzone">B</i><span>BetZone</span></button><button data-app="PlayZone"><i class="app-icon playzone">▶</i><span>PlayZone</span></button><button data-app="TuneBox"><i class="app-icon tunebox">♫</i><span>TuneBox</span></button><button data-app="Settings"><i class="app-icon settings">⚙</i><span>Settings</span></button>
+          </div><nav class="zenvia-dock"><button data-app="Phone">Phone</button><button data-app="Chale">Chale</button><button data-app="Camera">Camera</button><button data-app="Contacts">Contacts</button></nav>
+        </section>
+        <section id="zenvia-app-view" class="zenvia-app-view" hidden><header><button id="zenvia-back" aria-label="Back to home">‹</button><strong id="zenvia-app-title">App</strong><span>● 5G</span></header><div id="zenvia-app-content" class="zenvia-app-content"></div></section>
+        <div class="zenvia-home-indicator"></div>
+      </div></div><button id="zenvia-close" class="zenvia-close" type="button" aria-label="Put phone away">Put phone away</button>
+    </section>
+    <script type="module" src="/src/playcanvas/phone.ts"></script>
     <div class="touch-ui" id="on-foot-hud">
       <div class="stick" id="stick" role="application" aria-label="Movement joystick"><div class="stick-ring"></div><div class="stick-knob" id="stick-knob"></div></div>
       <div class="action-cluster">
