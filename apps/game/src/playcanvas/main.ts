@@ -9,6 +9,7 @@ import { createGreaterAccraWorld } from "./world";
 import { GREATER_ACCRA_ROAD_PATHS, GREATER_ACCRA_MAP_EXTENT, GREATER_ACCRA_REGION_ANCHORS } from "../world/greaterAccraLayout";
 import { buildGpsRoute, getRemainingRouteDistance, type GpsRoute } from "../world/gpsNavigation";
 import { persistWorldClock, restoreWorldClock } from "../world/worldClock";
+import { setWayGoNavigationAdapter } from "./waygo";
 
 const canvas = document.querySelector<HTMLCanvasElement>("#application")!;
 const loading = document.querySelector<HTMLElement>("#loading");
@@ -404,6 +405,37 @@ async function boot() {
 
   const walkSpeed = 4.6, sprintSpeed = 8.2;
   let inVehicle = false, vehicleSpeed = 0, vehicleYaw = 0;
+  setWayGoNavigationAdapter({
+    getState: () => {
+      const current = inVehicle ? vehicle.getPosition() : player.getPosition();
+      return {
+        position: { x: current.x, z: current.z },
+        headingRadians: inVehicle ? vehicleYaw : player.getEulerAngles().y * Math.PI / 180,
+        route: activeGpsRoute,
+        destinationLabel: gpsDestinationLabel,
+        isDriving: inVehicle
+      };
+    },
+    navigateTo: (place) => {
+      const current = inVehicle ? vehicle.getPosition() : player.getPosition();
+      const route = buildGpsRoute(
+        { x: current.x, z: current.z },
+        { x: place.x, z: place.z },
+        { maxStartSnapM: 1200, maxDestinationSnapM: 220 }
+      );
+      if (!route) return null;
+      activeGpsRoute = route;
+      worldMapWaypoint = route.points[route.points.length - 1];
+      gpsDestinationLabel = place.name;
+      showNotice(`WayGo route set · ${place.name}`);
+      return route;
+    },
+    clearRoute: () => {
+      activeGpsRoute = null;
+      worldMapWaypoint = null;
+      gpsDestinationLabel = "MARKED LOCATION";
+    }
+  });
   // One authoritative world-space facing vector drives both actor yaw and the minimap marker.
   let minimapFacingX = 0, minimapFacingZ = 1;
   worldMapCanvas?.addEventListener("pointerdown", (event) => {
