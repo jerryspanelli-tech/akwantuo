@@ -22,7 +22,22 @@
     <section id="zenvia-phone" class="zenvia-phone" aria-label="Zenvia smartphone" hidden>
       <div class="zenvia-device"><div class="zenvia-screen">
         <div class="zenvia-status"><span id="zenvia-status-time">08:00</span><span>● 5G ▰</span></div>
-        <section id="zenvia-lock" class="zenvia-lock"><div class="zenvia-brand">ZENVIA</div><strong class="zenvia-welcome">Welcome back</strong><small class="zenvia-lock-subtitle">Unlock your phone to continue</small><button id="zenvia-fingerprint" class="zenvia-fingerprint" type="button" aria-label="Unlock with fingerprint">◎</button><small>Touch fingerprint to unlock</small><button id="zenvia-pin-unlock" class="zenvia-text-button" type="button">Use phone PIN</button></section>
+        <section id="zenvia-setup" class="zenvia-setup">
+          <div class="zenvia-setup-brand">ZENVIA</div>
+          <div class="zenvia-setup-progress"><span></span></div>
+          <p class="zenvia-eyebrow">WELCOME TO YOUR NEW PHONE</p>
+          <h1>Make it yours.</h1>
+          <p class="zenvia-setup-copy">Set up your Zenvia phone for life in AKWANTUO. No Gmail address or external email verification needed.</p>
+          <label for="zenvia-language">Phone language</label>
+          <select id="zenvia-language"><option value="English">English</option><option value="Twi">Twi</option><option value="Ga">Ga</option><option value="Pidgin">Pidgin</option></select>
+          <label for="zenvia-player-name">Your name</label>
+          <input id="zenvia-player-name" maxlength="24" autocomplete="nickname" placeholder="How should your phone greet you?">
+          <label for="zenvia-player-handle">Choose a phone handle</label>
+          <input id="zenvia-player-handle" maxlength="16" autocomplete="off" placeholder="e.g. chale_kojo">
+          <small class="zenvia-setup-note">This creates a local phone profile. It does not create or sign in to an online AKWANTUO account.</small>
+          <button id="zenvia-setup-finish" type="button">Set up my phone</button>
+          <button id="zenvia-setup-guest" type="button">Continue as guest</button>
+        </section>
         <section id="zenvia-home" class="zenvia-home" hidden><header class="zenvia-home-header"><div><strong>ZENVIA</strong><small>One</small></div><button id="zenvia-power" aria-label="Lock phone">◉</button></header>
           <div class="zenvia-app-grid" id="zenvia-app-grid">
             <button data-app="Chale"><i class="app-icon chale">C</i><span>Chale</span></button><button data-app="Vibez"><i class="app-icon vibez">V</i><span>Vibez</span></button><button data-app="WayGo"><i class="app-icon waygo">↗</i><span>WayGo</span></button><button data-app="AppBay"><i class="app-icon appbay">A</i><span>AppBay</span></button>
