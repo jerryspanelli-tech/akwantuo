@@ -795,3 +795,23 @@ body {
 .app-icon{width:clamp(36px,15cqi,43px);height:clamp(36px,15cqi,43px);border-radius:14px;font-size:18px}
 .zenvia-dock{padding:8px 5px;border:1px solid #ffffff1d;border-radius:15px;background:#ffffff10;backdrop-filter:blur(12px)}
 .zenvia-dock button{font-size:8px;font-weight:700}
+
+/* Prevent iOS Safari from auto-zooming when first-run setup fields receive focus. */
+.zenvia-setup :is(input, select, textarea) {
+  font-size: 16px !important;
+  line-height: 1.35;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  min-height: 44px;
+  height: auto;
+  padding: 10px 12px;
+  touch-action: manipulation;
+}
+.zenvia-setup :is(input, select, textarea):focus {
+  font-size: 16px !important;
+  outline: 2px solid #e8c987;
+  outline-offset: 1px;
+}
+@media (max-height: 650px) {
+  .zenvia-setup :is(input, select, textarea) { min-height: 42px; }
+}
