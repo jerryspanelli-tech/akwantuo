@@ -353,7 +353,7 @@ async function openChaleApp() {
   let activeContact: ChaleContact | null = null;
   let contactsCache: ChaleContact[] = [];
   let authMode: "signin" | "signup" = "signin";
-  const el = (tag: "div"|"section"|"p"|"strong"|"small"|"span"|"button"|"input"|"form"|"textarea", cls = "") => makeNewsElement(tag, cls);
+  const el = (tag: "div"|"section"|"p"|"strong"|"small"|"span"|"button"|"input"|"form"|"textarea"|"article", cls = "") => makeNewsElement(tag, cls);
   const btn = (label: string, cls = "chale-btn") => {
     const b = el("button", cls) as HTMLButtonElement; b.type = "button"; b.textContent = label; return b;
   };
