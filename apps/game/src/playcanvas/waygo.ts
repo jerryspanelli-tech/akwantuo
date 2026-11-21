@@ -109,12 +109,12 @@ function drawMap(canvas: HTMLCanvasElement, state: WayGoState): void {
   for (let districtIndex=0; districtIndex<districts.length; districtIndex++) {
     const district=districts[districtIndex];
     for(let row=-3;row<=3;row++) for(let col=-3;col<=3;col++) {
-      const x=district.x+col*155+((row+districtIndex)%2)*34;
-      const z=district.z+row*145;
+      const x=district.x+col*390+((row+districtIndex)%2)*75;
+      const z=district.z+row*330;
       const base=project({x,z});
-      const bw=(13+(Math.abs(row*3+col+districtIndex)%9))*scale;
-      const bh=(9+(Math.abs(col*5-row+districtIndex)%8))*scale;
-      const lift=(7+(Math.abs(row+col+districtIndex)%14))*scale;
+      const bw=(105+(Math.abs(row*3+col+districtIndex)%70))*scale;
+      const bh=(85+(Math.abs(col*5-row+districtIndex)%55))*scale;
+      const lift=(75+(Math.abs(row+col+districtIndex)%95))*scale;
       if(base.x<-20||base.x>width+20||base.y<-25||base.y>height+25) continue;
       const topY=base.y-lift;
       context.fillStyle="#b9c6c0";
