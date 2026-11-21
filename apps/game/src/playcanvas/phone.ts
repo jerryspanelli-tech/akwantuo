@@ -37,6 +37,17 @@ const showHome = () => {
   if (setupScreen) setupScreen.hidden = true;
   if (homeScreen) homeScreen.hidden = false;
   if (appView) appView.hidden = true;
+  try {
+    const raw = localStorage.getItem(PROFILE_KEY);
+    const profile = raw ? JSON.parse(raw) as { name?: string; handle?: string; language?: string } : null;
+    const name = profile?.name || "Chale";
+    const greeting = document.getElementById("zenvia-home-name");
+    const subtitle = document.getElementById("zenvia-greeting");
+    const date = document.getElementById("zenvia-home-date");
+    if (greeting) greeting.textContent = name;
+    if (subtitle) subtitle.textContent = profile?.handle ? "@"+profile.handle : "YOUR AKWANTUO PHONE";
+    if (date) date.textContent = new Intl.DateTimeFormat("en-GH", { weekday: "long", day: "numeric", month: "long" }).format(new Date());
+  } catch { /* The home screen remains usable if local profile storage is unavailable. */ }
 };
 const setupComplete = () => {
   try { return localStorage.getItem(SETUP_KEY) === "complete"; }
