@@ -575,3 +575,193 @@ body.world-map-open .top-hud,body.world-map-open .health-hud,body.world-map-open
   .chale-app .chale-auth-switch button { font-size: 10px; padding-inline: 3px; }
   .chale-app .chale-auth-form input { padding-inline: 10px; }
 }
+
+
+/* Full-screen game viewport and safe-area-aware Zenvia phone frame. */
+html,
+body {
+  width: 100%;
+  min-width: 100%;
+  height: 100%;
+  min-height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+@supports (height: 100dvh) {
+  html, body { height: 100dvh; min-height: 100dvh; }
+}
+#game {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+@supports (height: 100dvh) {
+  #game { height: 100dvh; min-height: 100dvh; }
+}
+#application {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  touch-action: none;
+}
+.top-hud,
+.health-hud,
+.touch-ui {
+  box-sizing: border-box;
+}
+.health-hud {
+  top: max(48px, calc(env(safe-area-inset-top, 0px) + 42px));
+}
+.touch-ui {
+  bottom: max(12px, env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+
+/* Reserve room for the bottom "Put phone away" action as well as the bezel. */
+.zenvia-phone {
+  position: fixed;
+  top: max(12px, env(safe-area-inset-top, 0px));
+  right: max(12px, env(safe-area-inset-right, 0px));
+  bottom: max(12px, env(safe-area-inset-bottom, 0px));
+  left: auto;
+  width: auto;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 24px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 0;
+  pointer-events: none;
+}
+.zenvia-device {
+  flex: 0 1 auto;
+  width: min(360px, 88vw, calc((100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 84px) * 9 / 16.5));
+  height: auto;
+  max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 76px);
+  aspect-ratio: 9 / 16.5;
+  box-sizing: border-box;
+  overflow: visible;
+}
+.zenvia-screen {
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+.zenvia-status {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: space-between;
+  white-space: nowrap;
+}
+.zenvia-app-view > header {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.zenvia-app-view > header button {
+  flex: 0 0 32px;
+}
+.zenvia-app-view > header strong {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+}
+.zenvia-app-view > header span {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+.zenvia-close {
+  flex: 0 0 auto;
+  min-height: 34px;
+  min-width: 112px;
+  max-width: 100%;
+  padding: 7px 16px;
+  border-radius: 999px;
+  white-space: nowrap;
+  line-height: 1.2;
+  text-align: center;
+  font-size: 10px;
+}
+.chale-app .chale-auth-switch {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+}
+.chale-app .chale-auth-switch button:first-child {
+  white-space: nowrap;
+}
+.chale-app .chale-auth-switch button:last-child {
+  justify-self: center;
+  width: 100%;
+  max-width: 76px;
+  min-height: 44px;
+  white-space: normal;
+  word-break: normal;
+  overflow-wrap: normal;
+  hyphens: none;
+  text-align: center;
+}
+.chale-app .chale-primary {
+  justify-self: center;
+  width: 100%;
+  max-width: 116px;
+  min-height: 54px;
+  padding: 9px 12px;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.3;
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
+}
+.chale-app .chale-auth-form input {
+  padding-left: 14px;
+  padding-right: 14px;
+  text-overflow: clip;
+}
+.chale-app .chale-auth-form input::placeholder {
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+}
+@media (max-width: 420px) {
+  .zenvia-phone {
+    right: max(8px, env(safe-area-inset-right, 0px));
+    left: auto;
+  }
+  .zenvia-device {
+    width: min(360px, 90vw, calc((100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 82px) * 9 / 16.5));
+    max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 74px);
+    border-radius: 32px;
+  }
+  .zenvia-screen { border-radius: 25px; }
+}
+@media (max-height: 560px) {
+  .zenvia-phone {
+    top: max(6px, env(safe-area-inset-top, 0px));
+    bottom: max(6px, env(safe-area-inset-bottom, 0px));
+    gap: 5px;
+  }
+  .zenvia-device {
+    width: min(300px, 82vw, calc((100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 64px) * 9 / 16.5));
+    max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 58px);
+  }
+  .zenvia-close { min-height: 30px; padding-block: 5px; }
+}
