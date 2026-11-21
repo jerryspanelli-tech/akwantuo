@@ -222,3 +222,65 @@ body.world-map-open .top-hud,body.world-map-open .health-hud,body.world-map-open
 .chale-send{display:grid;place-items:center;flex:0 0 40px;width:40px;height:40px;border:0;border-radius:50%;background:#087e59;color:#fff;font-size:16px}
 .zenvia-app-content.chale-app{display:flex;flex-direction:column;min-height:0;padding:0!important;overflow:hidden}
 .zenvia-app-content:has(.chale-chat-screen){display:flex;flex-direction:column;min-height:0;overflow:hidden}
+
+
+/* ZENVIA global text-fit and iOS input-zoom prevention. */
+.zenvia-screen{
+  -webkit-text-size-adjust:100%;
+  text-size-adjust:100%;
+}
+.zenvia-screen,.zenvia-screen *{min-width:0}
+.zenvia-app-view,.zenvia-app-content,.zenvia-app-content *{
+  max-width:100%;
+  overflow-wrap:anywhere;
+}
+.zenvia-app-content{
+  overscroll-behavior:contain;
+  scrollbar-width:thin;
+  -webkit-overflow-scrolling:touch;
+}
+.zenvia-app-content :is(h1,h2,h3,h4,strong,b,label,small,p,span){
+  line-height:1.4;
+}
+.zenvia-app-content :is(input,textarea,select){
+  box-sizing:border-box;
+  max-width:100%;
+  min-width:0;
+  font-size:16px!important;
+  line-height:1.35;
+  -webkit-text-size-adjust:100%;
+}
+.zenvia-app-content :is(button,a){
+  max-width:100%;
+  white-space:normal;
+  overflow-wrap:anywhere;
+  line-height:1.3;
+}
+.zenvia-app-content :is(button,strong,b,span,small,p){
+  font-variant-numeric:tabular-nums;
+}
+.zenvia-app-content :is(img,canvas,svg,video){
+  max-width:100%;
+}
+.zenvia-app-content .waygo-map{
+  height:clamp(150px,30cqh,230px);
+  max-height:34%;
+}
+.zenvia-app-content .waygo-results{
+  min-width:0;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+}
+.chale-app :is(input,textarea,select){font-size:16px!important}
+.chale-app .chale-number-strip strong{
+  overflow-wrap:anywhere;
+  letter-spacing:clamp(.035em,1.4cqi,.09em);
+}
+.chale-app .chale-home-tools{min-width:0}
+.chale-app .chale-add-toggle{flex-shrink:0}
+.chale-app .chale-message{min-width:0}
+.chale-app .chale-message p{overflow-wrap:anywhere;word-break:normal}
+@media(max-height:600px){
+  .zenvia-lock,.zenvia-home,.zenvia-app-view{inset:12cqi 5.5cqi 8cqi}
+  .zenvia-app-view{gap:6px}
+  .zenvia-app-content{padding-top:4px;padding-bottom:4px}
+}
