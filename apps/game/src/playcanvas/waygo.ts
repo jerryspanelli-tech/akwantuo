@@ -97,6 +97,19 @@ function drawMap(canvas: HTMLCanvasElement, state: WayGoState): void {
   context.save();
   context.beginPath(); context.rect(0,0,width,height); context.clip();
 
+  // Keep the player fixed at the centre and rotate the map so their facing
+  // direction always points toward the top of the WayGo display.
+  const current = project(state.position);
+  const forwardX = Math.sin(state.headingRadians);
+  const forwardZ = Math.cos(state.headingRadians);
+  const screenForwardX = (forwardX - forwardZ) * 0.72;
+  const screenForwardY = (forwardX + forwardZ) * 0.36;
+  const headingOnScreen = Math.atan2(screenForwardY, screenForwardX);
+  const mapRotation = -Math.PI / 2 - headingOnScreen;
+  context.translate(width / 2, height / 2);
+  context.rotate(mapRotation);
+  context.translate(-current.x, -current.y);
+
   // Soft green parks/open areas around the urban districts.
   for (const [x,z,w,d] of [[-6000,1700,1500,900],[-1200,3200,1200,1000],[3000,3900,1300,900],[7000,900,900,700]] as const) {
     const c=project({x,z}), a=project({x:x+w,z}), b=project({x:x+w,z:z+d}), e=project({x,z:z+d});
@@ -162,11 +175,13 @@ function drawMap(canvas: HTMLCanvasElement, state: WayGoState): void {
     context.fillStyle="#52645c";context.fillText(label,p.x,p.y-14);
   }
 
-  const current=project(state.position);
-  context.save();context.translate(current.x,current.y);context.rotate(state.headingRadians);
+  context.restore();
+
+  // The player marker stays centred and points up; the map itself carries
+  // the heading rotation, matching the GTA-style minimap orientation.
+  context.save();context.translate(width / 2, height / 2);
   context.beginPath();context.moveTo(0,-12);context.lineTo(8,8);context.lineTo(0,4);context.lineTo(-8,8);context.closePath();
   context.fillStyle="#1684ee";context.fill();context.lineWidth=2.5;context.strokeStyle="#fff";context.stroke();context.restore();
-  context.restore();
 
   // Subtle map controls / scale cue.
   context.textAlign="left";context.fillStyle="#344b43";context.font="800 12px system-ui,sans-serif";
