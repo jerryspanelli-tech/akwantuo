@@ -292,6 +292,7 @@ export interface ChaleContact {
   phone_number: string;
   last_message: string | null;
   last_message_at: string | null;
+  is_mutual: boolean;
 }
 export interface ChaleMessage {
   id: string;
