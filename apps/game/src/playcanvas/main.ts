@@ -578,12 +578,12 @@ async function boot() {
       const width = minimap.width, height = minimap.height;
       const radius = Math.min(width, height) * 0.47;
       const scale = 0.16;
-      // The movement controller is the authoritative facing source: the
-      // visible GLB copies this exact yaw each frame, but its imported local
-      // forward axis may differ from PlayCanvas +Z. Read controller yaw so
-      // the radar follows the same 0–360° direction used to turn the actor.
-      const actor = inVehicle ? vehicle : player;
-      const heading = actor.getEulerAngles().y * Math.PI / 180;
+      // Use the rendered actor as the heading authority. On foot the visible
+      // GLB is the character the player sees; in a vehicle the taxi is the
+      // visible actor. Both are updated from the same world rotation used by
+      // gameplay, so the marker has no guessed 180-degree model correction.
+      const facingActor = inVehicle ? vehicle : (playerCharacter ?? player);
+      const heading = facingActor.getEulerAngles().y * Math.PI / 180;
       map.clearRect(0, 0, width, height);
       map.fillStyle = "#091511"; map.fillRect(0, 0, width, height);
       map.save();
@@ -668,10 +668,10 @@ async function boot() {
         map.fillText(distance >= 1000 ? `${(distance / 1000).toFixed(1)} KM TO MARK` : `${Math.round(distance)} M TO MARK`, 0, radius - 5);
       }
       map.restore();
-      // The imported player model's authored forward axis is opposite
-      // PlayCanvas' +Z controller forward. Apply a half-turn so the radar
-      // arrow tracks the direction the visible character is actually facing.
-      map.save(); map.translate(width / 2, height / 2); map.rotate(heading + Math.PI);
+      // Canvas' local arrow points north (screen -Y). Its positive rotation
+      // is clockwise, matching PlayCanvas' positive world yaw (+Z toward +X).
+      // Apply the rendered actor's yaw directly: no guessed axis flip.
+      map.save(); map.translate(width / 2, height / 2); map.rotate(heading);
       map.beginPath(); map.moveTo(0, -9); map.lineTo(6, 7); map.lineTo(0, 4); map.lineTo(-6, 7); map.closePath();
       map.fillStyle = "#f3c56f"; map.fill(); map.strokeStyle = "#fff4d8"; map.lineWidth = 1.3; map.stroke();
       map.restore();
