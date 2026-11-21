@@ -236,16 +236,55 @@ async function boot() {
     markPlayerUnavailable("The GLB request or container parse failed.", loadError);
   });
   const camera = new Entity("Third person camera");
-  camera.addComponent("camera", { clearColor: new Color(0.68, 0.78, 0.83), fov: 62, farClip: 260 });
+  camera.addComponent("camera", { clearColor: new Color(0.68, 0.78, 0.83), fov: 62, farClip: 520 });
   app.root.addChild(camera);
-  const sun = new Entity("Ghana afternoon sun");
+  const sun = new Entity("Ghana moving sun");
   sun.addComponent("light", { type: "directional", color: new Color(1, 0.82, 0.66), intensity: 1.35, castShadows: true, shadowDistance: 70, shadowResolution: 512 });
-  sun.setEulerAngles(48, 32, 0);
   app.root.addChild(sun);
 
-  // A slow tropical day/night cycle: keep the same sun direction but let the
-  // daylight, ambient fill and sky tone change smoothly over an eight-minute loop.
-  let worldClock = 0;
+  const sunDiscMaterial = mat(1, 0.78, 0.43);
+  sunDiscMaterial.emissive = new Color(1, 0.58, 0.22);
+  sunDiscMaterial.update();
+  const sunDisc = new Entity("Visible sun");
+  sunDisc.addComponent("render", { type: "sphere", material: sunDiscMaterial, castShadows: false, receiveShadows: false });
+  sunDisc.setLocalScale(10, 10, 10);
+  app.root.addChild(sunDisc);
+
+  const moonMaterial = mat(0.78, 0.84, 0.96);
+  moonMaterial.emissive = new Color(0.34, 0.40, 0.58);
+  moonMaterial.update();
+  const moon = new Entity("Visible moon");
+  moon.addComponent("render", { type: "sphere", material: moonMaterial, castShadows: false, receiveShadows: false });
+  moon.setLocalScale(7, 7, 7);
+  app.root.addChild(moon);
+  const moonLight = new Entity("Moonlight");
+  moonLight.addComponent("light", { type: "directional", color: new Color(0.48, 0.58, 0.82), intensity: 0.18, castShadows: false });
+  app.root.addChild(moonLight);
+
+  // A lightweight fixed star field. The stars follow the player so they remain
+  // visible on the sky dome without requiring an expensive skybox on mobile.
+  const starMaterial = mat(0.78, 0.84, 1);
+  starMaterial.emissive = new Color(0.68, 0.76, 1);
+  starMaterial.update();
+  const stars: Entity[] = [];
+  for (let i = 0; i < 54; i++) {
+    const star = new Entity("Night sky star");
+    star.addComponent("render", { type: "sphere", material: starMaterial, castShadows: false, receiveShadows: false });
+    const size = i % 7 === 0 ? 1.15 : 0.62;
+    star.setLocalScale(size, size, size);
+    star.enabled = false;
+    app.root.addChild(star);
+    stars.push(star);
+  }
+
+  // Start at the real local time in Accra (GMT), then run the in-game clock
+  // at 60x so a complete Ghana day/night cycle lasts 24 real-world minutes.
+  const accraTimeParts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Africa/Accra", hour: "2-digit", minute: "2-digit",
+    second: "2-digit", hourCycle: "h23"
+  }).formatToParts(new Date());
+  const timePart = (type: string) => Number(accraTimeParts.find((part) => part.type === type)?.value ?? 0);
+  let worldClock = timePart("hour") * 3600 + timePart("minute") * 60 + timePart("second");
   const rainMaterial = mat(0.48, 0.66, 0.78);
   const rainDrops: Entity[] = [];
   for (let i = 0; i < 36; i++) {
@@ -351,7 +390,7 @@ async function boot() {
 
   let cameraYaw = 0, cameraPitch = 13, dragPointer: number | null = null, lastX = 0, lastY = 0;
   canvas.addEventListener("pointerdown", (event) => { dragPointer = event.pointerId; lastX = event.clientX; lastY = event.clientY; });
-  window.addEventListener("pointermove", (event) => { if (dragPointer !== event.pointerId) return; cameraYaw -= (event.clientX - lastX) * 0.22; cameraPitch = clamp(cameraPitch + (event.clientY - lastY) * 0.12, -2, 30); lastX = event.clientX; lastY = event.clientY; });
+  window.addEventListener("pointermove", (event) => { if (dragPointer !== event.pointerId) return; cameraYaw -= (event.clientX - lastX) * 0.22; cameraPitch = clamp(cameraPitch + (event.clientY - lastY) * 0.12, -85, 80); lastX = event.clientX; lastY = event.clientY; });
   window.addEventListener("pointerup", (event) => { if (dragPointer === event.pointerId) dragPointer = null; });
 
   const walkSpeed = 4.6, sprintSpeed = 8.2;
@@ -443,19 +482,49 @@ async function boot() {
   app.on("update", (dt: number) => {
     const step = Math.min(dt, 0.05);
     world.update(step);
-    worldClock += step;
-    const daylight = 0.5 + 0.5 * Math.sin((worldClock / 480) * Math.PI * 2 - Math.PI / 2);
-    if (sun.light) sun.light.intensity = 0.22 + daylight * 1.16;
+    worldClock = (worldClock + step * 60) % 86400;
+    const hourOfDay = worldClock / 3600;
+    // Accra sunrise is around 06:00 and sunset around 18:00. Smooth the
+    // transition through golden hour and twilight rather than switching abruptly.
+    const solarAngle = ((hourOfDay - 6) / 12) * Math.PI;
+    const sunElevation = Math.sin(solarAngle);
+    const daylightRaw = clamp((sunElevation + 0.14) / 0.38, 0, 1);
+    const daylight = daylightRaw * daylightRaw * (3 - 2 * daylightRaw);
+    const night = 1 - daylight;
+    if (sun.light) {
+      sun.light.intensity = 0.025 + daylight * 1.45;
+      sun.setEulerAngles(90 - sunElevation * 72, hourOfDay * 15 + 90, 0);
+    }
+    if (moonLight.light) moonLight.light.intensity = 0.025 + night * 0.24;
+    const focusForSky = inVehicle ? vehicle.getPosition() : player.getPosition();
+    const sunX = Math.cos(solarAngle) * 210;
+    const sunY = Math.max(-35, sunElevation * 175);
+    sunDisc.setPosition(focusForSky.x + sunX, focusForSky.y + sunY + 35, focusForSky.z - 35);
+    moon.setPosition(focusForSky.x - sunX, focusForSky.y + Math.max(20, -sunElevation * 155) + 35, focusForSky.z + 35);
+    moonLight.setEulerAngles(42, hourOfDay * 15 + 270, 0);
+    const starsVisible = night > 0.48;
+    const starFade = clamp((night - 0.35) / 0.5, 0, 1);
+    for (let i = 0; i < stars.length; i++) {
+      const star = stars[i];
+      star.enabled = starsVisible;
+      if (starsVisible) {
+        // Deterministic golden-angle distribution across the upper sky.
+        const angle = i * 2.399963229728653;
+        const y = 55 + (i % 9) * 15;
+        const ring = Math.sqrt(Math.max(0, 1 - (y / 220) ** 2)) * 205;
+        star.setPosition(focusForSky.x + Math.cos(angle) * ring, focusForSky.y + y, focusForSky.z + Math.sin(angle) * ring);
+      }
+    }
     app.scene.ambientLight = new Color(
-      0.12 + daylight * 0.36,
-      0.14 + daylight * 0.35,
-      0.20 + daylight * 0.27
+      0.035 + daylight * 0.445 + starFade * 0.025,
+      0.045 + daylight * 0.405 + starFade * 0.035,
+      0.085 + daylight * 0.305 + starFade * 0.075
     );
     if (camera.camera) {
       camera.camera.clearColor = new Color(
-        0.025 + daylight * 0.63,
-        0.045 + daylight * 0.70,
-        0.085 + daylight * 0.72
+        0.006 + daylight * 0.57 + starFade * 0.018,
+        0.012 + daylight * 0.66 + starFade * 0.025,
+        0.035 + daylight * 0.68 + starFade * 0.055
       );
     }
     // Short tropical showers recur during the weather cycle. Keep the particle
@@ -573,8 +642,14 @@ async function boot() {
     const yaw = cameraYaw * Math.PI / 180;
     const distance = inVehicle ? 10 : 7.5;
     const height = inVehicle ? 4.4 : 3.6;
-    camera.setPosition(focus.x - Math.sin(yaw) * distance, focus.y + height + cameraPitch * 0.08, focus.z - Math.cos(yaw) * distance);
-    camera.lookAt(focus.x, focus.y + 1.15, focus.z);
+    camera.setPosition(focus.x - Math.sin(yaw) * distance, focus.y + height, focus.z - Math.cos(yaw) * distance);
+    const pitch = cameraPitch * Math.PI / 180;
+    const viewDistance = 30;
+    camera.lookAt(
+      focus.x + Math.sin(yaw) * Math.cos(pitch) * viewDistance,
+      focus.y + 1.15 - Math.sin(pitch) * viewDistance,
+      focus.z + Math.cos(yaw) * Math.cos(pitch) * viewDistance
+    );
     if (elapsed > 0.10) { updateButtons(); elapsed = 0; }
     elapsed += step;
     mapElapsed += step;
