@@ -107,7 +107,7 @@ async function boot() {
     entity.setPosition(x, y, z);
     entity.setLocalScale(sx, sy, sz);
     app.root.addChild(entity);
-    if (blocker) blockers.push({ x, z, hx: sx * 0.52, hz: sz * 0.52 });
+    if (blocker) blockers.push({ x, z, hx: sx * 0.52, hz: sz * 0.52, yaw: 0 });
     return entity;
   };
   const addPlane = (name: string, x: number, y: number, z: number, sx: number, sz: number, material: StandardMaterial) => {
