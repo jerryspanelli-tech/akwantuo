@@ -42,8 +42,8 @@ let mapCameraEntity: Entity | null = null;
 const mapZoomIn = document.querySelector<HTMLButtonElement>("#map-zoom-in");
 const mapZoomOut = document.querySelector<HTMLButtonElement>("#map-zoom-out");
 const mapMarkClear = document.querySelector<HTMLButtonElement>("#map-mark-clear");
-mapZoomIn?.addEventListener("click", () => { worldMapZoom = clamp(worldMapZoom * 1.25, 1, 4); });
-mapZoomOut?.addEventListener("click", () => { worldMapZoom = clamp(worldMapZoom / 1.25, 1, 4); });
+mapZoomIn?.addEventListener("click", () => { worldMapZoom = clamp(worldMapZoom * 1.25, 0.65, 4); });
+mapZoomOut?.addEventListener("click", () => { worldMapZoom = clamp(worldMapZoom / 1.25, 0.65, 4); });
 mapMarkClear?.addEventListener("click", () => { worldMapWaypoint = null; });
 const setWorldMapOpen = (open: boolean) => {
   worldMapOpen = open;
@@ -257,6 +257,7 @@ async function boot() {
   app.root.addChild(mapCamera);
   mapCamera.enabled = false;
   mapCameraEntity = mapCamera;
+  if (worldMapOpen) { camera.enabled = false; mapCamera.enabled = true; }
   const sun = new Entity("Ghana moving sun");
   sun.addComponent("light", { type: "directional", color: new Color(1, 0.82, 0.66), intensity: 1.35, castShadows: true, shadowDistance: 70, shadowResolution: 512 });
   app.root.addChild(sun);
@@ -800,7 +801,7 @@ async function boot() {
         map.restore();
         map.fillStyle = "#ffdf76"; map.font = "bold 10px system-ui,sans-serif";
         map.textAlign = "center"; map.textBaseline = "bottom";
-        map.fillText(distance >= 1000 ? `${(distance / 1000).toFixed(1)} KM TO MARK` : `${Math.round(distance)} M TO MARK`, 0, radius - 5);
+        map.fillText(distance >= 1000 ? `${(distance / 1000).toFixed(1)} KM DIRECT` : `${Math.round(distance)} M DIRECT`, 0, radius - 5);
       }
       map.restore();
       // Draw the marker directly from the same world-space facing vector
