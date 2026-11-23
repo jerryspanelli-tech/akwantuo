@@ -72,3 +72,6 @@ body.world-map-open .top-hud,body.world-map-open .health-hud,body.world-map-open
 .world-map-panel footer span:first-child{color:#8de3ae}
 .world-map-tools{flex-wrap:wrap;justify-content:flex-end}
 @media(max-width:520px){.world-map-panel footer{gap:8px}.world-map-panel footer span:first-child{font-size:8px}.world-map-tools{width:100%;justify-content:space-between}.world-map-tools button{flex:1}}
+
+#world-map-route-overlay{position:absolute;inset:0;z-index:0;display:block;width:100%;height:100%;border:0;border-radius:0;pointer-events:none}
+.world-map-header,.world-map-panel footer{position:relative;z-index:1}
