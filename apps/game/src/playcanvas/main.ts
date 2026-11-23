@@ -298,7 +298,19 @@ async function boot() {
   // Render the same scene from an elevated angle only while the map is open.
   // This switches cameras rather than creating a second renderer or world.
   const mapCamera = new Entity("Greater Accra 3D navigation camera");
-  mapCamera.addComponent("camera", { clearColor: new Color(0.035, 0.075, 0.065), fov: 58, nearClip: 0.5, farClip: 30000 });
+  mapCamera.addComponent("camera", {
+    clearColor: new Color(0.035, 0.075, 0.065),
+    fov: 58,
+    nearClip: 0.5,
+    farClip: 50000,
+    priority: 10
+  });
+  // Give the navigation view explicit render priority so it always replaces
+  // the gameplay camera while open, including on mobile WebGL.
+  if (mapCamera.camera) {
+    mapCamera.camera.priority = 10;
+    mapCamera.camera.clearColorBuffer = true;
+  }
   app.root.addChild(mapCamera);
   mapCamera.enabled = false;
   mapCameraEntity = mapCamera;
@@ -746,8 +758,14 @@ async function boot() {
     if (worldMapOpen) {
       const mapFocus = inVehicle ? vehicle.getPosition() : player.getPosition();
       const mapHeight = 12000 / worldMapZoom;
-      mapCamera.setPosition(mapFocus.x, mapFocus.y + mapHeight, mapFocus.z + mapHeight * 0.58);
+      mapCamera.setPosition(mapFocus.x, mapFocus.y + mapHeight, mapFocus.z + mapHeight * 0.42);
       mapCamera.lookAt(mapFocus.x, mapFocus.y, mapFocus.z);
+      // Keep the full 3D world camera active and full-screen; the map is not
+      // a separate flat canvas or a CSS-only panel.
+      if (mapCamera.camera) {
+        mapCamera.camera.priority = 10;
+        mapCamera.camera.rect.set(0, 0, 1, 1);
+      }
       if (routeOverlay && routeOverlayContext && mapCamera.camera) {
         const pixelRatio = Math.min(window.devicePixelRatio || 1, 1.25);
         const overlayWidth = Math.max(1, Math.round(canvas.clientWidth * pixelRatio));
