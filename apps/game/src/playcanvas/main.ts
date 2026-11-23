@@ -40,12 +40,15 @@ const mapRouteStatus = document.querySelector<HTMLElement>("#map-route-status");
 const worldMapClose = document.querySelector<HTMLButtonElement>("#world-map-close");
 let worldMapOpen = false;
 let worldMapZoom = 1;
+let worldMapHeight = 0;
+let worldMapCenter = {
+  x: (GREATER_ACCRA_MAP_EXTENT.minX + GREATER_ACCRA_MAP_EXTENT.maxX) / 2,
+  z: (GREATER_ACCRA_MAP_EXTENT.minZ + GREATER_ACCRA_MAP_EXTENT.maxZ) / 2
+};
 let worldMapWaypoint: { x: number; z: number } | null = null;
 let activeRoute: GreaterAccraRoute | null = null;
 let routeRefreshElapsed = 1;
 let routeFailureNoticeShown = false;
-let gameplayCameraEntity: Entity | null = null;
-let mapCameraEntity: Entity | null = null;
 const mapZoomIn = document.querySelector<HTMLButtonElement>("#map-zoom-in");
 const mapZoomOut = document.querySelector<HTMLButtonElement>("#map-zoom-out");
 const mapMarkClear = document.querySelector<HTMLButtonElement>("#map-mark-clear");
@@ -53,11 +56,16 @@ mapZoomIn?.addEventListener("click", () => { worldMapZoom = clamp(worldMapZoom *
 mapZoomOut?.addEventListener("click", () => { worldMapZoom = clamp(worldMapZoom / 1.25, 0.65, 4); });
 mapMarkClear?.addEventListener("click", () => { worldMapWaypoint = null; activeRoute = null; routeRefreshElapsed = 1; routeFailureNoticeShown = false; });
 const setWorldMapOpen = (open: boolean) => {
+  if (open && !worldMapOpen) {
+    worldMapCenter = {
+      x: (GREATER_ACCRA_MAP_EXTENT.minX + GREATER_ACCRA_MAP_EXTENT.maxX) / 2,
+      z: (GREATER_ACCRA_MAP_EXTENT.minZ + GREATER_ACCRA_MAP_EXTENT.maxZ) / 2
+    };
+    worldMapZoom = 1;
+  }
   worldMapOpen = open;
   if (worldMapPanel) worldMapPanel.hidden = !open;
   if (mapToggle) mapToggle.setAttribute("aria-expanded", String(open));
-  if (gameplayCameraEntity) gameplayCameraEntity.enabled = !open;
-  if (mapCameraEntity) mapCameraEntity.enabled = open;
   document.body.classList.toggle("world-map-open", open);
 };
 mapToggle?.addEventListener("click", () => setWorldMapOpen(!worldMapOpen));
@@ -165,7 +173,7 @@ async function boot() {
     const width = minimap.width, height = minimap.height;
     const center = world.spawn;
     const radius = Math.min(width, height) * 0.47;
-    const scale = 0.16;
+    const scale = radius / 1250;
     ctx.clearRect(0, 0, width, height);
     ctx.fillStyle = "#091511"; ctx.fillRect(0, 0, width, height);
     ctx.save();
@@ -293,28 +301,10 @@ async function boot() {
   const camera = new Entity("Third person camera");
   camera.addComponent("camera", { clearColor: new Color(0.68, 0.78, 0.83), fov: 62, farClip: 520 });
   app.root.addChild(camera);
-  gameplayCameraEntity = camera;
 
-  // Render the same scene from an elevated angle only while the map is open.
-  // This switches cameras rather than creating a second renderer or world.
-  const mapCamera = new Entity("Greater Accra 3D navigation camera");
-  mapCamera.addComponent("camera", {
-    clearColor: new Color(0.035, 0.075, 0.065),
-    fov: 58,
-    nearClip: 0.5,
-    farClip: 50000,
-    priority: 10
-  });
-  // Give the navigation view explicit render priority so it always replaces
-  // the gameplay camera while open, including on mobile WebGL.
-  if (mapCamera.camera) {
-    mapCamera.camera.priority = 10;
-    mapCamera.camera.clearColorBuffer = true;
-  }
-  app.root.addChild(mapCamera);
-  mapCamera.enabled = false;
-  mapCameraEntity = mapCamera;
-  if (worldMapOpen) { camera.enabled = false; mapCamera.enabled = true; }
+  // Both map modes reuse the existing world camera. No second camera or
+  // competing render pass is created; map mode temporarily changes its view.
+  if (camera.camera) camera.camera.farClip = 65000;
   const sun = new Entity("Ghana moving sun");
   sun.addComponent("light", { type: "directional", color: new Color(1, 0.82, 0.66), intensity: 1.35, castShadows: true, shadowDistance: 70, shadowResolution: 512 });
   app.root.addChild(sun);
@@ -466,18 +456,33 @@ async function boot() {
   stick?.addEventListener("pointerup", resetStick); stick?.addEventListener("pointercancel", resetStick); stick?.addEventListener("lostpointercapture", resetStick);
 
   let cameraYaw = 0, cameraPitch = 13, dragPointer: number | null = null, lastX = 0, lastY = 0;
-  let mapPointerStart: { id: number; x: number; y: number } | null = null;
+  let mapPointerStart: { id: number; x: number; y: number; moved: boolean } | null = null;
   canvas.addEventListener("pointerdown", (event) => {
     if (worldMapOpen) {
       event.preventDefault();
-      mapPointerStart = { id: event.pointerId, x: event.clientX, y: event.clientY };
+      mapPointerStart = { id: event.pointerId, x: event.clientX, y: event.clientY, moved: false };
       dragPointer = null;
       return;
     }
     dragPointer = event.pointerId; lastX = event.clientX; lastY = event.clientY;
   });
   window.addEventListener("pointermove", (event) => {
-    if (worldMapOpen || dragPointer !== event.pointerId) return;
+    if (worldMapOpen) {
+      if (mapPointerStart?.id === event.pointerId) {
+        const dx = event.clientX - mapPointerStart.x;
+        const dy = event.clientY - mapPointerStart.y;
+        if (Math.hypot(dx, dy) > 5) mapPointerStart.moved = true;
+        if (mapPointerStart.moved && worldMapHeight > 0) {
+          const unitsPerPixel = (2 * worldMapHeight * Math.tan(29 * Math.PI / 180)) / Math.max(1, canvas.clientHeight);
+          worldMapCenter.x -= dx * unitsPerPixel;
+          worldMapCenter.z += dy * unitsPerPixel;
+          mapPointerStart.x = event.clientX;
+          mapPointerStart.y = event.clientY;
+        }
+      }
+      return;
+    }
+    if (dragPointer !== event.pointerId) return;
     cameraYaw -= (event.clientX - lastX) * 0.22;
     cameraPitch = clamp(cameraPitch + (event.clientY - lastY) * 0.12, -85, 80);
     lastX = event.clientX; lastY = event.clientY;
@@ -485,11 +490,11 @@ async function boot() {
   window.addEventListener("pointerup", (event) => {
     if (worldMapOpen && mapPointerStart?.id === event.pointerId) {
       const start = mapPointerStart; mapPointerStart = null;
-      if (Math.hypot(event.clientX - start.x, event.clientY - start.y) <= 14 && mapCamera.camera) {
+      if (!start.moved && Math.hypot(event.clientX - start.x, event.clientY - start.y) <= 14 && camera.camera) {
         const rect = canvas.getBoundingClientRect();
         const sx = event.clientX - rect.left, sy = event.clientY - rect.top;
-        const rayStart = mapCamera.camera.screenToWorld(sx, sy, mapCamera.camera.nearClip);
-        const rayEnd = mapCamera.camera.screenToWorld(sx, sy, mapCamera.camera.farClip);
+        const rayStart = camera.camera.screenToWorld(sx, sy, camera.camera.nearClip);
+        const rayEnd = camera.camera.screenToWorld(sx, sy, camera.camera.farClip);
         const dy = rayEnd.y - rayStart.y;
         if (Math.abs(dy) > 0.0001) {
           const t = -rayStart.y / dy;
@@ -747,26 +752,22 @@ async function boot() {
     const yaw = cameraYaw * Math.PI / 180;
     const distance = inVehicle ? 10 : 7.5;
     const height = inVehicle ? 4.4 : 3.6;
-    camera.setPosition(focus.x - Math.sin(yaw) * distance, focus.y + height, focus.z - Math.cos(yaw) * distance);
-    const pitch = cameraPitch * Math.PI / 180;
-    const viewDistance = 30;
-    camera.lookAt(
-      focus.x + Math.sin(yaw) * Math.cos(pitch) * viewDistance,
-      focus.y + 1.15 - Math.sin(pitch) * viewDistance,
-      focus.z + Math.cos(yaw) * Math.cos(pitch) * viewDistance
-    );
     if (worldMapOpen) {
+      // Fit the complete authored Greater Accra extent to the current screen.
+      // Portrait phones need a wider world-space view than desktop displays.
+      const aspect = Math.max(0.35, canvas.clientWidth / Math.max(1, canvas.clientHeight));
+      const halfFov = 29 * Math.PI / 180;
+      const fitWidth = GREATER_ACCRA_MAP_EXTENT.widthM / (2 * Math.tan(halfFov) * aspect);
+      const fitDepth = GREATER_ACCRA_MAP_EXTENT.depthM / (2 * Math.tan(halfFov));
+      worldMapHeight = Math.max(fitWidth, fitDepth) * 1.08 / worldMapZoom;
       const mapFocus = inVehicle ? vehicle.getPosition() : player.getPosition();
-      const mapHeight = 12000 / worldMapZoom;
-      mapCamera.setPosition(mapFocus.x, mapFocus.y + mapHeight, mapFocus.z + mapHeight * 0.42);
-      mapCamera.lookAt(mapFocus.x, mapFocus.y, mapFocus.z);
-      // Keep the full 3D world camera active and full-screen; the map is not
-      // a separate flat canvas or a CSS-only panel.
-      if (mapCamera.camera) {
-        mapCamera.camera.priority = 10;
-        mapCamera.camera.rect.set(0, 0, 1, 1);
+      camera.setPosition(worldMapCenter.x, worldMapHeight, worldMapCenter.z + worldMapHeight * 0.34);
+      camera.lookAt(worldMapCenter.x, 0, worldMapCenter.z);
+      if (camera.camera) {
+        camera.camera.farClip = 65000;
+        camera.camera.rect.set(0, 0, 1, 1);
       }
-      if (routeOverlay && routeOverlayContext && mapCamera.camera) {
+      if (routeOverlay && routeOverlayContext && camera.camera) {
         const pixelRatio = Math.min(window.devicePixelRatio || 1, 1.25);
         const overlayWidth = Math.max(1, Math.round(canvas.clientWidth * pixelRatio));
         const overlayHeight = Math.max(1, Math.round(canvas.clientHeight * pixelRatio));
@@ -777,7 +778,7 @@ async function boot() {
         routeOverlayContext.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
         if (activeRoute && activeRoute.roadPoints.length > 1) {
           const projected = activeRoute.roadPoints.map((point) =>
-            mapCamera.camera!.worldToScreen(new Vec3(point.x, 0.55, point.z))
+            camera.camera!.worldToScreen(new Vec3(point.x, 0.55, point.z))
           );
           routeOverlayContext.beginPath();
           projected.forEach((point, index) => {
@@ -823,7 +824,7 @@ async function boot() {
       const center = inVehicle ? vehicle.getPosition() : player.getPosition();
       const width = minimap.width, height = minimap.height;
       const radius = Math.min(width, height) * 0.47;
-      const scale = 0.16;
+      const scale = radius / 1250;
       // The marker uses the exact world-space direction used to rotate the
       // player/vehicle, rather than re-reading Euler angles or rotating the map.
       const facingLength = Math.hypot(minimapFacingX, minimapFacingZ) || 1;
