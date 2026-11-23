@@ -2,6 +2,7 @@ import { AppBase, Color, Entity, StandardMaterial, Texture, PIXELFORMAT_RGBA8 } 
 import { GREATER_ACCRA_COASTLINE, GREATER_ACCRA_MAP_EXTENT, GREATER_ACCRA_REGION_ANCHORS, GREATER_ACCRA_ROAD_PATHS } from "../world/greaterAccraLayout";
 import { GREATER_ACCRA_LANDMARK_FOOTPRINTS } from "../world/greaterAccraLandmarkData";
 import { GREATER_ACCRA_RAIL_NODES, GREATER_ACCRA_RAIL_ROUTES } from "../world/railNetwork";
+import { addGhanaAdditionalLandmarks } from "./additionalLandmarks";
 
 export type WorldBlocker = { x: number; z: number; hx: number; hz: number; yaw: number };
 export type GreaterAccraWorld = {
@@ -303,6 +304,11 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
   // Landmark footprints preserve the existing Greater Accra spatial catalogue.
   for (const landmark of GREATER_ACCRA_LANDMARK_FOOTPRINTS) {
     const width = landmark.maxX - landmark.minX;
+    if (["black-star-square", "jamestown-lighthouse", "osu-castle", "accra-arts-centre"].includes(landmark.id)) {
+      // Dedicated models are built below; retain their registered collision bounds.
+      blockers.push({ x: landmark.x, z: landmark.z, hx: width * 0.52, hz: (landmark.maxZ - landmark.minZ) * 0.52, yaw: 0 });
+      continue;
+    }
     const depth = landmark.maxZ - landmark.minZ;
     const height = landmark.id === "kotoka-airport" ? 16 :
       landmark.id === "accra-sports-stadium" ? 22 :
@@ -455,6 +461,9 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     }
     box("The Signature landscaped arrival court", x, 0.06, z + 58, 100, 0.12, 26, mats.green);
   }
+
+  // Add detailed architecture only for the four newly registered landmark sites.
+  addGhanaAdditionalLandmarks(app);
 
   // Traffic-control furniture and public-transport stops at key Accra junctions.
   const junctions = [
