@@ -438,8 +438,8 @@ async function boot() {
         if (Math.hypot(dx, dy) > 5) mapPointerStart.moved = true;
         if (mapPointerStart.moved && worldMapHeight > 0) {
           const unitsPerPixel = (2 * worldMapHeight * Math.tan(29 * Math.PI / 180)) / Math.max(1, canvas.clientHeight);
-          worldMapCenter.x -= dx * unitsPerPixel;
-          worldMapCenter.z += dy * unitsPerPixel;
+          worldMapCenter.x = clamp(worldMapCenter.x - dx * unitsPerPixel, GREATER_ACCRA_MAP_EXTENT.minX - 2500, GREATER_ACCRA_MAP_EXTENT.maxX + 2500);
+          worldMapCenter.z = clamp(worldMapCenter.z + dy * unitsPerPixel, GREATER_ACCRA_MAP_EXTENT.minZ - 2500, GREATER_ACCRA_MAP_EXTENT.maxZ + 2500);
           mapPointerStart.x = event.clientX;
           mapPointerStart.y = event.clientY;
         }
@@ -740,29 +740,53 @@ async function boot() {
         }
         routeOverlayContext.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
         routeOverlayContext.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
-        if (activeRoute && activeRoute.roadPoints.length > 1) {
-          const projected = activeRoute.roadPoints.map((point) =>
-            camera.camera!.worldToScreen(new Vec3(point.x, 0.55, point.z))
+        if (worldMapWaypoint) {
+          const routePoints = activeRoute?.roadPoints ?? [{ x: mapFocus.x, z: mapFocus.z }, worldMapWaypoint];
+          const projected = routePoints.map((point) =>
+            camera.camera!.worldToScreen(new Vec3(point.x, 0.65, point.z))
           );
           routeOverlayContext.beginPath();
           projected.forEach((point, index) => {
             if (index === 0) routeOverlayContext!.moveTo(point.x, point.y);
             else routeOverlayContext!.lineTo(point.x, point.y);
           });
-          routeOverlayContext.strokeStyle = "#ffdf76";
-          routeOverlayContext.lineWidth = 4;
+          routeOverlayContext.strokeStyle = activeRoute ? "#ffdf76" : "#e0a65d";
+          routeOverlayContext.lineWidth = activeRoute ? 4 : 2.5;
           routeOverlayContext.lineCap = "round";
           routeOverlayContext.lineJoin = "round";
+          routeOverlayContext.setLineDash(activeRoute ? [] : [8, 7]);
           routeOverlayContext.shadowColor = "#10150d";
           routeOverlayContext.shadowBlur = 6;
           routeOverlayContext.stroke();
+          routeOverlayContext.setLineDash([]);
           routeOverlayContext.shadowBlur = 0;
         }
+        const playerScreen = camera.camera.worldToScreen(new Vec3(mapFocus.x, 8, mapFocus.z));
+        routeOverlayContext.beginPath();
+        routeOverlayContext.arc(playerScreen.x, playerScreen.y, 8, 0, Math.PI * 2);
+        routeOverlayContext.fillStyle = "#65e5a0";
+        routeOverlayContext.fill();
+        routeOverlayContext.lineWidth = 3;
+        routeOverlayContext.strokeStyle = "#f4fff8";
+        routeOverlayContext.stroke();
+        if (worldMapWaypoint) {
+          const targetScreen = camera.camera.worldToScreen(new Vec3(worldMapWaypoint.x, 10, worldMapWaypoint.z));
+          routeOverlayContext.beginPath();
+          routeOverlayContext.arc(targetScreen.x, targetScreen.y, 8, 0, Math.PI * 2);
+          routeOverlayContext.fillStyle = "#ffdb73";
+          routeOverlayContext.fill();
+          routeOverlayContext.lineWidth = 2;
+          routeOverlayContext.strokeStyle = "#3b2c16";
+          routeOverlayContext.stroke();
+        }
       }
+      const beaconRadius = Math.max(1.05, worldMapHeight * 0.006);
+      playerMapBeacon.setLocalScale(beaconRadius * 2, Math.max(12, worldMapHeight * 0.018), beaconRadius * 2);
+      waypointBeacon.setLocalScale(beaconRadius * 2.3, Math.max(16, worldMapHeight * 0.024), beaconRadius * 2.3);
       playerMapBeacon.enabled = true;
-      playerMapBeacon.setPosition(mapFocus.x, mapFocus.y + 6, mapFocus.z);
+      playerMapBeacon.setPosition(mapFocus.x, mapFocus.y + Math.max(6, worldMapHeight * 0.009), mapFocus.z);
       waypointBeacon.enabled = !!worldMapWaypoint;
-      if (worldMapWaypoint) waypointBeacon.setPosition(worldMapWaypoint.x, 8, worldMapWaypoint.z);
+      if (worldMapWaypoint) waypointBeacon.setPosition(worldMapWaypoint.x, Math.max(8, worldMapHeight * 0.012), worldMapWaypoint.z);
     } else {
       if (camera.camera) camera.camera.farClip = 520;
       playerMapBeacon.enabled = false;
