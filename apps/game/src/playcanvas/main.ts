@@ -7,6 +7,7 @@ import {
 import "./style.css";
 import { createGreaterAccraWorld } from "./world";
 import { GREATER_ACCRA_ROAD_PATHS, GREATER_ACCRA_MAP_EXTENT, GREATER_ACCRA_REGION_ANCHORS } from "../world/greaterAccraLayout";
+import { findGreaterAccraRoadRoute, type GreaterAccraRoute } from "../world/greaterAccraNavigation";
 
 const canvas = document.querySelector<HTMLCanvasElement>("#application")!;
 const loading = document.querySelector<HTMLElement>("#loading");
@@ -37,6 +38,9 @@ const worldMapClose = document.querySelector<HTMLButtonElement>("#world-map-clos
 let worldMapOpen = false;
 let worldMapZoom = 1;
 let worldMapWaypoint: { x: number; z: number } | null = null;
+let activeRoute: GreaterAccraRoute | null = null;
+let routeRefreshElapsed = 1;
+let routeFailureNoticeShown = false;
 let gameplayCameraEntity: Entity | null = null;
 let mapCameraEntity: Entity | null = null;
 const mapZoomIn = document.querySelector<HTMLButtonElement>("#map-zoom-in");
@@ -44,7 +48,7 @@ const mapZoomOut = document.querySelector<HTMLButtonElement>("#map-zoom-out");
 const mapMarkClear = document.querySelector<HTMLButtonElement>("#map-mark-clear");
 mapZoomIn?.addEventListener("click", () => { worldMapZoom = clamp(worldMapZoom * 1.25, 0.65, 4); });
 mapZoomOut?.addEventListener("click", () => { worldMapZoom = clamp(worldMapZoom / 1.25, 0.65, 4); });
-mapMarkClear?.addEventListener("click", () => { worldMapWaypoint = null; });
+mapMarkClear?.addEventListener("click", () => { worldMapWaypoint = null; activeRoute = null; routeRefreshElapsed = 1; routeFailureNoticeShown = false; });
 const setWorldMapOpen = (open: boolean) => {
   worldMapOpen = open;
   if (worldMapPanel) worldMapPanel.hidden = !open;
@@ -442,6 +446,7 @@ async function boot() {
             const bounds = GREATER_ACCRA_MAP_EXTENT;
             if (x >= bounds.minX && x <= bounds.maxX && z >= bounds.minZ && z <= bounds.maxZ) {
               worldMapWaypoint = { x, z };
+              activeRoute = null; routeRefreshElapsed = 1; routeFailureNoticeShown = false;
               showNotice("3D map destination marked");
             } else showNotice("Choose a location inside Greater Accra");
           }
@@ -676,6 +681,16 @@ async function boot() {
       playerCharacter.setEulerAngles(player.getEulerAngles());
     }
     const focus = inVehicle ? vehicle.getPosition() : player.getPosition();
+    routeRefreshElapsed += step;
+    if (!worldMapWaypoint) activeRoute = null;
+    else if (routeRefreshElapsed >= 0.45) {
+      routeRefreshElapsed = 0;
+      activeRoute = findGreaterAccraRoadRoute({ x: focus.x, z: focus.z }, worldMapWaypoint, GREATER_ACCRA_ROAD_PATHS);
+      if (!activeRoute && !routeFailureNoticeShown) {
+        showNotice("No connected playable road route here yet · showing direct distance");
+        routeFailureNoticeShown = true;
+      } else if (activeRoute) routeFailureNoticeShown = false;
+    }
     const yaw = cameraYaw * Math.PI / 180;
     const distance = inVehicle ? 10 : 7.5;
     const height = inVehicle ? 4.4 : 3.6;
@@ -778,12 +793,14 @@ async function boot() {
           map.fillText(place.name, p.x, p.y - 6); map.shadowBlur = 0;
         }
       }
-      // Active waypoint guidance: the radar rotates with the player, so
-      // this line and marker always point toward the selected destination.
+      // Follow the shortest connected path on verified first-release road geometry.
+      // If the selected place is outside the drivable network, be explicit and
+      // show direct distance rather than inventing a road route.
       if (worldMapWaypoint) {
         const dx = worldMapWaypoint.x - center.x;
         const dz = worldMapWaypoint.z - center.z;
-        const distance = Math.hypot(dx, dz);
+        const directDistance = Math.hypot(dx, dz);
+        const distance = activeRoute?.distanceM ?? directDistance;
         const target = plot(dx, dz);
         const targetLength = Math.hypot(target.x, target.y) || 1;
         const visibleLength = Math.min(targetLength, radius - 15);
@@ -791,8 +808,15 @@ async function boot() {
         const endY = target.y / targetLength * visibleLength;
         map.save();
         map.beginPath(); map.arc(0, 0, radius - 2, 0, Math.PI * 2); map.clip();
-        map.beginPath(); map.moveTo(0, 0); map.lineTo(endX, endY);
-        map.strokeStyle = "#ffdf76"; map.lineWidth = 3; map.setLineDash([5, 4]); map.stroke(); map.setLineDash([]);
+        map.beginPath();
+        const routePoints = activeRoute?.points ?? [{ x: center.x, z: center.z }, worldMapWaypoint];
+        routePoints.forEach((point, index) => {
+          const p = plot(point.x - center.x, point.z - center.z);
+          if (index === 0) map.moveTo(p.x, p.y); else map.lineTo(p.x, p.y);
+        });
+        map.strokeStyle = activeRoute ? "#ffdf76" : "#d9a95f";
+        map.lineWidth = activeRoute ? 3.5 : 2.5;
+        map.setLineDash(activeRoute ? [] : [5, 4]); map.stroke(); map.setLineDash([]);
         map.restore();
         map.save(); map.translate(endX, endY);
         map.fillStyle = "#ffdf76"; map.strokeStyle = "#342710"; map.lineWidth = 2;
@@ -801,7 +825,8 @@ async function boot() {
         map.restore();
         map.fillStyle = "#ffdf76"; map.font = "bold 10px system-ui,sans-serif";
         map.textAlign = "center"; map.textBaseline = "bottom";
-        map.fillText(distance >= 1000 ? `${(distance / 1000).toFixed(1)} KM DIRECT` : `${Math.round(distance)} M DIRECT`, 0, radius - 5);
+        const suffix = activeRoute ? "ROUTE" : "DIRECT";
+        map.fillText(distance >= 1000 ? `${(distance / 1000).toFixed(1)} KM ${suffix}` : `${Math.round(distance)} M ${suffix}`, 0, radius - 5);
       }
       map.restore();
       // Draw the marker directly from the same world-space facing vector
