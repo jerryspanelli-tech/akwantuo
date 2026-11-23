@@ -1,10 +1,7 @@
 name: AKWANTUO PlayCanvas validation
 
 on:
-  push:
-    branches: ["main", "engine/playcanvas-world-foundation"]
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
