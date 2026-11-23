@@ -33,12 +33,12 @@ const minimap = document.querySelector<HTMLCanvasElement>("#minimap");
 const minimapContext = minimap?.getContext("2d") ?? null;
 const mapToggle = document.querySelector<HTMLButtonElement>("#map-toggle");
 const worldMapPanel = document.querySelector<HTMLElement>("#world-map-panel");
-const worldMapCanvas = document.querySelector<HTMLCanvasElement>("#world-map-canvas");
-const worldMapContext = worldMapCanvas?.getContext("2d") ?? null;
 const worldMapClose = document.querySelector<HTMLButtonElement>("#world-map-close");
 let worldMapOpen = false;
 let worldMapZoom = 1;
 let worldMapWaypoint: { x: number; z: number } | null = null;
+let gameplayCameraEntity: Entity | null = null;
+let mapCameraEntity: Entity | null = null;
 const mapZoomIn = document.querySelector<HTMLButtonElement>("#map-zoom-in");
 const mapZoomOut = document.querySelector<HTMLButtonElement>("#map-zoom-out");
 const mapMarkClear = document.querySelector<HTMLButtonElement>("#map-mark-clear");
@@ -49,6 +49,8 @@ const setWorldMapOpen = (open: boolean) => {
   worldMapOpen = open;
   if (worldMapPanel) worldMapPanel.hidden = !open;
   if (mapToggle) mapToggle.setAttribute("aria-expanded", String(open));
+  if (gameplayCameraEntity) gameplayCameraEntity.enabled = !open;
+  if (mapCameraEntity) mapCameraEntity.enabled = open;
   document.body.classList.toggle("world-map-open", open);
 };
 mapToggle?.addEventListener("click", () => setWorldMapOpen(!worldMapOpen));
@@ -135,6 +137,14 @@ async function boot() {
     concrete: mat(0.55, 0.53, 0.47), glass: mat(0.16, 0.29, 0.31), roof: mat(0.28, 0.20, 0.16),
     tyre: mat(0.025, 0.03, 0.03), vehicle: mat(0.78, 0.67, 0.34)
   };
+  const waypointMaterial = mat(1, 0.72, 0.2);
+  waypointMaterial.emissive = new Color(0.85, 0.42, 0.06); waypointMaterial.update();
+  const playerMapMaterial = mat(0.25, 1, 0.58);
+  playerMapMaterial.emissive = new Color(0.08, 0.52, 0.22); playerMapMaterial.update();
+  const waypointBeacon = addCylinder("3D navigation destination beacon", 0, 8, 0, 1.2, 16, waypointMaterial);
+  waypointBeacon.enabled = false;
+  const playerMapBeacon = addCylinder("3D navigation player marker", 0, 6, 0, 1.05, 12, playerMapMaterial);
+  playerMapBeacon.enabled = false;
 
   loadingMessage && (loadingMessage.textContent = "Building Greater Accra roads, districts and coastline…");
   const world = createGreaterAccraWorld(app);
@@ -238,6 +248,15 @@ async function boot() {
   const camera = new Entity("Third person camera");
   camera.addComponent("camera", { clearColor: new Color(0.68, 0.78, 0.83), fov: 62, farClip: 520 });
   app.root.addChild(camera);
+  gameplayCameraEntity = camera;
+
+  // Render the same scene from an elevated angle only while the map is open.
+  // This switches cameras rather than creating a second renderer or world.
+  const mapCamera = new Entity("Greater Accra 3D navigation camera");
+  mapCamera.addComponent("camera", { clearColor: new Color(0.035, 0.075, 0.065), fov: 58, nearClip: 0.5, farClip: 30000 });
+  app.root.addChild(mapCamera);
+  mapCamera.enabled = false;
+  mapCameraEntity = mapCamera;
   const sun = new Entity("Ghana moving sun");
   sun.addComponent("light", { type: "directional", color: new Color(1, 0.82, 0.66), intensity: 1.35, castShadows: true, shadowDistance: 70, shadowResolution: 512 });
   app.root.addChild(sun);
@@ -389,43 +408,53 @@ async function boot() {
   stick?.addEventListener("pointerup", resetStick); stick?.addEventListener("pointercancel", resetStick); stick?.addEventListener("lostpointercapture", resetStick);
 
   let cameraYaw = 0, cameraPitch = 13, dragPointer: number | null = null, lastX = 0, lastY = 0;
-  canvas.addEventListener("pointerdown", (event) => { dragPointer = event.pointerId; lastX = event.clientX; lastY = event.clientY; });
-  window.addEventListener("pointermove", (event) => { if (dragPointer !== event.pointerId) return; cameraYaw -= (event.clientX - lastX) * 0.22; cameraPitch = clamp(cameraPitch + (event.clientY - lastY) * 0.12, -85, 80); lastX = event.clientX; lastY = event.clientY; });
-  window.addEventListener("pointerup", (event) => { if (dragPointer === event.pointerId) dragPointer = null; });
+  let mapPointerStart: { id: number; x: number; y: number } | null = null;
+  canvas.addEventListener("pointerdown", (event) => {
+    if (worldMapOpen) {
+      event.preventDefault();
+      mapPointerStart = { id: event.pointerId, x: event.clientX, y: event.clientY };
+      dragPointer = null;
+      return;
+    }
+    dragPointer = event.pointerId; lastX = event.clientX; lastY = event.clientY;
+  });
+  window.addEventListener("pointermove", (event) => {
+    if (worldMapOpen || dragPointer !== event.pointerId) return;
+    cameraYaw -= (event.clientX - lastX) * 0.22;
+    cameraPitch = clamp(cameraPitch + (event.clientY - lastY) * 0.12, -85, 80);
+    lastX = event.clientX; lastY = event.clientY;
+  });
+  window.addEventListener("pointerup", (event) => {
+    if (worldMapOpen && mapPointerStart?.id === event.pointerId) {
+      const start = mapPointerStart; mapPointerStart = null;
+      if (Math.hypot(event.clientX - start.x, event.clientY - start.y) <= 14 && mapCamera.camera) {
+        const rect = canvas.getBoundingClientRect();
+        const sx = event.clientX - rect.left, sy = event.clientY - rect.top;
+        const rayStart = mapCamera.camera.screenToWorld(sx, sy, mapCamera.camera.nearClip);
+        const rayEnd = mapCamera.camera.screenToWorld(sx, sy, mapCamera.camera.farClip);
+        const dy = rayEnd.y - rayStart.y;
+        if (Math.abs(dy) > 0.0001) {
+          const t = -rayStart.y / dy;
+          if (t >= 0 && t <= 1) {
+            const x = rayStart.x + (rayEnd.x - rayStart.x) * t;
+            const z = rayStart.z + (rayEnd.z - rayStart.z) * t;
+            const bounds = GREATER_ACCRA_MAP_EXTENT;
+            if (x >= bounds.minX && x <= bounds.maxX && z >= bounds.minZ && z <= bounds.maxZ) {
+              worldMapWaypoint = { x, z };
+              showNotice("3D map destination marked");
+            } else showNotice("Choose a location inside Greater Accra");
+          }
+        }
+      }
+    }
+    if (dragPointer === event.pointerId) dragPointer = null;
+  });
 
   const walkSpeed = 4.6, sprintSpeed = 8.2;
   let inVehicle = false, vehicleSpeed = 0, vehicleYaw = 0;
   // One authoritative world-space facing vector drives both actor yaw and the minimap marker.
   let minimapFacingX = 0, minimapFacingZ = 1;
-  worldMapCanvas?.addEventListener("pointerdown", (event) => {
-    if (!worldMapCanvas || !worldMapOpen) return;
-    event.preventDefault();
-    const rect = worldMapCanvas.getBoundingClientRect();
-    // Account for object-fit:contain letterboxing so taps map to the
-    // same coordinates the player sees on both narrow phones and desktop.
-    const aspect = worldMapCanvas.width / worldMapCanvas.height;
-    const displayWidth = Math.min(rect.width, rect.height * aspect);
-    const displayHeight = displayWidth / aspect;
-    const offsetX = (rect.width - displayWidth) / 2;
-    const offsetY = (rect.height - displayHeight) / 2;
-    const localX = event.clientX - rect.left - offsetX;
-    const localY = event.clientY - rect.top - offsetY;
-    if (localX < 0 || localY < 0 || localX > displayWidth || localY > displayHeight) return;
-    const px = localX * (worldMapCanvas.width / displayWidth);
-    const py = localY * (worldMapCanvas.height / displayHeight);
-    const bounds = GREATER_ACCRA_MAP_EXTENT, pad = 54;
-    const baseScale = Math.min((worldMapCanvas.width - pad * 2) / bounds.widthM, (worldMapCanvas.height - pad * 2) / bounds.depthM);
-    const mapWidth = bounds.widthM * baseScale, mapHeight = bounds.depthM * baseScale;
-    const ox = (worldMapCanvas.width - mapWidth) / 2, oy = (worldMapCanvas.height - mapHeight) / 2;
-    const current = inVehicle ? vehicle.getPosition() : player.getPosition();
-    const playerBaseX = ox + (current.x - bounds.minX) * baseScale;
-    const playerBaseY = oy + (bounds.maxZ - current.z) * baseScale;
-    worldMapWaypoint = {
-      x: current.x + (px - playerBaseX) / (baseScale * worldMapZoom),
-      z: current.z - (py - playerBaseY) / (baseScale * worldMapZoom)
-    };
-    showNotice("Map location marked");
-  });
+
   let nearbyInteraction: { id: string; label: string; x: number; z: number; radius: number } | null = null;
   const overlaps = (x: number, z: number) => {
     // Test the player's position in each building's local footprint. Rotated
@@ -486,7 +515,7 @@ async function boot() {
     if (event.code === "Space" && !event.repeat) requestJump();
   });
 
-  let elapsed = 0, mapElapsed = 0, worldMapElapsed = 1;
+  let elapsed = 0, mapElapsed = 0;
   app.on("update", (dt: number) => {
     const step = Math.min(dt, 0.05);
     world.update(step);
@@ -566,7 +595,6 @@ async function boot() {
         }
       }
     }
-    worldMapElapsed += step;
     const forward = (keys.has("KeyW") || keys.has("ArrowUp") ? 1 : 0) - (keys.has("KeyS") || keys.has("ArrowDown") ? 1 : 0) - stickY;
     const strafe = (keys.has("KeyD") || keys.has("ArrowRight") ? 1 : 0) - (keys.has("KeyA") || keys.has("ArrowLeft") ? 1 : 0) + stickX;
     if (inVehicle) {
@@ -658,6 +686,19 @@ async function boot() {
       focus.y + 1.15 - Math.sin(pitch) * viewDistance,
       focus.z + Math.cos(yaw) * Math.cos(pitch) * viewDistance
     );
+    if (worldMapOpen) {
+      const mapFocus = inVehicle ? vehicle.getPosition() : player.getPosition();
+      const mapHeight = 12000 / worldMapZoom;
+      mapCamera.setPosition(mapFocus.x, mapFocus.y + mapHeight, mapFocus.z + mapHeight * 0.58);
+      mapCamera.lookAt(mapFocus.x, mapFocus.y, mapFocus.z);
+      playerMapBeacon.enabled = true;
+      playerMapBeacon.setPosition(mapFocus.x, mapFocus.y + 6, mapFocus.z);
+      waypointBeacon.enabled = !!worldMapWaypoint;
+      if (worldMapWaypoint) waypointBeacon.setPosition(worldMapWaypoint.x, 8, worldMapWaypoint.z);
+    } else {
+      playerMapBeacon.enabled = false;
+      waypointBeacon.enabled = false;
+    }
     if (elapsed > 0.10) { updateButtons(); elapsed = 0; }
     elapsed += step;
     mapElapsed += step;
@@ -779,101 +820,6 @@ async function boot() {
     }
     if (status) status.textContent = inVehicle ? "TAXI · DRIVING" : "GREATER ACCRA · GHANA";
 
-    if (worldMapOpen && worldMapContext && worldMapCanvas && worldMapElapsed >= 0.25) {
-      worldMapElapsed = 0;
-      const map = worldMapContext, width = worldMapCanvas.width, height = worldMapCanvas.height;
-      const bounds = GREATER_ACCRA_MAP_EXTENT, pad = 54;
-      const sx = (width - pad * 2) / bounds.widthM, sy = (height - pad * 2) / bounds.depthM;
-      const baseScale = Math.min(sx, sy);
-      const mapWidth = bounds.widthM * baseScale, mapHeight = bounds.depthM * baseScale;
-      const ox = (width - mapWidth) / 2, oy = (height - mapHeight) / 2;
-      const current = player.getPosition();
-      const playerBaseX = ox + (current.x - bounds.minX) * baseScale;
-      const playerBaseY = oy + (bounds.maxZ - current.z) * baseScale;
-      const point = (x: number, z: number) => {
-        const baseX = ox + (x - bounds.minX) * baseScale;
-        const baseY = oy + (bounds.maxZ - z) * baseScale;
-        return {
-          x: playerBaseX + (baseX - playerBaseX) * worldMapZoom,
-          y: playerBaseY + (baseY - playerBaseY) * worldMapZoom
-        };
-      };
-      map.clearRect(0, 0, width, height);
-      map.fillStyle = "#10251f"; map.fillRect(0, 0, width, height);
-      map.fillStyle = "#123b4a"; map.fillRect(0, oy + (bounds.maxZ + 3050) * baseScale, width, height - oy - (bounds.maxZ + 3050) * baseScale);
-      map.fillStyle = "#263c2d"; map.fillRect(ox, oy, mapWidth, mapHeight);
-      map.strokeStyle = "#3a5543"; map.lineWidth = 1;
-      for (let x = 0; x <= width; x += 55) { map.beginPath(); map.moveTo(x, oy); map.lineTo(x, oy + mapHeight); map.stroke(); }
-      for (let y = oy; y <= oy + mapHeight; y += 55) { map.beginPath(); map.moveTo(ox, y); map.lineTo(ox + mapWidth, y); map.stroke(); }
-      for (const road of GREATER_ACCRA_ROAD_PATHS) {
-        if (!road.playableInFirstRelease) continue;
-        map.beginPath();
-        road.points.forEach((p, index) => { const q = point(p.x, p.z); if (index === 0) map.moveTo(q.x, q.y); else map.lineTo(q.x, q.y); });
-        map.strokeStyle = /^(n1|n4|n6)-/.test(road.roadSegmentId) ? "#e0bd79" : "#aeb9aa";
-        map.lineWidth = /^(n1|n4|n6)-/.test(road.roadSegmentId) ? 5 : 2.6;
-        map.lineCap = "round"; map.lineJoin = "round"; map.stroke();
-      }
-      const locations = [
-        { name:"MAKOLA MARKET",x:-500,z:350 }, { name:"KANESHIE",x:-2800,z:-250 },
-        { name:"CIRCLE",x:-450,z:450 }, { name:"37 / RIDGE",x:1250,z:-350 },
-        { name:"AIRPORT CITY",x:1100,z:350 }, { name:"OSU",x:1100,z:-1250 },
-        { name:"LABADI BEACH",x:2550,z:-1950 }, { name:"CANTONMENTS",x:1850,z:-250 },
-        { name:"EAST LEGON",x:3900,z:2100 }, { name:"TETTEH QUARSHIE",x:3650,z:1750 },
-        { name:"MADINA",x:5700,z:1700 }, { name:"ACHIMOTA",x:-1800,z:2200 },
-        { name:"DANSOMAN",x:-5100,z:-850 }, { name:"SPINTEX",x:5400,z:-1200 },
-        { name:"TEMA",x:8700,z:-850 }, { name:"LEGON",x:3300,z:3400 }
-      ];
-      const labelBoxes: Array<{ left: number; top: number; right: number; bottom: number }> = [];
-      map.font = "bold 12px system-ui,sans-serif";
-      for (const place of locations) {
-        const p = point(place.x, place.z);
-        map.fillStyle = "#f0c574"; map.beginPath(); map.arc(p.x,p.y,5,0,Math.PI*2); map.fill();
-        // Place labels on the clearest nearby side; skip a label rather than
-        // stacking it on top of another district name at this zoom level.
-        if (p.x < ox || p.x > ox + mapWidth || p.y < oy || p.y > oy + mapHeight) continue;
-        const labelWidth = map.measureText(place.name).width;
-        const labelHeight = 16;
-        const candidates = [
-          { left: p.x + 9, top: p.y - labelHeight / 2 },
-          { left: p.x - labelWidth - 9, top: p.y - labelHeight / 2 },
-          { left: p.x - labelWidth / 2, top: p.y - 21 },
-          { left: p.x - labelWidth / 2, top: p.y + 9 }
-        ];
-        const chosen = candidates.find((candidate) => {
-          const left = clamp(candidate.left, ox + 3, ox + mapWidth - labelWidth - 3);
-          const top = clamp(candidate.top, oy + 3, oy + mapHeight - labelHeight - 3);
-          const right = left + labelWidth, bottom = top + labelHeight;
-          return labelBoxes.every((box) =>
-            right + 5 < box.left || left - 5 > box.right ||
-            bottom + 3 < box.top || top - 3 > box.bottom
-          ) && (candidate.left >= ox - 2 && candidate.left + labelWidth <= ox + mapWidth + 2);
-        });
-        if (!chosen) continue;
-        const left = clamp(chosen.left, ox + 3, ox + mapWidth - labelWidth - 3);
-        const top = clamp(chosen.top, oy + 3, oy + mapHeight - labelHeight - 3);
-        labelBoxes.push({ left, top, right: left + labelWidth, bottom: top + labelHeight });
-        map.textAlign = "left"; map.textBaseline = "middle";
-        map.fillStyle = "#fff4dc"; map.shadowColor = "#07130f"; map.shadowBlur = 4;
-        map.fillText(place.name, left, top + labelHeight / 2); map.shadowBlur = 0;
-      }
-      const you = point(current.x,current.z);
-      map.fillStyle = "#68e2a0"; map.beginPath(); map.arc(you.x,you.y,9,0,Math.PI*2); map.fill();
-      map.strokeStyle = "#f3fff7"; map.lineWidth = 3; map.stroke();
-      map.fillStyle = "#f4f0e4"; map.font = "bold 14px system-ui,sans-serif"; map.fillText("YOU",you.x+13,you.y);
-      if (worldMapWaypoint) {
-        const marked = point(worldMapWaypoint.x, worldMapWaypoint.z);
-        map.save();
-        map.strokeStyle = "#ffdf76"; map.lineWidth = 4;
-        map.beginPath(); map.arc(marked.x,marked.y,11,0,Math.PI*2); map.stroke();
-        map.beginPath(); map.moveTo(marked.x-16,marked.y); map.lineTo(marked.x+16,marked.y);
-        map.moveTo(marked.x,marked.y-16); map.lineTo(marked.x,marked.y+16); map.stroke();
-        map.fillStyle = "#ffdf76"; map.font = "bold 14px system-ui,sans-serif";
-        map.textAlign = "left"; map.textBaseline = "bottom"; map.fillText("WAYPOINT",marked.x+15,marked.y-10);
-        map.restore();
-      }
-      const topLeft=point(bounds.minX,bounds.maxZ), bottomRight=point(bounds.maxX,bounds.minZ);
-      map.strokeStyle = "#d3b477"; map.lineWidth = 2; map.strokeRect(topLeft.x,topLeft.y,bottomRight.x-topLeft.x,bottomRight.y-topLeft.y);
-    }
     if (healthFill) healthFill.style.width = "100%";
     if (healthValue) healthValue.textContent = "100";
   });
