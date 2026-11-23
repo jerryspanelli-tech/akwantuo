@@ -6,7 +6,7 @@ import {
 } from "playcanvas";
 import "./style.css";
 import { createGreaterAccraWorld } from "./world";
-import { GREATER_ACCRA_ROAD_PATHS, GREATER_ACCRA_MAP_EXTENT, GREATER_ACCRA_REGION_ANCHORS } from "../world/greaterAccraLayout";
+import { GREATER_ACCRA_ROAD_PATHS, GREATER_ACCRA_MAP_EXTENT } from "../world/greaterAccraLayout";
 import { findGreaterAccraRoadRoute, type GreaterAccraRoute } from "../world/greaterAccraNavigation";
 
 const canvas = document.querySelector<HTMLCanvasElement>("#application")!;
