@@ -157,6 +157,44 @@ async function boot() {
   const world = createGreaterAccraWorld(app);
   const blockers = world.blockers;
 
+  // Paint a visible location immediately, before the first gameplay update.
+  // The live radar redraws from the moving player position every 140 ms below.
+  // This also gives a useful spawn-location fallback if a mobile frame is delayed.
+  if (minimapContext && minimap) {
+    const ctx = minimapContext;
+    const width = minimap.width, height = minimap.height;
+    const center = world.spawn;
+    const radius = Math.min(width, height) * 0.47;
+    const scale = 0.16;
+    ctx.clearRect(0, 0, width, height);
+    ctx.fillStyle = "#091511"; ctx.fillRect(0, 0, width, height);
+    ctx.save();
+    ctx.beginPath(); ctx.arc(width / 2, height / 2, radius, 0, Math.PI * 2); ctx.clip();
+    ctx.fillStyle = "#182a22"; ctx.fillRect(0, 0, width, height);
+    ctx.translate(width / 2, height / 2);
+    ctx.lineCap = "round"; ctx.lineJoin = "round";
+    for (const road of GREATER_ACCRA_ROAD_PATHS) {
+      if (!road.playableInFirstRelease) continue;
+      ctx.beginPath();
+      road.points.forEach((point, index) => {
+        const x = (point.x - center.x) * scale, y = -(point.z - center.z) * scale;
+        if (index === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      });
+      ctx.strokeStyle = /^(n1|n4|n6)-/.test(road.roadSegmentId) ? "#c6a66c" : "#87958b";
+      ctx.lineWidth = /^(n1|n4|n6)-/.test(road.roadSegmentId) ? 3.2 : 2;
+      ctx.stroke();
+    }
+    ctx.restore();
+    const px = width / 2, py = height / 2;
+    ctx.beginPath(); ctx.arc(px, py, 7, 0, Math.PI * 2);
+    ctx.fillStyle = "#f3c56f"; ctx.fill();
+    ctx.strokeStyle = "#fff4d8"; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = "#fff4d8"; ctx.font = "bold 9px system-ui,sans-serif";
+    ctx.textAlign = "center"; ctx.textBaseline = "top"; ctx.fillText("YOU", px, py + 10);
+    ctx.beginPath(); ctx.arc(width / 2, height / 2, radius, 0, Math.PI * 2);
+    ctx.strokeStyle = "#e3bd7a"; ctx.lineWidth = 3; ctx.stroke();
+  }
+
   loadingMessage && (loadingMessage.textContent = "Preparing the player and vehicle…");
   const player = new Entity("Player");
   player.setPosition(world.spawn.x, 0, world.spawn.z);
@@ -524,7 +562,7 @@ async function boot() {
     if (event.code === "Space" && !event.repeat) requestJump();
   });
 
-  let elapsed = 0, mapElapsed = 0;
+  let elapsed = 0, mapElapsed = 1;
   app.on("update", (dt: number) => {
     const step = Math.min(dt, 0.05);
     world.update(step);
