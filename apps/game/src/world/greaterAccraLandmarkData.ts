@@ -91,4 +91,44 @@ export const GREATER_ACCRA_LANDMARK_FOOTPRINTS: readonly LandmarkFootprint[] = [
     "minZ": -490,
     "maxZ": -350
   }
+  ,{
+    "id": "black-star-square",
+    "label": "Black Star Square / Independence Square",
+    "x": -250,
+    "z": -1550,
+    "minX": -390,
+    "maxX": -110,
+    "minZ": -1710,
+    "maxZ": -1390
+  },
+  {
+    "id": "jamestown-lighthouse",
+    "label": "Jamestown Lighthouse",
+    "x": -2300,
+    "z": -1850,
+    "minX": -2340,
+    "maxX": -2260,
+    "minZ": -1890,
+    "maxZ": -1810
+  },
+  {
+    "id": "osu-castle",
+    "label": "Osu Castle (Christiansborg Castle)",
+    "x": 1150,
+    "z": -2100,
+    "minX": 1070,
+    "maxX": 1230,
+    "minZ": -2160,
+    "maxZ": -2040
+  },
+  {
+    "id": "accra-arts-centre",
+    "label": "Accra Arts Centre",
+    "x": -1250,
+    "z": 250,
+    "minX": -1340,
+    "maxX": -1160,
+    "minZ": 170,
+    "maxZ": 330
+  }
 ];
