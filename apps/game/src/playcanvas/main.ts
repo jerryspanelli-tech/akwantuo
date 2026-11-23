@@ -799,7 +799,10 @@ async function boot() {
     if (mapElapsed > 0.14 && minimapContext && minimap) {
       mapElapsed = 0;
       const map = minimapContext;
-      const center = player.getPosition();
+      // The radar must follow the controlled entity: the player on foot, the
+      // vehicle while driving. This keeps roads, waypoint distance and heading
+      // anchored to the same live world position.
+      const center = inVehicle ? vehicle.getPosition() : player.getPosition();
       const width = minimap.width, height = minimap.height;
       const radius = Math.min(width, height) * 0.47;
       const scale = 0.16;
