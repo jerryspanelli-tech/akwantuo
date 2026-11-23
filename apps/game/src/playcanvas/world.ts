@@ -3,7 +3,7 @@ import { GREATER_ACCRA_COASTLINE, GREATER_ACCRA_MAP_EXTENT, GREATER_ACCRA_REGION
 import { GREATER_ACCRA_LANDMARK_FOOTPRINTS } from "../world/greaterAccraLandmarkData";
 import { GREATER_ACCRA_RAIL_NODES, GREATER_ACCRA_RAIL_ROUTES } from "../world/railNetwork";
 
-export type WorldBlocker = { x: number; z: number; hx: number; hz: number };
+export type WorldBlocker = { x: number; z: number; hx: number; hz: number; yaw: number };
 export type GreaterAccraWorld = {
   blockers: WorldBlocker[];
   spawn: { x: number; z: number };
@@ -74,7 +74,7 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     entity.setLocalScale(sx, sy, sz);
     if (yaw) entity.setEulerAngles(0, yaw, 0);
     app.root.addChild(entity);
-    if (solid) blockers.push({ x, z, hx: sx * 0.52, hz: sz * 0.52 });
+    if (solid) blockers.push({ x, z, hx: sx * 0.52, hz: sz * 0.52, yaw });
     return entity;
   };
   const plane = (name: string, x: number, y: number, z: number, width: number, depth: number, mat: StandardMaterial) => {
@@ -321,7 +321,7 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
       // These locations receive dedicated architectural assemblies below.
       // Keep their collision footprint without burying the detailed model
       // inside the former generic solid landmark block.
-      blockers.push({ x: landmark.x, z: landmark.z, hx: width * 0.52, hz: depth * 0.52 });
+      blockers.push({ x: landmark.x, z: landmark.z, hx: width * 0.52, hz: depth * 0.52, yaw: 0 });
     } else {
       box(landmark.label + " landmark", landmark.x, height / 2, landmark.z, width, height, depth, base, 0, true);
       box(landmark.label + " roofline", landmark.x, height + 0.3, landmark.z, width + 4, 0.6, depth + 4, mats.roof);
