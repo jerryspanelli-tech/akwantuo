@@ -106,10 +106,10 @@ export const GREATER_ACCRA_LANDMARK_FOOTPRINTS: readonly LandmarkFootprint[] = [
     "label": "Jamestown Lighthouse",
     "x": -2300,
     "z": -1850,
-    "minX": -2340,
-    "maxX": -2260,
-    "minZ": -1890,
-    "maxZ": -1810
+    "minX": -2335,
+    "maxX": -2265,
+    "minZ": -1885,
+    "maxZ": -1815
   },
   {
     "id": "osu-castle",
