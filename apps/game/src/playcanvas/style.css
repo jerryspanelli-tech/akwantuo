@@ -64,3 +64,11 @@ body.world-map-open .top-hud,body.world-map-open .health-hud,body.world-map-open
 @media(min-width:800px){.map-toggle{left:auto;right:24px;bottom:150px;width:112px;height:122px}#minimap{width:104px!important;height:104px!important}}
 
 .world-map-tools{display:flex;align-items:center;gap:8px}.world-map-tools button{min-width:38px;min-height:34px;padding:5px 10px;border:1px solid #d9b77788;border-radius:9px;background:#1a3028;color:#fff;font-weight:800}.world-map-tools button:active{background:#8a693c}.world-map-panel footer{align-items:center;flex-wrap:wrap}
+
+/* The full map is rendered by the shared 3D scene camera behind this HUD. */
+.world-map-panel{justify-content:space-between;background:linear-gradient(180deg,rgba(7,18,14,.9),rgba(7,18,14,0) 24%,rgba(7,18,14,0) 72%,rgba(7,18,14,.92));pointer-events:none}
+.world-map-header,.world-map-panel footer{pointer-events:auto;width:100%;padding:10px 12px;border:1px solid #d9b77755;border-radius:10px;background:#0b1714c9;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.world-map-panel footer{align-items:center;flex-wrap:wrap;min-height:58px}
+.world-map-panel footer span:first-child{color:#8de3ae}
+.world-map-tools{flex-wrap:wrap;justify-content:flex-end}
+@media(max-width:520px){.world-map-panel footer{gap:8px}.world-map-panel footer span:first-child{font-size:8px}.world-map-tools{width:100%;justify-content:space-between}.world-map-tools button{flex:1}}
