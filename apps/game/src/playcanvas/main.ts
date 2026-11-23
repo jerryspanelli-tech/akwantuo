@@ -8,6 +8,7 @@ import "./style.css";
 import { createGreaterAccraWorld } from "./world";
 import { GREATER_ACCRA_ROAD_PATHS, GREATER_ACCRA_MAP_EXTENT } from "../world/greaterAccraLayout";
 import { findGreaterAccraRoadRoute, type GreaterAccraRoute } from "../world/greaterAccraNavigation";
+import { drawAkwantuoMinimap } from "./maps";
 
 const canvas = document.querySelector<HTMLCanvasElement>("#application")!;
 const loading = document.querySelector<HTMLElement>("#loading");
@@ -31,7 +32,6 @@ const stick = document.querySelector<HTMLElement>("#stick");
 const stickKnob = document.querySelector<HTMLElement>("#stick-knob");
 const notice = document.querySelector<HTMLElement>("#notice");
 const minimap = document.querySelector<HTMLCanvasElement>("#minimap");
-const minimapContext = minimap?.getContext("2d") ?? null;
 const mapToggle = document.querySelector<HTMLButtonElement>("#map-toggle");
 const worldMapPanel = document.querySelector<HTMLElement>("#world-map-panel");
 const routeOverlay = document.querySelector<HTMLCanvasElement>("#world-map-route-overlay");
@@ -165,43 +165,8 @@ async function boot() {
   const world = createGreaterAccraWorld(app);
   const blockers = world.blockers;
 
-  // Paint a visible location immediately, before the first gameplay update.
-  // The live radar redraws from the moving player position every 140 ms below.
-  // This also gives a useful spawn-location fallback if a mobile frame is delayed.
-  if (minimapContext && minimap) {
-    const ctx = minimapContext;
-    const width = minimap.width, height = minimap.height;
-    const center = world.spawn;
-    const radius = Math.min(width, height) * 0.47;
-    const scale = radius / 1250;
-    ctx.clearRect(0, 0, width, height);
-    ctx.fillStyle = "#091511"; ctx.fillRect(0, 0, width, height);
-    ctx.save();
-    ctx.beginPath(); ctx.arc(width / 2, height / 2, radius, 0, Math.PI * 2); ctx.clip();
-    ctx.fillStyle = "#182a22"; ctx.fillRect(0, 0, width, height);
-    ctx.translate(width / 2, height / 2);
-    ctx.lineCap = "round"; ctx.lineJoin = "round";
-    for (const road of GREATER_ACCRA_ROAD_PATHS) {
-      if (!road.playableInFirstRelease) continue;
-      ctx.beginPath();
-      road.points.forEach((point, index) => {
-        const x = (point.x - center.x) * scale, y = -(point.z - center.z) * scale;
-        if (index === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-      });
-      ctx.strokeStyle = /^(n1|n4|n6)-/.test(road.roadSegmentId) ? "#c6a66c" : "#87958b";
-      ctx.lineWidth = /^(n1|n4|n6)-/.test(road.roadSegmentId) ? 3.2 : 2;
-      ctx.stroke();
-    }
-    ctx.restore();
-    const px = width / 2, py = height / 2;
-    ctx.beginPath(); ctx.arc(px, py, 7, 0, Math.PI * 2);
-    ctx.fillStyle = "#f3c56f"; ctx.fill();
-    ctx.strokeStyle = "#fff4d8"; ctx.lineWidth = 2; ctx.stroke();
-    ctx.fillStyle = "#fff4d8"; ctx.font = "bold 9px system-ui,sans-serif";
-    ctx.textAlign = "center"; ctx.textBaseline = "top"; ctx.fillText("YOU", px, py + 10);
-    ctx.beginPath(); ctx.arc(width / 2, height / 2, radius, 0, Math.PI * 2);
-    ctx.strokeStyle = "#e3bd7a"; ctx.lineWidth = 3; ctx.stroke();
-  }
+  // Draw the rewritten radar immediately so it never opens as an empty circle.
+  drawAkwantuoMinimap(minimap, world.spawn, { x: 0, z: 1 }, blockers, GREATER_ACCRA_ROAD_PATHS, null, null);
 
   loadingMessage && (loadingMessage.textContent = "Preparing the player and vehicle…");
   const player = new Entity("Player");
@@ -815,134 +780,18 @@ async function boot() {
     if (elapsed > 0.10) { updateButtons(); elapsed = 0; }
     elapsed += step;
     mapElapsed += step;
-    if (mapElapsed > 0.14 && minimapContext && minimap) {
+    if (mapElapsed > 0.14 && minimap) {
       mapElapsed = 0;
-      const map = minimapContext;
-      // The radar must follow the controlled entity: the player on foot, the
-      // vehicle while driving. This keeps roads, waypoint distance and heading
-      // anchored to the same live world position.
       const center = inVehicle ? vehicle.getPosition() : player.getPosition();
-      const width = minimap.width, height = minimap.height;
-      const radius = Math.min(width, height) * 0.47;
-      const scale = radius / 1250;
-      // The marker uses the exact world-space direction used to rotate the
-      // player/vehicle, rather than re-reading Euler angles or rotating the map.
-      const facingLength = Math.hypot(minimapFacingX, minimapFacingZ) || 1;
-      const facingX = -minimapFacingX / facingLength; // Match the character's horizontal screen-facing direction.
-      const facingY = -minimapFacingZ / facingLength; // canvas Y points down
-      map.clearRect(0, 0, width, height);
-      map.fillStyle = "#091511"; map.fillRect(0, 0, width, height);
-      map.save();
-      map.beginPath(); map.arc(width / 2, height / 2, radius, 0, Math.PI * 2); map.clip();
-      map.fillStyle = "#182a22"; map.fillRect(0, 0, width, height);
-      // Keep the radar world north-up. Rotate only the player arrow below,
-      // so its nose follows the player's actual facing direction.
-      map.translate(width / 2, height / 2);
-      const plot = (x: number, z: number) => ({ x: x * scale, y: -z * scale });
-      // Draw nearby authored building / landmark footprints from the same
-      // collision bounds used by gameplay, so the radar reflects the 3D city.
-      map.fillStyle = "#34483d";
-      for (const building of blockers) {
-        const p = plot(building.x - center.x, building.z - center.z);
-        const footprintWidth = building.hx * 2 * scale;
-        const footprintDepth = building.hz * 2 * scale;
-        const footprintRadius = Math.hypot(footprintWidth, footprintDepth) / 2;
-        if (Math.abs(p.x) > radius + footprintRadius || Math.abs(p.y) > radius + footprintRadius) continue;
-        map.save();
-        map.translate(p.x, p.y);
-        map.rotate((building.yaw * Math.PI) / 180);
-        map.fillRect(-footprintWidth / 2, -footprintDepth / 2, footprintWidth, footprintDepth);
-        map.restore();
-      }
-      // Major Greater Accra routes.
-      for (const road of GREATER_ACCRA_ROAD_PATHS) {
-        if (!road.playableInFirstRelease) continue;
-        map.beginPath();
-        road.points.forEach((point, index) => {
-          const p = plot(point.x - center.x, point.z - center.z);
-          if (index === 0) map.moveTo(p.x, p.y); else map.lineTo(p.x, p.y);
-        });
-        const highway = /^(n1|n4|n6)-/.test(road.roadSegmentId);
-        map.strokeStyle = highway ? "#c6a66c" : "#87958b";
-        map.lineWidth = highway ? 3.2 : 2;
-        map.lineCap = "round"; map.lineJoin = "round"; map.stroke();
-      }
-      const poi = [
-        { name: "OSU", x: 1450, z: -1180, kind: "district" },
-        { name: "MAKOLA", x: -500, z: 350, kind: "market" },
-        { name: "CIRCLE", x: -450, z: 450, kind: "transport" },
-        { name: "37", x: 1250, z: -350, kind: "district" },
-        { name: "AIRPORT CITY", x: 1050, z: 850, kind: "landmark" },
-        { name: "TETTEH QUARSHIE", x: 3650, z: 1750, kind: "transport" },
-        { name: "EAST LEGON", x: 3900, z: 2100, kind: "district" },
-        { name: "MADINA", x: 5000, z: 1750, kind: "market" },
-        { name: "LABADI BEACH", x: 2750, z: -2100, kind: "beach" },
-        { name: "SPINTEX", x: 5600, z: -1150, kind: "district" },
-        { name: "TEMA", x: 8700, z: -850, kind: "district" }
-      ];
-      for (const place of poi) {
-        const p = plot(place.x - center.x, place.z - center.z);
-        if (Math.hypot(p.x, p.y) > radius - 8) continue;
-        map.beginPath(); map.arc(p.x, p.y, place.kind === "landmark" || place.kind === "beach" ? 4 : 3, 0, Math.PI * 2);
-        map.fillStyle = place.kind === "market" ? "#f0bd67" : place.kind === "beach" ? "#58c5d1" : place.kind === "transport" ? "#a7c8ef" : "#e9e5d8";
-        map.fill();
-        if (Math.hypot(p.x, p.y) < radius - 22) {
-          map.font = "bold 7px system-ui, sans-serif";
-          map.textAlign = "center"; map.textBaseline = "bottom";
-          map.fillStyle = "#f2eee2"; map.shadowColor = "#06100c"; map.shadowBlur = 3;
-          map.fillText(place.name, p.x, p.y - 6); map.shadowBlur = 0;
-        }
-      }
-      // Follow the shortest connected path on authored first-release playable road geometry.
-      // If the selected place is outside the drivable network, be explicit and
-      // show direct distance rather than inventing a road route.
-      if (worldMapWaypoint) {
-        const dx = worldMapWaypoint.x - center.x;
-        const dz = worldMapWaypoint.z - center.z;
-        const directDistance = Math.hypot(dx, dz);
-        const distance = activeRoute?.distanceM ?? directDistance;
-        const target = plot(dx, dz);
-        const targetLength = Math.hypot(target.x, target.y) || 1;
-        const visibleLength = Math.min(targetLength, radius - 15);
-        const endX = target.x / targetLength * visibleLength;
-        const endY = target.y / targetLength * visibleLength;
-        map.save();
-        map.beginPath(); map.arc(0, 0, radius - 2, 0, Math.PI * 2); map.clip();
-        map.beginPath();
-        const routePoints = activeRoute?.points ?? [{ x: center.x, z: center.z }, worldMapWaypoint];
-        routePoints.forEach((point, index) => {
-          const p = plot(point.x - center.x, point.z - center.z);
-          if (index === 0) map.moveTo(p.x, p.y); else map.lineTo(p.x, p.y);
-        });
-        map.strokeStyle = activeRoute ? "#ffdf76" : "#d9a95f";
-        map.lineWidth = activeRoute ? 3.5 : 2.5;
-        map.setLineDash(activeRoute ? [] : [5, 4]); map.stroke(); map.setLineDash([]);
-        map.restore();
-        map.save(); map.translate(endX, endY);
-        map.fillStyle = "#ffdf76"; map.strokeStyle = "#342710"; map.lineWidth = 2;
-        map.beginPath(); map.arc(0, 0, 6, 0, Math.PI * 2); map.fill(); map.stroke();
-        map.beginPath(); map.moveTo(0, -11); map.lineTo(0, -19); map.stroke();
-        map.restore();
-        map.fillStyle = "#ffdf76"; map.font = "bold 10px system-ui,sans-serif";
-        map.textAlign = "center"; map.textBaseline = "bottom";
-        const suffix = activeRoute ? "ROUTE" : "DIRECT";
-        map.fillText(distance >= 1000 ? `${(distance / 1000).toFixed(1)} KM ${suffix}` : `${Math.round(distance)} M ${suffix}`, 0, radius - 5);
-      }
-      map.restore();
-      // Draw the marker directly from the same world-space facing vector
-      // used by movement. No canvas rotation, sign conversion or 180° guess.
-      const markerX = width / 2, markerY = height / 2;
-      const perpendicularX = -facingY, perpendicularY = facingX;
-      map.beginPath();
-      map.moveTo(markerX + facingX * 10, markerY + facingY * 10);
-      map.lineTo(markerX - facingX * 5 + perpendicularX * 5, markerY - facingY * 5 + perpendicularY * 5);
-      map.lineTo(markerX + facingX * 1, markerY + facingY * 1);
-      map.lineTo(markerX - facingX * 5 - perpendicularX * 5, markerY - facingY * 5 - perpendicularY * 5);
-      map.closePath();
-      map.fillStyle = "#f3c56f"; map.fill(); map.strokeStyle = "#fff4d8"; map.lineWidth = 1.3; map.stroke();
-      // Radar rim and north/heading tick.
-      map.beginPath(); map.arc(width / 2, height / 2, radius, 0, Math.PI * 2);
-      map.strokeStyle = "#e3bd7a"; map.lineWidth = 3; map.stroke();
+      drawAkwantuoMinimap(
+        minimap,
+        { x: center.x, z: center.z },
+        { x: minimapFacingX, z: minimapFacingZ },
+        blockers,
+        GREATER_ACCRA_ROAD_PATHS,
+        worldMapWaypoint,
+        activeRoute
+      );
     }
     if (status) status.textContent = inVehicle ? "TAXI · DRIVING" : "GREATER ACCRA · GHANA";
 
