@@ -269,7 +269,6 @@ async function boot() {
 
   // Both map modes reuse the existing world camera. No second camera or
   // competing render pass is created; map mode temporarily changes its view.
-  if (camera.camera) camera.camera.farClip = 65000;
   const sun = new Entity("Ghana moving sun");
   sun.addComponent("light", { type: "directional", color: new Color(1, 0.82, 0.66), intensity: 1.35, castShadows: true, shadowDistance: 70, shadowResolution: 512 });
   app.root.addChild(sun);
@@ -765,6 +764,7 @@ async function boot() {
       waypointBeacon.enabled = !!worldMapWaypoint;
       if (worldMapWaypoint) waypointBeacon.setPosition(worldMapWaypoint.x, 8, worldMapWaypoint.z);
     } else {
+      if (camera.camera) camera.camera.farClip = 520;
       playerMapBeacon.enabled = false;
       waypointBeacon.enabled = false;
       if (routeOverlayContext && routeOverlay) routeOverlayContext.clearRect(0, 0, routeOverlay.width, routeOverlay.height);
