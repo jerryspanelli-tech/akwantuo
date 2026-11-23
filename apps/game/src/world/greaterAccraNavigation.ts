@@ -193,6 +193,11 @@ export function findGreaterAccraRoadRoute(
   }
 
   if (!best) return null;
+  // Reject extreme detours caused by gaps in this early primary-road layout.
+  // It is safer to report direct distance than pretend a long detour is the
+  // intended route to a nearby district.
+  const directDistance = distanceBetween(start, destination);
+  if (best.distance > Math.max(directDistance * 3.2, directDistance + 2500)) return null;
   const points: MapPoint[] = [];
   appendDistinct(points, start);
   for (const point of best.roadPoints) appendDistinct(points, point);
