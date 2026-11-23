@@ -689,8 +689,13 @@ async function boot() {
         const p = plot(building.x - center.x, building.z - center.z);
         const footprintWidth = building.hx * 2 * scale;
         const footprintDepth = building.hz * 2 * scale;
-        if (Math.abs(p.x) > radius + footprintWidth || Math.abs(p.y) > radius + footprintDepth) continue;
-        map.fillRect(p.x - footprintWidth / 2, p.y - footprintDepth / 2, footprintWidth, footprintDepth);
+        const footprintRadius = Math.hypot(footprintWidth, footprintDepth) / 2;
+        if (Math.abs(p.x) > radius + footprintRadius || Math.abs(p.y) > radius + footprintRadius) continue;
+        map.save();
+        map.translate(p.x, p.y);
+        map.rotate((building.yaw * Math.PI) / 180);
+        map.fillRect(-footprintWidth / 2, -footprintDepth / 2, footprintWidth, footprintDepth);
+        map.restore();
       }
       // Major Greater Accra routes.
       for (const road of GREATER_ACCRA_ROAD_PATHS) {
@@ -707,7 +712,7 @@ async function boot() {
       }
       const poi = [
         { name: "OSU", x: 1450, z: -1180, kind: "district" },
-        { name: "MAKOLA", x: -400, z: 450, kind: "market" },
+        { name: "MAKOLA", x: -500, z: 350, kind: "market" },
         { name: "CIRCLE", x: -450, z: 450, kind: "transport" },
         { name: "37", x: 1250, z: -350, kind: "district" },
         { name: "AIRPORT CITY", x: 1050, z: 850, kind: "landmark" },
@@ -818,12 +823,38 @@ async function boot() {
         { name:"DANSOMAN",x:-5100,z:-850 }, { name:"SPINTEX",x:5400,z:-1200 },
         { name:"TEMA",x:8700,z:-850 }, { name:"LEGON",x:3300,z:3400 }
       ];
+      const labelBoxes: Array<{ left: number; top: number; right: number; bottom: number }> = [];
+      map.font = "bold 12px system-ui,sans-serif";
       for (const place of locations) {
         const p = point(place.x, place.z);
         map.fillStyle = "#f0c574"; map.beginPath(); map.arc(p.x,p.y,5,0,Math.PI*2); map.fill();
-        map.font = "bold 13px system-ui,sans-serif"; map.textAlign = "left"; map.textBaseline = "middle";
+        // Place labels on the clearest nearby side; skip a label rather than
+        // stacking it on top of another district name at this zoom level.
+        if (p.x < ox || p.x > ox + mapWidth || p.y < oy || p.y > oy + mapHeight) continue;
+        const labelWidth = map.measureText(place.name).width;
+        const labelHeight = 16;
+        const candidates = [
+          { left: p.x + 9, top: p.y - labelHeight / 2 },
+          { left: p.x - labelWidth - 9, top: p.y - labelHeight / 2 },
+          { left: p.x - labelWidth / 2, top: p.y - 21 },
+          { left: p.x - labelWidth / 2, top: p.y + 9 }
+        ];
+        const chosen = candidates.find((candidate) => {
+          const left = clamp(candidate.left, ox + 3, ox + mapWidth - labelWidth - 3);
+          const top = clamp(candidate.top, oy + 3, oy + mapHeight - labelHeight - 3);
+          const right = left + labelWidth, bottom = top + labelHeight;
+          return labelBoxes.every((box) =>
+            right + 5 < box.left || left - 5 > box.right ||
+            bottom + 3 < box.top || top - 3 > box.bottom
+          ) && (candidate.left >= ox - 2 && candidate.left + labelWidth <= ox + mapWidth + 2);
+        });
+        if (!chosen) continue;
+        const left = clamp(chosen.left, ox + 3, ox + mapWidth - labelWidth - 3);
+        const top = clamp(chosen.top, oy + 3, oy + mapHeight - labelHeight - 3);
+        labelBoxes.push({ left, top, right: left + labelWidth, bottom: top + labelHeight });
+        map.textAlign = "left"; map.textBaseline = "middle";
         map.fillStyle = "#fff4dc"; map.shadowColor = "#07130f"; map.shadowBlur = 4;
-        map.fillText(place.name,p.x+9,p.y-2); map.shadowBlur = 0;
+        map.fillText(place.name, left, top + labelHeight / 2); map.shadowBlur = 0;
       }
       const you = point(current.x,current.z);
       map.fillStyle = "#68e2a0"; map.beginPath(); map.arc(you.x,you.y,9,0,Math.PI*2); map.fill();
