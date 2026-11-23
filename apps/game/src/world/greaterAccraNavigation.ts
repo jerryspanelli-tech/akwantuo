@@ -139,7 +139,7 @@ function shortestPath(
 }
 
 /**
- * Finds a shortest path along first-release road centre-lines.
+ * Finds a shortest path along authored first-release playable road centre-lines.
  * It refuses destinations too far from a road or in a disconnected road component.
  * This is a game-map route, not a GPS or traffic-aware route.
  */
