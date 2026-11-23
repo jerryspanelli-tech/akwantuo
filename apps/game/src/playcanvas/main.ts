@@ -2,7 +2,7 @@ import {
   AppBase, AppOptions, CameraComponentSystem, LightComponentSystem, RenderComponentSystem,
   AnimComponentSystem, ContainerHandler, TextureHandler, Asset, Color, StandardMaterial,
   createGraphicsDevice, DEVICETYPE_WEBGPU, DEVICETYPE_WEBGL2, FILLMODE_FILL_WINDOW,
-  RESOLUTION_AUTO, Entity
+  RESOLUTION_AUTO, Entity, Vec3
 } from "playcanvas";
 import "./style.css";
 import { createGreaterAccraWorld } from "./world";
@@ -34,6 +34,9 @@ const minimap = document.querySelector<HTMLCanvasElement>("#minimap");
 const minimapContext = minimap?.getContext("2d") ?? null;
 const mapToggle = document.querySelector<HTMLButtonElement>("#map-toggle");
 const worldMapPanel = document.querySelector<HTMLElement>("#world-map-panel");
+const routeOverlay = document.querySelector<HTMLCanvasElement>("#world-map-route-overlay");
+const routeOverlayContext = routeOverlay?.getContext("2d") ?? null;
+const mapRouteStatus = document.querySelector<HTMLElement>("#map-route-status");
 const worldMapClose = document.querySelector<HTMLButtonElement>("#world-map-close");
 let worldMapOpen = false;
 let worldMapZoom = 1;
@@ -707,6 +710,34 @@ async function boot() {
       const mapHeight = 12000 / worldMapZoom;
       mapCamera.setPosition(mapFocus.x, mapFocus.y + mapHeight, mapFocus.z + mapHeight * 0.58);
       mapCamera.lookAt(mapFocus.x, mapFocus.y, mapFocus.z);
+      if (routeOverlay && routeOverlayContext && mapCamera.camera) {
+        const pixelRatio = Math.min(window.devicePixelRatio || 1, 1.25);
+        const overlayWidth = Math.max(1, Math.round(canvas.clientWidth * pixelRatio));
+        const overlayHeight = Math.max(1, Math.round(canvas.clientHeight * pixelRatio));
+        if (routeOverlay.width !== overlayWidth || routeOverlay.height !== overlayHeight) {
+          routeOverlay.width = overlayWidth; routeOverlay.height = overlayHeight;
+        }
+        routeOverlayContext.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+        routeOverlayContext.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+        if (activeRoute && activeRoute.roadPoints.length > 1) {
+          const projected = activeRoute.roadPoints.map((point) =>
+            mapCamera.camera!.worldToScreen(new Vec3(point.x, 0.55, point.z))
+          );
+          routeOverlayContext.beginPath();
+          projected.forEach((point, index) => {
+            if (index === 0) routeOverlayContext!.moveTo(point.x, point.y);
+            else routeOverlayContext!.lineTo(point.x, point.y);
+          });
+          routeOverlayContext.strokeStyle = "#ffdf76";
+          routeOverlayContext.lineWidth = 4;
+          routeOverlayContext.lineCap = "round";
+          routeOverlayContext.lineJoin = "round";
+          routeOverlayContext.shadowColor = "#10150d";
+          routeOverlayContext.shadowBlur = 6;
+          routeOverlayContext.stroke();
+          routeOverlayContext.shadowBlur = 0;
+        }
+      }
       playerMapBeacon.enabled = true;
       playerMapBeacon.setPosition(mapFocus.x, mapFocus.y + 6, mapFocus.z);
       waypointBeacon.enabled = !!worldMapWaypoint;
@@ -714,6 +745,15 @@ async function boot() {
     } else {
       playerMapBeacon.enabled = false;
       waypointBeacon.enabled = false;
+      if (routeOverlayContext && routeOverlay) routeOverlayContext.clearRect(0, 0, routeOverlay.width, routeOverlay.height);
+    }
+    if (mapRouteStatus) {
+      if (!worldMapWaypoint) mapRouteStatus.textContent = "3D NAVIGATION · GHANA";
+      else if (activeRoute) mapRouteStatus.textContent = `${(activeRoute.distanceM / 1000).toFixed(1)} KM ROAD ROUTE`;
+      else {
+        const direct = Math.hypot(worldMapWaypoint.x - focus.x, worldMapWaypoint.z - focus.z);
+        mapRouteStatus.textContent = `${(direct / 1000).toFixed(1)} KM DIRECT · NO ROAD ROUTE`;
+      }
     }
     if (elapsed > 0.10) { updateButtons(); elapsed = 0; }
     elapsed += step;
