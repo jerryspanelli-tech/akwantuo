@@ -428,7 +428,15 @@ async function boot() {
   });
   let nearbyInteraction: { id: string; label: string; x: number; z: number; radius: number } | null = null;
   const overlaps = (x: number, z: number) => {
-    const buildingCollision = blockers.some((b) => Math.abs(x - b.x) < b.hx + 0.38 && Math.abs(z - b.z) < b.hz + 0.38);
+    // Test the player's position in each building's local footprint. Rotated
+    // buildings must not create oversized invisible collision barriers.
+    const buildingCollision = blockers.some((b) => {
+      const radians = b.yaw * Math.PI / 180;
+      const dx = x - b.x, dz = z - b.z;
+      const localX = dx * Math.cos(radians) - dz * Math.sin(radians);
+      const localZ = dx * Math.sin(radians) + dz * Math.cos(radians);
+      return Math.abs(localX) < b.hx + 0.38 && Math.abs(localZ) < b.hz + 0.38;
+    });
     const vehiclePosition = vehicle.getPosition();
     const vehicleCollision = !inVehicle && Math.abs(x - vehiclePosition.x) < 1.55 && Math.abs(z - vehiclePosition.z) < 2.45;
     return buildingCollision || vehicleCollision;
