@@ -833,7 +833,7 @@ async function boot() {
           map.fillText(place.name, p.x, p.y - 6); map.shadowBlur = 0;
         }
       }
-      // Follow the shortest connected path on verified first-release road geometry.
+      // Follow the shortest connected path on authored first-release playable road geometry.
       // If the selected place is outside the drivable network, be explicit and
       // show direct distance rather than inventing a road route.
       if (worldMapWaypoint) {
