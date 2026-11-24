@@ -208,6 +208,48 @@
 .device.is-app-open .dock{display:none!important}
 .device.is-app-open .home-indicator{flex:0 0 4px;min-height:4px;margin-top:0}
 
+
+/* Practical home screen: date, tappable glance cards, and the existing app grid. */
+.home-header{grid-column:1;grid-row:1;align-self:start;padding:clamp(10px,2vh,22px) 2px 16px}
+.home-date{font-size:clamp(24px,3.1vw,36px);font-weight:560;letter-spacing:-.045em;line-height:1.12}
+.home-location{display:flex;align-items:center;gap:7px;margin-top:9px;color:#b5c2c8;font-size:12px;letter-spacing:.02em}
+.location-dot{width:7px;height:7px;border-radius:50%;background:#82c6b1;box-shadow:0 0 10px #82c6b188}
+.widget-stack{grid-column:1;grid-row:2;display:grid;align-content:start;gap:11px;min-width:0}
+.home-widget{display:flex;align-items:center;gap:12px;width:100%;min-width:0;padding:15px 14px;border:1px solid #ffffff20;border-radius:19px;background:linear-gradient(135deg,#ffffff13,#ffffff07);box-shadow:inset 0 1px #ffffff12,0 10px 26px #0002;text-align:left;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);transition:transform .16s,border-color .16s}
+.home-widget:active{transform:scale(.985);border-color:#e8b66a77}
+.widget-icon{display:grid;place-items:center;flex:0 0 42px;width:42px;height:42px;border-radius:14px;font-size:19px;font-weight:750}
+.message-widget-icon{background:linear-gradient(145deg,#287c72,#174b4c);color:#fff}
+.wallet-widget-icon{background:linear-gradient(145deg,#526a8d,#293d5a);color:#fff;font-size:12px}
+.widget-copy{display:grid;gap:4px;min-width:0;flex:1}
+.widget-copy small{font-size:8px;font-weight:800;letter-spacing:.14em;color:#aebbc2}
+.widget-copy strong{font-size:15px;line-height:1.15;letter-spacing:-.02em;color:#f4f1e9}
+.widget-copy>span{font-size:10px;color:#bdc8cd;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.widget-chevron{font-size:24px;color:#aebbc2;line-height:1}
+#home{grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);grid-template-rows:auto 1fr;align-content:stretch;gap:12px clamp(18px,3vw,34px)}
+#home>.home-header{grid-column:1;grid-row:1}
+#home>.widget-stack{grid-column:1;grid-row:2}
+#home>.section-head{grid-column:2;grid-row:1;align-self:end;margin:0 1px 8px}
+#home>.apps{grid-column:2;grid-row:2;grid-template-columns:repeat(4,minmax(0,1fr));align-content:start;gap:clamp(14px,2.2vh,22px) 8px;padding:4px 0}
+@media(max-width:650px){
+ #home{grid-template-columns:1fr;grid-template-rows:auto auto auto auto;gap:5px}
+ #home>.home-header{grid-column:1;grid-row:1;padding:3px 1px 10px}
+ .home-date{font-size:clamp(23px,6.5vw,31px)}
+ .home-location{margin-top:5px;font-size:11px}
+ #home>.widget-stack{grid-column:1;grid-row:2;gap:8px}
+ .home-widget{padding:11px 12px;border-radius:16px}
+ .widget-icon{flex-basis:36px;width:36px;height:36px;border-radius:12px}
+ .widget-copy{gap:3px}
+ .widget-copy strong{font-size:14px}
+ #home>.section-head{grid-column:1;grid-row:3;margin:10px 1px 5px;align-self:auto}
+ #home>.apps{grid-column:1;grid-row:4;grid-template-columns:repeat(4,minmax(0,1fr));padding:4px 0 10px;gap:12px 5px}
+}
+@media(max-height:560px){
+ .home-header{padding-top:3px;padding-bottom:8px}
+ .home-widget{padding:9px 11px}
+ .widget-icon{width:34px;height:34px;flex-basis:34px}
+ #home>.apps{gap:9px 6px}
+}
+
 </style>
 </head>
 <body>
@@ -217,9 +259,9 @@
 
   <main class="content" id="content">
     <section id="home">
-      <div class="greeting"><div class="eyebrow">ATLAS OS · PERSONAL SPACE</div><h1>Your world, in one place.</h1><p>A calmer way to stay connected to everything that matters.</p></div>
-      <div class="feature"><div class="feature-copy"><small>ATLAS TAB · HOME</small><strong>Technology without limits.</strong><span>Your world, at a glance.</span></div><div class="atlas-orbit"></div></div>
-      <div class="section-head"><strong>Apps</strong><span>Your workspace</span></div>
+      <div class="home-header"><div class="home-date" id="home-date">Tuesday, November 24</div><div class="home-location"><span class="location-dot"></span>Accra · Ghana</div></div>
+      <div class="widget-stack" aria-label="At a glance"><button class="home-widget message-widget" type="button" data-app="messages"><span class="widget-icon message-widget-icon">✉</span><span class="widget-copy"><small>MESSAGES</small><strong>Inbox</strong><span>No new messages</span></span><span class="widget-chevron">›</span></button><button class="home-widget wallet-widget" type="button" data-app="wallet"><span class="widget-icon wallet-widget-icon">GH₵</span><span class="widget-copy"><small>AKWANTUO WALLET · PREVIEW</small><strong>GH₵ 0.00</strong><span>Demo balance · Tap to open</span></span><span class="widget-chevron">›</span></button></div>
+      <div class="section-head"><strong>Apps</strong></div>
       <div class="apps">
         <button class="app" data-app="messages"><span class="app-icon messages"><svg viewBox="0 0 24 24"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H5l-1 2v-5.5A7.5 7.5 0 1 1 20 11.5Z"/><path d="M8 11h8M8 14h5"/></svg></span><span class="app-label">Messages</span></button>
         <button class="app" data-app="maps"><span class="app-icon maps"><svg viewBox="0 0 24 24"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6Z"/><path d="M9 3v15m6-12v15"/></svg></span><span class="app-label">Atlas Maps</span></button>
@@ -230,8 +272,6 @@
         <button class="app" data-app="music"><span class="app-icon music"><svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></span><span class="app-label">Sound</span></button>
         <button class="app" data-app="market"><span class="app-icon market"><svg viewBox="0 0 24 24"><path d="M4 9h16l-1 12H5L4 9Z"/><path d="M8 9a4 4 0 0 1 8 0M9 13v.1m6-.1v.1"/></svg></span><span class="app-label">Market</span></button>
       </div>
-      <div class="section-head"><strong>Quick controls</strong><span>Device shortcuts</span></div>
-      <div class="quickrow"><button class="quick" data-toast="Connections panel is ready"><b>⌁</b> Network</button><button class="quick" data-toast="Do not disturb is off"><b>◐</b> Focus</button><button class="quick" data-toast="Battery health: 100%"><b>ϟ</b> Battery</button></div>
     </section>
     <section id="appview" hidden></section>
   </main>
@@ -263,7 +303,7 @@ let touchStartY=null;
 lockScreen.addEventListener('touchstart',e=>{touchStartY=e.touches[0].clientY},{passive:true});
 lockScreen.addEventListener('touchend',e=>{if(touchStartY!==null&&touchStartY-e.changedTouches[0].clientY>35)unlock();touchStartY=null},{passive:true});
 lockScreen.addEventListener('click',e=>{if(e.target.closest('button'))return;unlock()});
-function tick(){const d=new Date(),time=d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',hour12:false});document.getElementById('status-clock').textContent=time;document.getElementById('lock-time').textContent=time;document.getElementById('lock-date').textContent=d.toLocaleDateString([], {weekday:'long',month:'long',day:'numeric'})}
+function tick(){const d=new Date(),time=d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',hour12:false});document.getElementById('status-clock').textContent=time;document.getElementById('lock-time').textContent=time;document.getElementById('lock-date').textContent=d.toLocaleDateString([], {weekday:'long',month:'long',day:'numeric'});const homeDate=document.getElementById('home-date');if(homeDate)homeDate.textContent=d.toLocaleDateString([], {weekday:'long',month:'long',day:'numeric'})}
 tick();setInterval(tick,1000);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(device.classList.contains('is-locked'))unlock();else goHome()}});
 </script>
