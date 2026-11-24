@@ -2,12 +2,10 @@ import {
   AppBase, AppOptions, CameraComponentSystem, LightComponentSystem, RenderComponentSystem,
   AnimComponentSystem, ContainerHandler, TextureHandler, Asset, Color, StandardMaterial,
   createGraphicsDevice, DEVICETYPE_WEBGPU, DEVICETYPE_WEBGL2, FILLMODE_FILL_WINDOW,
-  RESOLUTION_AUTO, Entity, Vec3
+  RESOLUTION_AUTO, Entity
 } from "playcanvas";
 import "./style.css";
 import { createGreaterAccraWorld } from "./world";
-import { GREATER_ACCRA_ROAD_PATHS, GREATER_ACCRA_MAP_EXTENT } from "../world/greaterAccraLayout";
-import { findGreaterAccraRoadRoute, type GreaterAccraRoute } from "../world/greaterAccraNavigation";
 
 const canvas = document.querySelector<HTMLCanvasElement>("#application")!;
 const loading = document.querySelector<HTMLElement>("#loading");
@@ -30,46 +28,6 @@ const touchUi = document.querySelector<HTMLElement>(".touch-ui");
 const stick = document.querySelector<HTMLElement>("#stick");
 const stickKnob = document.querySelector<HTMLElement>("#stick-knob");
 const notice = document.querySelector<HTMLElement>("#notice");
-const mapToggle = document.querySelector<HTMLButtonElement>("#map-toggle");
-const worldMapPanel = document.querySelector<HTMLElement>("#world-map-panel");
-const routeOverlay = document.querySelector<HTMLCanvasElement>("#world-map-route-overlay");
-const routeOverlayContext = routeOverlay?.getContext("2d") ?? null;
-const mapRouteStatus = document.querySelector<HTMLElement>("#map-route-status");
-const worldMapClose = document.querySelector<HTMLButtonElement>("#world-map-close");
-let worldMapOpen = false;
-let worldMapZoom = 1;
-let worldMapHeight = 0;
-let worldMapCenter = {
-  x: (GREATER_ACCRA_MAP_EXTENT.minX + GREATER_ACCRA_MAP_EXTENT.maxX) / 2,
-  z: (GREATER_ACCRA_MAP_EXTENT.minZ + GREATER_ACCRA_MAP_EXTENT.maxZ) / 2
-};
-let worldMapWaypoint: { x: number; z: number } | null = null;
-let activeRoute: GreaterAccraRoute | null = null;
-let routeRefreshElapsed = 1;
-let routeFailureNoticeShown = false;
-const mapZoomIn = document.querySelector<HTMLButtonElement>("#map-zoom-in");
-const mapZoomOut = document.querySelector<HTMLButtonElement>("#map-zoom-out");
-const mapMarkClear = document.querySelector<HTMLButtonElement>("#map-mark-clear");
-mapZoomIn?.addEventListener("click", () => { worldMapZoom = clamp(worldMapZoom * 1.25, 0.65, 4); });
-mapZoomOut?.addEventListener("click", () => { worldMapZoom = clamp(worldMapZoom / 1.25, 0.65, 4); });
-mapMarkClear?.addEventListener("click", () => { worldMapWaypoint = null; activeRoute = null; routeRefreshElapsed = 1; routeFailureNoticeShown = false; });
-const setWorldMapOpen = (open: boolean) => {
-  if (open && !worldMapOpen) {
-    worldMapCenter = {
-      x: (GREATER_ACCRA_MAP_EXTENT.minX + GREATER_ACCRA_MAP_EXTENT.maxX) / 2,
-      z: (GREATER_ACCRA_MAP_EXTENT.minZ + GREATER_ACCRA_MAP_EXTENT.maxZ) / 2
-    };
-    worldMapZoom = 1;
-  }
-  worldMapOpen = open;
-  if (worldMapPanel) worldMapPanel.hidden = !open;
-  if (mapToggle) mapToggle.setAttribute("aria-expanded", String(open));
-  document.body.classList.toggle("world-map-open", open);
-};
-mapToggle?.addEventListener("click", () => setWorldMapOpen(!worldMapOpen));
-worldMapClose?.addEventListener("click", () => setWorldMapOpen(false));
-window.addEventListener("keydown", (event) => { if (event.key === "Escape" && worldMapOpen) setWorldMapOpen(false); });
-
 if (!canvas) throw new Error("AKWANTUO PlayCanvas canvas is missing.");
 
 const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
@@ -133,15 +91,6 @@ async function boot() {
     app.root.addChild(entity);
     return entity;
   };
-  const addCylinder = (name: string, x: number, y: number, z: number, radius: number, height: number, material: StandardMaterial) => {
-    const entity = new Entity(name);
-    entity.addComponent("render", { type: "cylinder", material });
-    entity.setPosition(x, y, z);
-    entity.setLocalScale(radius * 2, height, radius * 2);
-    app.root.addChild(entity);
-    return entity;
-  };
-
   const materials = {
     soil: mat(0.48, 0.38, 0.25), grass: mat(0.22, 0.34, 0.22), road: mat(0.105, 0.12, 0.12),
     lane: mat(0.88, 0.78, 0.53), kerb: mat(0.69, 0.66, 0.57), sand: mat(0.78, 0.68, 0.48),
@@ -150,15 +99,6 @@ async function boot() {
     concrete: mat(0.55, 0.53, 0.47), glass: mat(0.16, 0.29, 0.31), roof: mat(0.28, 0.20, 0.16),
     tyre: mat(0.025, 0.03, 0.03), vehicle: mat(0.78, 0.67, 0.34)
   };
-  const waypointMaterial = mat(1, 0.72, 0.2);
-  waypointMaterial.emissive = new Color(0.85, 0.42, 0.06); waypointMaterial.update();
-  const playerMapMaterial = mat(0.25, 1, 0.58);
-  playerMapMaterial.emissive = new Color(0.08, 0.52, 0.22); playerMapMaterial.update();
-  const waypointBeacon = addCylinder("3D navigation destination beacon", 0, 8, 0, 1.2, 16, waypointMaterial);
-  waypointBeacon.enabled = false;
-  const playerMapBeacon = addCylinder("3D navigation player marker", 0, 6, 0, 1.05, 12, playerMapMaterial);
-  playerMapBeacon.enabled = false;
-
   loadingMessage && (loadingMessage.textContent = "Building Greater Accra roads, districts and coastline…");
   const world = createGreaterAccraWorld(app);
   const blockers = world.blockers;
@@ -415,61 +355,16 @@ async function boot() {
   stick?.addEventListener("pointerup", resetStick); stick?.addEventListener("pointercancel", resetStick); stick?.addEventListener("lostpointercapture", resetStick);
 
   let cameraYaw = 0, cameraPitch = 13, dragPointer: number | null = null, lastX = 0, lastY = 0;
-  let mapPointerStart: { id: number; x: number; y: number; moved: boolean } | null = null;
   canvas.addEventListener("pointerdown", (event) => {
-    if (worldMapOpen) {
-      event.preventDefault();
-      mapPointerStart = { id: event.pointerId, x: event.clientX, y: event.clientY, moved: false };
-      dragPointer = null;
-      return;
-    }
     dragPointer = event.pointerId; lastX = event.clientX; lastY = event.clientY;
   });
   window.addEventListener("pointermove", (event) => {
-    if (worldMapOpen) {
-      if (mapPointerStart?.id === event.pointerId) {
-        const dx = event.clientX - mapPointerStart.x;
-        const dy = event.clientY - mapPointerStart.y;
-        if (Math.hypot(dx, dy) > 5) mapPointerStart.moved = true;
-        if (mapPointerStart.moved && worldMapHeight > 0) {
-          const unitsPerPixel = (2 * worldMapHeight * Math.tan(29 * Math.PI / 180)) / Math.max(1, canvas.clientHeight);
-          worldMapCenter.x = clamp(worldMapCenter.x - dx * unitsPerPixel, GREATER_ACCRA_MAP_EXTENT.minX - 2500, GREATER_ACCRA_MAP_EXTENT.maxX + 2500);
-          worldMapCenter.z = clamp(worldMapCenter.z + dy * unitsPerPixel, GREATER_ACCRA_MAP_EXTENT.minZ - 2500, GREATER_ACCRA_MAP_EXTENT.maxZ + 2500);
-          mapPointerStart.x = event.clientX;
-          mapPointerStart.y = event.clientY;
-        }
-      }
-      return;
-    }
     if (dragPointer !== event.pointerId) return;
     cameraYaw -= (event.clientX - lastX) * 0.22;
-    cameraPitch = clamp(cameraPitch + (event.clientY - lastY) * 0.12, -85, 80);
+    cameraPitch = clamp(cameraPitch + (event.clientY - lastY) * 0.12, -35, 65);
     lastX = event.clientX; lastY = event.clientY;
   });
   window.addEventListener("pointerup", (event) => {
-    if (worldMapOpen && mapPointerStart?.id === event.pointerId) {
-      const start = mapPointerStart; mapPointerStart = null;
-      if (!start.moved && Math.hypot(event.clientX - start.x, event.clientY - start.y) <= 14 && camera.camera) {
-        const rect = canvas.getBoundingClientRect();
-        const sx = event.clientX - rect.left, sy = event.clientY - rect.top;
-        const rayStart = camera.camera.screenToWorld(sx, sy, camera.camera.nearClip);
-        const rayEnd = camera.camera.screenToWorld(sx, sy, camera.camera.farClip);
-        const dy = rayEnd.y - rayStart.y;
-        if (Math.abs(dy) > 0.0001) {
-          const t = -rayStart.y / dy;
-          if (t >= 0 && t <= 1) {
-            const x = rayStart.x + (rayEnd.x - rayStart.x) * t;
-            const z = rayStart.z + (rayEnd.z - rayStart.z) * t;
-            const bounds = GREATER_ACCRA_MAP_EXTENT;
-            if (x >= bounds.minX && x <= bounds.maxX && z >= bounds.minZ && z <= bounds.maxZ) {
-              worldMapWaypoint = { x, z };
-              activeRoute = null; routeRefreshElapsed = 1; routeFailureNoticeShown = false;
-              showNotice("3D map destination marked");
-            } else showNotice("Choose a location inside Greater Accra");
-          }
-        }
-      }
-    }
     if (dragPointer === event.pointerId) dragPointer = null;
   });
 
@@ -692,103 +587,19 @@ async function boot() {
       playerCharacter.setEulerAngles(player.getEulerAngles());
     }
     const focus = inVehicle ? vehicle.getPosition() : player.getPosition();
-    routeRefreshElapsed += step;
-    if (!worldMapWaypoint) activeRoute = null;
-    else if (routeRefreshElapsed >= 0.45) {
-      routeRefreshElapsed = 0;
-      activeRoute = findGreaterAccraRoadRoute({ x: focus.x, z: focus.z }, worldMapWaypoint, GREATER_ACCRA_ROAD_PATHS);
-      if (!activeRoute && !routeFailureNoticeShown) {
-        showNotice("No connected playable road route here yet · showing direct distance");
-        routeFailureNoticeShown = true;
-      } else if (activeRoute) routeFailureNoticeShown = false;
-    }
     const yaw = cameraYaw * Math.PI / 180;
     const distance = inVehicle ? 10 : 7.5;
     const height = inVehicle ? 4.4 : 3.6;
-    if (worldMapOpen) {
-      // Fit the complete authored Greater Accra extent to the current screen.
-      // Portrait phones need a wider world-space view than desktop displays.
-      const aspect = Math.max(0.35, canvas.clientWidth / Math.max(1, canvas.clientHeight));
-      const halfFov = 29 * Math.PI / 180;
-      const fitWidth = GREATER_ACCRA_MAP_EXTENT.widthM / (2 * Math.tan(halfFov) * aspect);
-      const fitDepth = GREATER_ACCRA_MAP_EXTENT.depthM / (2 * Math.tan(halfFov));
-      worldMapHeight = Math.max(fitWidth, fitDepth) * 1.08 / worldMapZoom;
-      const mapFocus = inVehicle ? vehicle.getPosition() : player.getPosition();
-      camera.setPosition(worldMapCenter.x, worldMapHeight, worldMapCenter.z + worldMapHeight * 0.34);
-      camera.lookAt(worldMapCenter.x, 0, worldMapCenter.z);
-      if (camera.camera) {
-        camera.camera.farClip = 65000;
-        camera.camera.rect.set(0, 0, 1, 1);
-      }
-      if (routeOverlay && routeOverlayContext && camera.camera) {
-        const pixelRatio = Math.min(window.devicePixelRatio || 1, 1.25);
-        const overlayWidth = Math.max(1, Math.round(canvas.clientWidth * pixelRatio));
-        const overlayHeight = Math.max(1, Math.round(canvas.clientHeight * pixelRatio));
-        if (routeOverlay.width !== overlayWidth || routeOverlay.height !== overlayHeight) {
-          routeOverlay.width = overlayWidth; routeOverlay.height = overlayHeight;
-        }
-        routeOverlayContext.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-        routeOverlayContext.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
-        if (worldMapWaypoint) {
-          const routePoints = activeRoute?.roadPoints ?? [{ x: mapFocus.x, z: mapFocus.z }, worldMapWaypoint];
-          const projected = routePoints.map((point) =>
-            camera.camera!.worldToScreen(new Vec3(point.x, 0.65, point.z))
-          );
-          routeOverlayContext.beginPath();
-          projected.forEach((point, index) => {
-            if (index === 0) routeOverlayContext!.moveTo(point.x, point.y);
-            else routeOverlayContext!.lineTo(point.x, point.y);
-          });
-          routeOverlayContext.strokeStyle = activeRoute ? "#ffdf76" : "#e0a65d";
-          routeOverlayContext.lineWidth = activeRoute ? 4 : 2.5;
-          routeOverlayContext.lineCap = "round";
-          routeOverlayContext.lineJoin = "round";
-          routeOverlayContext.setLineDash(activeRoute ? [] : [8, 7]);
-          routeOverlayContext.shadowColor = "#10150d";
-          routeOverlayContext.shadowBlur = 6;
-          routeOverlayContext.stroke();
-          routeOverlayContext.setLineDash([]);
-          routeOverlayContext.shadowBlur = 0;
-        }
-        const playerScreen = camera.camera.worldToScreen(new Vec3(mapFocus.x, 8, mapFocus.z));
-        routeOverlayContext.beginPath();
-        routeOverlayContext.arc(playerScreen.x, playerScreen.y, 8, 0, Math.PI * 2);
-        routeOverlayContext.fillStyle = "#65e5a0";
-        routeOverlayContext.fill();
-        routeOverlayContext.lineWidth = 3;
-        routeOverlayContext.strokeStyle = "#f4fff8";
-        routeOverlayContext.stroke();
-        if (worldMapWaypoint) {
-          const targetScreen = camera.camera.worldToScreen(new Vec3(worldMapWaypoint.x, 10, worldMapWaypoint.z));
-          routeOverlayContext.beginPath();
-          routeOverlayContext.arc(targetScreen.x, targetScreen.y, 8, 0, Math.PI * 2);
-          routeOverlayContext.fillStyle = "#ffdb73";
-          routeOverlayContext.fill();
-          routeOverlayContext.lineWidth = 2;
-          routeOverlayContext.strokeStyle = "#3b2c16";
-          routeOverlayContext.stroke();
-        }
-      }
-      const beaconRadius = Math.max(1.05, worldMapHeight * 0.006);
-      playerMapBeacon.setLocalScale(beaconRadius * 2, Math.max(12, worldMapHeight * 0.018), beaconRadius * 2);
-      waypointBeacon.setLocalScale(beaconRadius * 2.3, Math.max(16, worldMapHeight * 0.024), beaconRadius * 2.3);
-      playerMapBeacon.enabled = true;
-      playerMapBeacon.setPosition(mapFocus.x, mapFocus.y + Math.max(6, worldMapHeight * 0.009), mapFocus.z);
-      waypointBeacon.enabled = !!worldMapWaypoint;
-      if (worldMapWaypoint) waypointBeacon.setPosition(worldMapWaypoint.x, Math.max(8, worldMapHeight * 0.012), worldMapWaypoint.z);
-    } else {
-      if (camera.camera) camera.camera.farClip = 520;
-      playerMapBeacon.enabled = false;
-      waypointBeacon.enabled = false;
-      if (routeOverlayContext && routeOverlay) routeOverlayContext.clearRect(0, 0, routeOverlay.width, routeOverlay.height);
-    }
-    if (mapRouteStatus) {
-      if (!worldMapWaypoint) mapRouteStatus.textContent = "3D NAVIGATION · GHANA";
-      else if (activeRoute) mapRouteStatus.textContent = `${(activeRoute.distanceM / 1000).toFixed(1)} KM ROAD ROUTE`;
-      else {
-        const direct = Math.hypot(worldMapWaypoint.x - focus.x, worldMapWaypoint.z - focus.z);
-        mapRouteStatus.textContent = `${(direct / 1000).toFixed(1)} KM DIRECT · NO ROAD ROUTE`;
-      }
+    const cameraYawRadians = cameraYaw * Math.PI / 180;
+    const cameraPitchRadians = cameraPitch * Math.PI / 180;
+    const cameraDistance = inVehicle ? 10 : 7.5;
+    const cameraHorizontal = cameraDistance * Math.cos(cameraPitchRadians);
+    camera.setPosition(
+      focus.x - Math.sin(cameraYawRadians) * cameraHorizontal,
+      focus.y + height + cameraDistance * Math.sin(cameraPitchRadians),
+      focus.z - Math.cos(cameraYawRadians) * cameraHorizontal
+    );
+    camera.lookAt(focus.x, focus.y + (inVehicle ? 1.2 : 1.5), focus.z);
     }
     if (elapsed > 0.10) { updateButtons(); elapsed = 0; }
     elapsed += step;
