@@ -587,8 +587,6 @@ async function boot() {
       playerCharacter.setEulerAngles(player.getEulerAngles());
     }
     const focus = inVehicle ? vehicle.getPosition() : player.getPosition();
-    const yaw = cameraYaw * Math.PI / 180;
-    const distance = inVehicle ? 10 : 7.5;
     const height = inVehicle ? 4.4 : 3.6;
     const cameraYawRadians = cameraYaw * Math.PI / 180;
     const cameraPitchRadians = cameraPitch * Math.PI / 180;
@@ -600,7 +598,6 @@ async function boot() {
       focus.z - Math.cos(cameraYawRadians) * cameraHorizontal
     );
     camera.lookAt(focus.x, focus.y + (inVehicle ? 1.2 : 1.5), focus.z);
-    }
     if (elapsed > 0.10) { updateButtons(); elapsed = 0; }
     elapsed += step;
     if (status) status.textContent = inVehicle ? "TAXI · DRIVING" : "GREATER ACCRA · GHANA";
