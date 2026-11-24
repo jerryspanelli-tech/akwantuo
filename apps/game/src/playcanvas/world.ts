@@ -947,7 +947,9 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     }
     const offset=(i/12)*length;
     const signalIndex=route.roadSegmentId==="ring-road-coastal"?0:route.roadSegmentId==="spintex-road"?3:null;
-    // Never render primitive box/cylinder stand-ins. NPCs appear only as imported GLB vehicles.\n    fallback.enabled=false;\n    traffic.push({root,fallback,modelKind,route,distance:offset,speed:4.2+(i%5)*0.9,length,signalIndex});
+    // Never render primitive box/cylinder stand-ins. NPCs appear only as imported GLB vehicles.
+    fallback.enabled=false;
+    traffic.push({root,fallback,modelKind,route,distance:offset,speed:4.2+(i%5)*0.9,length,signalIndex});
   }
 
   // Load mobile-sized, CC0 glTF vehicle variants once, then reuse each
