@@ -274,12 +274,48 @@
 .map-foot span{font-size:9px;color:#9eafb6;text-align:right}
 .device.is-app-open .appbody:has(.zenvia-map){overflow:hidden}
 @media(max-height:560px){.zenvia-map{min-height:270px;gap:7px}.map-stage{min-height:170px}.map-foot{padding:7px 10px}}
+
+/* Compact portrait ZENVIA phone shell and map-first app layout. */
+.device{width:100%;height:100%;padding:12px 13px 10px;gap:8px}
+.status{height:25px;min-height:25px;flex:0 0 25px;padding:0 2px;font-size:12px}
+.status-right{gap:7px}
+.phone-close{width:24px;height:24px;display:grid;place-items:center;border-radius:50%;border:1px solid #ffffff25;background:#ffffff12;color:#fff;font-size:19px;line-height:1;padding:0;margin-left:2px}
+.device.is-app-open #content{padding:0;gap:0}
+.device.is-app-open .appview{gap:7px}
+.device.is-app-open .apphead{padding:0 0 6px;border:0;min-height:34px}
+.device.is-app-open .apphead .back{width:30px;height:30px;flex:0 0 30px}
+.map-apphead{display:flex;align-items:center;gap:9px}
+.map-app-label{font-size:12px;font-weight:700;color:#aebbc2}
+.zenvia-map{height:100%;min-height:0;gap:9px}
+.map-search{height:43px;min-height:43px;display:flex;align-items:center;gap:9px;padding:0 13px;border:1px solid #ffffff20;border-radius:15px;background:#ffffff12;color:#aebbc2}
+.map-search>span:first-child{font-size:21px;line-height:1;color:#e8bd70}
+.map-search input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:#f4f1e9;font:inherit;font-size:12px}
+.map-search input::placeholder{color:#aebbc2;opacity:1}
+.map-search-pin{font-size:16px;color:#e8bd70}
+.map-stage{flex:1 1 75%;min-height:0;border-radius:19px}
+.map-toolbar{min-height:39px}
+.map-controls button{height:34px;min-width:36px}
+.map-locate{height:34px;padding:0 13px;border:1px solid #ffffff22;border-radius:12px;background:#ffffff10;color:#f4f1e9;font-size:10px;font-weight:700}
+.map-foot{padding:4px 2px;border:0;background:transparent}
+.map-foot strong{font-size:12px;letter-spacing:0}
+.map-foot span{font-size:9px}
+.map-topline,.map-live,.map-coordinate{display:none!important}
+.device.is-app-open .appbody:has(.zenvia-map){overflow:hidden;display:flex;flex-direction:column;min-height:0;padding:0 1px 4px}
+@media(max-width:650px){
+ .device{padding:11px 12px 9px;gap:7px}
+ .status{height:24px;min-height:24px;flex-basis:24px}
+ .zenvia-map{gap:8px}
+ .map-search{height:42px;min-height:42px}
+ .map-stage{min-height:0}
+ .map-foot{padding-top:2px}
+}
+
 </style>
 </head>
 <body>
 <div class="device is-locked" id="atlas-device">
   <section class="lock-screen" id="lock-screen" aria-label="ZENVIA lock screen"><div class="lock-top"><span class="lock-brand">ZENVIA <i>OS</i></span><span class="lock-weather">ACCRA · GH</span></div><div class="lock-clock-wrap"><div class="lock-time" id="lock-time">09:41</div><div class="lock-date" id="lock-date">Monday, November 24</div></div><div class="lock-bottom"><div class="lock-hint"><span class="lock-dot"></span> Swipe up or tap to unlock</div><button class="unlock-button" id="unlock-button" type="button" aria-label="Unlock ZENVIA Tab"><span>UNLOCK</span><b>↑</b></button></div></section>
-  <div class="status"><span id="status-clock">09:41</span><div class="status-right"><span>5G</span><span class="signal"><i></i><i></i><i></i><i></i></span><span class="battery"><span></span></span></div></div>
+  <div class="status"><span id="status-clock">09:41</span><div class="status-right"><span>5G</span><span class="signal"><i></i><i></i><i></i><i></i></span><span class="battery"><span></span></span><button class="phone-close" id="phone-close" type="button" aria-label="Close ZENVIA">×</button></div></div>
 
   <main class="content" id="content">
     <section id="home">
@@ -306,7 +342,7 @@
 const content=document.getElementById('content'),home=document.getElementById('home'),view=document.getElementById('appview'),toast=document.getElementById('toast');
 const appData={
 messages:['Messages','<div class="tile"><strong>AKWANTUO NETWORK</strong><p>Your in-world messages and contacts will appear here.</p></div><div class="placeholder">Your conversations will live here.<br>Stay close to your people.</div>'],
-maps:['Zenvia Maps','<div class="zenvia-map"><div class="map-topline"><span class="map-live" id="map-live">CONNECTING TO AKWANTUO</span><span class="map-coordinate" id="map-coordinate">PLAYER POSITION · —</span></div><div class="map-stage"><canvas id="zenvia-map-canvas" aria-label="Interactive Greater Accra game world map"></canvas><span class="map-north">N</span></div><div class="map-toolbar"><div class="map-controls"><button type="button" id="map-zoom-out" aria-label="Zoom out">−</button><button type="button" id="map-zoom-in" aria-label="Zoom in">+</button></div><div class="map-controls"><button type="button" class="map-locate" id="map-locate">LOCATE PLAYER</button></div></div><div class="map-foot"><strong id="map-district">GREATER ACCRA · GHANA</strong><span id="map-status">Waiting for world data…</span></div></div>'],
+maps:['Maps','<div class="zenvia-map"><label class="map-search"><span>⌕</span><input aria-label="Search locations" placeholder="Search Accra…" readonly><span class="map-search-pin">◎</span></label><div class="map-stage"><canvas id="zenvia-map-canvas" aria-label="Interactive Greater Accra game world map"></canvas><span class="map-north">N</span></div><div class="map-toolbar"><div class="map-controls"><button type="button" id="map-zoom-out" aria-label="Zoom out">−</button><button type="button" id="map-zoom-in" aria-label="Zoom in">+</button></div><button type="button" class="map-locate" id="map-locate">◎ <span>Locate</span></button></div><div class="map-foot"><strong id="map-district">Greater Accra</strong><span id="map-status">Waiting for player</span></div></div>'],
 wallet:['Wallet','<div class="tile"><div class="eyebrow">AKWANTUO BALANCE</div><div class="balance">GH₵ 0.00</div><p>In-game funds · Secure wallet preview</p></div><div class="tile"><strong>Recent activity</strong><p>No transactions yet.</p></div>'],
 camera:['Camera','<div class="placeholder">◉<br><br>Capture your moments in AKWANTUO.<br>Camera integration is planned for a later build.</div>'],
 notes:['Notes','<div class="tile"><strong>Quick note</strong><textarea placeholder="Write something..." style="width:100%;min-height:110px;background:#0e171e;border:1px solid var(--line);border-radius:10px;color:var(--ink);padding:10px;resize:vertical;font:inherit;font-size:11px"></textarea></div>'],
@@ -314,7 +350,7 @@ settings:['Settings','<div class="tile"><strong>ZENVIA Tab</strong><p>ZENVIA OS 
 music:['Sound','<div class="placeholder">Your sound library will appear here.<br>Original ZENVIA notification tones are planned.</div>'],
 market:['Market','<div class="tile"><strong>AKWANTUO MARKET</strong><p>Discover services, goods and in-world essentials.</p></div><div class="placeholder">The marketplace is being prepared.</div>']
 };
-function openApp(id){const data=appData[id];if(!data)return;if(id!=='maps')sendMapMessage('ZENVIA_MAP_CLOSE');device.classList.add('is-app-open');home.hidden=true;view.hidden=false;view.innerHTML='<div class="appview"><div class="apphead"><button class="back" id="back" aria-label="Back">‹</button><strong>'+data[0]+'</strong></div><div class="appbody">'+data[1]+'</div></div>';document.getElementById('back').addEventListener('click',goHome);content.scrollTop=0;if(id==='maps')requestAnimationFrame(initZenviaMap)}
+function openApp(id){const data=appData[id];if(!data)return;if(id!=='maps')sendMapMessage('ZENVIA_MAP_CLOSE');device.classList.add('is-app-open');home.hidden=true;view.hidden=false;const head=id==='maps'?'<div class="apphead map-apphead"><button class="back" id="back" aria-label="Back">‹</button><span class="map-app-label">Maps</span></div>':'<div class="apphead"><button class="back" id="back" aria-label="Back">‹</button><strong>'+data[0]+'</strong></div>';view.innerHTML='<div class="appview">'+head+'<div class="appbody">'+data[1]+'</div></div>';document.getElementById('back').addEventListener('click',goHome);content.scrollTop=0;if(id==='maps')requestAnimationFrame(initZenviaMap)}
 function goHome(){sendMapMessage('ZENVIA_MAP_CLOSE');device.classList.remove('is-app-open');view.hidden=true;home.hidden=false;content.scrollTop=0}
 const zenviaMap={data:null,state:null,zoom:1,panX:0,panY:0,canvas:null,ctx:null,retry:null,drag:null};
 function sendMapMessage(type){if(window.parent!==window)window.parent.postMessage({type},window.location.origin)}
@@ -347,7 +383,7 @@ function drawZenviaMap(){
  if(zenviaMap.zoom>=1.35){ctx.fillStyle='#33463e';for(const b of data.buildings||[]){const p=point(b.x,b.z);if(p.x<-20||p.x>w+20||p.y<-20||p.y>h+20)continue;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(-(b.yaw||0)*Math.PI/180);ctx.fillRect(-b.hx*scale,-b.hz*scale,b.hx*2*scale,b.hz*2*scale);ctx.restore()}}
  for(const road of data.roads||[]){if(!road.points||road.points.length<2)continue;ctx.beginPath();road.points.forEach((p,i)=>{const q=point(p.x,p.z);if(i===0)ctx.moveTo(q.x,q.y);else ctx.lineTo(q.x,q.y)});const highway=/^(n1|n4|n6)-/.test(road.id||'');ctx.strokeStyle=highway?'#d2b477':'#a6b5a9';ctx.lineWidth=Math.max(highway?2.1:1.1,scale*(highway?17:8));ctx.lineCap='round';ctx.lineJoin='round';ctx.stroke()}
  for(const place of data.landmarks||[]){const p=point(place.x,place.z);if(p.x<-30||p.x>w+30||p.y<-30||p.y>h+30)continue;if(zenviaMap.zoom>1.05){const a=point(place.minX,place.maxZ),b=point(place.maxX,place.minZ);ctx.fillStyle='#c6a66a33';ctx.strokeStyle='#e2bd7b';ctx.lineWidth=1;ctx.fillRect(a.x,a.y,b.x-a.x,b.y-a.y);ctx.strokeRect(a.x,a.y,b.x-a.x,b.y-a.y)}ctx.beginPath();ctx.arc(p.x,p.y,Math.max(2.5,3.5*zenviaMap.zoom/2),0,Math.PI*2);ctx.fillStyle='#f0c477';ctx.fill();if(zenviaMap.zoom>=1.6){ctx.font='600 9px system-ui';ctx.textAlign='left';ctx.fillStyle='#f5eee0';ctx.fillText(place.label,p.x+6,p.y-5)}}
- for(const region of data.regions||[]){const p=point(region.x,region.z);if(p.x<0||p.x>w||p.y<0||p.y>h)continue;ctx.fillStyle='#b7c9c0';ctx.font='700 8px system-ui';ctx.textAlign='center';ctx.fillText(region.label,p.x,p.y)}
+ const majorAreas=new Set(['Accra Central','Tema','Madina','Dansoman']);const detailedAreas=new Set(['Osu','Labadi','Kaneshie','Spintex','Adenta']);const visibleRegions=(data.regions||[]).filter(region=>{const name=String(region.label||'').trim();return zenviaMap.zoom<1.65?majorAreas.has(name):(majorAreas.has(name)||detailedAreas.has(name))});const occupied=[];for(const region of visibleRegions){const p=point(region.x,region.z);if(p.x<0||p.x>w||p.y<0||p.y>h)continue;const label=String(region.label||'');ctx.font='700 '+(zenviaMap.zoom<1.65?'9':'10')+'px system-ui';const tw=ctx.measureText(label).width+12,box={l:p.x-tw/2,r:p.x+tw/2,t:p.y-17,b:p.y+3};if(occupied.some(a=>box.l<a.r+7&&box.r>a.l-7&&box.t<a.b+5&&box.b>a.t-5))continue;occupied.push(box);ctx.fillStyle='#b7c9c0';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(label,p.x,p.y-7)}
  if(zenviaMap.state){const p=point(zenviaMap.state.x,zenviaMap.state.z),angle=(zenviaMap.state.heading||0)*Math.PI/180;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(-angle);ctx.beginPath();ctx.moveTo(0,-11);ctx.lineTo(7,8);ctx.lineTo(0,4);ctx.lineTo(-7,8);ctx.closePath();ctx.fillStyle=zenviaMap.state.inVehicle?'#77d5a8':'#f5d18a';ctx.strokeStyle='#102027';ctx.lineWidth=2;ctx.fill();ctx.stroke();ctx.restore();ctx.beginPath();ctx.arc(p.x,p.y,13,0,Math.PI*2);ctx.strokeStyle='#f5d18a88';ctx.lineWidth=1;ctx.stroke()}
  ctx.restore();
  const live=document.getElementById('map-live'),status=document.getElementById('map-status'),coord=document.getElementById('map-coordinate'),district=document.getElementById('map-district');
@@ -358,6 +394,7 @@ function drawZenviaMap(){
 }
 window.addEventListener('message',event=>{if(event.source!==window.parent||event.origin!==window.location.origin)return;const m=event.data||{};if(m.type==='ZENVIA_MAP_STATIC'){zenviaMap.data=m.payload;if(zenviaMap.retry){clearInterval(zenviaMap.retry);zenviaMap.retry=null}drawZenviaMap()}else if(m.type==='ZENVIA_MAP_STATE'){zenviaMap.state=m.payload;drawZenviaMap()}else if(m.type==='ZENVIA_MAP_PARENT_CLOSED'){sendMapMessage('ZENVIA_MAP_CLOSE')}});
 
+document.getElementById('phone-close').addEventListener('click',()=>{if(window.parent!==window)window.parent.postMessage({type:'ZENVIA_TABLET_CLOSE'},window.location.origin)});
 document.querySelectorAll('[data-app]').forEach(el=>el.addEventListener('click',()=>openApp(el.dataset.app)));
 document.querySelectorAll('[data-toast]').forEach(el=>el.addEventListener('click',()=>showToast(el.dataset.toast)));
 function showToast(message){toast.textContent=message;toast.classList.add('show');clearTimeout(window._atlasToast);window._atlasToast=setTimeout(()=>toast.classList.remove('show'),1700)}
