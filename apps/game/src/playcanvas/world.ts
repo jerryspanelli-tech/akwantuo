@@ -575,10 +575,10 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
   for (let i = 0; i < 2; i++) addStreetlight("Spintex Road LED streetlight", 5500 + i * 62, -1490, 140);
   // Decorative fixtures extend the streetlight network toward the N1/Tema,
   // N4/Madina and N6/Achimota corridors without increasing dynamic light count.
-  addStreetlight("N1 Tema corridor LED streetlight", 2100, 200, 90, false);
-  addStreetlight("N1 Tema corridor LED streetlight", 2900, 125, 90, false);
-  addStreetlight("N4 Madina approach LED streetlight", 4850, 1760, 20, false);
-  addStreetlight("N6 Achimota approach LED streetlight", -1830, 2350, 15, false);
+  addStreetlight("N1 Tema corridor LED streetlight", 2100, 220, 90, false);
+  addStreetlight("N1 Tema corridor LED streetlight", 2900, 145, 90, false);
+  addStreetlight("N4 Madina approach LED streetlight", 4850, 1795, 90, false);
+  addStreetlight("N6 Achimota approach LED streetlight", -1787, 2354, 180, false);
 
   // Labadi marina watercraft props: a speedboat and a personal watercraft.
   box("Labadi speedboat hull", 2820, 0.65, -3960, 3.2, 0.85, 9.5, mats.white);
