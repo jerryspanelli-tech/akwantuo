@@ -434,7 +434,6 @@ async function boot() {
   let elapsed = 0;
   app.on("update", (dt: number) => {
     const step = Math.min(dt, 0.05);
-    world.update(step);
     worldClock = (worldClock + step * 60) % 86400;
     const hourOfDay = worldClock / 3600;
     // Accra sunrise is around 06:00 and sunset around 18:00. Smooth the
@@ -444,6 +443,7 @@ async function boot() {
     const daylightRaw = clamp((sunElevation + 0.14) / 0.38, 0, 1);
     const daylight = daylightRaw * daylightRaw * (3 - 2 * daylightRaw);
     const night = 1 - daylight;
+    world.update(step, night);
     if (sun.light) {
       sun.light.intensity = 0.025 + daylight * 1.45;
       sun.setEulerAngles(90 - sunElevation * 72, hourOfDay * 15 + 90, 0);
