@@ -458,8 +458,29 @@ function drawZenviaMap(){
  const coast=data.coastline||[];if(coast.length>1){ctx.beginPath();coast.forEach((p,i)=>{const q=point(p.x,p.z);if(i===0)ctx.moveTo(q.x,q.y);else ctx.lineTo(q.x,q.y)});const end=point(e.maxX,e.minZ),start=point(e.minX,e.minZ);ctx.lineTo(end.x,end.y);ctx.lineTo(start.x,start.y);ctx.closePath();ctx.fillStyle='#17414b';ctx.fill();ctx.strokeStyle='#4e8790';ctx.lineWidth=1.5;ctx.stroke()}
  if(zenviaMap.zoom>=1.35){ctx.fillStyle='#33463e';for(const b of data.buildings||[]){const p=point(b.x,b.z);if(p.x<-20||p.x>w+20||p.y<-20||p.y>h+20)continue;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(-(b.yaw||0)*Math.PI/180);ctx.fillRect(-b.hx*scale,-b.hz*scale,b.hx*2*scale,b.hz*2*scale);ctx.restore()}}
  for(const road of data.roads||[]){if(!road.points||road.points.length<2)continue;ctx.beginPath();road.points.forEach((p,i)=>{const q=point(p.x,p.z);if(i===0)ctx.moveTo(q.x,q.y);else ctx.lineTo(q.x,q.y)});const highway=/^(n1|n4|n6)-/.test(road.id||'');ctx.strokeStyle=highway?'#d2b477':'#a6b5a9';ctx.lineWidth=Math.max(highway?2.1:1.1,scale*(highway?17:8));ctx.lineCap='round';ctx.lineJoin='round';ctx.stroke()}
- for(const place of data.landmarks||[]){const p=point(place.x,place.z);if(p.x<-30||p.x>w+30||p.y<-30||p.y>h+30)continue;if(zenviaMap.zoom>1.05){const a=point(place.minX,place.maxZ),b=point(place.maxX,place.minZ);ctx.fillStyle='#c6a66a33';ctx.strokeStyle='#e2bd7b';ctx.lineWidth=1;ctx.fillRect(a.x,a.y,b.x-a.x,b.y-a.y);ctx.strokeRect(a.x,a.y,b.x-a.x,b.y-a.y)}ctx.beginPath();ctx.arc(p.x,p.y,Math.max(2.5,3.5*zenviaMap.zoom/2),0,Math.PI*2);ctx.fillStyle='#f0c477';ctx.fill();if(zenviaMap.zoom>=1.6){ctx.font='600 9px system-ui';ctx.textAlign='left';ctx.fillStyle='#f5eee0';ctx.fillText(place.label,p.x+6,p.y-5)}}
- const majorAreas=new Set(['accra-central-makola','tema','madina-adenta','dansoman']);const detailedAreas=new Set(['osu','labadi','kaneshie','spintex']);const areaNames={'accra-central-makola':'Accra Central','tema':'Tema','madina-adenta':zenviaMap.zoom<1.65?'Madina':'Madina · Adenta','dansoman':'Dansoman','osu':'Osu','labadi':'Labadi','kaneshie':'Kaneshie','spintex':'Spintex'};const visibleRegions=(data.regions||[]).filter(region=>{const id=String(region.id||'').toLowerCase();return majorAreas.has(id)||(zenviaMap.zoom>=1.65&&detailedAreas.has(id))});const occupied=[];for(const region of visibleRegions){const p=point(region.x,region.z);if(p.x<0||p.x>w||p.y<0||p.y>h)continue;const id=String(region.id||'').toLowerCase(),label=areaNames[id]||String(region.label||'');ctx.font='700 '+(zenviaMap.zoom<1.65?'9':'10')+'px system-ui';const tw=ctx.measureText(label).width+12,box={l:p.x-tw/2,r:p.x+tw/2,t:p.y-17,b:p.y+3};if(occupied.some(a=>box.l<a.r+7&&box.r>a.l-7&&box.t<a.b+5&&box.b>a.t-5))continue;occupied.push(box);ctx.fillStyle='#b7c9c0';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(label,p.x,p.y-7)}
+ const labelCandidates=[];
+ for(const place of data.landmarks||[]){const p=point(place.x,place.z);if(p.x<-30||p.x>w+30||p.y<-30||p.y>h+30)continue;if(zenviaMap.zoom>1.05){const a=point(place.minX,place.maxZ),b=point(place.maxX,place.minZ);ctx.fillStyle='#c6a66a33';ctx.strokeStyle='#e2bd7b';ctx.lineWidth=1;ctx.fillRect(a.x,a.y,b.x-a.x,b.y-a.y);ctx.strokeRect(a.x,a.y,b.x-a.x,b.y-a.y)}ctx.beginPath();ctx.arc(p.x,p.y,Math.max(2.5,3.5*zenviaMap.zoom/2),0,Math.PI*2);ctx.fillStyle='#f0c477';ctx.fill();if(zenviaMap.zoom>=1.6&&place.label)labelCandidates.push({text:String(place.label),x:p.x+7,y:p.y-7,priority:80,align:'left',kind:'landmark'});}
+ const majorAreas=new Set(['accra-central-makola','tema','madina-adenta','dansoman']);
+ const detailedAreas=new Set(['osu','labadi','kaneshie','spintex']);
+ const areaNames={'accra-central-makola':'Accra Central','tema':'Tema','madina-adenta':zenviaMap.zoom<1.65?'Madina':'Madina · Adenta','dansoman':'Dansoman','osu':'Osu','labadi':'Labadi','kaneshie':'Kaneshie','spintex':'Spintex'};
+ const visibleRegions=(data.regions||[]).filter(region=>{const id=String(region.id||'').toLowerCase();return majorAreas.has(id)||(zenviaMap.zoom>=1.65&&detailedAreas.has(id))});
+ for(const region of visibleRegions){const p=point(region.x,region.z);const id=String(region.id||'').toLowerCase(),label=areaNames[id]||String(region.label||'');if(label)labelCandidates.push({text:label,x:p.x,y:p.y-8,priority:100,align:'center',kind:'region'});}
+ // One screen-space declutter pass for every label type. Text stays fixed-size as the map zooms.
+ const safeTop=zenviaMap.zoom>=1.6?62:54,safeBottom=zenviaMap.zoom>=1.6?78:66,occupied=[];
+ labelCandidates.sort((a,b)=>b.priority-a.priority);
+ for(const item of labelCandidates){
+   ctx.font=item.kind==='region'?'700 10px system-ui':'600 10px system-ui';
+   const padX=7,padY=4,textWidth=ctx.measureText(item.text).width;
+   const left=item.align==='center'?item.x-textWidth/2-padX:item.x;
+   const right=item.align==='center'?item.x+textWidth/2+padX:item.x+textWidth+padX*2;
+   const box={l:left,r:right,t:item.y-10-padY,b:item.y+4+padY};
+   if(box.r<5||box.l>w-5||box.b<safeTop||box.t>h-safeBottom)continue;
+   if(occupied.some(a=>box.l<a.r+6&&box.r>a.l-6&&box.t<a.b+4&&box.b>a.t-4))continue;
+   occupied.push(box);
+   ctx.save();ctx.font=item.kind==='region'?'700 10px system-ui':'600 10px system-ui';ctx.textAlign=item.align==='center'?'center':'left';ctx.textBaseline='middle';
+   ctx.fillStyle=item.kind==='region'?'#b7c9c0':'#f5eee0';
+   ctx.shadowColor='#071116';ctx.shadowBlur=4;ctx.fillText(item.text,item.x,item.y);ctx.restore();
+ }
  if(zenviaMap.state){const p=point(zenviaMap.state.x,zenviaMap.state.z),angle=(zenviaMap.state.heading||0)*Math.PI/180;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(-angle);ctx.beginPath();ctx.moveTo(0,-11);ctx.lineTo(7,8);ctx.lineTo(0,4);ctx.lineTo(-7,8);ctx.closePath();ctx.fillStyle=zenviaMap.state.inVehicle?'#77d5a8':'#f5d18a';ctx.strokeStyle='#102027';ctx.lineWidth=2;ctx.fill();ctx.stroke();ctx.restore();ctx.beginPath();ctx.arc(p.x,p.y,13,0,Math.PI*2);ctx.strokeStyle='#f5d18a88';ctx.lineWidth=1;ctx.stroke()}
  ctx.restore();
  const live=document.getElementById('map-live'),status=document.getElementById('map-status'),coord=document.getElementById('map-coordinate'),district=document.getElementById('map-district');
