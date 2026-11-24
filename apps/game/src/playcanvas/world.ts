@@ -953,12 +953,16 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
   // Load mobile-sized, CC0 glTF vehicle variants once, then reuse each
   // container for multiple NPCs. The procedural fallback remains visible if
   // the external model cannot be reached, so traffic never disappears.
+  // Use detailed LOD1 models for visible traffic, not the very low-detail LOD2
+  // proxies. The minivan fills the trotro slot until a Ghana-specific minibus
+  // asset is available; the procedural Ghana route-board fallback remains on failure.
   const trafficModelUrls:Record<string,string>={
-    taxi:"https://tevy.dev/models/yellow-taxi/v1/lod2.glb",
-    sedan:"https://tevy.dev/models/family-sedan/v1/lod2.glb",
-    suv:"https://tevy.dev/models/suv/v1/lod2.glb",
-    pickup:"https://tevy.dev/models/pickup-truck/v1/lod2.glb",
-    bus:"https://tevy.dev/models/city-bus/v1/lod2.glb"
+    trotro:"https://tevy.dev/models/family-minivan/v1/lod1.glb",
+    taxi:"https://tevy.dev/models/yellow-taxi/v1/lod1.glb",
+    sedan:"https://tevy.dev/models/family-sedan/v1/lod1.glb",
+    suv:"https://tevy.dev/models/suv/v1/lod1.glb",
+    pickup:"https://tevy.dev/models/pickup-truck/v1/lod1.glb",
+    bus:"https://tevy.dev/models/city-bus/v1/lod1.glb"
   };
   const trafficModelLoads=new Map<string,Promise<any>>();
   const loadTrafficModel=(kind:string,url:string):Promise<any>=>{
@@ -975,13 +979,16 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
   };
   for(const car of traffic){
     const url=trafficModelUrls[car.modelKind];
-    if(!url)continue; // Keep the Ghana trotro fallback as authored.
+    if(!url)continue;
     void loadTrafficModel(car.modelKind,url).then((container)=>{
       const model=container.instantiateRenderEntity({castShadows:false});
       model.name="NPC "+car.modelKind+" detailed 3D vehicle";
       car.root.addChild(model);
       model.syncHierarchy();
       car.fallback.enabled=false;
+      const loadedKinds=new Set((document.documentElement.dataset.akwantuoTrafficModelsLoaded??"").split(",").filter(Boolean));
+      loadedKinds.add(car.modelKind);
+      document.documentElement.dataset.akwantuoTrafficModelsLoaded=[...loadedKinds].sort().join(",");
       console.info("[AKWANTUO] NPC traffic model loaded",car.modelKind);
     }).catch((error)=>{
       console.warn("[AKWANTUO] NPC traffic model unavailable; keeping fallback",car.modelKind,error);
