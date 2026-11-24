@@ -256,6 +256,24 @@
 .device.is-app-open #appview{overflow:hidden!important}
 .device.is-app-open .appview{flex:1 1 0%;min-height:0;overflow:hidden}
 .device.is-app-open .appbody{display:block;flex:1 1 0%;min-height:0;min-width:0;overflow-x:hidden;overflow-y:auto;touch-action:pan-y;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain}
+/* Live ZENVIA Maps canvas: authored world geometry with touch pan and zoom. */
+.zenvia-map{height:100%;min-height:340px;display:flex;flex-direction:column;gap:10px}
+.map-topline,.map-toolbar,.map-foot{display:flex;align-items:center;justify-content:space-between;gap:9px;flex:none}
+.map-live{display:flex;align-items:center;gap:7px;color:#9fb4b6;font-size:9px;font-weight:800;letter-spacing:.13em}
+.map-live:before{content:"";width:7px;height:7px;border-radius:50%;background:#e2b66f;box-shadow:0 0 9px #e2b66f66}
+.map-live.connected:before{background:#77d5a8;box-shadow:0 0 9px #77d5a866}
+.map-coordinate{font-size:9px;color:#aab9bf;font-variant-numeric:tabular-nums}
+.map-stage{position:relative;flex:1;min-height:230px;overflow:hidden;border:1px solid #ffffff24;border-radius:20px;background:#10252b;box-shadow:inset 0 1px #ffffff14,0 12px 28px #0003}
+#zenvia-map-canvas{display:block;width:100%;height:100%;touch-action:none}
+.map-north{position:absolute;top:11px;right:11px;width:29px;height:29px;display:grid;place-items:center;border:1px solid #ffffff25;border-radius:50%;background:#101a20c9;color:#e9c47e;font-size:10px;font-weight:900;pointer-events:none}
+.map-controls{display:flex;align-items:center;gap:7px}
+.map-controls button{min-width:37px;height:35px;padding:0 11px;border:1px solid #ffffff22;border-radius:12px;background:#ffffff0d;color:#f4f1e9;font-size:13px;font-weight:750}
+.map-controls button.map-locate{margin-left:auto;padding:0 13px;font-size:10px;letter-spacing:.04em}
+.map-foot{padding:10px 12px;border:1px solid #ffffff1b;border-radius:14px;background:#ffffff09}
+.map-foot strong{font-size:11px;letter-spacing:.04em}
+.map-foot span{font-size:9px;color:#9eafb6;text-align:right}
+.device.is-app-open .appbody:has(.zenvia-map){overflow:hidden}
+@media(max-height:560px){.zenvia-map{min-height:270px;gap:7px}.map-stage{min-height:170px}.map-foot{padding:7px 10px}}
 </style>
 </head>
 <body>
@@ -288,7 +306,7 @@
 const content=document.getElementById('content'),home=document.getElementById('home'),view=document.getElementById('appview'),toast=document.getElementById('toast');
 const appData={
 messages:['Messages','<div class="tile"><strong>AKWANTUO NETWORK</strong><p>Your in-world messages and contacts will appear here.</p></div><div class="placeholder">Your conversations will live here.<br>Stay close to your people.</div>'],
-maps:['Zenvia Maps','<div class="map-art"><svg viewBox="0 0 360 190" preserveAspectRatio="xMidYMid slice"><path d="M-20 45 380 150M-10 130 370 35M70 -10 150 210M260 -10 205 210" stroke="#8caa91" stroke-width="13" opacity=".55" fill="none"/><path d="M-20 45 380 150M-10 130 370 35M70 -10 150 210M260 -10 205 210" stroke="#d5c99d" stroke-width="2" stroke-dasharray="7 7" fill="none"/><path d="M0 170 Q100 130 180 150 T380 115" stroke="#5aa3ad" stroke-width="18" fill="none"/><circle cx="180" cy="92" r="8" fill="#e8b66a" stroke="#fff" stroke-width="3"/></svg></div><div class="map-caption">Greater Accra · Map connection preview</div><div class="tile"><strong>Explore your surroundings</strong><p>Navigation will connect to the AKWANTUO world map.</p></div>'],
+maps:['Zenvia Maps','<div class="zenvia-map"><div class="map-topline"><span class="map-live" id="map-live">CONNECTING TO AKWANTUO</span><span class="map-coordinate" id="map-coordinate">PLAYER POSITION · —</span></div><div class="map-stage"><canvas id="zenvia-map-canvas" aria-label="Interactive Greater Accra game world map"></canvas><span class="map-north">N</span></div><div class="map-toolbar"><div class="map-controls"><button type="button" id="map-zoom-out" aria-label="Zoom out">−</button><button type="button" id="map-zoom-in" aria-label="Zoom in">+</button></div><div class="map-controls"><button type="button" class="map-locate" id="map-locate">LOCATE PLAYER</button></div></div><div class="map-foot"><strong id="map-district">GREATER ACCRA · GHANA</strong><span id="map-status">Waiting for world data…</span></div></div>'],
 wallet:['Wallet','<div class="tile"><div class="eyebrow">AKWANTUO BALANCE</div><div class="balance">GH₵ 0.00</div><p>In-game funds · Secure wallet preview</p></div><div class="tile"><strong>Recent activity</strong><p>No transactions yet.</p></div>'],
 camera:['Camera','<div class="placeholder">◉<br><br>Capture your moments in AKWANTUO.<br>Camera integration is planned for a later build.</div>'],
 notes:['Notes','<div class="tile"><strong>Quick note</strong><textarea placeholder="Write something..." style="width:100%;min-height:110px;background:#0e171e;border:1px solid var(--line);border-radius:10px;color:var(--ink);padding:10px;resize:vertical;font:inherit;font-size:11px"></textarea></div>'],
@@ -296,8 +314,50 @@ settings:['Settings','<div class="tile"><strong>ZENVIA Tab</strong><p>ZENVIA OS 
 music:['Sound','<div class="placeholder">Your sound library will appear here.<br>Original ZENVIA notification tones are planned.</div>'],
 market:['Market','<div class="tile"><strong>AKWANTUO MARKET</strong><p>Discover services, goods and in-world essentials.</p></div><div class="placeholder">The marketplace is being prepared.</div>']
 };
-function openApp(id){const data=appData[id];if(!data)return;device.classList.add('is-app-open');home.hidden=true;view.hidden=false;view.innerHTML='<div class="appview"><div class="apphead"><button class="back" id="back" aria-label="Back">‹</button><strong>'+data[0]+'</strong></div><div class="appbody">'+data[1]+'</div></div>';document.getElementById('back').addEventListener('click',goHome);content.scrollTop=0}
-function goHome(){device.classList.remove('is-app-open');view.hidden=true;home.hidden=false;content.scrollTop=0}
+function openApp(id){const data=appData[id];if(!data)return;if(id!=='maps')sendMapMessage('ZENVIA_MAP_CLOSE');device.classList.add('is-app-open');home.hidden=true;view.hidden=false;view.innerHTML='<div class="appview"><div class="apphead"><button class="back" id="back" aria-label="Back">‹</button><strong>'+data[0]+'</strong></div><div class="appbody">'+data[1]+'</div></div>';document.getElementById('back').addEventListener('click',goHome);content.scrollTop=0;if(id==='maps')requestAnimationFrame(initZenviaMap)}
+function goHome(){sendMapMessage('ZENVIA_MAP_CLOSE');device.classList.remove('is-app-open');view.hidden=true;home.hidden=false;content.scrollTop=0}
+const zenviaMap={data:null,state:null,zoom:1,panX:0,panY:0,canvas:null,ctx:null,retry:null,drag:null};
+function sendMapMessage(type){if(window.parent!==window)window.parent.postMessage({type},window.location.origin)}
+function requestZenviaMap(){sendMapMessage('ZENVIA_MAP_REQUEST');const live=document.getElementById('map-live');if(live&&!zenviaMap.data)live.textContent='CONNECTING TO AKWANTUO'}
+function initZenviaMap(){
+ const canvas=document.getElementById('zenvia-map-canvas');if(!canvas)return;
+ zenviaMap.canvas=canvas;zenviaMap.ctx=canvas.getContext('2d');
+ const stage=canvas.parentElement;
+ const resize=()=>{const rect=canvas.getBoundingClientRect();if(!rect.width||!rect.height)return;const dpr=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(rect.width*dpr);canvas.height=Math.round(rect.height*dpr);zenviaMap.ctx.setTransform(dpr,0,0,dpr,0,0);drawZenviaMap()};
+ if(window.ResizeObserver){if(!zenviaMap.observer){zenviaMap.observer=new ResizeObserver(resize)}zenviaMap.observer.disconnect();zenviaMap.observer.observe(stage)}else window.addEventListener('resize',resize);
+ document.getElementById('map-zoom-in').onclick=()=>{zenviaMap.zoom=Math.min(6,zenviaMap.zoom*1.35);drawZenviaMap()};
+ document.getElementById('map-zoom-out').onclick=()=>{zenviaMap.zoom=Math.max(1,zenviaMap.zoom/1.35);drawZenviaMap()};
+ document.getElementById('map-locate').onclick=()=>{if(!zenviaMap.data||!zenviaMap.state)return;const e=zenviaMap.data.extent,r=canvas.getBoundingClientRect(),scale=Math.min((r.width-24)/e.widthM,(r.height-24)/e.depthM)*zenviaMap.zoom,cx=(e.minX+e.maxX)/2,cz=(e.minZ+e.maxZ)/2;zenviaMap.zoom=Math.max(2,zenviaMap.zoom);const z=Math.min((r.width-24)/e.widthM,(r.height-24)/e.depthM)*zenviaMap.zoom;zenviaMap.panX=(cx-zenviaMap.state.x)*z;zenviaMap.panY=(zenviaMap.state.z+cz)*z;drawZenviaMap()};
+ canvas.onpointerdown=e=>{zenviaMap.drag={id:e.pointerId,x:e.clientX,y:e.clientY,panX:zenviaMap.panX,panY:zenviaMap.panY};canvas.setPointerCapture(e.pointerId)};
+ canvas.onpointermove=e=>{if(!zenviaMap.drag||zenviaMap.drag.id!==e.pointerId)return;zenviaMap.panX=zenviaMap.drag.panX+e.clientX-zenviaMap.drag.x;zenviaMap.panY=zenviaMap.drag.panY+e.clientY-zenviaMap.drag.y;drawZenviaMap()};
+ const endDrag=e=>{if(zenviaMap.drag&&zenviaMap.drag.id===e.pointerId)zenviaMap.drag=null};canvas.onpointerup=endDrag;canvas.onpointercancel=endDrag;canvas.onlostpointercapture=endDrag;
+ requestZenviaMap();if(zenviaMap.retry)clearInterval(zenviaMap.retry);zenviaMap.retry=setInterval(()=>{if(!zenviaMap.data)requestZenviaMap();else{clearInterval(zenviaMap.retry);zenviaMap.retry=null}},1400);
+ resize();
+}
+function drawZenviaMap(){
+ const c=zenviaMap.canvas,ctx=zenviaMap.ctx,data=zenviaMap.data;if(!c||!ctx)return;
+ const rect=c.getBoundingClientRect(),w=rect.width,h=rect.height;if(!w||!h)return;
+ ctx.clearRect(0,0,w,h);ctx.fillStyle='#10252b';ctx.fillRect(0,0,w,h);
+ if(!data){ctx.fillStyle='#b6c4c5';ctx.font='12px system-ui';ctx.textAlign='center';ctx.fillText('Connecting to the AKWANTUO world…',w/2,h/2);return}
+ const e=data.extent,cx=(e.minX+e.maxX)/2,cz=(e.minZ+e.maxZ)/2,scale=Math.min((w-24)/e.widthM,(h-24)/e.depthM)*zenviaMap.zoom;
+ const ox=w/2+zenviaMap.panX-cx*scale,oy=h/2+zenviaMap.panY+cz*scale;
+ const point=(x,z)=>({x:ox+x*scale,y:oy-z*scale});
+ ctx.save();ctx.beginPath();ctx.rect(0,0,w,h);ctx.clip();
+ const coast=data.coastline||[];if(coast.length>1){ctx.beginPath();coast.forEach((p,i)=>{const q=point(p.x,p.z);if(i===0)ctx.moveTo(q.x,q.y);else ctx.lineTo(q.x,q.y)});const end=point(e.maxX,e.minZ),start=point(e.minX,e.minZ);ctx.lineTo(end.x,end.y);ctx.lineTo(start.x,start.y);ctx.closePath();ctx.fillStyle='#17414b';ctx.fill();ctx.strokeStyle='#4e8790';ctx.lineWidth=1.5;ctx.stroke()}
+ if(zenviaMap.zoom>=1.35){ctx.fillStyle='#33463e';for(const b of data.buildings||[]){const p=point(b.x,b.z);if(p.x<-20||p.x>w+20||p.y<-20||p.y>h+20)continue;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(-(b.yaw||0)*Math.PI/180);ctx.fillRect(-b.hx*scale,-b.hz*scale,b.hx*2*scale,b.hz*2*scale);ctx.restore()}}
+ for(const road of data.roads||[]){if(!road.points||road.points.length<2)continue;ctx.beginPath();road.points.forEach((p,i)=>{const q=point(p.x,p.z);if(i===0)ctx.moveTo(q.x,q.y);else ctx.lineTo(q.x,q.y)});const highway=/^(n1|n4|n6)-/.test(road.id||'');ctx.strokeStyle=highway?'#d2b477':'#a6b5a9';ctx.lineWidth=Math.max(highway?2.1:1.1,scale*(highway?17:8));ctx.lineCap='round';ctx.lineJoin='round';ctx.stroke()}
+ for(const place of data.landmarks||[]){const p=point(place.x,place.z);if(p.x<-30||p.x>w+30||p.y<-30||p.y>h+30)continue;if(zenviaMap.zoom>1.05){const a=point(place.minX,place.maxZ),b=point(place.maxX,place.minZ);ctx.fillStyle='#c6a66a33';ctx.strokeStyle='#e2bd7b';ctx.lineWidth=1;ctx.fillRect(a.x,a.y,b.x-a.x,b.y-a.y);ctx.strokeRect(a.x,a.y,b.x-a.x,b.y-a.y)}ctx.beginPath();ctx.arc(p.x,p.y,Math.max(2.5,3.5*zenviaMap.zoom/2),0,Math.PI*2);ctx.fillStyle='#f0c477';ctx.fill();if(zenviaMap.zoom>=1.6){ctx.font='600 9px system-ui';ctx.textAlign='left';ctx.fillStyle='#f5eee0';ctx.fillText(place.label,p.x+6,p.y-5)}}
+ for(const region of data.regions||[]){const p=point(region.x,region.z);if(p.x<0||p.x>w||p.y<0||p.y>h)continue;ctx.fillStyle='#b7c9c0';ctx.font='700 8px system-ui';ctx.textAlign='center';ctx.fillText(region.label,p.x,p.y)}
+ if(zenviaMap.state){const p=point(zenviaMap.state.x,zenviaMap.state.z),angle=(zenviaMap.state.heading||0)*Math.PI/180;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(-angle);ctx.beginPath();ctx.moveTo(0,-11);ctx.lineTo(7,8);ctx.lineTo(0,4);ctx.lineTo(-7,8);ctx.closePath();ctx.fillStyle=zenviaMap.state.inVehicle?'#77d5a8':'#f5d18a';ctx.strokeStyle='#102027';ctx.lineWidth=2;ctx.fill();ctx.stroke();ctx.restore();ctx.beginPath();ctx.arc(p.x,p.y,13,0,Math.PI*2);ctx.strokeStyle='#f5d18a88';ctx.lineWidth=1;ctx.stroke()}
+ ctx.restore();
+ const live=document.getElementById('map-live'),status=document.getElementById('map-status'),coord=document.getElementById('map-coordinate'),district=document.getElementById('map-district');
+ if(live){live.textContent=zenviaMap.state?'LIVE · AKWANTUO WORLD':'WORLD MAP LOADED';live.classList.toggle('connected',!!zenviaMap.state)}
+ if(status)status.textContent=zenviaMap.state?(zenviaMap.state.inVehicle?'PLAYER · IN VEHICLE':'PLAYER · ON FOOT'):'Waiting for player position';
+ if(coord&&zenviaMap.state)coord.textContent='X '+Math.round(zenviaMap.state.x)+' · Z '+Math.round(zenviaMap.state.z);
+ if(district&&zenviaMap.state&&data.regions&&data.regions.length){const near=data.regions.reduce((a,b)=>Math.hypot(b.x-zenviaMap.state.x,b.z-zenviaMap.state.z)<Math.hypot(a.x-zenviaMap.state.x,a.z-zenviaMap.state.z)?b:a);district.textContent=near.label+' · GREATER ACCRA'}
+}
+window.addEventListener('message',event=>{if(event.source!==window.parent||event.origin!==window.location.origin)return;const m=event.data||{};if(m.type==='ZENVIA_MAP_STATIC'){zenviaMap.data=m.payload;if(zenviaMap.retry){clearInterval(zenviaMap.retry);zenviaMap.retry=null}drawZenviaMap()}else if(m.type==='ZENVIA_MAP_STATE'){zenviaMap.state=m.payload;drawZenviaMap()}});
+
 document.querySelectorAll('[data-app]').forEach(el=>el.addEventListener('click',()=>openApp(el.dataset.app)));
 document.querySelectorAll('[data-toast]').forEach(el=>el.addEventListener('click',()=>showToast(el.dataset.toast)));
 function showToast(message){toast.textContent=message;toast.classList.add('show');clearTimeout(window._atlasToast);window._atlasToast=setTimeout(()=>toast.classList.remove('show'),1700)}
