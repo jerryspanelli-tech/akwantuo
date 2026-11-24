@@ -39,8 +39,8 @@ export function createSolidRoadStrip(
     const a = i * 4;
     const b = (i + 1) * 4;
     // Top, underside, inner wall and outer wall.
-    indices.push(a, a + 1, b + 1, a, b + 1, b);
-    indices.push(a + 2, b + 3, a + 3, a + 2, b + 2, b + 3);
+    indices.push(a, b, b + 1, a, b + 1, a + 1);
+    indices.push(a + 2, a + 3, b + 3, a + 2, b + 3, b + 2);
     indices.push(a, b, b + 2, a, b + 2, a + 2);
     indices.push(a + 1, a + 3, b + 3, a + 1, b + 3, b + 1);
   }
@@ -60,6 +60,7 @@ export function createSolidRoadStrip(
 
   const mesh = new Mesh(name, scene);
   data.applyToMesh(mesh, false);
+  material.backFaceCulling = false;
   mesh.material = material;
   mesh.isPickable = false;
   mesh.checkCollisions = false;
