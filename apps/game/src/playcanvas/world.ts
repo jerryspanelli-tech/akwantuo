@@ -534,34 +534,51 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
   // Reusable Ghanaian arterial LED streetlight assembly. The pole, base plate,
   // outreach arm, diagonal brace, sealed luminaire and warm diffuser share a
   // small material palette; only the 12 existing practical lights cast light.
-  const streetLamps: Array<{ light: Entity; diffuser: Entity }> = [];
-  const addStreetlight = (name: string, x: number, z: number) => {
+  const streetLamps: Array<{ light: Entity | null; diffuser: Entity }> = [];
+  const addStreetlight = (name: string, x: number, z: number, yaw = 0, hasPracticalLight = true) => {
+    // Yaw rotates the outreach arm across the carriageway while the mast stays vertical.
+    const radians = yaw * Math.PI / 180;
+    const offset = (distance: number) => ({
+      x: x + Math.cos(radians) * distance,
+      z: z - Math.sin(radians) * distance
+    });
     box(name + " reinforced concrete footing", x, 0.22, z, 0.72, 0.44, 0.72, mats.concrete);
     cylinder(name + " galvanised base plate", x, 0.48, z, 0.31, 0.12, mats.streetPole);
     cylinder(name + " tapered steel mast", x, 4.95, z, 0.115, 9.0, mats.streetPole);
     cylinder(name + " mast collar", x, 8.35, z, 0.15, 0.24, mats.lampHousing);
-    box(name + " outreach arm", x + 1.55, 8.82, z, 3.25, 0.16, 0.16, mats.streetPole);
+    const arm = offset(1.55);
+    box(name + " outreach arm", arm.x, 8.82, arm.z, 3.25, 0.16, 0.16, mats.streetPole, yaw);
+    const bracePosition = offset(0.82);
     const brace = new Entity(name + " arm brace");
     brace.addComponent("render", { type: "box", material: mats.streetPole, castShadows: false, receiveShadows: true });
-    brace.setPosition(x + 0.82, 8.58, z);
+    brace.setPosition(bracePosition.x, 8.58, bracePosition.z);
     brace.setLocalScale(1.55, 0.12, 0.12);
-    brace.setEulerAngles(0, 0, -18);
+    brace.setEulerAngles(0, yaw, -18);
     app.root.addChild(brace);
-    const head = box(name + " sealed LED luminaire", x + 3.15, 8.73, z, 1.18, 0.24, 0.58, mats.lampHousing);
-    const diffuser = box(name + " warm LED diffuser", x + 3.15, 8.59, z + 0.02, 0.88, 0.045, 0.38, mats.lampGlow);
-    head.addComponent("light", {
-      type: "omni", color: new Color(1, 0.76, 0.48), intensity: 0.85,
-      range: 22, enabled: false, castShadows: false
-    });
-    streetLamps.push({ light: head, diffuser });
+    const headPosition = offset(3.15);
+    const head = box(name + " sealed LED luminaire", headPosition.x, 8.73, headPosition.z, 1.18, 0.24, 0.58, mats.lampHousing, yaw);
+    const diffuser = box(name + " warm LED diffuser", headPosition.x, 8.59, headPosition.z + 0.02, 0.88, 0.045, 0.38, mats.lampGlow, yaw);
+    if (hasPracticalLight) {
+      head.addComponent("light", {
+        type: "omni", color: new Color(1, 0.76, 0.48), intensity: 0.85,
+        range: 22, enabled: false, castShadows: false
+      });
+    }
+    streetLamps.push({ light: hasPracticalLight ? head : null, diffuser });
   };
 
-  // Oxford Street remains the showcase run; matching fixtures extend lighting
-  // to Circle, East Legon and Spintex without scattering lamps across every road.
-  for (let i = 0; i < 6; i++) addStreetlight("Osu Oxford Street LED streetlight", 1350 + i * 42, -1320);
-  for (let i = 0; i < 2; i++) addStreetlight("Circle LED streetlight", -500 + i * 62, 390);
-  for (let i = 0; i < 2; i++) addStreetlight("East Legon LED streetlight", 4250 + i * 62, 1060);
-  for (let i = 0; i < 2; i++) addStreetlight("Spintex Road LED streetlight", 5500 + i * 62, -1490);
+  // Keep real point lights capped for mobile performance. Additional fixtures
+  // are visible street furniture and glow at night without adding light sources.
+  for (let i = 0; i < 6; i++) addStreetlight("Osu Oxford Street LED streetlight", 1350 + i * 42, -1320, 0);
+  for (let i = 0; i < 2; i++) addStreetlight("Circle LED streetlight", -500 + i * 62, 390, 70);
+  for (let i = 0; i < 2; i++) addStreetlight("East Legon LED streetlight", 4250 + i * 62, 1060, 140);
+  for (let i = 0; i < 2; i++) addStreetlight("Spintex Road LED streetlight", 5500 + i * 62, -1490, 140);
+  // Decorative fixtures extend the streetlight network toward the N1/Tema,
+  // N4/Madina and N6/Achimota corridors without increasing dynamic light count.
+  addStreetlight("N1 Tema corridor LED streetlight", 2100, 200, 90, false);
+  addStreetlight("N1 Tema corridor LED streetlight", 2900, 125, 90, false);
+  addStreetlight("N4 Madina approach LED streetlight", 4850, 1760, 20, false);
+  addStreetlight("N6 Achimota approach LED streetlight", -1830, 2350, 15, false);
 
   // Labadi marina watercraft props: a speedboat and a personal watercraft.
   box("Labadi speedboat hull", 2820, 0.65, -3960, 3.2, 0.85, 9.5, mats.white);
@@ -884,7 +901,7 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     // shared world clock. Lights are disabled during daylight to save mobile GPU work.
     const lampsOn = nightAmount > 0.55;
     for (const lamp of streetLamps) {
-      if (lamp.light.light) lamp.light.light.enabled = lampsOn;
+      if (lamp.light?.light) lamp.light.light.enabled = lampsOn;
       lamp.diffuser.enabled = lampsOn;
     }
     for(const person of pedestrians){
