@@ -2,6 +2,7 @@ import { Color3, MeshBuilder, Scene, StandardMaterial, Vector3 } from "@babylonj
 import type { ChunkBounds, ChunkHandle } from "../chunkManager";
 import type { ChunkBuildResult, ChunkGenerator } from "../chunkRegistry";
 import { GREATER_ACCRA_LOCAL_ROADS } from "../greaterAccraRoadData";
+import { LEGON_CAMPUS_ROADS } from "../legonCampusRoads";
 import { clipRoadPath, type RoadPoint } from "../roadClipping";
 import { createSolidRoadStrip } from "../solidRoadStrip";
 
@@ -52,7 +53,7 @@ function buildRoadPiece(scene: Scene, id: string, points: readonly RoadPoint[], 
 export const localRoadsGenerator: ChunkGenerator = {
   id: "local-roads", priority: 20,
   build(scene: Scene, bounds: ChunkBounds): ChunkBuildResult | null {
-    const roads = GREATER_ACCRA_LOCAL_ROADS.flatMap((road) =>
+    const roads = [...GREATER_ACCRA_LOCAL_ROADS, ...LEGON_CAMPUS_ROADS].flatMap((road) =>
       clipRoadPath(road.points, bounds).map((piece, index) => ({ road, piece, index }))
     );
     if (!roads.length) return null;
