@@ -85,15 +85,86 @@
   .app-label{font-size:8px}
   .quickrow{margin-top:8px}
 }
+
+/* Premium ATLAS OS device experience: lock screen, status-only clock, and refined glass surfaces. */
+.device{isolation:isolate;border-radius:inherit;background:
+ radial-gradient(ellipse at 72% 14%,#b28b5545 0,transparent 29%),
+ radial-gradient(ellipse at 18% 80%,#4b819055 0,transparent 34%),
+ radial-gradient(ellipse at 50% 120%,#a27a4730 0,transparent 42%),
+ linear-gradient(145deg,#0a121a 0%,#172832 48%,#0a131b 100%);padding:clamp(18px,3vw,34px);gap:clamp(12px,2vw,20px)}
+.device:after{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.2;background:repeating-linear-gradient(128deg,transparent 0 54px,#d5b37b0c 55px,#d5b37b0c 56px,transparent 57px 112px),radial-gradient(ellipse at 50% 50%,transparent 35%,#0008 100%)}
+.device>*{position:relative;z-index:1}
+.status{height:24px;flex:none;font-size:13px;letter-spacing:.02em}
+.top-actions{display:flex;align-items:center;gap:9px}
+.round{width:39px;height:39px;border-radius:50%;background:#ffffff0b;border:1px solid #ffffff22;backdrop-filter:blur(18px);box-shadow:0 8px 24px #0003}
+.topbar{min-height:44px}
+.content{padding:0 2px}
+.greeting h1{font-size:clamp(30px,4.6vw,48px);letter-spacing:-.055em;font-weight:720}
+.greeting p{font-size:13px;color:#c0cbd0}
+.feature{border-radius:26px;min-height:clamp(160px,25vh,220px);border:1px solid #ffffff25;box-shadow:inset 0 1px #ffffff18,0 18px 44px #0003;background:linear-gradient(115deg,#314a56d9,#1b303bdc 62%,#38434bd9)}
+.feature:before{content:"";position:absolute;inset:0;background:linear-gradient(120deg,#ffffff0b,transparent 38%,#d5ad6820);pointer-events:none}
+.apps{gap:clamp(17px,2.8vh,27px) 15px}
+.app{gap:8px;transition:transform .18s ease}
+.app:active{transform:scale(.94)}
+.app-icon{width:clamp(62px,7.5vw,78px);height:clamp(62px,7.5vw,78px);border-radius:24px;border:1px solid #ffffff35;box-shadow:inset 0 1px 1px #ffffff40,0 9px 22px #0004}
+.app-icon svg{width:30px;height:30px;filter:drop-shadow(0 2px 3px #0005)}
+.app-label{font-size:11px;font-weight:600;letter-spacing:.01em;text-shadow:0 2px 6px #0008}
+.dock{border-radius:24px;background:linear-gradient(120deg,#ffffff16,#ffffff09);border:1px solid #ffffff25;box-shadow:inset 0 1px #ffffff20,0 14px 35px #0003;backdrop-filter:blur(26px);padding:13px 20px}
+.dock button{font-size:9px;font-weight:650;gap:5px}
+.dock svg{width:23px;height:23px}
+.appview{gap:17px}
+.apphead{padding:4px 0 13px;border-bottom:1px solid #ffffff20}
+.back{width:38px;height:38px;border:1px solid #ffffff22;background:#ffffff10}
+.apphead strong{font-size:21px;letter-spacing:-.03em}
+.tile{border-radius:21px;background:linear-gradient(145deg,#ffffff12,#ffffff06);border:1px solid #ffffff20;box-shadow:inset 0 1px #ffffff10,0 9px 25px #0002}
+.map-art{border-radius:22px}
+.home-indicator{width:110px;height:4px;background:#ffffffb8;box-shadow:0 0 12px #ffffff45;margin-top:-4px}
+.lock-screen{position:absolute;inset:0;z-index:8;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;padding:clamp(24px,5vw,48px);background:
+ radial-gradient(ellipse at 72% 25%,#c39a5b55 0,transparent 30%),
+ radial-gradient(ellipse at 20% 78%,#4b849c66 0,transparent 36%),
+ linear-gradient(145deg,#09131d 0%,#18313b 48%,#0a141d 100%);color:#fff;touch-action:pan-y}
+.lock-screen:before{content:"";position:absolute;inset:-25%;background:radial-gradient(ellipse at 50% 50%,transparent 0 23%,#e8bd7022 23.2% 23.35%,transparent 23.6% 36%,#e8bd7012 36.2% 36.35%,transparent 36.6%),linear-gradient(130deg,transparent 48%,#ffffff0c 48.2%,transparent 48.5%);transform:rotate(-12deg);pointer-events:none}
+.lock-screen:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,#0004,transparent 30%,transparent 62%,#0008);pointer-events:none}
+.lock-top,.lock-clock-wrap,.lock-bottom{position:relative;z-index:1}
+.lock-top{display:flex;justify-content:space-between;align-items:center;font-size:10px;letter-spacing:.2em;font-weight:800;color:#f3eee3}
+.lock-brand i{font-style:normal;color:#e8bd70;margin-left:4px}
+.lock-weather{font-size:9px;color:#d1dadd;letter-spacing:.16em}
+.lock-clock-wrap{margin-top:auto;margin-bottom:auto;text-align:center;padding:20px 0}
+.lock-time{font-size:clamp(76px,16vw,132px);font-weight:250;letter-spacing:-.085em;line-height:.95;font-variant-numeric:tabular-nums;text-shadow:0 8px 35px #0005}
+.lock-date{font-size:clamp(14px,2vw,18px);font-weight:550;letter-spacing:.015em;color:#e8e9e6;margin-top:15px}
+.lock-bottom{display:flex;flex-direction:column;align-items:center;gap:17px}
+.lock-hint{font-size:11px;color:#e0e5e4;letter-spacing:.04em;display:flex;align-items:center;gap:8px}
+.lock-dot{width:6px;height:6px;border-radius:50%;background:#e8bd70;box-shadow:0 0 12px #e8bd70}
+.unlock-button{display:flex;align-items:center;justify-content:space-between;gap:32px;min-width:148px;padding:11px 13px 11px 18px;border-radius:30px;border:1px solid #ffffff55;background:#ffffff14;backdrop-filter:blur(18px);color:#fff;font-size:9px;font-weight:900;letter-spacing:.2em;box-shadow:inset 0 1px #ffffff30,0 8px 25px #0003}
+.unlock-button b{display:grid;place-items:center;width:27px;height:27px;border-radius:50%;background:#e8bd70;color:#16232a;font-size:17px;line-height:1}
+.device.is-locked .status,.device.is-locked .topbar,.device.is-locked .content,.device.is-locked .dock,.device.is-locked .home-indicator{visibility:hidden;pointer-events:none}
+.device:not(.is-locked) .lock-screen{display:none}
+#home>.section-head{font-size:13px}
+@media(max-width:650px){
+ .device{padding:17px 18px 14px;gap:12px}
+ .lock-screen{padding:24px}
+ .lock-time{font-size:clamp(76px,22vw,106px)}
+ .greeting{padding:4px 1px 11px}
+ .greeting h1{font-size:clamp(27px,7.5vw,36px)}
+ .feature{min-height:112px;border-radius:21px}
+ .apps{gap:16px 7px}
+ .app-icon{width:clamp(48px,13vw,60px);height:clamp(48px,13vw,60px);border-radius:19px}
+ .app-icon svg{width:24px;height:24px}
+ .app-label{font-size:9px}
+ .dock{padding:10px 8px;border-radius:19px}
+}
+@media(max-height:520px){.lock-screen{padding:17px 26px}.lock-time{font-size:72px}.lock-clock-wrap{padding:6px}.lock-bottom{gap:8px}}
+
 </style>
 </head>
 <body>
-<div class="device">
-  <div class="status"><span id="clock">09:41</span><div class="status-right"><span>5G</span><span class="signal"><i></i><i></i><i></i><i></i></span><span class="battery"><span></span></span></div></div>
-  <div class="topbar"><div class="brand"><div class="brandmark"><svg viewBox="0 0 32 32" fill="none" aria-label="ATLAS mark"><path d="M16 3.5 27.5 16 16 28.5 4.5 16 16 3.5Z" stroke="#E8B66A" stroke-width="1.5"/><path d="M9.5 19.5 16 9l6.5 10.5M12 16h8" stroke="#F4F1E9" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div><div class="brandname">ATLAS</div><div class="edition">TAB · PERSONAL DEVICE</div></div></div><button class="round" id="profile" aria-label="Profile">◉</button></div>
+<div class="device is-locked" id="atlas-device">
+  <section class="lock-screen" id="lock-screen" aria-label="ATLAS lock screen"><div class="lock-top"><span class="lock-brand">ATLAS <i>OS</i></span><span class="lock-weather">ACCRA · GH</span></div><div class="lock-clock-wrap"><div class="lock-time" id="lock-time">09:41</div><div class="lock-date" id="lock-date">Monday, November 24</div></div><div class="lock-bottom"><div class="lock-hint"><span class="lock-dot"></span> Swipe up or tap to unlock</div><button class="unlock-button" id="unlock-button" type="button" aria-label="Unlock ATLAS Tab"><span>UNLOCK</span><b>↑</b></button></div></section>
+  <div class="status"><span id="status-clock">09:41</span><div class="status-right"><span>5G</span><span class="signal"><i></i><i></i><i></i><i></i></span><span class="battery"><span></span></span></div></div>
+  <div class="topbar"><div class="brand"><div class="brandmark"><svg viewBox="0 0 32 32" fill="none" aria-label="ATLAS mark"><path d="M16 3.5 27.5 16 16 28.5 4.5 16 16 3.5Z" stroke="#E8B66A" stroke-width="1.5"/><path d="M9.5 19.5 16 9l6.5 10.5M12 16h8" stroke="#F4F1E9" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div><div class="brandname">ATLAS</div><div class="edition">TAB · PERSONAL DEVICE</div></div></div><div class="top-actions"><button class="round" id="lock-device" aria-label="Lock ATLAS Tab">⌑</button><button class="round" id="profile" aria-label="Settings">◉</button></div></div>
   <main class="content" id="content">
     <section id="home">
-      <div class="greeting"><div class="eyebrow">YOUR WORLD · YOUR DIRECTION</div><h1 id="date-title">Good morning, Explorer.</h1><p id="date-subtitle">Your world, organised in one place.</p></div>
+      <div class="greeting"><div class="eyebrow">ATLAS OS · PERSONAL SPACE</div><h1>Your world, in one place.</h1><p>A calmer way to stay connected to everything that matters.</p></div>
       <div class="feature"><div class="feature-copy"><small>ATLAS TAB · HOME</small><strong>Technology without limits.</strong><span>Your world, at a glance.</span></div><div class="atlas-orbit"></div></div>
       <div class="section-head"><strong>Apps</strong><span>Your workspace</span></div>
       <div class="apps">
@@ -132,7 +203,17 @@ document.querySelectorAll('[data-app]').forEach(el=>el.addEventListener('click',
 document.getElementById('profile').addEventListener('click',()=>openApp('settings'));
 document.querySelectorAll('[data-toast]').forEach(el=>el.addEventListener('click',()=>showToast(el.dataset.toast)));
 function showToast(message){toast.textContent=message;toast.classList.add('show');clearTimeout(window._atlasToast);window._atlasToast=setTimeout(()=>toast.classList.remove('show'),1700)}
-function tick(){const d=new Date();document.getElementById('clock').textContent=d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',hour12:false});const title=document.getElementById('date-title');const subtitle=document.getElementById('date-subtitle');if(title)title.textContent=d.toLocaleDateString([], {weekday:'long',month:'long',day:'numeric'});if(subtitle)subtitle.textContent='Your world, organised in one place.'}tick();setInterval(tick,30000);
-document.addEventListener('keydown',e=>{if(e.key==='Escape')goHome()});
+const device=document.getElementById('atlas-device'),lockScreen=document.getElementById('lock-screen');
+function unlock(){device.classList.remove('is-locked')}
+function lock(){goHome();device.classList.add('is-locked')}
+document.getElementById('unlock-button').addEventListener('click',unlock);
+document.getElementById('lock-device').addEventListener('click',lock);
+let touchStartY=null;
+lockScreen.addEventListener('touchstart',e=>{touchStartY=e.touches[0].clientY},{passive:true});
+lockScreen.addEventListener('touchend',e=>{if(touchStartY!==null&&touchStartY-e.changedTouches[0].clientY>35)unlock();touchStartY=null},{passive:true});
+lockScreen.addEventListener('click',e=>{if(e.target.closest('button'))return;unlock()});
+function tick(){const d=new Date(),time=d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',hour12:false});document.getElementById('status-clock').textContent=time;document.getElementById('lock-time').textContent=time;document.getElementById('lock-date').textContent=d.toLocaleDateString([], {weekday:'long',month:'long',day:'numeric'})}
+tick();setInterval(tick,15000);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(device.classList.contains('is-locked'))unlock();else goHome()}});
 </script>
 </body></html>
