@@ -1,4 +1,4 @@
-import { Color3, MeshBuilder, Scene, StandardMaterial } from "@babylonjs/core";
+import { Color3, DynamicTexture, MeshBuilder, Scene, StandardMaterial } from "@babylonjs/core";
 import type { SolidArea } from "./collision";
 
 type CampusBuilding = Readonly<{
@@ -71,6 +71,15 @@ export function createLegonCampusDistrict(scene: Scene, solids: SolidArea[]): vo
   const track = material(scene, "university-ghana-track", new Color3(0.42, 0.19, 0.15));
   const field = material(scene, "university-ghana-field", new Color3(0.17, 0.34, 0.17));
   const water = material(scene, "university-ghana-fountain-water", new Color3(0.12, 0.38, 0.48));
+  const pole = material(scene, "university-ghana-road-pole", new Color3(0.12, 0.13, 0.14));
+  const signalHousing = material(scene, "university-ghana-signal-housing", new Color3(0.08, 0.09, 0.1));
+  const signalRed = material(scene, "university-ghana-signal-red", new Color3(0.8, 0.025, 0.02));
+  signalRed.emissiveColor = new Color3(0.55, 0.01, 0.01);
+  const signalAmber = material(scene, "university-ghana-signal-amber", new Color3(0.85, 0.48, 0.02));
+  const signalGreen = material(scene, "university-ghana-signal-green", new Color3(0.03, 0.55, 0.12));
+  const lamp = material(scene, "university-ghana-streetlight-lamp", new Color3(0.95, 0.82, 0.56));
+  lamp.emissiveColor = new Color3(0.35, 0.25, 0.1);
+  const roadPaint = material(scene, "university-ghana-road-paint", new Color3(0.92, 0.92, 0.86));
 
   // Main entrance: the blue-and-gold identity is used for the campus gateway
   // and wayfinding, while the campus buildings retain varied local finishes.
@@ -79,6 +88,81 @@ export function createLegonCampusDistrict(scene: Scene, solids: SolidArea[]): vo
   staticBox(scene, "university-ghana-main-gate-sign", 2.4, 5.5, 78, 4215, 16.5, 3550, blue);
   staticBox(scene, "university-ghana-main-gate-gold-trim", 2.7, 0.55, 82, 4215, 19.5, 3550, gold);
   staticBox(scene, "university-ghana-main-gate-motto-panel", 0.35, 2.1, 58, 4213.6, 12.7, 3550, gold);
+
+  // Wayfinding sign faces the approaching traffic on University Avenue.
+  const signTexture = new DynamicTexture("university-ghana-university-avenue-sign-texture", {
+    width: 512, height: 128
+  }, scene, false);
+  const signContext = signTexture.getContext();
+  signContext.fillStyle = "#2f4a75";
+  signContext.fillRect(0, 0, 512, 128);
+  signContext.strokeStyle = "#b79a64";
+  signContext.lineWidth = 8;
+  signContext.strokeRect(5, 5, 502, 118);
+  signContext.fillStyle = "#ffffff";
+  signContext.textAlign = "center";
+  signContext.font = "bold 40px Arial";
+  signContext.fillText("UNIVERSITY AVENUE", 256, 58);
+  signContext.font = "24px Arial";
+  signContext.fillText("LEGON CAMPUS", 256, 96);
+  signTexture.update();
+  const signMaterial = new StandardMaterial("university-ghana-university-avenue-sign-material", scene);
+  signMaterial.diffuseTexture = signTexture;
+  signMaterial.emissiveColor = new Color3(0.18, 0.18, 0.18);
+  signMaterial.backFaceCulling = false;
+  const avenueSign = MeshBuilder.CreatePlane("university-ghana-university-avenue-sign", {
+    width: 5.2, height: 1.3
+  }, scene);
+  avenueSign.rotation.y = -Math.PI / 2;
+  avenueSign.position.set(4100, 4.8, 3480);
+  avenueSign.material = signMaterial;
+  avenueSign.isPickable = false;
+
+  const addTrafficSignal = (id: string, x: number, z: number, active: "red" | "green"): void => {
+    const post = MeshBuilder.CreateCylinder(id + "-post", { height: 6.8, diameter: 0.2, tessellation: 10 }, scene);
+    post.position.set(x, 3.4, z);
+    post.material = pole;
+    post.isPickable = false;
+    staticBox(scene, id + "-housing", 0.82, 2.35, 0.72, x, 5.6, z, signalHousing);
+    const lenses = [
+      { y: 6.35, surface: signalRed, state: "red" },
+      { y: 5.6, surface: signalAmber, state: "amber" },
+      { y: 4.85, surface: signalGreen, state: "green" }
+    ];
+    for (const lens of lenses) {
+      const face = MeshBuilder.CreateCylinder(id + "-" + lens.state + "-lens", {
+        height: 0.12, diameter: 0.38, tessellation: 16
+      }, scene);
+      face.rotation.z = Math.PI / 2;
+      face.position.set(x - 0.47, lens.y, z);
+      face.material = lens.state === active ? lens.surface : signalHousing;
+      face.isPickable = false;
+    }
+  };
+  // One red approach and one green side-road approach make the junction's
+  // signal arrangement legible; these are static visuals, not timed controls.
+  addTrafficSignal("legon-gate-signal-main-avenue", 4250, 3478, "red");
+  addTrafficSignal("legon-gate-signal-east-legon-road", 4300, 3622, "green");
+
+  // Zebra crossing and stop line sit on the approach, not on the pavement.
+  for (let stripe = 0; stripe < 7; stripe += 1) {
+    staticBox(scene, "legon-gate-zebra-stripe-" + stripe, 0.55, 0.035, 12.5,
+      4135 + stripe * 1.25, 0.095, 3550, roadPaint);
+  }
+  staticBox(scene, "legon-gate-stop-line", 0.38, 0.04, 13.5, 4148, 0.1, 3550, roadPaint);
+
+  const addStreetLight = (id: string, x: number, z: number, armDirection: -1 | 1): void => {
+    const post = MeshBuilder.CreateCylinder(id + "-post", { height: 7.2, diameter: 0.2, tessellation: 10 }, scene);
+    post.position.set(x, 3.6, z);
+    post.material = pole;
+    post.isPickable = false;
+    staticBox(scene, id + "-arm", 0.18, 0.16, 2.4, x, 7.0, z + armDirection * 1.05, pole);
+    staticBox(scene, id + "-lamp", 0.72, 0.18, 0.72, x, 6.9, z + armDirection * 2.05, lamp);
+  };
+  addStreetLight("legon-university-avenue-light-1", 3980, 3560, -1);
+  addStreetLight("legon-university-avenue-light-2", 3750, 3540, 1);
+  addStreetLight("legon-university-avenue-light-3", 3520, 3560, -1);
+  addStreetLight("legon-university-avenue-light-4", 3290, 3540, 1);
 
   const buildings: CampusBuilding[] = [
     { id: "university-ghana-convocation-group", x: 2860, z: 4140, width: 118, depth: 78, height: 25, wall: warmStone, roof: redRoof, glass },
