@@ -290,7 +290,7 @@ async function boot() {
   // collision footprint, enter/exit and camera remain unchanged.
   const vehicle = new Entity("AKWANTUO Sports Car");
   const vehiclePlaceholder = new Entity("Sports car loading fallback");
-  vehicle.addChild(vehiclePlaceholder);
+  vehicle.addChild(vehiclePlaceholder);\n  // Do not show box/cylinder stand-ins: the drivable vehicle visual is the imported sports-car GLB.\n  vehiclePlaceholder.enabled = false;
   const vehicleBody = new Entity("Fallback sports car body");
   vehicleBody.addComponent("render", { type: "box", material: materials.vehicle, castShadows: true, receiveShadows: true });
   vehicleBody.setLocalScale(2.06, 0.62, 4.6);
