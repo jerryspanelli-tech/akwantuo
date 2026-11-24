@@ -220,6 +220,43 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     }
   }
 
+  // Painted pedestrian crossings at the two major urban junctions.
+  // These are static meshes using the shared road-marking material; no new
+  // textures, dynamic lights, blockers or per-frame work are introduced.
+  const addZebraCrossing = (name: string, x: number, z: number,
+    towardX: number, towardZ: number, roadWidth: number) => {
+    const dx = towardX - x, dz = towardZ - z;
+    const length = Math.hypot(dx, dz);
+    if (length < 1) return;
+    const yaw = Math.atan2(dx, dz) * 180 / Math.PI;
+    const directionX = dx / length, directionZ = dz / length;
+    const crossingCenterX = x + directionX * 19;
+    const crossingCenterZ = z + directionZ * 19;
+    for (let stripe = 0; stripe < 6; stripe++) {
+      const along = (stripe - 2.5) * 1.05;
+      box(name + " zebra stripe", crossingCenterX + directionX * along,
+        0.17, crossingCenterZ + directionZ * along,
+        roadWidth * 0.72, 0.035, 0.62, mats.white, yaw);
+    }
+    // A single transverse stop bar gives approaching traffic a clear stopping point.
+    box(name + " stop line", x + directionX * 14, 0.17, z + directionZ * 14,
+      roadWidth * 0.78, 0.035, 0.32, mats.white, yaw);
+  };
+
+  // 37 / Ridge: markings are placed only on the urban connectors, not across
+  // the divided N1 motorway. Coordinates are shared road-network junction nodes.
+  addZebraCrossing("37 Ridge Liberation Road crossing",
+    1250, -350, 1150, 450, 12);
+  addZebraCrossing("37 Ridge Ring Road crossing",
+    1250, -350, 750, -50, 13);
+  addZebraCrossing("37 Ridge coastal Ring Road crossing",
+    1250, -350, 1450, -700, 13);
+
+  // Tetteh Quarshie / Spintex approach: mark the urban Spintex arm only;
+  // the divided N4 carriageway is deliberately left without a pedestrian crossing.
+  addZebraCrossing("Tetteh Quarshie Spintex Road crossing",
+    3650, 1750, 4150, 1050, 14);
+
   // The 1067 mm Cape-gauge corridor is a schematic game route, not surveyed track.
   for (const route of GREATER_ACCRA_RAIL_ROUTES.filter((item) => item.firstRelease)) {
     for (let i = 0; i < route.points.length - 1; i++) {
