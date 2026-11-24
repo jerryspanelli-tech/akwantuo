@@ -43,44 +43,9 @@
 /* Compact horizontal driving pedals: BRAKE/REVERSE left, GAS right. */
 @media(max-width:799px){.vehicle-pedals{display:flex!important;flex-direction:row!important;align-items:flex-end!important;gap:8px!important}.vehicle-brake-stack{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:6px!important}.vehicle-brake-stack .vehicle-exit{min-width:68px!important;width:68px!important;min-height:38px!important;padding:6px 5px!important;font-size:8px!important}.reverse-control{min-width:68px!important;width:68px!important;min-height:42px!important;padding:7px 5px!important;font-size:8px!important}.accelerate-control{min-width:68px!important;width:68px!important;min-height:48px!important;padding:7px 5px!important;font-size:9px!important;align-self:flex-end!important}}
 @media(max-width:390px){.vehicle-pedals{gap:6px!important}.vehicle-brake-stack .vehicle-exit{min-width:62px!important;width:62px!important;min-height:36px!important}.reverse-control{min-width:62px!important;width:62px!important;min-height:40px!important}.accelerate-control{min-width:62px!important;width:62px!important;min-height:46px!important}}
-.world-map-panel{position:fixed;inset:0;z-index:20;background:#0b1714f5;display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top,0px) + 12px) 12px calc(env(safe-area-inset-bottom,0px) + 10px);gap:10px}
-.world-map-panel[hidden]{display:none!important}
-.world-map-header{display:flex;align-items:center;justify-content:space-between;color:#f4e8cf}
-.world-map-header div{display:grid;gap:4px}.world-map-header strong{font-size:15px;letter-spacing:.16em}.world-map-header small{font-size:9px;letter-spacing:.16em;color:#d9b777}
-#world-map-close{width:42px;height:42px;border:1px solid #d9b77799;border-radius:50%;background:#1a3028;color:#fff;font-size:30px;line-height:1}
 #world-map-canvas{display:block;width:100%;height:100%;min-height:0;object-fit:contain;border:1px solid #d9b77755;border-radius:10px;touch-action:none}
-.world-map-panel footer{display:flex;justify-content:space-between;gap:8px;color:#cfc8b7;font-size:9px;letter-spacing:.08em}
-.world-map-panel footer span:first-child{color:#7be2a9}
 .mission{display:none!important}
+@media(max-width:520px){}
 
-
-.world-map-tools{display:flex;align-items:center;gap:8px}.world-map-tools button{min-width:38px;min-height:34px;padding:5px 10px;border:1px solid #d9b77788;border-radius:9px;background:#1a3028;color:#fff;font-weight:800}.world-map-tools button:active{background:#8a693c}.world-map-panel footer{align-items:center;flex-wrap:wrap}
-
-/* The full map is rendered by the shared 3D scene camera behind this HUD. */
-.world-map-panel{justify-content:space-between;background:linear-gradient(180deg,rgba(7,18,14,.9),rgba(7,18,14,0) 24%,rgba(7,18,14,0) 72%,rgba(7,18,14,.92));pointer-events:none}
-.world-map-header,.world-map-panel footer{pointer-events:auto;width:100%;padding:10px 12px;border:1px solid #d9b77755;border-radius:10px;background:#0b1714c9;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
-.world-map-panel footer{align-items:center;flex-wrap:wrap;min-height:58px}
-.world-map-panel footer span:first-child{color:#8de3ae}
-.world-map-tools{flex-wrap:wrap;justify-content:flex-end}
-@media(max-width:520px){.world-map-panel footer{gap:8px}.world-map-panel footer span:first-child{font-size:8px}.world-map-tools{width:100%;justify-content:space-between}.world-map-tools button{flex:1}}
-
-#world-map-route-overlay{position:absolute;inset:0;z-index:0;display:block;width:100%;height:100%;border:0;border-radius:0;pointer-events:none}
-.world-map-header,.world-map-panel footer{position:relative;z-index:1}
-.world-map-panel{padding:calc(env(safe-area-inset-top,0px) + 14px) 14px calc(env(safe-area-inset-bottom,0px) + 14px);gap:12px;background:linear-gradient(180deg,rgba(5,14,11,.88),rgba(5,14,11,.08) 18%,rgba(5,14,11,.02) 72%,rgba(5,14,11,.9));}
-.world-map-header,.world-map-panel footer{border:1px solid #d9b77766;border-radius:13px;background:rgba(8,22,17,.78);box-shadow:0 8px 28px #0005;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
-.world-map-header{min-height:64px;padding:12px 15px}
-.world-map-header strong{font-size:14px;letter-spacing:.19em}
-.world-map-header small{font-size:9px;letter-spacing:.13em}
-.world-map-compass{display:grid;place-items:center;width:42px;height:42px;border:1px solid #e0bd7b88;border-radius:50%;color:#f5d797;font-size:11px;font-weight:900;background:#17291f}
-.world-map-panel footer{min-height:62px;padding:10px 12px}
-.world-map-panel footer span:first-child{font-size:9px;letter-spacing:.08em;color:#a9e8bd}
-.world-map-tools button{min-width:42px;min-height:38px;border:1px solid #d9b777a0;border-radius:10px;background:#182b22;color:#fff;font-size:13px}
-#world-map-close{font-size:26px}
-#world-map-route-overlay{z-index:0}
-
-@media(max-width:520px){.world-map-panel{padding-left:9px;padding-right:9px}.world-map-header,.world-map-panel footer{padding-left:10px;padding-right:10px}.world-map-tools button{min-height:40px}.world-map-panel footer span:first-child{font-size:8px}}
-
-/* Standalone entry point for the full-screen 3D Greater Accra map. */
-.map-toggle{position:fixed;z-index:5;right:14px;bottom:max(166px,calc(env(safe-area-inset-bottom,0px) + 166px));min-width:112px;min-height:44px;padding:0 14px;border:1px solid #e4c17d;border-radius:12px;background:#0b1714ed;color:#f5e6c5;font:900 10px system-ui;letter-spacing:.14em;text-shadow:0 2px 8px #000;box-shadow:0 4px 16px #0008;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.map-toggle:active{transform:scale(.97);background:#294333}
-@media(min-width:800px){.map-toggle{right:24px;bottom:150px;min-width:124px;min-height:48px}}
+@media(max-width:520px){}
+@media(min-width:800px){}
