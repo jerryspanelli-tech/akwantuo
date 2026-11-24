@@ -48,19 +48,3 @@
 
 @media(max-width:520px){}
 @media(min-width:800px){}
-
-/* Elara phone dock: right aligned so the live world remains visible beside it. */
-.elara-launch{position:fixed;z-index:5;top:calc(env(safe-area-inset-top,0px) + 96px);right:16px;display:flex;align-items:center;gap:8px;padding:8px 12px 8px 8px;border:1px solid #e8bd7080;border-radius:14px;background:#10201ddf;color:#fff;box-shadow:0 5px 18px #0006;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);cursor:pointer}
-.elara-launch-mark{width:32px;height:32px;display:grid;place-items:center;border:1px solid #e8bd70;border-radius:10px;color:#f1ca83;font-weight:900;font-size:17px}
-.elara-launch strong,.elara-launch small{display:block;text-align:left;line-height:1.2}.elara-launch strong{font-size:10px;letter-spacing:.13em}.elara-launch small{font-size:8px;letter-spacing:.18em;color:#e8bd70;margin-top:3px}
-.elara-launch:active{transform:scale(.96)}
-.elara-overlay{position:fixed;inset:0;z-index:30;display:flex;align-items:center;justify-content:flex-end;padding:env(safe-area-inset-top,12px) max(12px,env(safe-area-inset-right,12px)) env(safe-area-inset-bottom,12px) 12px;background:linear-gradient(90deg,rgba(3,7,10,.06) 0%,rgba(3,7,10,.16) 52%,rgba(3,7,10,.58) 100%);pointer-events:none}
-.elara-overlay[hidden]{display:none!important}
-.elara-dock{width:min(30vw,340px,calc(84dvh * 9 / 19.5));height:auto;aspect-ratio:9/19.5;display:flex;flex-direction:column;align-items:stretch;gap:8px;pointer-events:auto;filter:drop-shadow(0 16px 34px #0009)}
-.elara-overlay-bar{height:36px;flex:0 0 36px;display:flex;align-items:center;justify-content:space-between;padding:0 10px 0 13px;color:#e9edf5;background:#101722ed;border:1px solid #344052;border-radius:14px;font-size:9px;letter-spacing:.1em}
-.elara-overlay-bar b{color:#e8bd70}
-.elara-overlay-bar button{border:1px solid #46536a;border-radius:9px;background:#1b2636;color:#fff;padding:6px 9px;font-size:9px;font-weight:800;letter-spacing:.06em}
-.elara-overlay iframe{display:block;width:100%;height:calc(100% - 44px);flex:1;min-height:0;border:0;border-radius:40px;background:#02030a;box-shadow:0 0 0 2px #8792a5,0 0 0 5px #080b11;overflow:hidden}
-@media(max-width:799px){.elara-dock{width:min(48vw,300px,calc(78dvh * 9 / 19.5));height:auto}.elara-overlay{padding-right:max(10px,env(safe-area-inset-right,10px))}.elara-overlay-bar{height:32px;flex-basis:32px}}
-@media(max-width:390px){.elara-dock{width:min(46vw,calc(74dvh * 9 / 19.5));height:auto}.elara-overlay-bar{font-size:8px;padding:0 7px}.elara-overlay-bar button{padding:5px 7px}}
-@media(max-height:520px){.elara-dock{width:min(40vh,calc(88dvh * 9 / 19.5));height:auto;aspect-ratio:9/19.5}.elara-overlay{padding-top:6px;padding-bottom:6px}}
