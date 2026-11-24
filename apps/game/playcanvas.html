@@ -16,6 +16,9 @@
       <div class="health-label"><span>♥</span><strong>HEALTH</strong><b id="health-value">100</b></div>
       <div class="health-track"><span id="health-fill"></span></div>
     </section>
+    <button class="elara-launch" id="elara-open" type="button" aria-label="Open Elara phone">
+      <span class="elara-launch-mark">E</span><span><strong>ELARA</strong><small>PHONE</small></span>
+    </button>
 
     <div class="touch-ui" id="on-foot-hud">
       <div class="stick" id="stick" role="application" aria-label="Movement joystick"><div class="stick-ring"></div><div class="stick-knob" id="stick-knob"></div></div>
@@ -49,6 +52,10 @@
     <div class="crosshair" aria-hidden="true"></div>
     <div class="loading" id="loading"><div class="loader-mark">A</div><strong>AKWANTUO</strong><span id="loading-message">Building your world…</span></div>
     <div class="notice" id="notice" role="status"></div>
+    <section class="elara-overlay" id="elara-overlay" hidden aria-hidden="true" aria-label="Elara smartphone">
+      <header class="elara-overlay-bar"><span><b>ELARA</b> · IN-GAME DEVICE</span><button id="elara-close" type="button">CLOSE ✕</button></header>
+      <iframe title="Elara smartphone" src="/elara/index.html" loading="lazy" allow="clipboard-read; clipboard-write"></iframe>
+    </section>
   </main>
   <script type="module" src="/src/playcanvas/main.ts"></script>
 </body>
