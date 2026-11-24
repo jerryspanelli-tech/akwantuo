@@ -1,23 +1,37 @@
-import type { MapPoint, MapRoadPath } from "../world/greaterAccraLayout";
+import { GREATER_ACCRA_MAP_NODES, GREATER_ACCRA_REGION_ANCHORS, type MapPoint, type MapRoadPath } from "../world/greaterAccraLayout";
 import type { GreaterAccraRoute } from "../world/greaterAccraNavigation";
 
 export type MinimapBuilding = Readonly<{
   x: number; z: number; hx: number; hz: number; yaw: number;
 }>;
 
-const LANDMARKS: readonly (MapPoint & { name: string; kind: "district" | "market" | "transport" | "landmark" | "beach" })[] = [
-  { name: "OSU", x: 1450, z: -1180, kind: "district" },
-  { name: "MAKOLA", x: -500, z: 350, kind: "market" },
-  { name: "CIRCLE", x: -450, z: 450, kind: "transport" },
-  { name: "37", x: 1250, z: -350, kind: "district" },
-  { name: "AIRPORT CITY", x: 1050, z: 850, kind: "landmark" },
-  { name: "TETTEH QUARSHIE", x: 3650, z: 1750, kind: "transport" },
-  { name: "EAST LEGON", x: 3900, z: 2100, kind: "district" },
-  { name: "MADINA", x: 5000, z: 1750, kind: "market" },
-  { name: "LABADI BEACH", x: 2750, z: -2100, kind: "beach" },
-  { name: "SPINTEX", x: 5600, z: -1150, kind: "district" },
-  { name: "TEMA", x: 8700, z: -850, kind: "district" }
-];
+const regionPoint = (regionId: string, name: string, kind: "district" | "market" | "transport" | "landmark" | "beach") => {
+  const point = GREATER_ACCRA_REGION_ANCHORS.find((anchor) => anchor.regionId === regionId);
+  if (!point) throw new Error(`Missing Greater Accra map anchor: ${regionId}`);
+  return { name, x: point.x, z: point.z, kind };
+};
+
+const nodePoint = (nodeId: string, name: string, kind: "district" | "market" | "transport" | "landmark" | "beach") => {
+  const point = GREATER_ACCRA_MAP_NODES.find((node) => node.nodeId === nodeId);
+  if (!point) throw new Error(`Missing Greater Accra map node: ${nodeId}`);
+  return { name, x: point.x, z: point.z, kind };
+};
+
+// Reuse the world layout's authoritative anchors so map labels cannot drift
+// away from the districts and junctions used to build the playable city.
+const LANDMARKS = [
+  regionPoint("osu", "OSU", "district"),
+  regionPoint("accra-central-makola", "MAKOLA", "market"),
+  nodePoint("circle-junction", "CIRCLE", "transport"),
+  nodePoint("37-junction", "37", "district"),
+  nodePoint("airport-city-anchor", "AIRPORT CITY", "landmark"),
+  nodePoint("tetteh-quarshie-interchange", "TETTEH QUARSHIE", "transport"),
+  regionPoint("east-legon", "EAST LEGON", "district"),
+  nodePoint("madina-junction", "MADINA", "market"),
+  regionPoint("labadi", "LABADI BEACH", "beach"),
+  regionPoint("spintex", "SPINTEX", "district"),
+  regionPoint("tema", "TEMA", "district")
+] as const;
 
 const isHighway = (id: string) => /^(n1|n4|n6)-/.test(id);
 
@@ -162,7 +176,7 @@ export function drawAkwantuoMinimap(
 
   // Heading arrow: map stays north-up while the arrow follows the controlled actor.
   const length = Math.hypot(facing.x, facing.z) || 1;
-  const fx = -facing.x / length;
+  const fx = facing.x / length;
   const fy = -facing.z / length;
   const px = -fy;
   const py = fx;
