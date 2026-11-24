@@ -55,12 +55,13 @@ body{margin:0;background:var(--bg);color:var(--fg);font-family:-apple-system,"Se
 .shade{position:absolute;inset:0;z-index:12;background:rgba(8,12,22,.97);padding:48px 16px 24px;overflow:auto;color:#e8ecf4;backdrop-filter:blur(18px)}
 .shade h2{font-size:26px;font-weight:400;margin:8px 0 4px}.shadegrid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin:18px 0}.qst{border:1px solid #30394d;background:#182237;color:#e8ecf4;border-radius:16px;padding:13px;text-align:left;min-height:62px;font-size:13px}.qst.on{background:#4565bd;border-color:#7895e8}.qst b{display:block;font-size:15px;margin-bottom:4px}.shadecard{border:1px solid #30394d;background:#131c2d;border-radius:15px;padding:12px;margin:9px 0;font-size:13px}.shadehead{display:flex;align-items:center;justify-content:space-between}.shadehead button{border:0;background:transparent;color:#9db4ff;font-size:13px}.shadefoot{display:flex;justify-content:space-between;align-items:center;margin-top:18px;color:#9aa7bf;font-size:12px}.home,.lock{isolation:isolate}
 </style><style>
-/* Embedded Elara device layout: fit the original prototype inside the game overlay. */
+/* The iframe viewport is the phone screen; keep the existing UI fitted edge-to-edge. */
 html,body{width:100%;height:100%;min-height:0;overflow:hidden}
-body{padding:8px;gap:8px;justify-content:center;overflow:hidden}
-.ph{width:min(340px,100%);height:min(640px,calc(100dvh - 100px));min-height:420px}
+body{padding:0;gap:0;justify-content:center;overflow:hidden;background:transparent}
+.ph{width:100%;height:100%;max-width:none;min-height:0;border-radius:34px;background:#02030a;padding:8px;border:1px solid #8b96a8}
+#scr{border-radius:27px}
 .info{display:none}
-@media(max-height:560px){.ph{height:calc(100dvh - 64px);min-height:0;border-radius:26px}.sw button{padding:6px 10px;font-size:12px}}
+@media(max-height:520px){.ph{height:100%;min-height:0;border-radius:26px;padding:6px}#scr{border-radius:21px}}
 </style></head>
 <body>
 <div class="sw" id="sw"></div>
