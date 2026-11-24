@@ -887,57 +887,105 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     ["ring-road-central","ring-road-coastal","la-beach-road","liberation-road","spintex-road","n1-tema-corridor"].includes(path.roadSegmentId)
   );
   const trafficColors=[mats.gold,mats.white,mats.red,mats.green,mats.modern,mats.glass];
-  const traffic:Array<{root:Entity;route:typeof trafficRoutes[number];distance:number;speed:number;length:number;signalIndex:number|null}>=[];
+  const traffic:Array<{root:Entity;fallback:Entity;modelKind:string;route:typeof trafficRoutes[number];distance:number;speed:number;length:number;signalIndex:number|null}>=[];
+  const trafficKinds=["trotro","taxi","sedan","suv","pickup","bus"] as const;
   for(let i=0;i<12;i++){
     const route=trafficRoutes[i%trafficRoutes.length];
     const length=route.points.slice(1).reduce((sum,p,index)=>sum+Math.hypot(p.x-route.points[index].x,p.z-route.points[index].z),0);
-    const root=new Entity(i%3===0?"Accra trotro traffic":i%3===1?"Accra taxi traffic":"Accra private car traffic");
+    const modelKind=trafficKinds[i%trafficKinds.length];
+    const isTrotro=modelKind==="trotro";
+    const isTaxi=modelKind==="taxi";
+    const isBus=modelKind==="bus";
+    const isPublicTransport=isTrotro||isBus;
+    const root=new Entity(modelKind==="trotro"?"Accra trotro traffic":modelKind==="taxi"?"Accra taxi traffic":modelKind==="bus"?"Accra city bus traffic":modelKind==="pickup"?"Accra pickup traffic":modelKind==="suv"?"Accra SUV traffic":"Accra private sedan traffic");
     app.root.addChild(root);
-    const isTrotro = i%3===0;
-    const isTaxi = i%3===1;
+    const fallback=new Entity("NPC vehicle fallback · "+modelKind);
+    root.addChild(fallback);
     const bodyMat=isTaxi?mats.yellow:trafficColors[i%trafficColors.length];
-    const bodyLength=isTrotro?4.8:4.15;
-    const bodyHeight=isTrotro?1.0:0.78;
-    const bodyWidth=isTrotro?2.05:1.9;
-    makeActorPart(root,"box","Traffic vehicle chassis",0,0.62,0,bodyWidth*0.92,0.3,bodyLength*0.92,mats.roof);
-    makeActorPart(root,"box",isTrotro?"Ghana trotro minibus body":isTaxi?"Accra taxi body":"Accra private car body",0,0.78,0,bodyWidth,bodyHeight,bodyLength,bodyMat);
-    const cabinZ=isTrotro?-0.18:-0.25;
-    makeActorPart(root,"box","Vehicle cabin glass",0,isTrotro?1.55:1.42,cabinZ,bodyWidth*0.82,isTrotro?0.78:0.68,isTrotro?2.7:2.0,mats.glass);
-    makeActorPart(root,"box","Vehicle roof",0,isTrotro?1.98:1.78,cabinZ,bodyWidth*0.78,0.14,isTrotro?2.5:1.8,bodyMat);
-    // Separate front/rear glazing and side passenger windows make the silhouette
-    // read as a minibus/trotro rather than a generic moving block.
-    makeActorPart(root,"box","Vehicle windscreen",0,isTrotro?1.52:1.4,bodyLength*0.5+0.012,bodyWidth*0.7,0.52,0.055,mats.glass);
-    makeActorPart(root,"box","Vehicle rear window",0,isTrotro?1.5:1.38,-bodyLength*0.5-0.012,bodyWidth*0.62,0.42,0.055,mats.glass);
+    const bodyLength=isBus?10.5:isTrotro?4.8:modelKind==="pickup"?5.3:4.9;
+    const bodyHeight=isBus?1.25:isPublicTransport?1.0:0.78;
+    const bodyWidth=isBus?2.5:isTrotro?2.05:modelKind==="pickup"?2.0:1.9;
+    const cabinY=isBus?2.05:isPublicTransport?1.55:1.42;
+    makeActorPart(fallback,"box","Traffic vehicle chassis",0,0.62,0,bodyWidth*0.92,0.3,bodyLength*0.92,mats.roof);
+    makeActorPart(fallback,"box",isTrotro?"Ghana trotro minibus body":isTaxi?"Accra taxi body":isBus?"Accra city bus body":modelKind==="pickup"?"Accra pickup body":modelKind==="suv"?"Accra SUV body":"Accra private sedan body",0,0.78,0,bodyWidth,bodyHeight,bodyLength,bodyMat);
+    const cabinZ=isPublicTransport?-0.18:-0.25;
+    makeActorPart(fallback,"box","Vehicle cabin glass",0,cabinY,cabinZ,bodyWidth*0.82,isPublicTransport?0.78:0.68,isPublicTransport?bodyLength*0.56:2.0,mats.glass);
+    makeActorPart(fallback,"box","Vehicle roof",0,cabinY+(isBus?0.48:0.38),cabinZ,bodyWidth*0.78,0.14,isPublicTransport?bodyLength*0.52:1.8,bodyMat);
+    makeActorPart(fallback,"box","Vehicle windscreen",0,cabinY-0.03,bodyLength*0.5+0.012,bodyWidth*0.7,0.52,0.055,mats.glass);
+    makeActorPart(fallback,"box","Vehicle rear window",0,cabinY-0.05,-bodyLength*0.5-0.012,bodyWidth*0.62,0.42,0.055,mats.glass);
     for(const side of [-1,1]){
-      for(const z of (isTrotro?[-1.45,-0.48,0.52,1.42]:[-0.82,0.72])){
-        makeActorPart(root,"box","Vehicle side passenger window",side*(bodyWidth/2+0.018),isTrotro?1.55:1.45,z,0.055,isTrotro?0.48:0.42,isTrotro?0.78:0.92,mats.glass);
+      const windowPositions=isBus?[-4.0,-2.4,-0.8,0.8,2.4,4.0]:isTrotro?[-1.45,-0.48,0.52,1.42]:[-0.82,0.72];
+      for(const z of windowPositions){
+        makeActorPart(fallback,"box","Vehicle side passenger window",side*(bodyWidth/2+0.018),cabinY,isPublicTransport?z:z,0.055,isPublicTransport?0.48:0.42,isPublicTransport?0.78:0.92,mats.glass);
       }
-      makeActorPart(root,"box","Vehicle side mirror",side*(bodyWidth/2+0.16),1.42,bodyLength*0.34,0.24,0.12,0.2,mats.roof);
-      makeActorPart(root,"box","Vehicle side rubbing strip",side*(bodyWidth/2+0.025),0.82,0,0.055,0.13,bodyLength*0.76,mats.white);
+      makeActorPart(fallback,"box","Vehicle side mirror",side*(bodyWidth/2+0.16),cabinY-0.03,bodyLength*0.34,0.24,0.12,0.2,mats.roof);
+      makeActorPart(fallback,"box","Vehicle side rubbing strip",side*(bodyWidth/2+0.025),0.82,0,0.055,0.13,bodyLength*0.76,mats.white);
     }
-    makeActorPart(root,"box","Vehicle front bumper",0,0.38,bodyLength*0.51,bodyWidth*0.96,0.18,0.18,mats.roof);
-    makeActorPart(root,"box","Vehicle rear bumper",0,0.38,-bodyLength*0.51,bodyWidth*0.96,0.18,0.18,mats.roof);
-    makeActorPart(root,"box","Vehicle front grille",0,0.78,bodyLength*0.51+0.02,bodyWidth*0.28,0.24,0.06,mats.roof);
+    makeActorPart(fallback,"box","Vehicle front bumper",0,0.38,bodyLength*0.51,bodyWidth*0.96,0.18,0.18,mats.roof);
+    makeActorPart(fallback,"box","Vehicle rear bumper",0,0.38,-bodyLength*0.51,bodyWidth*0.96,0.18,0.18,mats.roof);
+    makeActorPart(fallback,"box","Vehicle front grille",0,0.78,bodyLength*0.51+0.02,bodyWidth*0.28,0.24,0.06,mats.roof);
     for(const side of [-1,1]){
-      makeActorPart(root,"box","Vehicle headlamp",side*bodyWidth*0.34,0.91,bodyLength*0.51+0.035,0.28,0.2,0.07,mats.white);
-      makeActorPart(root,"box","Vehicle tail lamp",side*bodyWidth*0.36,0.9,-bodyLength*0.51-0.035,0.24,0.28,0.07,mats.red);
+      makeActorPart(fallback,"box","Vehicle headlamp",side*bodyWidth*0.34,0.91,bodyLength*0.51+0.035,0.28,0.2,0.07,mats.white);
+      makeActorPart(fallback,"box","Vehicle tail lamp",side*bodyWidth*0.36,0.9,-bodyLength*0.51-0.035,0.24,0.28,0.07,mats.red);
     }
     if(isTaxi){
-      makeActorPart(root,"box","Accra taxi roof marker",0,2.02,-0.15,0.72,0.16,0.34,mats.gold);
-      makeActorPart(root,"box","Accra taxi side stripe",bodyWidth/2+0.035,0.82,0,0.06,0.16,bodyLength*0.72,mats.roof);
+      makeActorPart(fallback,"box","Accra taxi roof marker",0,2.02,-0.15,0.72,0.16,0.34,mats.gold);
+      makeActorPart(fallback,"box","Accra taxi side stripe",bodyWidth/2+0.035,0.82,0,0.06,0.16,bodyLength*0.72,mats.roof);
     }
     if(isTrotro){
-      makeActorPart(root,"box","Trotro roof luggage rack",0,2.12,-0.12,1.55,0.12,2.65,mats.roof);
-      makeActorPart(root,"box","Trotro route board",0,2.04,bodyLength*0.5+0.08,0.86,0.24,0.08,mats.gold);
+      makeActorPart(fallback,"box","Trotro roof luggage rack",0,2.12,-0.12,1.55,0.12,2.65,mats.roof);
+      makeActorPart(fallback,"box","Trotro route board",0,2.04,bodyLength*0.5+0.08,0.86,0.24,0.08,mats.gold);
+    }
+    if(isBus){
+      makeActorPart(fallback,"box","City bus destination display",0,2.45,bodyLength*0.5+0.06,1.55,0.32,0.08,mats.roof);
+      makeActorPart(fallback,"box","City bus lower destination panel",0,1.35,bodyLength*0.5+0.06,1.0,0.24,0.08,mats.gold);
     }
     for(const side of [-1,1])for(const z of [-bodyLength*0.34,bodyLength*0.34]){
-      const wheel=makeActorPart(root,"cylinder","Traffic vehicle tyre",side*(bodyWidth/2+0.035),0.42,z,0.56,0.22,0.56,mats.roof);
+      const wheel=makeActorPart(fallback,"cylinder","Traffic vehicle tyre",side*(bodyWidth/2+0.035),0.42,z,0.56,0.22,0.56,mats.roof);
       wheel.setLocalEulerAngles(0,0,90);
-      makeActorPart(root,"cylinder","Vehicle wheel hub",side*(bodyWidth/2+0.16),0.42,z,0.2,0.24,0.2,mats.lightConcrete);
+      makeActorPart(fallback,"cylinder","Vehicle wheel hub",side*(bodyWidth/2+0.16),0.42,z,0.2,0.24,0.2,mats.lightConcrete);
     }
     const offset=(i/12)*length;
     const signalIndex=route.roadSegmentId==="ring-road-coastal"?0:route.roadSegmentId==="spintex-road"?3:null;
-    traffic.push({root,route,distance:offset,speed:4.2+(i%5)*0.9,length,signalIndex});
+    traffic.push({root,fallback,modelKind,route,distance:offset,speed:4.2+(i%5)*0.9,length,signalIndex});
+  }
+
+  // Load mobile-sized, CC0 glTF vehicle variants once, then reuse each
+  // container for multiple NPCs. The procedural fallback remains visible if
+  // the external model cannot be reached, so traffic never disappears.
+  const trafficModelUrls:Record<string,string>={
+    taxi:"https://tevy.dev/models/yellow-taxi/v1/lod2.glb",
+    sedan:"https://tevy.dev/models/family-sedan/v1/lod2.glb",
+    suv:"https://tevy.dev/models/suv/v1/lod2.glb",
+    pickup:"https://tevy.dev/models/pickup-truck/v1/lod2.glb",
+    bus:"https://tevy.dev/models/city-bus/v1/lod2.glb"
+  };
+  const trafficModelLoads=new Map<string,Promise<any>>();
+  const loadTrafficModel=(kind:string,url:string):Promise<any>=>{
+    const existing=trafficModelLoads.get(kind);
+    if(existing)return existing;
+    const pending=new Promise<any>((resolve,reject)=>{
+      app.assets.loadFromUrl(url,"container",(error,asset)=>{
+        if(error||!asset?.resource)reject(error??new Error("NPC vehicle model returned no container resource: "+kind));
+        else resolve(asset.resource);
+      });
+    });
+    trafficModelLoads.set(kind,pending);
+    return pending;
+  };
+  for(const car of traffic){
+    const url=trafficModelUrls[car.modelKind];
+    if(!url)continue; // Keep the Ghana trotro fallback as authored.
+    void loadTrafficModel(car.modelKind,url).then((container)=>{
+      const model=container.instantiateRenderEntity({castShadows:false});
+      model.name="NPC "+car.modelKind+" detailed 3D vehicle";
+      car.root.addChild(model);
+      model.syncHierarchy();
+      car.fallback.enabled=false;
+      console.info("[AKWANTUO] NPC traffic model loaded",car.modelKind);
+    }).catch((error)=>{
+      console.warn("[AKWANTUO] NPC traffic model unavailable; keeping fallback",car.modelKind,error);
+    });
   }
 
   const cloudBanks:Array<{root:Entity;speed:number;originX:number}>=[];
