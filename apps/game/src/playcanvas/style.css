@@ -122,3 +122,14 @@
 /* Minimal device-frame control: no promotional title, only the close affordance. */
 .atlas-shell-bar{justify-content:flex-end;padding-right:10px;background:linear-gradient(180deg,#18242d,#0b1218)}
 .atlas-shell-bar button{width:22px;height:22px}
+
+/* ZENVIA Maps: portrait handset overlay and a map-first, low-chrome layout. */
+.atlas-panel{width:min(360px,calc(100vw - 24px));height:min(86dvh,740px);max-width:calc(100vw - 24px);max-height:86dvh;aspect-ratio:auto;border-radius:34px}
+.atlas-shell-bar{display:none!important}
+.atlas-panel iframe{height:100%}
+@media(max-width:650px){
+ .atlas-panel{width:min(340px,calc(100vw - 22px));height:85dvh;max-height:85dvh;border-radius:32px}
+}
+@media(max-height:520px){
+ .atlas-panel{width:min(340px,calc(100vw - 22px));height:90dvh;max-height:90dvh;border-radius:24px}
+}
