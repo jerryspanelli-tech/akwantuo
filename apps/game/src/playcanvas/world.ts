@@ -136,6 +136,25 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     return sign;
   };
 
+  // Physical roadside sign assembly: twin galvanised posts, a deep backing,
+  // inset reflective face and gold edging. The board remains readable from
+  // the approach side and is built once with the rest of the static world.
+  const mountedRoadSign = (name: string, label: string, x: number, z: number,
+    width: number, height: number, boardY = 5.35) => {
+    const postOffset = width * 0.39;
+    for (const side of [-1, 1]) {
+      box(name + " steel support", x + side * postOffset, boardY / 2, z,
+        0.24, boardY, 0.24, mats.roof);
+      box(name + " post footing", x + side * postOffset, 0.18, z,
+        0.58, 0.36, 0.58, mats.concrete);
+    }
+    box(name + " sign backing", x, boardY, z, width + 0.55, height + 0.5, 0.5, mats.roof);
+    box(name + " reflective face", x, boardY, z + 0.29, width, height, 0.12, makeSignMaterial(label));
+    box(name + " upper gold trim", x, boardY + height / 2 + 0.13, z + 0.36, width + 0.08, 0.12, 0.16, mats.gold);
+    box(name + " lower gold trim", x, boardY - height / 2 - 0.13, z + 0.36, width + 0.08, 0.12, 0.16, mats.gold);
+    return undefined;
+  };
+
   const centerX = (GREATER_ACCRA_MAP_EXTENT.minX + GREATER_ACCRA_MAP_EXTENT.maxX) / 2;
   const centerZ = (GREATER_ACCRA_MAP_EXTENT.minZ + GREATER_ACCRA_MAP_EXTENT.maxZ) / 2;
   plane("Greater Accra landmass", centerX, -0.22, centerZ, GREATER_ACCRA_MAP_EXTENT.widthM, GREATER_ACCRA_MAP_EXTENT.depthM, mats.earth);
@@ -242,9 +261,7 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     const isModern = anchor.regionId === "airport-city" || anchor.regionId === "east-legon" || anchor.regionId === "tema";
     const facade = isMarket ? mats.market : isModern ? mats.modern : mats.residential;
     const name = districtNames[anchor.regionId] ?? anchor.regionId.toUpperCase();
-    box(name + " sign post", anchor.x - 35, 3.1, anchor.z + 65, 0.55, 6.2, 0.55, mats.roof);
-    box(name + " green sign", anchor.x - 35, 5.4, anchor.z + 65, 13, 2.1, 0.42, makeSignMaterial(name));
-    box(name + " gold sign band", anchor.x - 35, 4.45, anchor.z + 65, 12.6, 0.12, 0.48, mats.gold);
+    mountedRoadSign(name + " district entrance sign", name, anchor.x - 35, anchor.z + 65, 13, 2.1);
     for (let i = 0; i < 7; i++) {
       const angle = (i / 7) * Math.PI * 2;
       const radius = 115 + (i % 3) * 28;
@@ -297,8 +314,7 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     { label: "LABADI BEACH", x: 2300, z: -2220 }
   ];
   for (const sign of routeSigns) {
-    box(sign.label + " sign post", sign.x, 3.1, sign.z + 24, 0.45, 6.2, 0.45, mats.roof);
-    box(sign.label + " directional board", sign.x, 5.4, sign.z + 24, 11, 2.1, 0.4, makeSignMaterial(sign.label));
+    mountedRoadSign(sign.label + " directional sign", sign.label, sign.x, sign.z + 24, 11, 2.1);
   }
 
   // Landmark footprints preserve the existing Greater Accra spatial catalogue.
