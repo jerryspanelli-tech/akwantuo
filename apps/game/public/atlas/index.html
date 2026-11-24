@@ -356,7 +356,7 @@ function drawZenviaMap(){
  if(coord&&zenviaMap.state)coord.textContent='X '+Math.round(zenviaMap.state.x)+' · Z '+Math.round(zenviaMap.state.z);
  if(district&&zenviaMap.state&&data.regions&&data.regions.length){const near=data.regions.reduce((a,b)=>Math.hypot(b.x-zenviaMap.state.x,b.z-zenviaMap.state.z)<Math.hypot(a.x-zenviaMap.state.x,a.z-zenviaMap.state.z)?b:a);district.textContent=near.label+' · GREATER ACCRA'}
 }
-window.addEventListener('message',event=>{if(event.source!==window.parent||event.origin!==window.location.origin)return;const m=event.data||{};if(m.type==='ZENVIA_MAP_STATIC'){zenviaMap.data=m.payload;if(zenviaMap.retry){clearInterval(zenviaMap.retry);zenviaMap.retry=null}drawZenviaMap()}else if(m.type==='ZENVIA_MAP_STATE'){zenviaMap.state=m.payload;drawZenviaMap()}});
+window.addEventListener('message',event=>{if(event.source!==window.parent||event.origin!==window.location.origin)return;const m=event.data||{};if(m.type==='ZENVIA_MAP_STATIC'){zenviaMap.data=m.payload;if(zenviaMap.retry){clearInterval(zenviaMap.retry);zenviaMap.retry=null}drawZenviaMap()}else if(m.type==='ZENVIA_MAP_STATE'){zenviaMap.state=m.payload;drawZenviaMap()}else if(m.type==='ZENVIA_MAP_PARENT_CLOSED'){sendMapMessage('ZENVIA_MAP_CLOSE')}});
 
 document.querySelectorAll('[data-app]').forEach(el=>el.addEventListener('click',()=>openApp(el.dataset.app)));
 document.querySelectorAll('[data-toast]').forEach(el=>el.addEventListener('click',()=>showToast(el.dataset.toast)));
