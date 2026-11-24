@@ -43,7 +43,6 @@
 /* Compact horizontal driving pedals: BRAKE/REVERSE left, GAS right. */
 @media(max-width:799px){.vehicle-pedals{display:flex!important;flex-direction:row!important;align-items:flex-end!important;gap:8px!important}.vehicle-brake-stack{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:6px!important}.vehicle-brake-stack .vehicle-exit{min-width:68px!important;width:68px!important;min-height:38px!important;padding:6px 5px!important;font-size:8px!important}.reverse-control{min-width:68px!important;width:68px!important;min-height:42px!important;padding:7px 5px!important;font-size:8px!important}.accelerate-control{min-width:68px!important;width:68px!important;min-height:48px!important;padding:7px 5px!important;font-size:9px!important;align-self:flex-end!important}}
 @media(max-width:390px){.vehicle-pedals{gap:6px!important}.vehicle-brake-stack .vehicle-exit{min-width:62px!important;width:62px!important;min-height:36px!important}.reverse-control{min-width:62px!important;width:62px!important;min-height:40px!important}.accelerate-control{min-width:62px!important;width:62px!important;min-height:46px!important}}
-#world-map-canvas{display:block;width:100%;height:100%;min-height:0;object-fit:contain;border:1px solid #d9b77755;border-radius:10px;touch-action:none}
 .mission{display:none!important}
 @media(max-width:520px){}
 
