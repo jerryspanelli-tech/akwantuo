@@ -404,7 +404,7 @@ async function boot() {
     zenviaMapSubscribers.add(source);
     source.postMessage({ type: "ZENVIA_MAP_STATIC", payload: zenviaMapStatic }, event.origin);
     const position = inVehicle ? vehicle.getPosition() : player.getPosition();
-    const rawHeading = inVehicle ? vehicle.getEulerAngles().y : player.getEulerAngles().y;
+    const rawHeading = inVehicle ? vehicle.getEulerAngles().y : cameraYaw;
     const heading = ((rawHeading % 360) + 360) % 360;
     source.postMessage({ type: "ZENVIA_MAP_STATE", payload: { x: position.x, z: position.z, heading, inVehicle } }, event.origin);
   });
@@ -639,10 +639,10 @@ async function boot() {
     if (elapsed > 0.10) { updateButtons(); elapsed = 0; }
     elapsed += step;
     zenviaMapElapsed += step;
-    if (zenviaMapElapsed >= 0.18 && zenviaMapSubscribers.size) {
+    if (zenviaMapElapsed >= 0.08 && zenviaMapSubscribers.size) {
       zenviaMapElapsed = 0;
       const mapPosition = inVehicle ? vehicle.getPosition() : player.getPosition();
-      const rawMapHeading = inVehicle ? vehicle.getEulerAngles().y : player.getEulerAngles().y;
+      const rawMapHeading = inVehicle ? vehicle.getEulerAngles().y : cameraYaw;
       const mapHeading = ((rawMapHeading % 360) + 360) % 360;
       const mapState = { type: "ZENVIA_MAP_STATE", payload: { x: mapPosition.x, z: mapPosition.z, heading: mapHeading, inVehicle } };
       for (const subscriber of zenviaMapSubscribers) {
