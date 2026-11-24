@@ -580,6 +580,47 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
   addStreetlight("N4 Madina approach LED streetlight", 4850, 1795, 90, false);
   addStreetlight("N6 Achimota approach LED streetlight", -1787, 2354, 180, false);
 
+  // Extend the visible lighting network along the authored first-release roads.
+  // Fixtures are sampled by travelled distance (not point count), alternate sides,
+  // and remain decorative: the 12 existing practical lights stay the only light sources.
+  const existingLampPositions = [
+    [1350, -1320], [1392, -1320], [1434, -1320], [1476, -1320], [1518, -1320], [1560, -1320],
+    [-500, 390], [-438, 390], [4250, 1060], [4312, 1060],
+    [5500, -1490], [5562, -1490], [2100, 220], [2900, 145],
+    [4850, 1795], [-1787, 2354]
+  ];
+  const minimumLampSpacing = 210;
+  for (const path of GREATER_ACCRA_ROAD_PATHS) {
+    if (!path.playableInFirstRelease) continue;
+    const isArterial = /^(n1|n4|n6)-/.test(path.roadSegmentId);
+    const shoulderOffset = isArterial ? 15 : 10;
+    let distanceToNextLamp = 850;
+    let segmentStartDistance = 0;
+    for (let segmentIndex = 0; segmentIndex < path.points.length - 1; segmentIndex++) {
+      const a = path.points[segmentIndex], b = path.points[segmentIndex + 1];
+      const dx = b.x - a.x, dz = b.z - a.z;
+      const segmentLength = Math.hypot(dx, dz);
+      if (segmentLength < 1) continue;
+      const roadYaw = Math.atan2(dx, dz) * 180 / Math.PI;
+      while (distanceToNextLamp <= segmentStartDistance + segmentLength) {
+        const t = (distanceToNextLamp - segmentStartDistance) / segmentLength;
+        const side = Math.floor(distanceToNextLamp / 850) % 2 === 0 ? 1 : -1;
+        const normalX = Math.cos(roadYaw * Math.PI / 180);
+        const normalZ = -Math.sin(roadYaw * Math.PI / 180);
+        const x = a.x + dx * t + normalX * shoulderOffset * side;
+        const z = a.z + dz * t + normalZ * shoulderOffset * side;
+        const tooClose = existingLampPositions.some(([px, pz]) => Math.hypot(px - x, pz - z) < minimumLampSpacing);
+        if (!tooClose) {
+          addStreetlight(path.roadSegmentId + " roadside LED streetlight", x, z,
+            roadYaw + (side < 0 ? 180 : 0), false);
+          existingLampPositions.push([x, z]);
+        }
+        distanceToNextLamp += 850;
+      }
+      segmentStartDistance += segmentLength;
+    }
+  }
+
   // Labadi marina watercraft props: a speedboat and a personal watercraft.
   box("Labadi speedboat hull", 2820, 0.65, -3960, 3.2, 0.85, 9.5, mats.white);
   box("Labadi speedboat deck", 2820, 1.15, -3960, 2.7, 0.22, 7.2, mats.red);
