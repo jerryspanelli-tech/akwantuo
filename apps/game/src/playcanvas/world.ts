@@ -993,7 +993,8 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
       document.documentElement.dataset.akwantuoTrafficModelsLoaded=[...loadedKinds].sort().join(",");
       console.info("[AKWANTUO] NPC traffic model loaded",car.modelKind);
     }).catch((error)=>{
-      document.documentElement.dataset.akwantuoTrafficModelErrors = [document.documentElement.dataset.akwantuoTrafficModelErrors, car.modelKind].filter(Boolean).join(",");\n      console.error("[AKWANTUO] NPC traffic GLB failed; primitive fallback is disabled",car.modelKind,error);
+      document.documentElement.dataset.akwantuoTrafficModelErrors = [document.documentElement.dataset.akwantuoTrafficModelErrors, car.modelKind].filter(Boolean).join(",");
+      console.error("[AKWANTUO] NPC traffic GLB failed; primitive fallback is disabled",car.modelKind,error);
     });
   }
 
