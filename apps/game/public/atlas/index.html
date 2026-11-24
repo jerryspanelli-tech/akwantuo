@@ -225,14 +225,12 @@ market:['Market','<div class="tile"><strong>AKWANTUO MARKET</strong><p>Discover 
 function openApp(id){const data=appData[id];if(!data)return;home.hidden=true;view.hidden=false;view.innerHTML='<div class="appview"><div class="apphead"><button class="back" id="back" aria-label="Back">‹</button><strong>'+data[0]+'</strong></div><div class="appbody">'+data[1]+'</div></div>';document.getElementById('back').addEventListener('click',goHome);content.scrollTop=0}
 function goHome(){view.hidden=true;home.hidden=false;content.scrollTop=0}
 document.querySelectorAll('[data-app]').forEach(el=>el.addEventListener('click',()=>openApp(el.dataset.app)));
-document.getElementById('profile').addEventListener('click',()=>openApp('settings'));
 document.querySelectorAll('[data-toast]').forEach(el=>el.addEventListener('click',()=>showToast(el.dataset.toast)));
 function showToast(message){toast.textContent=message;toast.classList.add('show');clearTimeout(window._atlasToast);window._atlasToast=setTimeout(()=>toast.classList.remove('show'),1700)}
 const device=document.getElementById('atlas-device'),lockScreen=document.getElementById('lock-screen');
 function unlock(){device.classList.remove('is-locked')}
 function lock(){goHome();device.classList.add('is-locked')}
 document.getElementById('unlock-button').addEventListener('click',unlock);
-document.getElementById('lock-device').addEventListener('click',lock);
 let touchStartY=null;
 lockScreen.addEventListener('touchstart',e=>{touchStartY=e.touches[0].clientY},{passive:true});
 lockScreen.addEventListener('touchend',e=>{if(touchStartY!==null&&touchStartY-e.changedTouches[0].clientY>35)unlock();touchStartY=null},{passive:true});
