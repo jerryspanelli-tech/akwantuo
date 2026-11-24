@@ -1,5 +1,5 @@
 import {
-  AppBase, AppOptions, CameraComponentSystem, LightComponentSystem, RenderComponentSystem,
+  AppBase, AppOptions, CameraComponentSystem, LightComponentSystem, RenderComponentSystem,\n  basisInitialize, meshoptInitialize,
   AnimComponentSystem, ContainerHandler, TextureHandler, Asset, Color, StandardMaterial,
   createGraphicsDevice, DEVICETYPE_WEBGPU, DEVICETYPE_WEBGL2, FILLMODE_FILL_WINDOW,
   RESOLUTION_AUTO, Entity
