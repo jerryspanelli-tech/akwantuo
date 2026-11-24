@@ -60,3 +60,26 @@
 .atlas-panel iframe{display:block;width:100%;height:calc(100% - 32px);min-height:0;border:0;background:#101820}
 @media(max-width:520px){.atlas-panel{width:calc(100vw - 14px);height:min(78dvh,620px);border-radius:22px}.atlas-launcher{right:12px}}
 @media(max-height:520px){.atlas-panel{width:min(920px,calc(100vw - 18px));height:calc(100dvh - 12px);border-radius:17px}}
+
+
+/* ATLAS Tab: preserve a true landscape tablet silhouette on every viewport. */
+.atlas-panel{
+  width:min(920px,calc(100vw - 20px),calc((100dvh - 24px)*1.3333));
+  height:auto;
+  aspect-ratio:4 / 3;
+  max-height:calc(100dvh - 24px);
+  border:1px solid #d6b477aa;
+  border-radius:30px;
+  background:#080f15;
+  box-shadow:0 28px 100px #000e,0 0 0 1px #ffffff18,inset 0 1px #ffffff24;
+}
+.atlas-shell-bar{height:28px;background:linear-gradient(180deg,#18242d,#0b1218);letter-spacing:.22em}
+.atlas-panel iframe{height:calc(100% - 28px)}
+@media(max-width:520px){
+ .atlas-panel{width:min(calc(100vw - 18px),calc((100dvh - 20px)*1.3333));height:auto;aspect-ratio:4 / 3;max-height:calc(100dvh - 20px);border-radius:25px}
+ .atlas-shell-bar{height:25px}
+ .atlas-panel iframe{height:calc(100% - 25px)}
+}
+@media(max-height:420px){
+ .atlas-panel{width:min(calc(100vw - 18px),calc((100dvh - 14px)*1.3333));max-height:calc(100dvh - 14px);border-radius:18px}
+}
