@@ -49,8 +49,8 @@
 @media(max-width:520px){}
 @media(min-width:800px){}
 
-/* Elara sits in the open right-side scenery; HUD controls remain above it. */
-.elara-panel{position:fixed;z-index:2;top:calc(env(safe-area-inset-top,0px) + 56px);right:54px;bottom:max(138px,calc(env(safe-area-inset-bottom,0px) + 128px));width:min(176px,44vw);max-height:calc(100dvh - 210px);min-height:190px;border:1px solid #d8ad6488;border-radius:22px;background:#080d16;box-shadow:0 8px 28px #0008;overflow:hidden;isolation:isolate}
+/* Elara opens as a centred tablet-sized overlay, not a narrow side dock. */
+.elara-panel{position:fixed;z-index:20;left:50%;top:50%;right:auto;bottom:auto;transform:translate(-50%,-50%);width:min(390px,calc(100vw - 28px));height:min( min(760px, calc(100dvh - 36px)), 88dvh);border:1px solid #d8ad64aa;border-radius:28px;background:#080d16;box-shadow:0 18px 64px #000b;overflow:hidden;isolation:isolate}
 .elara-panel iframe{display:block;width:100%;height:100%;min-height:0;border:0;border-radius:inherit;background:#080d16}
-@media(max-height:520px){.elara-panel{top:calc(env(safe-area-inset-top,0px) + 48px);bottom:max(122px,calc(env(safe-area-inset-bottom,0px) + 112px));min-height:170px;border-radius:17px}}
-@media(max-width:350px){.elara-panel{right:50px;width:44vw}}
+@media(max-width:420px){.elara-panel{width:min(390px,calc(100vw - 20px));height:min(760px,calc(100dvh - 24px));border-radius:24px}}
+@media(max-height:520px){.elara-panel{width:min(520px,calc(100vw - 24px));height:calc(100dvh - 20px);border-radius:18px}}
