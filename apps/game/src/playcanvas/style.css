@@ -83,3 +83,6 @@
 @media(max-height:420px){
  .atlas-panel{width:min(calc(100vw - 18px),calc((100dvh - 14px)*1.3333));max-height:calc(100dvh - 14px);border-radius:18px}
 }
+
+/* The centered ATLAS overlay covers the inner edges of the game wordmark; hide the full HUD strip while the tablet is open instead of showing clipped fragments. */
+.atlas-open .top-hud{visibility:hidden}
