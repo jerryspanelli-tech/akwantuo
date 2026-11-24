@@ -63,13 +63,13 @@ export const GREATER_ACCRA_LANDMARK_FOOTPRINTS: readonly LandmarkFootprint[] = [
   },
   {
     "id": "university-of-ghana",
-    "label": "University of Ghana",
+    "label": "University of Ghana – Legon Campus",
     "x": 3350,
     "z": 3550,
-    "minX": 3280,
-    "maxX": 3540,
-    "minZ": 3480,
-    "maxZ": 3620
+    "minX": 2700,
+    "maxX": 4300,
+    "minZ": 2100,
+    "maxZ": 5050
   },
   {
     "id": "kwame-nkrumah-memorial",
