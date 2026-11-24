@@ -42,6 +42,9 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     skinDeep: material(0.20, 0.095, 0.055), skinRich: material(0.31, 0.15, 0.085),
     skinWarm: material(0.43, 0.23, 0.13), skinLight: material(0.56, 0.34, 0.22)
   };
+  // The diffuser mesh is hidden in daylight and emits a warm amber glow at night.
+  mats.lampGlow.emissive = new Color(1.0, 0.62, 0.25);
+  mats.lampGlow.update();
 
   // Lightweight procedural surface grain: subtle pixel variation gives asphalt, concrete,
   // earth and sand a material response instead of perfectly flat primitive colors.
