@@ -28,10 +28,6 @@ const touchUi = document.querySelector<HTMLElement>(".touch-ui");
 const stick = document.querySelector<HTMLElement>("#stick");
 const stickKnob = document.querySelector<HTMLElement>("#stick-knob");
 const notice = document.querySelector<HTMLElement>("#notice");
-const elaraOpenButton = document.querySelector<HTMLButtonElement>("#elara-open");
-const elaraOverlay = document.querySelector<HTMLElement>("#elara-overlay");
-const elaraCloseButton = document.querySelector<HTMLButtonElement>("#elara-close");
-let elaraOpen = false;
 if (!canvas) throw new Error("AKWANTUO PlayCanvas canvas is missing.");
 
 const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
@@ -336,34 +332,6 @@ async function boot() {
   vehicleStick?.addEventListener("pointercancel", resetVehicleStick);
   vehicleStick?.addEventListener("lostpointercapture", resetVehicleStick);
 
-  // Elara is a real in-game overlay. Opening it releases every held control and
-  // pauses world simulation until the player closes the phone.
-  const closeElara = () => {
-    if (!elaraOpen) return;
-    elaraOpen = false;
-    elaraOverlay?.setAttribute("hidden", "");
-    elaraOverlay?.setAttribute("aria-hidden", "true");
-    keys.clear();
-    stickX = stickY = vehicleStickX = 0;
-    vehicleInput.accelerate = vehicleInput.reverse = false;
-    if (stickKnob) stickKnob.style.transform = "";
-    if (vehicleStickKnob) vehicleStickKnob.style.transform = "";
-    elaraOpenButton?.focus();
-  };
-  elaraOpenButton?.addEventListener("click", () => {
-    if (!elaraOverlay) return;
-    elaraOpen = true;
-    keys.clear();
-    stickX = stickY = vehicleStickX = 0;
-    vehicleInput.accelerate = vehicleInput.reverse = false;
-    elaraOverlay.removeAttribute("hidden");
-    elaraOverlay.setAttribute("aria-hidden", "false");
-    elaraCloseButton?.focus();
-  });
-  elaraCloseButton?.addEventListener("click", closeElara);
-  window.addEventListener("keydown", (event) => {
-    if (event.code === "Escape" && elaraOpen) closeElara();
-  });
   let jumpRequested = false, verticalVelocity = 0, grounded = true;
   const groundHeight = 0;
   const requestJump = () => { if (!inVehicle && grounded) { jumpRequested = true; jumpButton?.classList.add("pressed"); } };
@@ -466,7 +434,6 @@ async function boot() {
 
   let elapsed = 0;
   app.on("update", (dt: number) => {
-    if (elaraOpen) return;
     const step = Math.min(dt, 0.05);
     worldClock = (worldClock + step * 60) % 86400;
     const hourOfDay = worldClock / 3600;
