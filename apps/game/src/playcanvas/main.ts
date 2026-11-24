@@ -30,6 +30,10 @@ const touchUi = document.querySelector<HTMLElement>(".touch-ui");
 const stick = document.querySelector<HTMLElement>("#stick");
 const stickKnob = document.querySelector<HTMLElement>("#stick-knob");
 const notice = document.querySelector<HTMLElement>("#notice");
+const navigationGuidance = document.querySelector<HTMLElement>("#navigation-guidance");
+const navigationArrow = document.querySelector<HTMLElement>("#navigation-arrow");
+const navigationDistance = document.querySelector<HTMLElement>("#navigation-distance");
+let navigationTarget: { x: number; z: number; label: string } | null = null;
 if (!canvas) throw new Error("AKWANTUO PlayCanvas canvas is missing.");
 
 const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
@@ -394,8 +398,19 @@ async function boot() {
   const zenviaMapSubscribers = new Set<Window>();
   window.addEventListener("message", (event: MessageEvent) => {
     if (event.origin !== window.location.origin || !event.source || event.source === window) return;
-    const message = event.data as { type?: string };
+    const message = event.data as { type?: string; payload?: { x?: number; z?: number; label?: string } | null };
     const source = event.source as Window;
+    if (message?.type === "ZENVIA_MAP_DESTINATION") {
+      const payload = message.payload;
+      if (payload === null) {
+        navigationTarget = null;
+        if (navigationGuidance) navigationGuidance.hidden = true;
+      } else if (payload && Number.isFinite(payload.x) && Number.isFinite(payload.z)) {
+        navigationTarget = { x: Number(payload.x), z: Number(payload.z), label: String(payload.label || "Destination") };
+        if (navigationGuidance) navigationGuidance.hidden = false;
+      }
+      return;
+    }
     if (message?.type === "ZENVIA_MAP_CLOSE") {
       zenviaMapSubscribers.delete(source);
       return;
@@ -625,6 +640,21 @@ async function boot() {
       playerCharacter.setEulerAngles(player.getEulerAngles());
     }
     const focus = inVehicle ? vehicle.getPosition() : player.getPosition();
+    if (navigationTarget && navigationGuidance && navigationArrow) {
+      const dx = navigationTarget.x - focus.x;
+      const dz = navigationTarget.z - focus.z;
+      const distance = Math.hypot(dx, dz);
+      const bearing = Math.atan2(dx, dz) * 180 / Math.PI;
+      const relativeBearing = ((bearing - cameraYaw) % 360 + 360) % 360;
+      navigationArrow.style.transform = "rotate(" + relativeBearing + "deg)";
+      if (navigationDistance) {
+        navigationDistance.textContent = distance <= 5
+          ? "DESTINATION REACHED"
+          : Math.round(distance).toLocaleString() + " m · " + navigationTarget.label;
+      }
+      navigationGuidance.classList.toggle("arrived", distance <= 5);
+      navigationGuidance.hidden = false;
+    }
     const height = inVehicle ? 4.4 : 3.6;
     const cameraYawRadians = cameraYaw * Math.PI / 180;
     const cameraPitchRadians = cameraPitch * Math.PI / 180;
