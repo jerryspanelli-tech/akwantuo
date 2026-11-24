@@ -10,7 +10,7 @@ export type GreaterAccraWorld = {
   spawn: { x: number; z: number };
   taxiSpawn: { x: number; z: number };
   interactables: Array<{ id: string; label: string; x: number; z: number; radius: number }>;
-  update: (dt: number) => void;
+  update: (dt: number, nightAmount?: number) => void;
 };
 
 const material = (r: number, g: number, b: number): StandardMaterial => {
@@ -36,6 +36,9 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     market: material(0.63, 0.35, 0.19), industrial: material(0.38, 0.42, 0.39),
     modern: material(0.35, 0.43, 0.45), residential: material(0.68, 0.55, 0.39),
     palm: material(0.23, 0.31, 0.17),
+    streetPole: material(0.20, 0.22, 0.23),
+    lampHousing: material(0.27, 0.29, 0.30),
+    lampGlow: material(0.16, 0.13, 0.075),
     skinDeep: material(0.20, 0.095, 0.055), skinRich: material(0.31, 0.15, 0.085),
     skinWarm: material(0.43, 0.23, 0.13), skinLight: material(0.56, 0.34, 0.22)
   };
@@ -525,18 +528,37 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     box("Fuel dispenser", x, 1.25, -1040, 1.25, 2.5, 1.2, mats.white, 0, true);
     box("Fuel dispenser display", x, 1.7, -1039.35, 0.7, 0.48, 0.08, mats.glass);
   }
-  const streetLamps: Entity[] = [];
-  for (let i = 0; i < 12; i++) {
-    const x = 950 + i * 34;
-    box("Osu streetlight pole", x, 4.5, -1320, 0.18, 9, 0.18, mats.roof);
-    box("Osu streetlight arm", x + 1.8, 8.8, -1320, 3.6, 0.12, 0.12, mats.roof);
-    const lamp = box("Osu streetlight lamp", x + 3.4, 8.65, -1320, 0.8, 0.22, 0.5, mats.gold);
-    lamp.addComponent("light", {
-      type: "omni", color: new Color(1, 0.76, 0.42), intensity: 0.85,
+  // Reusable Ghanaian arterial LED streetlight assembly. The pole, base plate,
+  // outreach arm, diagonal brace, sealed luminaire and warm diffuser share a
+  // small material palette; only the 12 existing practical lights cast light.
+  const streetLamps: Array<{ light: Entity; diffuser: Entity }> = [];
+  const addStreetlight = (name: string, x: number, z: number) => {
+    box(name + " reinforced concrete footing", x, 0.22, z, 0.72, 0.44, 0.72, mats.concrete);
+    cylinder(name + " galvanised base plate", x, 0.48, z, 0.31, 0.12, mats.streetPole);
+    cylinder(name + " tapered steel mast", x, 4.95, z, 0.115, 9.0, mats.streetPole);
+    cylinder(name + " mast collar", x, 8.35, z, 0.15, 0.24, mats.lampHousing);
+    box(name + " outreach arm", x + 1.55, 8.82, z, 3.25, 0.16, 0.16, mats.streetPole);
+    const brace = new Entity(name + " arm brace");
+    brace.addComponent("render", { type: "box", material: mats.streetPole, castShadows: false, receiveShadows: true });
+    brace.setPosition(x + 0.82, 8.58, z);
+    brace.setLocalScale(1.55, 0.12, 0.12);
+    brace.setEulerAngles(0, 0, -18);
+    app.root.addChild(brace);
+    const head = box(name + " sealed LED luminaire", x + 3.15, 8.73, z, 1.18, 0.24, 0.58, mats.lampHousing);
+    const diffuser = box(name + " warm LED diffuser", x + 3.15, 8.59, z + 0.02, 0.88, 0.045, 0.38, mats.lampGlow);
+    head.addComponent("light", {
+      type: "omni", color: new Color(1, 0.76, 0.48), intensity: 0.85,
       range: 22, enabled: false, castShadows: false
     });
-    streetLamps.push(lamp);
-  }
+    streetLamps.push({ light: head, diffuser });
+  };
+
+  // Oxford Street remains the showcase run; matching fixtures extend lighting
+  // to Circle, East Legon and Spintex without scattering lamps across every road.
+  for (let i = 0; i < 6; i++) addStreetlight("Osu Oxford Street LED streetlight", 1350 + i * 42, -1320);
+  for (let i = 0; i < 2; i++) addStreetlight("Circle LED streetlight", -500 + i * 62, 390);
+  for (let i = 0; i < 2; i++) addStreetlight("East Legon LED streetlight", 4250 + i * 62, 1060);
+  for (let i = 0; i < 2; i++) addStreetlight("Spintex Road LED streetlight", 5500 + i * 62, -1490);
 
   // Labadi marina watercraft props: a speedboat and a personal watercraft.
   box("Labadi speedboat hull", 2820, 0.65, -3960, 3.2, 0.85, 9.5, mats.white);
@@ -833,7 +855,7 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
 
   let livingClock=0;
   let previousRainState=false;
-  const updateLivingCity=(dt:number)=>{
+  const updateLivingCity=(dt:number, nightAmount = 0)=>{
     livingClock+=dt;
     const weatherPhase=livingClock%240;
     const raining=weatherPhase>=150 && weatherPhase<198;
@@ -857,11 +879,10 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     }
     // Warm practical street lighting switches on for the night portion of the
     // shared world clock. Lights are disabled during daylight to save mobile GPU work.
-    const nightFactor = 0.5 + 0.5 * Math.sin((livingClock / 480) * Math.PI * 2 - Math.PI / 2);
-    const lampsOn = nightFactor < 0.28;
+    const lampsOn = nightAmount > 0.55;
     for (const lamp of streetLamps) {
-      const light = lamp.light;
-      if (light) light.enabled = lampsOn;
+      if (lamp.light.light) lamp.light.light.enabled = lampsOn;
+      lamp.diffuser.enabled = lampsOn;
     }
     for(const person of pedestrians){
       let remaining=person.speed*dt;
