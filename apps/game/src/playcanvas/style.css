@@ -48,3 +48,16 @@
 
 @media(max-width:520px){}
 @media(min-width:800px){}
+
+/* Elara in-game phone: lightweight DOM overlay, separate from the 3D scene. */
+.elara-launch{position:fixed;z-index:5;top:calc(env(safe-area-inset-top,0px) + 96px);right:16px;display:flex;align-items:center;gap:8px;padding:8px 12px 8px 8px;border:1px solid #e8bd7080;border-radius:14px;background:#10201ddf;color:#fff;box-shadow:0 5px 18px #0006;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);cursor:pointer}
+.elara-launch-mark{width:32px;height:32px;display:grid;place-items:center;border:1px solid #e8bd70;border-radius:10px;color:#f1ca83;font-weight:900;font-size:17px}
+.elara-launch strong,.elara-launch small{display:block;text-align:left;line-height:1.2}.elara-launch strong{font-size:10px;letter-spacing:.13em}.elara-launch small{font-size:8px;letter-spacing:.18em;color:#e8bd70;margin-top:3px}
+.elara-launch:active{transform:scale(.96)}
+.elara-overlay{position:fixed;inset:0;z-index:30;display:flex;flex-direction:column;background:#05080d;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
+.elara-overlay[hidden]{display:none!important}
+.elara-overlay-bar{height:44px;flex:0 0 44px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;color:#e9edf5;background:#101722;border-bottom:1px solid #293244;font-size:11px;letter-spacing:.12em}
+.elara-overlay-bar b{color:#e8bd70}
+.elara-overlay-bar button{border:1px solid #46536a;border-radius:9px;background:#1b2636;color:#fff;padding:7px 11px;font-size:10px;font-weight:800;letter-spacing:.08em}
+.elara-overlay iframe{display:block;width:100%;height:calc(100% - 44px);flex:1;border:0;background:#0b0f1a}
+@media(min-width:800px){.elara-launch{top:110px;right:24px}.elara-overlay{align-items:center}.elara-overlay-bar,.elara-overlay iframe{width:min(100%,560px)}}
