@@ -8,6 +8,7 @@ import {
   Vector3
 } from "@babylonjs/core";
 import type { SolidArea } from "./collision";
+import { createLegonCampusDistrict } from "./legonCampusDistrict";
 
 type Point = Readonly<{ x: number; z: number }>;
 type LandmarkReport = Readonly<{
@@ -244,16 +245,7 @@ export function createAccraSportsStadium(scene: Scene, solids: SolidArea[]): voi
 }
 
 export function createUniversityOfGhana(scene: Scene, solids: SolidArea[]): void {
-  const x = 3350, z = 3550;
-  const stone = sharedMaterial(scene, "akwantuo-legon-stone", new Color3(0.72, 0.66, 0.53));
-  const roof = sharedMaterial(scene, "akwantuo-legon-roof", new Color3(0.43, 0.34, 0.26));
-  const glass = sharedMaterial(scene, "akwantuo-legon-glass", new Color3(0.28, 0.42, 0.44));
-  box(scene, "university-of-ghana-main-hall", 66, 26, 46, x, 13, z, stone);
-  box(scene, "university-of-ghana-main-hall-roof", 72, 2.2, 52, x, 27, z, roof);
-  box(scene, "university-of-ghana-main-hall-tower", 15, 44, 15, x, 22, z - 20, stone);
-  box(scene, "university-of-ghana-main-hall-clock-face", 3.4, 3.4, 0.25, x, 37, z - 27.7, glass);
-  box(scene, "university-of-ghana-campus-annex", 92, 16, 32, x + 115, 8, z + 25, stone);
-  solids.push({ x, z, halfWidth: 43, halfDepth: 35 });
+  createLegonCampusDistrict(scene, solids);
 }
 
 export function createKwameNkrumahMemorial(scene: Scene, solids: SolidArea[]): void {
