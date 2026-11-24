@@ -310,6 +310,81 @@
  .map-foot{padding-top:2px}
 }
 
+
+/* ZENVIA home: a clean launcher grid, with every service represented by its app icon. */
+.device:not(.is-locked):not(.is-app-open) #home{
+  display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto 1fr;
+  align-content:start;align-items:start;gap:0;min-height:100%;
+}
+.device:not(.is-locked):not(.is-app-open) #home>.home-header{grid-column:1;grid-row:1;padding:8px 2px 18px}
+.device:not(.is-locked):not(.is-app-open) #home>.section-head{grid-column:1;grid-row:2;margin:0 1px 14px}
+.device:not(.is-locked):not(.is-app-open) #home>.apps{
+  grid-column:1;grid-row:3;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+  align-content:start;justify-items:center;gap:clamp(17px,3.4vh,27px) 8px;padding:0 2px 16px;
+}
+.device:not(.is-locked):not(.is-app-open) #home>.apps .app{width:100%;min-width:0;min-height:0}
+.device:not(.is-locked):not(.is-app-open) #home>.apps .app-icon{width:clamp(52px,15vw,64px);height:clamp(52px,15vw,64px);border-radius:19px}
+.device:not(.is-locked):not(.is-app-open) #home>.apps .app-label{font-size:10px}
+.device:not(.is-locked):not(.is-app-open) #home>.widget-stack{display:none!important}
+
+/* Maps is a true edge-to-edge canvas; search and map actions float above it. */
+.device.is-app-open:has(.zenvia-map) #content{position:relative;display:flex;flex:1 1 0%;min-height:0;overflow:hidden}
+.device.is-app-open:has(.zenvia-map) .appview{position:relative;display:flex;flex:1 1 0%;min-height:0;overflow:hidden;gap:0}
+.device.is-app-open:has(.zenvia-map) .map-apphead{
+  position:absolute;z-index:5;top:10px;left:10px;width:34px;height:42px;padding:0;margin:0;
+  display:flex;align-items:center;justify-content:center;background:transparent;border:0;
+}
+.device.is-app-open:has(.zenvia-map) .map-apphead .back{
+  width:34px;height:34px;border-radius:12px;background:#101a20d9;border:1px solid #ffffff35;
+  color:#fff;box-shadow:0 5px 18px #0005;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+}
+.device.is-app-open:has(.zenvia-map) .map-app-label{display:none}
+.device.is-app-open:has(.zenvia-map) .appbody{
+  position:absolute;inset:0;display:block;flex:1 1 0%;width:100%;height:100%;
+  min-width:0;min-height:0;padding:0!important;margin:0;overflow:hidden!important;
+}
+.device.is-app-open:has(.zenvia-map) .zenvia-map{position:absolute;inset:0;width:100%;height:100%;min-height:0;display:block;margin:0;padding:0}
+.device.is-app-open:has(.zenvia-map) .map-stage{
+  position:absolute;inset:0;width:100%;height:100%;min-height:0;flex:none;
+  border:0;border-radius:0;box-shadow:none;
+}
+.device.is-app-open:has(.zenvia-map) #zenvia-map-canvas{width:100%;height:100%;display:block}
+.device.is-app-open:has(.zenvia-map) .map-search{
+  position:absolute;z-index:4;top:10px;left:53px;right:12px;width:auto;height:42px;min-height:42px;
+  border-radius:14px;background:#101a20df;border:1px solid #ffffff38;
+  box-shadow:0 6px 22px #0006;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+}
+.device.is-app-open:has(.zenvia-map) .map-toolbar{
+  position:absolute;z-index:4;left:12px;right:12px;bottom:14px;min-height:0;
+  display:flex;align-items:center;justify-content:space-between;pointer-events:none;
+}
+.device.is-app-open:has(.zenvia-map) .map-controls{gap:7px;pointer-events:auto}
+.device.is-app-open:has(.zenvia-map) .map-controls button,
+.device.is-app-open:has(.zenvia-map) .map-locate{
+  height:40px;min-width:42px;border-radius:13px;background:#101a20df;border:1px solid #ffffff38;
+  box-shadow:0 5px 18px #0006;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+}
+.device.is-app-open:has(.zenvia-map) .map-locate{margin-left:auto;padding:0 15px;pointer-events:auto}
+.device.is-app-open:has(.zenvia-map) .map-foot{
+  position:absolute;z-index:4;left:50%;bottom:18px;transform:translateX(-50%);
+  width:max-content;max-width:42%;padding:7px 10px;border-radius:12px;
+  background:#101a20c9;border:1px solid #ffffff2b;box-shadow:0 5px 18px #0005;
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);pointer-events:none;
+}
+.device.is-app-open:has(.zenvia-map) .map-foot strong{font-size:10px;white-space:nowrap}
+.device.is-app-open:has(.zenvia-map) .map-foot span{display:none}
+@media(orientation:landscape) and (max-height:650px){
+ .device.is-app-open:has(.zenvia-map) .map-search{top:8px;height:38px;min-height:38px}
+ .device.is-app-open:has(.zenvia-map) .map-toolbar{bottom:9px}
+ .device.is-app-open:has(.zenvia-map) .map-foot{bottom:13px}
+}
+@media(max-width:650px){
+ .device:not(.is-locked):not(.is-app-open) #home>.home-header{padding:5px 1px 16px}
+ .device:not(.is-locked):not(.is-app-open) #home>.apps{gap:18px 5px;padding-top:2px}
+ .device:not(.is-locked):not(.is-app-open) #home>.apps .app-icon{width:clamp(50px,14vw,60px);height:clamp(50px,14vw,60px)}
+ .device:not(.is-locked):not(.is-app-open) #home>.apps .app-label{font-size:9px}
+}
+
 </style>
 </head>
 <body>
@@ -320,7 +395,7 @@
   <main class="content" id="content">
     <section id="home">
       <div class="home-header"><div class="home-date" id="home-date">Tuesday, November 24</div><div class="home-location"><span class="location-dot"></span>Accra · Ghana</div></div>
-      <div class="widget-stack" aria-label="At a glance"><button class="home-widget message-widget" type="button" data-app="messages"><span class="widget-icon message-widget-icon">✉</span><span class="widget-copy"><small>MESSAGES</small><strong>Inbox</strong><span>No new messages</span></span><span class="widget-chevron">›</span></button><button class="home-widget wallet-widget" type="button" data-app="wallet"><span class="widget-icon wallet-widget-icon">GH₵</span><span class="widget-copy"><small>AKWANTUO WALLET · PREVIEW</small><strong>GH₵ 0.00</strong><span>Demo balance · Tap to open</span></span><span class="widget-chevron">›</span></button></div>
+      
       <div class="section-head"><strong>Apps</strong></div>
       <div class="apps">
         <button class="app" data-app="messages"><span class="app-icon messages"><svg viewBox="0 0 24 24"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H5l-1 2v-5.5A7.5 7.5 0 1 1 20 11.5Z"/><path d="M8 11h8M8 14h5"/></svg></span><span class="app-label">Messages</span></button>
@@ -363,19 +438,20 @@ function initZenviaMap(){
  if(window.ResizeObserver){if(!zenviaMap.observer){zenviaMap.observer=new ResizeObserver(resize)}zenviaMap.observer.disconnect();zenviaMap.observer.observe(stage)}else window.addEventListener('resize',resize);
  document.getElementById('map-zoom-in').onclick=()=>{zenviaMap.zoom=Math.min(6,zenviaMap.zoom*1.35);drawZenviaMap()};
  document.getElementById('map-zoom-out').onclick=()=>{zenviaMap.zoom=Math.max(1,zenviaMap.zoom/1.35);drawZenviaMap()};
- document.getElementById('map-locate').onclick=()=>{if(!zenviaMap.data||!zenviaMap.state)return;const e=zenviaMap.data.extent,r=canvas.getBoundingClientRect(),scale=Math.min((r.width-24)/e.widthM,(r.height-24)/e.depthM)*zenviaMap.zoom,cx=(e.minX+e.maxX)/2,cz=(e.minZ+e.maxZ)/2;zenviaMap.zoom=Math.max(2,zenviaMap.zoom);const z=Math.min((r.width-24)/e.widthM,(r.height-24)/e.depthM)*zenviaMap.zoom;zenviaMap.panX=(cx-zenviaMap.state.x)*z;zenviaMap.panY=(zenviaMap.state.z+cz)*z;drawZenviaMap()};
+ document.getElementById('map-locate').onclick=()=>{if(!zenviaMap.data||!zenviaMap.state)return;const e=zenviaMap.data.extent,r=canvas.getBoundingClientRect(),cx=(e.minX+e.maxX)/2,cz=(e.minZ+e.maxZ)/2;zenviaMap.zoom=Math.max(2,zenviaMap.zoom);const z=getZenviaMapBaseScale(r.width,r.height,e)*zenviaMap.zoom;zenviaMap.panX=(cx-zenviaMap.state.x)*z;zenviaMap.panY=(zenviaMap.state.z+cz)*z;drawZenviaMap()};
  canvas.onpointerdown=e=>{zenviaMap.drag={id:e.pointerId,x:e.clientX,y:e.clientY,panX:zenviaMap.panX,panY:zenviaMap.panY};canvas.setPointerCapture(e.pointerId)};
  canvas.onpointermove=e=>{if(!zenviaMap.drag||zenviaMap.drag.id!==e.pointerId)return;zenviaMap.panX=zenviaMap.drag.panX+e.clientX-zenviaMap.drag.x;zenviaMap.panY=zenviaMap.drag.panY+e.clientY-zenviaMap.drag.y;drawZenviaMap()};
  const endDrag=e=>{if(zenviaMap.drag&&zenviaMap.drag.id===e.pointerId)zenviaMap.drag=null};canvas.onpointerup=endDrag;canvas.onpointercancel=endDrag;canvas.onlostpointercapture=endDrag;
  requestZenviaMap();if(zenviaMap.retry)clearInterval(zenviaMap.retry);zenviaMap.retry=setInterval(()=>{if(!zenviaMap.data)requestZenviaMap();else{clearInterval(zenviaMap.retry);zenviaMap.retry=null}},1400);
  resize();
 }
+function getZenviaMapBaseScale(w,h,e){const fit=Math.min((w-24)/e.widthM,(h-24)/e.depthM);return h>w?Math.max(fit,(h-104)/e.depthM):fit}
 function drawZenviaMap(){
  const c=zenviaMap.canvas,ctx=zenviaMap.ctx,data=zenviaMap.data;if(!c||!ctx)return;
  const rect=c.getBoundingClientRect(),w=rect.width,h=rect.height;if(!w||!h)return;
  ctx.clearRect(0,0,w,h);ctx.fillStyle='#10252b';ctx.fillRect(0,0,w,h);
  if(!data){ctx.fillStyle='#b6c4c5';ctx.font='12px system-ui';ctx.textAlign='center';ctx.fillText('Connecting to the AKWANTUO world…',w/2,h/2);return}
- const e=data.extent,cx=(e.minX+e.maxX)/2,cz=(e.minZ+e.maxZ)/2,scale=Math.min((w-24)/e.widthM,(h-24)/e.depthM)*zenviaMap.zoom;
+ const e=data.extent,cx=(e.minX+e.maxX)/2,cz=(e.minZ+e.maxZ)/2,scale=getZenviaMapBaseScale(w,h,e)*zenviaMap.zoom;
  const ox=w/2+zenviaMap.panX-cx*scale,oy=h/2+zenviaMap.panY+cz*scale;
  const point=(x,z)=>({x:ox+x*scale,y:oy-z*scale});
  ctx.save();ctx.beginPath();ctx.rect(0,0,w,h);ctx.clip();
