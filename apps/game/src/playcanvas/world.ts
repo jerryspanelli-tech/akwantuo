@@ -947,7 +947,7 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     }
     const offset=(i/12)*length;
     const signalIndex=route.roadSegmentId==="ring-road-coastal"?0:route.roadSegmentId==="spintex-road"?3:null;
-    traffic.push({root,fallback,modelKind,route,distance:offset,speed:4.2+(i%5)*0.9,length,signalIndex});
+    // Never render primitive box/cylinder stand-ins. NPCs appear only as imported GLB vehicles.\n    fallback.enabled=false;\n    traffic.push({root,fallback,modelKind,route,distance:offset,speed:4.2+(i%5)*0.9,length,signalIndex});
   }
 
   // Load mobile-sized, CC0 glTF vehicle variants once, then reuse each
@@ -991,7 +991,7 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
       document.documentElement.dataset.akwantuoTrafficModelsLoaded=[...loadedKinds].sort().join(",");
       console.info("[AKWANTUO] NPC traffic model loaded",car.modelKind);
     }).catch((error)=>{
-      console.warn("[AKWANTUO] NPC traffic model unavailable; keeping fallback",car.modelKind,error);
+      document.documentElement.dataset.akwantuoTrafficModelErrors = [document.documentElement.dataset.akwantuoTrafficModelErrors, car.modelKind].filter(Boolean).join(",");\n      console.error("[AKWANTUO] NPC traffic GLB failed; primitive fallback is disabled",car.modelKind,error);
     });
   }
 
