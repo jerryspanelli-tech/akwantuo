@@ -118,3 +118,7 @@
     border-radius:18px;
   }
 }
+
+/* Minimal device-frame control: no promotional title, only the close affordance. */
+.atlas-shell-bar{justify-content:flex-end;padding-right:10px;background:linear-gradient(180deg,#18242d,#0b1218)}
+.atlas-shell-bar button{width:22px;height:22px}
