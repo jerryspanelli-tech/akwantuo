@@ -363,10 +363,13 @@ async function boot() {
       maxY = Math.max(maxY, bounds.getMax().y);
       maxZ = Math.max(maxZ, bounds.getMax().z);
     }
+    const vehicleOrigin = vehicle.getPosition();
+    // AABBs are world-space because the parent vehicle is already at its
+    // spawn coordinates; convert the measured correction back to local space.
     sportsCar.setLocalPosition(
-      -(minX + maxX) * 0.5,
-      -minY + 0.035,
-      -(minZ + maxZ) * 0.5
+      vehicleOrigin.x - (minX + maxX) * 0.5,
+      vehicleOrigin.y - minY + 0.035,
+      vehicleOrigin.z - (minZ + maxZ) * 0.5
     );
     sportsCar.syncHierarchy();
     vehiclePlaceholder.enabled = false;
