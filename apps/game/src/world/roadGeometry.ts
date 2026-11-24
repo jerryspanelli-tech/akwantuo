@@ -1,18 +1,18 @@
 import {
   Color3,
   Mesh,
-  MeshBuilder,
   Scene,
   StandardMaterial,
   Vector3
 } from "@babylonjs/core";
 import type { RoadCrossSectionProfile } from "@akwantuo/shared";
+import { createSolidRoadStrip } from "./solidRoadStrip";
 import { getMapRoadPath, GREATER_ACCRA_ROAD_PATHS, type MapPoint } from "./greaterAccraLayout";
 import { getRoadCrossSectionProfile, ROAD_CROSS_SECTION_PROFILES, GREATER_ACCRA_ROAD_DESIGNS } from "./roadDesign";
 import { GREATER_ACCRA_JUNCTION_LAYOUTS } from "./junctionLayouts";
 import { GREATER_ACCRA_ROAD_NETWORK } from "./roadNetwork";
 
-type RoadBandKind = "asphalt" | "sidewalk" | "median" | "drain";
+type RoadBandKind = "asphalt" | "sidewalk" | "median" | "drain" | "kerb";
 
 type RoadBand = Readonly<{
   kind: RoadBandKind;
@@ -32,7 +32,8 @@ const ROAD_MATERIAL_COLORS: Record<RoadBandKind, Color3> = {
   asphalt: new Color3(0.105, 0.12, 0.125),
   sidewalk: new Color3(0.48, 0.47, 0.42),
   median: new Color3(0.62, 0.59, 0.48),
-  drain: new Color3(0.075, 0.09, 0.085)
+  drain: new Color3(0.075, 0.09, 0.085),
+  kerb: new Color3(0.68, 0.66, 0.59)
 };
 
 function getMaterial(scene: Scene, kind: RoadBandKind): StandardMaterial {
@@ -144,15 +145,17 @@ function createBands(profile: RoadCrossSectionProfile): RoadBand[] {
   const median = profile.medianWidthM;
 
   const intervals: Array<{ kind: RoadBandKind; width: number; y: number }> = [
-    { kind: "drain", width: drain, y: 0.018 },
-    { kind: "sidewalk", width: sidewalk, y: 0.032 },
-    { kind: "asphalt", width: shoulder, y: 0.045 },
-    { kind: "asphalt", width: carriageway, y: 0.05 },
-    { kind: "median", width: median, y: 0.04 },
-    { kind: "asphalt", width: carriageway, y: 0.05 },
-    { kind: "asphalt", width: shoulder, y: 0.045 },
-    { kind: "sidewalk", width: sidewalk, y: 0.032 },
-    { kind: "drain", width: drain, y: 0.018 }
+    { kind: "drain", width: drain, y: 0.025 },
+    { kind: "sidewalk", width: sidewalk, y: 0.14 },
+    { kind: "kerb", width: sidewalk > 0 ? 0.18 : 0, y: 0.22 },
+    { kind: "asphalt", width: shoulder, y: 0.055 },
+    { kind: "asphalt", width: carriageway, y: 0.06 },
+    { kind: "median", width: median, y: 0.12 },
+    { kind: "asphalt", width: carriageway, y: 0.06 },
+    { kind: "asphalt", width: shoulder, y: 0.055 },
+    { kind: "kerb", width: sidewalk > 0 ? 0.18 : 0, y: 0.22 },
+    { kind: "sidewalk", width: sidewalk, y: 0.14 },
+    { kind: "drain", width: drain, y: 0.025 }
   ];
 
   const totalWidth = intervals.reduce((sum, item) => sum + item.width, 0);
@@ -194,20 +197,16 @@ function createBandMesh(
     ));
   });
 
-  const mesh = MeshBuilder.CreateRibbon(name, {
-    pathArray: [inner, outer],
-    sideOrientation: Mesh.DOUBLESIDE,
-    updatable: false
-  }, scene);
-  mesh.material = getMaterial(scene, band.kind);
-  mesh.isPickable = false;
-  mesh.checkCollisions = false;
-  return mesh;
+  const thickness = band.kind === "asphalt" ? 0.24
+    : band.kind === "sidewalk" ? 0.16
+    : band.kind === "kerb" ? 0.20
+    : band.kind === "median" ? 0.28 : 0.12;
+  return createSolidRoadStrip(scene, name, inner, outer, thickness, getMaterial(scene, band.kind));
 }
 
 /**
- * Builds a road segment as separate continuous asphalt, sidewalk, median and
- * drainage ribbons. This is a reusable geometry layer; it does not yet place
+ * Builds a road segment as closed, solid asphalt, sidewalk, kerb, median and
+ * drainage strips. This is a reusable geometry layer; it does not yet place
  * traffic, signs, markings, junction ramps or roadside props.
  */
 export function createRoadSegmentGeometry(
