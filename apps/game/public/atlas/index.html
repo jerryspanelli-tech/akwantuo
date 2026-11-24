@@ -385,6 +385,10 @@
  .device:not(.is-locked):not(.is-app-open) #home>.apps .app-label{font-size:9px}
 }
 
+/* Keep the live district chip away from the player marker and bottom map controls. */
+.device.is-app-open:has(.zenvia-map) .map-foot{left:auto;right:12px;top:54px;bottom:auto;transform:none;max-width:calc(100% - 24px);}
+.device.is-app-open:has(.zenvia-map) .map-foot strong{overflow:hidden;text-overflow:ellipsis;}
+@media(orientation:landscape) and (max-height:650px){.device.is-app-open:has(.zenvia-map) .map-foot{top:48px;right:10px;}}
 </style>
 </head>
 <body>
@@ -466,7 +470,7 @@ function drawZenviaMap(){
  const visibleRegions=(data.regions||[]).filter(region=>{const id=String(region.id||'').toLowerCase();return majorAreas.has(id)||(zenviaMap.zoom>=1.65&&detailedAreas.has(id))});
  for(const region of visibleRegions){const p=point(region.x,region.z);const id=String(region.id||'').toLowerCase(),label=areaNames[id]||String(region.label||'');if(label)labelCandidates.push({text:label,x:p.x,y:p.y-8,priority:100,align:'center',kind:'region'});}
  // One screen-space declutter pass for every label type. Text stays fixed-size as the map zooms.
- const safeTop=zenviaMap.zoom>=1.6?62:54,safeBottom=zenviaMap.zoom>=1.6?78:66,occupied=[];
+ const safeTop=zenviaMap.zoom>=1.6?100:96,safeBottom=zenviaMap.zoom>=1.6?78:66,occupied=[];
  labelCandidates.sort((a,b)=>b.priority-a.priority);
  for(const item of labelCandidates){
    ctx.font=item.kind==='region'?'700 10px system-ui':'600 10px system-ui';
