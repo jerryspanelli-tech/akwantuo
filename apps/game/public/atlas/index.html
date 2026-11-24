@@ -180,6 +180,16 @@
  .device:not(.is-locked) .home-indicator{margin-top:0}
 }
 @media(max-height:560px){.device:not(.is-locked) .feature{min-height:76px}.device:not(.is-locked) .quickrow{display:none}}
+
+/* App mode: an opened app owns the tablet workspace; launcher and dock are removed. */
+.device.is-app-open #content{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.device.is-app-open #home{display:none!important}
+.device.is-app-open #appview{display:flex!important;flex:1;flex-direction:column;min-height:0;width:100%;overflow:hidden}
+.device.is-app-open .appview{height:100%;min-height:0;flex:1;overflow:hidden}
+.device.is-app-open .appbody{min-height:0;flex:1;overflow-y:auto;overscroll-behavior:contain;padding:2px 2px 12px}
+.device.is-app-open .dock{display:none!important}
+.device.is-app-open .home-indicator{flex:none;margin-top:0}
+
 </style>
 </head>
 <body>
@@ -222,8 +232,8 @@ settings:['Settings','<div class="tile"><strong>ATLAS Tab</strong><p>ATLAS OS ·
 music:['Sound','<div class="placeholder">Your sound library will appear here.<br>Original ATLAS notification tones are planned.</div>'],
 market:['Market','<div class="tile"><strong>AKWANTUO MARKET</strong><p>Discover services, goods and in-world essentials.</p></div><div class="placeholder">The marketplace is being prepared.</div>']
 };
-function openApp(id){const data=appData[id];if(!data)return;home.hidden=true;view.hidden=false;view.innerHTML='<div class="appview"><div class="apphead"><button class="back" id="back" aria-label="Back">‹</button><strong>'+data[0]+'</strong></div><div class="appbody">'+data[1]+'</div></div>';document.getElementById('back').addEventListener('click',goHome);content.scrollTop=0}
-function goHome(){view.hidden=true;home.hidden=false;content.scrollTop=0}
+function openApp(id){const data=appData[id];if(!data)return;device.classList.add('is-app-open');home.hidden=true;view.hidden=false;view.innerHTML='<div class="appview"><div class="apphead"><button class="back" id="back" aria-label="Back">‹</button><strong>'+data[0]+'</strong></div><div class="appbody">'+data[1]+'</div></div>';document.getElementById('back').addEventListener('click',goHome);content.scrollTop=0}
+function goHome(){device.classList.remove('is-app-open');view.hidden=true;home.hidden=false;content.scrollTop=0}
 document.querySelectorAll('[data-app]').forEach(el=>el.addEventListener('click',()=>openApp(el.dataset.app)));
 document.querySelectorAll('[data-toast]').forEach(el=>el.addEventListener('click',()=>showToast(el.dataset.toast)));
 function showToast(message){toast.textContent=message;toast.classList.add('show');clearTimeout(window._atlasToast);window._atlasToast=setTimeout(()=>toast.classList.remove('show'),1700)}
