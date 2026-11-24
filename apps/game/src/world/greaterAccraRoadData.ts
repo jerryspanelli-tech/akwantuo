@@ -6,7 +6,7 @@ export interface LocalRoadDefinition {
   readonly points: readonly RoadPoint[];
 }
 
-/** Original local-road coordinates and widths, extracted without changing the Greater Accra layout. */
+/** Original Greater Accra neighbourhood-road coordinates. Legon campus roads are maintained separately in legonCampusRoads.ts. */
 export const GREATER_ACCRA_LOCAL_ROADS: readonly LocalRoadDefinition[] = [
   { id: "airport-residential-drive", width: 13, points: [
         { x: 250, z: 1030 }, { x: 340, z: 1260 }, { x: 470, z: 1510 }, { x: 650, z: 1770 }
@@ -41,9 +41,6 @@ export const GREATER_ACCRA_LOCAL_ROADS: readonly LocalRoadDefinition[] = [
   { id: "accra-mall-west-access", width: 12, points: [
         { x: 3250, z: 2460 }, { x: 3270, z: 2360 }, { x: 3290, z: 2240 }, { x: 3350, z: 2200 }
       ] },
-  { id: "legon-campus-road", width: 12, points: [
-        { x: 3250, z: 2460 }, { x: 3280, z: 2800 }, { x: 3310, z: 3200 }, { x: 3350, z: 3550 }
-      ] },
   { id: "central-stadium-access", width: 12, points: [
         { x: -450, z: 450 }, { x: -330, z: 80 }, { x: -240, z: -360 }, { x: -150, z: -820 }
       ] },
@@ -65,8 +62,6 @@ export const GREATER_ACCRA_LOCAL_ROADS: readonly LocalRoadDefinition[] = [
   { id: "achimota-community-street", width: 11, points: [{ x: -2400, z: 2450 }, { x: -2000, z: 2450 }, { x: -1600, z: 2450 }, { x: -1200, z: 2450 }] },
   { id: "madina-commercial-street", width: 12, points: [{ x: 4700, z: 1500 }, { x: 5150, z: 1500 }, { x: 5600, z: 1500 }, { x: 6000, z: 1500 }] },
   { id: "madina-residential-street", width: 11, points: [{ x: 4700, z: 2050 }, { x: 5150, z: 2050 }, { x: 5600, z: 2050 }, { x: 6000, z: 2050 }] },
-  { id: "legon-campus-avenue", width: 12, points: [{ x: 2800, z: 3100 }, { x: 3200, z: 3100 }, { x: 3600, z: 3100 }, { x: 3900, z: 3100 }] },
-  { id: "legon-residential-street", width: 11, points: [{ x: 2800, z: 3650 }, { x: 3200, z: 3650 }, { x: 3600, z: 3650 }, { x: 3900, z: 3650 }] },
   { id: "nkrumah-memorial-access", width: 12, points: [
         { x: -450, z: 450 }, { x: -620, z: 390 }, { x: -760, z: 300 }
       ] },
