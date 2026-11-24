@@ -1,4 +1,4 @@
-import { Color3, Mesh, MeshBuilder, Scene, StandardMaterial, Vector3 } from "@babylonjs/core";
+import { Color3, Scene, StandardMaterial, Vector3 } from "@babylonjs/core";
 import type { ChunkBounds, ChunkHandle } from "../chunkManager";
 import type { ChunkBuildResult, ChunkGenerator } from "../chunkRegistry";
 import { GREATER_ACCRA_LOCAL_ROADS } from "../greaterAccraRoadData";
