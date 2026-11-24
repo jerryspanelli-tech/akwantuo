@@ -445,7 +445,7 @@ market:['Market','<div class="tile"><strong>AKWANTUO MARKET</strong><p>Discover 
 function openApp(id){const data=appData[id];if(!data)return;if(id!=='maps')sendMapMessage('ZENVIA_MAP_CLOSE');device.classList.add('is-app-open');home.hidden=true;view.hidden=false;const head=id==='maps'?'<div class="apphead map-apphead"><button class="back" id="back" aria-label="Back">‹</button><span class="map-app-label">Maps</span></div>':'<div class="apphead"><button class="back" id="back" aria-label="Back">‹</button><strong>'+data[0]+'</strong></div>';view.innerHTML='<div class="appview">'+head+'<div class="appbody">'+data[1]+'</div></div>';document.getElementById('back').addEventListener('click',goHome);content.scrollTop=0;if(id==='maps')requestAnimationFrame(initZenviaMap)}
 function goHome(){sendMapMessage('ZENVIA_MAP_CLOSE');device.classList.remove('is-app-open');view.hidden=true;home.hidden=false;content.scrollTop=0}
 const zenviaMap={data:null,state:null,zoom:1,panX:0,panY:0,canvas:null,ctx:null,retry:null,drag:null,destination:null};
-function sendMapMessage(type){if(window.parent!==window)window.parent.postMessage({type},window.location.origin)}
+function sendMapMessage(type,payload){if(window.parent!==window)window.parent.postMessage({type,payload},window.location.origin)}
 function requestZenviaMap(){sendMapMessage('ZENVIA_MAP_REQUEST');const live=document.getElementById('map-live');if(live&&!zenviaMap.data)live.textContent='CONNECTING TO AKWANTUO'}
 function initZenviaMap(){
  const canvas=document.getElementById('zenvia-map-canvas');if(!canvas)return;
@@ -454,7 +454,7 @@ function initZenviaMap(){
  updateMapSearchOptions();
  const searchInput=document.getElementById("map-search-input");
  if(searchInput){searchInput.onchange=()=>selectMapSearchResult(searchInput.value);searchInput.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();selectMapSearchResult(searchInput.value)}}}
- const clearButton=document.getElementById("map-clear");if(clearButton)clearButton.onclick=()=>{zenviaMap.destination=null;drawZenviaMap()};
+ const clearButton=document.getElementById("map-clear");if(clearButton)clearButton.onclick=()=>{zenviaMap.destination=null;sendMapMessage("ZENVIA_MAP_DESTINATION",null);drawZenviaMap()};
  const resize=()=>{const rect=canvas.getBoundingClientRect();if(!rect.width||!rect.height)return;const dpr=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(rect.width*dpr);canvas.height=Math.round(rect.height*dpr);zenviaMap.ctx.setTransform(dpr,0,0,dpr,0,0);drawZenviaMap()};
  if(window.ResizeObserver){if(!zenviaMap.observer){zenviaMap.observer=new ResizeObserver(resize)}zenviaMap.observer.disconnect();zenviaMap.observer.observe(stage)}else window.addEventListener('resize',resize);
  document.getElementById('map-zoom-in').onclick=()=>{zenviaMap.zoom=Math.min(6,zenviaMap.zoom*1.35);drawZenviaMap()};
@@ -469,7 +469,7 @@ function initZenviaMap(){
 function getZenviaMapBaseScale(w,h,e){const fit=Math.min((w-24)/e.widthM,(h-24)/e.depthM);return h>w?Math.max(fit,(h-104)/e.depthM):fit}
 function getMapTransform(){const c=zenviaMap.canvas,data=zenviaMap.data;if(!c||!data)return null;const r=c.getBoundingClientRect(),w=r.width,h=r.height,e=data.extent,cx=(e.minX+e.maxX)/2,cz=(e.minZ+e.maxZ)/2,scale=getZenviaMapBaseScale(w,h,e)*zenviaMap.zoom;return {w,h,e,scale,ox:w/2+zenviaMap.panX-cx*scale,oy:h/2+zenviaMap.panY+cz*scale}}
 function worldPointFromCanvas(x,y){const t=getMapTransform();if(!t)return null;return {x:Math.max(t.e.minX,Math.min(t.e.maxX,(x-t.ox)/t.scale)),z:Math.max(t.e.minZ,Math.min(t.e.maxZ,(t.oy-y)/t.scale))}}
-function setMapDestination(x,z,label){zenviaMap.destination={x,z,label:label||"Dropped pin"};drawZenviaMap()}
+function setMapDestination(x,z,label){zenviaMap.destination={x,z,label:label||"Dropped pin"};sendMapMessage("ZENVIA_MAP_DESTINATION",zenviaMap.destination);drawZenviaMap()}
 function setMapDestinationFromCanvas(x,y){const t=getMapTransform(),world=worldPointFromCanvas(x,y);if(!t||!world)return;let nearest=null,nearestPx=Infinity;for(const place of zenviaMap.data.landmarks||[]){const px=t.ox+place.x*t.scale,py=t.oy-place.z*t.scale,d=Math.hypot(px-x,py-y);if(d<nearestPx){nearestPx=d;nearest=place}}if(nearest&&nearestPx<=Math.max(18,7*zenviaMap.zoom))setMapDestination(nearest.x,nearest.z,nearest.label);else setMapDestination(world.x,world.z,"Dropped pin")}
 function updateMapSearchOptions(){const list=document.getElementById("map-landmark-options");if(!list||!zenviaMap.data)return;list.replaceChildren(...(zenviaMap.data.landmarks||[]).filter(p=>p.label).map(p=>{const option=document.createElement("option");option.value=String(p.label);return option}))}
 function selectMapSearchResult(value){const q=String(value||"").trim().toLowerCase();if(!q||!zenviaMap.data)return;const place=(zenviaMap.data.landmarks||[]).find(p=>String(p.label||"").toLowerCase()===q)||(zenviaMap.data.landmarks||[]).find(p=>String(p.label||"").toLowerCase().includes(q));if(!place)return;setMapDestination(place.x,place.z,place.label);const t=getMapTransform();if(t){zenviaMap.zoom=Math.max(zenviaMap.zoom,1.7);const next=getMapTransform();zenviaMap.panX+=(next.w/2-(next.ox+place.x*next.scale));zenviaMap.panY+=(next.h/2-(next.oy-place.z*next.scale));drawZenviaMap()}}
