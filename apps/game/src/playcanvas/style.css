@@ -86,3 +86,35 @@
 
 /* The centered ATLAS overlay covers the inner edges of the game wordmark; hide the full HUD strip while the tablet is open instead of showing clipped fragments. */
 .atlas-open .top-hud{visibility:hidden}
+
+
+/* ATLAS Tab responsive 4:3 shell and fixed flex workspace. */
+.atlas-panel{
+  display:flex;
+  flex-direction:column;
+  width:min(920px,calc(100vw - 20px),calc(85dvh * 1.333333));
+  height:min(85dvh,680px,calc((100vw - 20px) * .75));
+  max-width:calc(100vw - 20px);
+  max-height:85dvh;
+  aspect-ratio:4 / 3;
+  overflow:hidden;
+}
+.atlas-shell-bar{flex:0 0 28px;min-height:28px}
+.atlas-panel iframe{display:block;flex:1 1 0%;width:100%;height:auto;min-height:0;min-width:0;border:0}
+@media(max-width:520px){
+  .atlas-panel{
+    width:min(calc(100vw - 18px),calc(85dvh * 1.333333));
+    height:min(85dvh,calc((100vw - 18px) * .75));
+    max-height:85dvh;
+    aspect-ratio:4 / 3;
+  }
+  .atlas-shell-bar{flex:0 0 25px;min-height:25px}
+}
+@media(max-height:420px){
+  .atlas-panel{
+    width:min(calc(100vw - 18px),calc(85dvh * 1.333333));
+    height:min(85dvh,calc((100vw - 18px) * .75));
+    max-height:85dvh;
+    border-radius:18px;
+  }
+}
