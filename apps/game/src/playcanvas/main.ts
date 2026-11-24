@@ -8,7 +8,6 @@ import "./style.css";
 import { createGreaterAccraWorld } from "./world";
 import { GREATER_ACCRA_ROAD_PATHS, GREATER_ACCRA_MAP_EXTENT } from "../world/greaterAccraLayout";
 import { findGreaterAccraRoadRoute, type GreaterAccraRoute } from "../world/greaterAccraNavigation";
-import { drawAkwantuoMinimap } from "./maps";
 
 const canvas = document.querySelector<HTMLCanvasElement>("#application")!;
 const loading = document.querySelector<HTMLElement>("#loading");
@@ -31,7 +30,6 @@ const touchUi = document.querySelector<HTMLElement>(".touch-ui");
 const stick = document.querySelector<HTMLElement>("#stick");
 const stickKnob = document.querySelector<HTMLElement>("#stick-knob");
 const notice = document.querySelector<HTMLElement>("#notice");
-const minimap = document.querySelector<HTMLCanvasElement>("#minimap");
 const mapToggle = document.querySelector<HTMLButtonElement>("#map-toggle");
 const worldMapPanel = document.querySelector<HTMLElement>("#world-map-panel");
 const routeOverlay = document.querySelector<HTMLCanvasElement>("#world-map-route-overlay");
@@ -164,9 +162,6 @@ async function boot() {
   loadingMessage && (loadingMessage.textContent = "Building Greater Accra roads, districts and coastline…");
   const world = createGreaterAccraWorld(app);
   const blockers = world.blockers;
-
-  // Draw the rewritten radar immediately so it never opens as an empty circle.
-  drawAkwantuoMinimap(minimap, world.spawn, { x: 0, z: 1 }, blockers, GREATER_ACCRA_ROAD_PATHS, null, null);
 
   loadingMessage && (loadingMessage.textContent = "Preparing the player and vehicle…");
   const player = new Entity("Player");
@@ -480,8 +475,6 @@ async function boot() {
 
   const walkSpeed = 4.6, sprintSpeed = 8.2;
   let inVehicle = false, vehicleSpeed = 0, vehicleYaw = 0;
-  // One authoritative world-space facing vector drives both actor yaw and the minimap marker.
-  let minimapFacingX = 0, minimapFacingZ = 1;
 
   let nearbyInteraction: { id: string; label: string; x: number; z: number; radius: number } | null = null;
   const overlaps = (x: number, z: number) => {
@@ -543,7 +536,7 @@ async function boot() {
     if (event.code === "Space" && !event.repeat) requestJump();
   });
 
-  let elapsed = 0, mapElapsed = 1;
+  let elapsed = 0;
   app.on("update", (dt: number) => {
     const step = Math.min(dt, 0.05);
     world.update(step);
@@ -646,8 +639,6 @@ async function boot() {
       const nextZ = vehicle.getPosition().z + Math.cos(vehicleYaw) * vehicleSpeed * step;
       if (!overlaps(nextX, nextZ) && nextX > -8000 && nextX < 13000 && nextZ > -4050 && nextZ < 8500) vehicle.setPosition(nextX, 0, nextZ);
       vehicle.setEulerAngles(0, vehicleYaw * 180 / Math.PI, 0);
-      minimapFacingX = Math.sin(vehicleYaw);
-      minimapFacingZ = Math.cos(vehicleYaw);
       const vehiclePosition = vehicle.getPosition();
       player.setPosition(vehiclePosition.x, vehiclePosition.y, vehiclePosition.z);
       if (exitButton) exitButton.hidden = false;
@@ -680,8 +671,6 @@ async function boot() {
         if (!overlaps(player.getPosition().x, nz)) player.setPosition(player.getPosition().x, p.y, nz);
         const playerHeading = Math.atan2(dx, dz);
         player.setEulerAngles(0, playerHeading * 180 / Math.PI, 0);
-        minimapFacingX = Math.sin(playerHeading);
-        minimapFacingZ = Math.cos(playerHeading);
       } else {
       }
       const desiredAnimation = magnitude <= 0.04
@@ -803,20 +792,6 @@ async function boot() {
     }
     if (elapsed > 0.10) { updateButtons(); elapsed = 0; }
     elapsed += step;
-    mapElapsed += step;
-    if (mapElapsed > 0.14 && minimap) {
-      mapElapsed = 0;
-      const center = inVehicle ? vehicle.getPosition() : player.getPosition();
-      drawAkwantuoMinimap(
-        minimap,
-        { x: center.x, z: center.z },
-        { x: minimapFacingX, z: minimapFacingZ },
-        blockers,
-        GREATER_ACCRA_ROAD_PATHS,
-        worldMapWaypoint,
-        activeRoute
-      );
-    }
     if (status) status.textContent = inVehicle ? "TAXI · DRIVING" : "GREATER ACCRA · GHANA";
 
     if (healthFill) healthFill.style.width = "100%";
