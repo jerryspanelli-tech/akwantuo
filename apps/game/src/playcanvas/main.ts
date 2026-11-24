@@ -6,6 +6,8 @@ import {
 } from "playcanvas";
 import "./style.css";
 import { createGreaterAccraWorld } from "./world";
+import { GREATER_ACCRA_COASTLINE, GREATER_ACCRA_MAP_EXTENT, GREATER_ACCRA_REGION_ANCHORS, GREATER_ACCRA_ROAD_PATHS } from "../world/greaterAccraLayout";
+import { GREATER_ACCRA_LANDMARK_FOOTPRINTS } from "../world/greaterAccraLandmarkData";
 
 const canvas = document.querySelector<HTMLCanvasElement>("#application")!;
 const loading = document.querySelector<HTMLElement>("#loading");
@@ -102,6 +104,23 @@ async function boot() {
   loadingMessage && (loadingMessage.textContent = "Building Greater Accra roads, districts and coastline…");
   const world = createGreaterAccraWorld(app);
   const blockers = world.blockers;
+  // ZENVIA Maps receives the same authored Greater Accra geometry and live
+  // player transform as the running game; no duplicate map is maintained.
+  const zenviaMapStatic = {
+    extent: GREATER_ACCRA_MAP_EXTENT,
+    coastline: GREATER_ACCRA_COASTLINE.map(({ x, z }) => ({ x, z })),
+    roads: GREATER_ACCRA_ROAD_PATHS
+      .filter((road) => road.playableInFirstRelease)
+      .map((road) => ({ id: road.roadSegmentId, points: road.points })),
+    regions: GREATER_ACCRA_REGION_ANCHORS.map((region) => ({
+      id: region.regionId, label: region.regionId.replace(/-/g, " ").toUpperCase(), x: region.x, z: region.z
+    })),
+    landmarks: GREATER_ACCRA_LANDMARK_FOOTPRINTS.map((landmark) => ({
+      id: landmark.id, label: landmark.label, x: landmark.x, z: landmark.z,
+      minX: landmark.minX, maxX: landmark.maxX, minZ: landmark.minZ, maxZ: landmark.maxZ
+    })),
+    buildings: blockers.map(({ x, z, hx, hz, yaw }) => ({ x, z, hx, hz, yaw }))
+  };
 
   loadingMessage && (loadingMessage.textContent = "Preparing the player and vehicle…");
   const player = new Entity("Player");
@@ -372,6 +391,23 @@ async function boot() {
   const walkSpeed = 4.6, sprintSpeed = 8.2;
   let inVehicle = false, vehicleSpeed = 0, vehicleYaw = 0;
 
+  const zenviaMapSubscribers = new Set<Window>();
+  window.addEventListener("message", (event: MessageEvent) => {
+    if (event.origin !== window.location.origin || !event.source || event.source === window) return;
+    const message = event.data as { type?: string };
+    const source = event.source as Window;
+    if (message?.type === "ZENVIA_MAP_CLOSE") {
+      zenviaMapSubscribers.delete(source);
+      return;
+    }
+    if (message?.type !== "ZENVIA_MAP_REQUEST") return;
+    zenviaMapSubscribers.add(source);
+    source.postMessage({ type: "ZENVIA_MAP_STATIC", payload: zenviaMapStatic }, event.origin);
+    const position = inVehicle ? vehicle.getPosition() : player.getPosition();
+    const heading = inVehicle ? vehicle.getEulerAngles().y : player.getEulerAngles().y;
+    source.postMessage({ type: "ZENVIA_MAP_STATE", payload: { x: position.x, z: position.z, heading, inVehicle } }, event.origin);
+  });
+  let zenviaMapElapsed = 0;
   let nearbyInteraction: { id: string; label: string; x: number; z: number; radius: number } | null = null;
   const overlaps = (x: number, z: number) => {
     // Test the player's position in each building's local footprint. Rotated
@@ -601,6 +637,19 @@ async function boot() {
     camera.lookAt(focus.x, focus.y + (inVehicle ? 1.2 : 1.5), focus.z);
     if (elapsed > 0.10) { updateButtons(); elapsed = 0; }
     elapsed += step;
+    zenviaMapElapsed += step;
+    if (zenviaMapElapsed >= 0.18 && zenviaMapSubscribers.size) {
+      zenviaMapElapsed = 0;
+      const mapPosition = inVehicle ? vehicle.getPosition() : player.getPosition();
+      const mapHeading = inVehicle ? vehicle.getEulerAngles().y : player.getEulerAngles().y;
+      const mapState = { type: "ZENVIA_MAP_STATE", payload: { x: mapPosition.x, z: mapPosition.z, heading: mapHeading, inVehicle } };
+      for (const subscriber of zenviaMapSubscribers) {
+        try {
+          if (subscriber.closed) zenviaMapSubscribers.delete(subscriber);
+          else subscriber.postMessage(mapState, window.location.origin);
+        } catch { zenviaMapSubscribers.delete(subscriber); }
+      }
+    }
     if (status) status.textContent = inVehicle ? "TAXI · DRIVING" : "GREATER ACCRA · GHANA";
 
     if (healthFill) healthFill.style.width = "100%";
