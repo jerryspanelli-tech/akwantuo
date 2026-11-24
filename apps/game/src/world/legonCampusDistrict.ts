@@ -100,11 +100,12 @@ export function createLegonCampusDistrict(scene: Scene, solids: SolidArea[]): vo
   signContext.lineWidth = 8;
   signContext.strokeRect(5, 5, 502, 118);
   signContext.fillStyle = "#ffffff";
-  signContext.textAlign = "center";
   signContext.font = "bold 40px Arial";
-  signContext.fillText("UNIVERSITY AVENUE", 256, 58);
+  const avenueLabel = "UNIVERSITY AVENUE";
+  signContext.fillText(avenueLabel, (512 - signContext.measureText(avenueLabel).width) / 2, 58);
   signContext.font = "24px Arial";
-  signContext.fillText("LEGON CAMPUS", 256, 96);
+  const campusLabel = "LEGON CAMPUS";
+  signContext.fillText(campusLabel, (512 - signContext.measureText(campusLabel).width) / 2, 96);
   signTexture.update();
   const signMaterial = new StandardMaterial("university-ghana-university-avenue-sign-material", scene);
   signMaterial.diffuseTexture = signTexture;
