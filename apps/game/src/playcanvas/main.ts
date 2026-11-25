@@ -1,5 +1,6 @@
 import {
   AppBase, AppOptions, CameraComponentSystem, LightComponentSystem, RenderComponentSystem,
+  basisInitialize, meshoptInitialize,
   AnimComponentSystem, ContainerHandler, TextureHandler, Asset, Color, StandardMaterial,
   createGraphicsDevice, DEVICETYPE_WEBGPU, DEVICETYPE_WEBGL2, FILLMODE_FILL_WINDOW,
   RESOLUTION_AUTO, Entity
@@ -52,6 +53,14 @@ const mat = (r: number, g: number, b: number) => {
 };
 
 async function boot() {
+  // The external sports-car GLB uses compressed geometry and textures.
+  meshoptInitialize({ url: "https://cdn.jsdelivr.net/npm/meshoptimizer@1.0.1/meshopt_decoder.mjs" });
+  basisInitialize({
+    glueUrl: "https://raw.githubusercontent.com/playcanvas/engine/v2.24.1/examples/assets/wasm/basis/basis.wasm.js",
+    wasmUrl: "https://raw.githubusercontent.com/playcanvas/engine/v2.24.1/examples/assets/wasm/basis/basis.wasm.wasm",
+    fallbackUrl: "https://raw.githubusercontent.com/playcanvas/engine/v2.24.1/examples/assets/wasm/basis/basis.js",
+    numWorkers: 1
+  });
   loadingMessage && (loadingMessage.textContent = "Starting WebGL / WebGPU renderer…");
   const device = await createGraphicsDevice(canvas, { deviceTypes: [DEVICETYPE_WEBGPU, DEVICETYPE_WEBGL2] });
   // Conservative default for older iPhones. Desktop can use a higher cap.
