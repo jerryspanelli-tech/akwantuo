@@ -1,11 +1,13 @@
 import {
   AppBase, AppOptions, CameraComponentSystem, LightComponentSystem, RenderComponentSystem,
+  basisInitialize, meshoptInitialize,
   AnimComponentSystem, ContainerHandler, TextureHandler, Asset, Color, StandardMaterial,
   createGraphicsDevice, DEVICETYPE_WEBGPU, DEVICETYPE_WEBGL2, FILLMODE_FILL_WINDOW,
   RESOLUTION_AUTO, Entity
 } from "playcanvas";
 import "./style.css";
 import { createGreaterAccraWorld } from "./world";
+import { createAmbientLife } from "./ambientLife";
 import { GREATER_ACCRA_ROAD_PATHS } from "../world/greaterAccraLayout";
 
 const canvas = document.querySelector<HTMLCanvasElement>("#application")!;
@@ -52,6 +54,14 @@ const mat = (r: number, g: number, b: number) => {
 };
 
 async function boot() {
+  // The external sports-car GLB uses compressed geometry and textures.
+  meshoptInitialize({ url: "https://cdn.jsdelivr.net/npm/meshoptimizer@1.0.1/meshopt_decoder.mjs" });
+  basisInitialize({
+    glueUrl: "https://raw.githubusercontent.com/playcanvas/engine/v2.24.1/examples/assets/wasm/basis/basis.wasm.js",
+    wasmUrl: "https://raw.githubusercontent.com/playcanvas/engine/v2.24.1/examples/assets/wasm/basis/basis.wasm.wasm",
+    fallbackUrl: "https://raw.githubusercontent.com/playcanvas/engine/v2.24.1/examples/assets/wasm/basis/basis.js",
+    numWorkers: 1
+  });
   loadingMessage && (loadingMessage.textContent = "Starting WebGL / WebGPU renderer…");
   const device = await createGraphicsDevice(canvas, { deviceTypes: [DEVICETYPE_WEBGPU, DEVICETYPE_WEBGL2] });
   // Conservative default for older iPhones. Desktop can use a higher cap.
@@ -115,6 +125,7 @@ async function boot() {
 
   loadingMessage && (loadingMessage.textContent = "Building Greater Accra roads, districts and coastline…");
   const world = createGreaterAccraWorld(app);
+  const upgradeAmbientPedestrians = createAmbientLife(app);
   const blockers = world.blockers;
 
   loadingMessage && (loadingMessage.textContent = "Preparing the player and vehicle…");
@@ -142,6 +153,9 @@ async function boot() {
       if (!Array.isArray(container.renders) || container.renders.length === 0) {
         throw new Error("The GLB container has no render assets.");
       }
+      // Upgrade the six ambient pedestrians with the same rigged Ghanaian
+      // character asset; their lightweight route controllers remain unchanged.
+      upgradeAmbientPedestrians(container);
 
       const character = container.instantiateRenderEntity({ castShadows: true });
       character.name = "AKWANTUO Ghanaian 3D player";
@@ -220,53 +234,106 @@ async function boot() {
   sun.setEulerAngles(48, 32, 0);
   app.root.addChild(sun);
 
-  // Drivable Accra taxi: separate 3D body panels, glass, bumpers, lights,
-  // mirrors, door details, rubber tyres and metallic wheel hubs.
-  const vehicle = new Entity("Accra taxi");
-  const vehiclePart = (name: string, x: number, y: number, z: number, sx: number, sy: number, sz: number, material: StandardMaterial) => {
-    const part = new Entity(name);
-    part.addComponent("render", { type: "box", material, castShadows: true, receiveShadows: true });
-    part.setLocalPosition(x, y, z);
-    part.setLocalScale(sx, sy, sz);
-    vehicle.addChild(part);
-    return part;
-  };
-  const vehicleCylinder = (name: string, x: number, y: number, z: number, radius: number, height: number, material: StandardMaterial) => {
-    const part = new Entity(name);
-    part.addComponent("render", { type: "cylinder", material, castShadows: true, receiveShadows: true });
-    part.setLocalScale(radius * 2, height, radius * 2);
-    part.setLocalEulerAngles(0, 0, 90);
-    part.setLocalPosition(x, y, z);
-    vehicle.addChild(part);
-    return part;
-  };
-  vehiclePart("Taxi lower chassis", 0, 0.72, 0, 1.95, 0.36, 4.0, materials.roof);
-  vehiclePart("Taxi painted body", 0, 1.12, 0, 2.08, 0.92, 4.25, materials.vehicle);
-  vehiclePart("Taxi bonnet", 0, 1.48, 1.35, 1.9, 0.16, 1.35, materials.vehicle);
-  vehiclePart("Taxi roof", 0, 2.34, -0.18, 1.78, 0.16, 2.08, materials.vehicle);
-  vehiclePart("Taxi windscreen", 0, 1.99, 1.02, 1.66, 0.66, 0.12, materials.glass);
-  vehiclePart("Taxi rear glass", 0, 1.99, -1.27, 1.62, 0.62, 0.12, materials.glass);
-  for (const side of [-1, 1]) {
-    vehiclePart("Taxi side front window", side * 0.91, 2.0, 0.55, 0.1, 0.58, 0.86, materials.glass);
-    vehiclePart("Taxi side rear window", side * 0.91, 2.0, -0.55, 0.1, 0.58, 0.88, materials.glass);
-    vehiclePart("Taxi door handle", side * 1.055, 1.45, -0.05, 0.055, 0.09, 0.34, materials.white);
-    vehiclePart("Taxi side mirror arm", side * 1.08, 1.9, 0.88, 0.28, 0.08, 0.12, materials.roof);
-    vehiclePart("Taxi side mirror", side * 1.22, 1.96, 0.88, 0.16, 0.2, 0.22, materials.glass);
-    vehiclePart("Taxi side protective trim", side * 1.045, 0.98, -0.05, 0.045, 0.12, 2.2, materials.white);
-  }
-  vehiclePart("Taxi front bumper", 0, 0.76, 2.17, 2.05, 0.22, 0.18, materials.roof);
-  vehiclePart("Taxi rear bumper", 0, 0.76, -2.17, 2.05, 0.22, 0.18, materials.roof);
-  vehiclePart("Taxi front grille", 0, 1.13, 2.16, 0.76, 0.34, 0.08, materials.roof);
-  for (const side of [-1, 1]) {
-    vehiclePart("Taxi headlamp", side * 0.72, 1.35, 2.17, 0.42, 0.26, 0.08, materials.white);
-    vehiclePart("Taxi rear lamp", side * 0.76, 1.36, -2.17, 0.3, 0.38, 0.08, materials.red);
-    for (const z of [-1.35, 1.35]) {
-      vehicleCylinder("Taxi rubber tyre", side * 1.02, 0.62, z, 0.43, 0.28, materials.tyre);
-      vehicleCylinder("Taxi alloy wheel hub", side * 1.18, 0.62, z, 0.22, 0.035, materials.white);
-    }
+  // Drivable sports car. Keep a lightweight fallback until the detailed GLB
+  // is ready, then replace only the visual child; the vehicle controller,
+  // collision footprint, enter/exit and camera remain unchanged.
+  const vehicle = new Entity("AKWANTUO Sports Car");
+  const vehiclePlaceholder = new Entity("Sports car loading fallback");
+  vehicle.addChild(vehiclePlaceholder);
+  // Do not show box/cylinder stand-ins: the drivable vehicle visual is the imported sports-car GLB.
+  vehiclePlaceholder.enabled = true;
+  const vehicleBody = new Entity("Fallback sports car body");
+  vehicleBody.addComponent("render", { type: "box", material: materials.vehicle, castShadows: true, receiveShadows: true });
+  vehicleBody.setLocalScale(2.06, 0.62, 4.6);
+  vehicleBody.setLocalPosition(0, 0.64, 0);
+  vehiclePlaceholder.addChild(vehicleBody);
+  const fallbackCabin = new Entity("Fallback sports car cabin");
+  fallbackCabin.addComponent("render", { type: "box", material: materials.glass });
+  fallbackCabin.setLocalScale(1.55, 0.56, 1.8);
+  fallbackCabin.setLocalPosition(0, 1.17, -0.12);
+  vehiclePlaceholder.addChild(fallbackCabin);
+  for (const x of [-0.94, 0.94]) for (const z of [-1.48, 1.48]) {
+    const wheel = new Entity("Fallback sports car wheel");
+    wheel.addComponent("render", { type: "cylinder", material: materials.tyre, castShadows: true, receiveShadows: true });
+    wheel.setLocalScale(0.66, 0.24, 0.66);
+    wheel.setLocalEulerAngles(0, 0, 90);
+    wheel.setLocalPosition(x, 0.36, z);
+    vehiclePlaceholder.addChild(wheel);
   }
   vehicle.setPosition(world.taxiSpawn.x, 0, world.taxiSpawn.z);
   app.root.addChild(vehicle);
+
+  // CC0 mid-engine supercar, LOD1 (44,632 triangles / about 1.9 MB):
+  // detailed body, glass engine cover, lights, intakes, rims and brake details.
+  // Fit the imported model from its measured bounds so its lowest point
+  // (the tyres) rests just above the road plane instead of hovering or clipping.
+  const sportsCarAssetPromise = new Promise<Asset>((resolve, reject) => {
+    app.assets.loadFromUrl(
+      "https://tevy.dev/models/supercar/v2/lod1.glb",
+      "container",
+      (error, asset) => {
+        if (error || !asset?.resource) reject(error ?? new Error("Sports car GLB returned no container resource."));
+        else resolve(asset);
+      }
+    );
+  });
+  void sportsCarAssetPromise.then((loadedAsset) => {
+    const container = loadedAsset.resource as any;
+    const sportsCar = container.instantiateRenderEntity({ castShadows: true });
+    sportsCar.name = "Detailed pearl-orange mid-engine sports car";
+    sportsCar.enabled = true;
+    vehicle.addChild(sportsCar);
+    sportsCar.syncHierarchy();
+
+    const meshInstances: any[] = [];
+    const collectMeshes = (node: any) => {
+      node.enabled = true;
+      for (const meshInstance of node.render?.meshInstances ?? []) {
+        meshInstance.visible = true;
+        meshInstances.push(meshInstance);
+      }
+      for (const child of node.children ?? []) collectMeshes(child);
+    };
+    collectMeshes(sportsCar);
+    if (meshInstances.length === 0) {
+      sportsCar.destroy();
+      throw new Error("Sports car GLB contains no visible render meshes.");
+    }
+
+    // Mesh AABBs are measured after hierarchy sync. Center the model over the
+    // vehicle controller and lift/lower it by its actual lowest mesh point.
+    let minX = Number.POSITIVE_INFINITY, maxX = Number.NEGATIVE_INFINITY;
+    let minY = Number.POSITIVE_INFINITY, maxY = Number.NEGATIVE_INFINITY;
+    let minZ = Number.POSITIVE_INFINITY, maxZ = Number.NEGATIVE_INFINITY;
+    for (const meshInstance of meshInstances) {
+      const bounds = meshInstance.aabb;
+      minX = Math.min(minX, bounds.getMin().x);
+      minY = Math.min(minY, bounds.getMin().y);
+      minZ = Math.min(minZ, bounds.getMin().z);
+      maxX = Math.max(maxX, bounds.getMax().x);
+      maxY = Math.max(maxY, bounds.getMax().y);
+      maxZ = Math.max(maxZ, bounds.getMax().z);
+    }
+    const vehicleOrigin = vehicle.getPosition();
+    // AABBs are world-space because the parent vehicle is already at its
+    // spawn coordinates; convert the measured correction back to local space.
+    sportsCar.setLocalPosition(
+      vehicleOrigin.x - (minX + maxX) * 0.5,
+      vehicleOrigin.y - minY + 0.035,
+      vehicleOrigin.z - (minZ + maxZ) * 0.5
+    );
+    sportsCar.syncHierarchy();
+    vehiclePlaceholder.enabled = false;
+    document.documentElement.dataset.akwantuoVehicleModel = "sports-car-3d";
+    console.info("[AKWANTUO] Detailed sports car loaded and grounded", {
+      meshCount: meshInstances.length,
+      bounds: { width: maxX - minX, height: maxY - minY, length: maxZ - minZ },
+      groundClearance: 0.035
+    });
+  }).catch((error) => {
+    document.documentElement.dataset.akwantuoVehicleModel = "fallback";
+    console.error("[AKWANTUO] Sports car GLB failed to load; retaining drivable fallback.", error);
+  });
 
   const keys = new Set<string>();
   window.addEventListener("keydown", (event) => { keys.add(event.code); if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"].includes(event.code)) event.preventDefault(); });
