@@ -36,7 +36,7 @@ export async function attachGlbVehicleVisual(options: VehicleVisualOptions): Pro
 
   const wheelRoll = imported.animationGroups.filter((group) => /wheel[-_ ]?roll/i.test(group.name));
   const wheelNodes = wrapper.getChildTransformNodes(true).filter((node) =>
-    /^wheel-(front|rear)-(left|right)$/i.test(node.name)
+    /^wheel-(front|rear)-(left|right)(?:$|\/)/i.test(node.name)
   );
   const frontWheels = wheelNodes.filter((node) => /wheel-front-/i.test(node.name));
   const baseSteering = new Map(frontWheels.map((wheel) => [wheel, wheel.rotation.y]));
