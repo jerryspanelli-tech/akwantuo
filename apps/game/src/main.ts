@@ -27,6 +27,7 @@ import { findNearestRoadProjection, getRoadLaneCenterPoint } from "./world/roadN
 import { getRoadVehicleAutopilotControl } from "./vehicles/roadVehicleAutopilot";
 import { advanceRoadVehicleDynamics, type RoadVehicleDynamicsState } from "./vehicles/roadVehicleDynamics";
 import { createRoadVehicleGeometry } from "./vehicles/roadVehicleGeometry";
+import { attachGlbVehicleVisual, type VehicleVisualDriver } from "./vehicles/attachGlbVehicleVisual";
 import { createRoadVehicleRig } from "./vehicles/roadVehicleRig";
 import { enterVehicle, exitVehicle, type VehicleInteractionState } from "./vehicles/vehicleInteraction";
 import { isVehiclePathClear } from "./vehicles/vehicleCollision";
@@ -995,6 +996,7 @@ async function start(): Promise<void> {
     });
     return {
       rig,
+      visualIndex: index,
       state: {
         ...origin,
         headingRadians: start.headingRadians,
@@ -1002,6 +1004,20 @@ async function start(): Promise<void> {
       } as RoadVehicleDynamicsState,
       distanceM: startDistanceM
     };
+  });
+  const npcVisualDrivers: Array<VehicleVisualDriver | null> = [null, null, null];
+  const npcVehicleAssetUrls = [
+    "https://cdn.3dassets.dev/assets/18686/v1/model.glb",
+    "https://cdn.3dassets.dev/assets/32487/v1/model.glb",
+    "https://cdn.3dassets.dev/assets/32490/v1/model.glb"
+  ];
+  npcTraffic.forEach((traffic) => {
+    void attachGlbVehicleVisual({
+      scene, parent: traffic.rig.root, assetUrl: npcVehicleAssetUrls[traffic.visualIndex],
+      id: "akwantuo-npc-vehicle-" + traffic.visualIndex,
+      scale: traffic.visualIndex === 0 ? 0.85 : traffic.visualIndex === 1 ? 1 : 0.9
+    }).then((driver) => { npcVisualDrivers[traffic.visualIndex] = driver; })
+      .catch(() => { document.documentElement.dataset.npcVehicleGlbFallback = "true"; });
   });
   document.documentElement.dataset.npcRoadTraffic = String(npcTraffic.length);
   document.documentElement.dataset.npcRoadTrafficRoute = npcTrafficPath.roadSegmentId;
@@ -1021,6 +1037,13 @@ async function start(): Promise<void> {
     id: "playable-starter-saloon-rig",
     origin: vehicleOrigin
   });
+  let playerVehicleVisualDriver: VehicleVisualDriver | null = null;
+  void attachGlbVehicleVisual({
+    scene, parent: vehicleRig.root,
+    assetUrl: "https://cdn.3dassets.dev/assets/32490/v1/model.glb",
+    id: "akwantuo-player-saloon-glb", scale: 0.9
+  }).then((driver) => { playerVehicleVisualDriver = driver; })
+    .catch(() => { document.documentElement.dataset.playerVehicleGlbFallback = "true"; });
   const watercraftHullMaterial = new StandardMaterial("akwantuo-marina-watercraft-hull", scene);
   watercraftHullMaterial.diffuseColor = new Color3(0.83, 0.86, 0.84);
   const watercraftTrimMaterial = new StandardMaterial("akwantuo-marina-watercraft-trim", scene);
@@ -1258,6 +1281,7 @@ async function start(): Promise<void> {
           steering: npcControl.steering
         }, rawDelta);
         traffic.rig.update(traffic.state);
+        npcVisualDrivers[traffic.visualIndex]?.update(traffic.state.speedMps, npcControl.steering, rawDelta);
         traffic.distanceM = npcControl.routeDistanceM;
       }
       const trafficProgress = [...npcTraffic].sort((a, b) => a.distanceM - b.distanceM);
@@ -1605,6 +1629,7 @@ async function start(): Promise<void> {
             vehicleState = { ...vehicleState, speedMps: 0 };
           }
           vehicleRig.update(vehicleState);
+          playerVehicleVisualDriver?.update(vehicleState.speedMps, 0, delta);
           camera.target = Vector3.Lerp(camera.target, new Vector3(vehicleState.x, 1.4, vehicleState.z), Math.min(1, delta * 8));
           camera.alpha = -Math.PI / 2 - vehicleState.headingRadians;
           camera.radius = 9;
