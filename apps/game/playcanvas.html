@@ -12,6 +12,12 @@
   <main id="game">
     <canvas id="application" aria-label="AKWANTUO playable Ghana-inspired 3D world"></canvas>
     <header class="top-hud"><a href="./" class="wordmark">AKWANTUO<span>.</span></a><div><strong id="district">OSU · ACCRA</strong><small id="world-status">LOADING WORLD</small></div></header>
+    <button class="map-toggle" id="map-toggle" type="button" aria-controls="world-map-panel" aria-expanded="false">WORLD MAP</button>
+    <section class="world-map-panel" id="world-map-panel" hidden aria-label="Greater Accra world map">
+      <header class="world-map-header"><div><small>AKWANTUO · GHANA</small><h2>GREATER ACCRA MAP</h2></div><button id="map-close" type="button" aria-label="Close world map">×</button></header>
+      <div class="world-map-layout"><canvas id="world-map-canvas" width="960" height="620" aria-label="Map of Greater Accra roads, districts and landmarks"></canvas><aside class="map-destination-panel"><strong>DESTINATIONS</strong><div id="map-destinations" class="map-destinations"></div></aside></div>
+      <p id="map-route-status" class="map-route-status" role="status">Choose a district or landmark to plot a road route.</p>
+    </section>
     <section class="health-hud" aria-label="Player health">
       <div class="health-label"><span>♥</span><strong>HEALTH</strong><b id="health-value">100</b></div>
       <div class="health-track"><span id="health-fill"></span></div>

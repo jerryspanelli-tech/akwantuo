@@ -8,7 +8,9 @@ import {
 import "./style.css";
 import { createGreaterAccraWorld } from "./world";
 import { createAmbientLife } from "./ambientLife";
-import { GREATER_ACCRA_ROAD_PATHS } from "../world/greaterAccraLayout";
+import { GREATER_ACCRA_COASTLINE, GREATER_ACCRA_REGION_ANCHORS, GREATER_ACCRA_ROAD_PATHS } from "../world/greaterAccraLayout";
+import { GREATER_ACCRA_LANDMARK_FOOTPRINTS } from "../world/greaterAccraLandmarkData";
+import { attachGreaterAccraWorldMap } from "./worldMapHud";
 
 const canvas = document.querySelector<HTMLCanvasElement>("#application")!;
 const loading = document.querySelector<HTMLElement>("#loading");
@@ -423,6 +425,14 @@ async function boot() {
 
   const walkSpeed = 4.6, sprintSpeed = 8.2;
   let inVehicle = false, vehicleSpeed = 0, vehicleYaw = 0;
+  const worldMapHud = attachGreaterAccraWorldMap({
+    roads: GREATER_ACCRA_ROAD_PATHS,
+    coastline: GREATER_ACCRA_COASTLINE,
+    regions: GREATER_ACCRA_REGION_ANCHORS,
+    landmarks: GREATER_ACCRA_LANDMARK_FOOTPRINTS,
+    getPlayerPosition: () => inVehicle ? vehicle.getPosition() : player.getPosition(),
+    getPlayerHeading: () => inVehicle ? vehicleYaw : player.getEulerAngles().y * Math.PI / 180
+  });
   let nearbyInteraction: { id: string; label: string; x: number; z: number; radius: number } | null = null;
   const overlaps = (x: number, z: number) => {
     // Test each rotated building in its own local footprint. Treating every
@@ -568,6 +578,7 @@ async function boot() {
     camera.lookAt(focus.x, focus.y + 1.15, focus.z);
     if (elapsed > 0.10) { updateButtons(); elapsed = 0; }
     elapsed += step;
+    worldMapHud.update(step);
     mapElapsed += step;
     if (mapElapsed > 0.14 && minimapContext && minimap) {
       mapElapsed = 0;
