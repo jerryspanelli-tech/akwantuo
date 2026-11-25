@@ -1,5 +1,5 @@
 import "@babylonjs/loaders/glTF";
-import { SceneLoader, TransformNode, type AnimationGroup, type Scene, type TransformNode as TransformNodeType } from "@babylonjs/core";
+import { SceneLoader, TransformNode, type Scene } from "@babylonjs/core";
 
 export type VehicleVisualDriver = Readonly<{
   update: (speedMps: number, steeringRadians: number, deltaSeconds: number) => void;
