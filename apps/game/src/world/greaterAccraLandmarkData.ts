@@ -75,11 +75,11 @@ export const GREATER_ACCRA_LANDMARK_FOOTPRINTS: readonly LandmarkFootprint[] = [
     "id": "kwame-nkrumah-memorial",
     "label": "Kwame Nkrumah Memorial Park",
     "x": -760,
-    "z": 300,
+    "z": 160,
     "minX": -820,
     "maxX": -700,
-    "minZ": 240,
-    "maxZ": 360
+    "minZ": 100,
+    "maxZ": 220
   },
   {
     "id": "national-theatre",

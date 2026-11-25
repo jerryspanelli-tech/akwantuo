@@ -2,8 +2,32 @@ import { AppBase, Color, Entity, StandardMaterial, Texture, PIXELFORMAT_RGBA8 } 
 import { GREATER_ACCRA_COASTLINE, GREATER_ACCRA_MAP_EXTENT, GREATER_ACCRA_REGION_ANCHORS, GREATER_ACCRA_ROAD_PATHS } from "../world/greaterAccraLayout";
 import { GREATER_ACCRA_LANDMARK_FOOTPRINTS } from "../world/greaterAccraLandmarkData";
 import { GREATER_ACCRA_RAIL_NODES, GREATER_ACCRA_RAIL_ROUTES } from "../world/railNetwork";
+import { buildAccraCoastalShowcase } from "./coastalShowcase";
 
-export type WorldBlocker = { x: number; z: number; hx: number; hz: number };
+export type WorldBlocker = { x: number; z: number; hx: number; hz: number; yaw: number };
+type RoadPoint = Readonly<{ x: number; z: number }>;
+
+/** Smooth authored road centrelines so junction approaches do not become
+ * disconnected straight slabs. Sampling density scales with segment length. */
+function smoothRoadCentreline(points: readonly RoadPoint[]): RoadPoint[] {
+  if (points.length < 3) return [...points];
+  const result: RoadPoint[] = [points[0]];
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[Math.max(0, i - 1)];
+    const p1 = points[i];
+    const p2 = points[i + 1];
+    const p3 = points[Math.min(points.length - 1, i + 2)];
+    const span = Math.hypot(p2.x - p1.x, p2.z - p1.z);
+    const steps = Math.max(4, Math.ceil(span / 240));
+    for (let step = 1; step <= steps; step++) {
+      const t = step / steps, t2 = t * t, t3 = t2 * t;
+      const x = 0.5 * (2*p1.x + (-p0.x+p2.x)*t + (2*p0.x-5*p1.x+4*p2.x-p3.x)*t2 + (-p0.x+3*p1.x-3*p2.x+p3.x)*t3);
+      const z = 0.5 * (2*p1.z + (-p0.z+p2.z)*t + (2*p0.z-5*p1.z+4*p2.z-p3.z)*t2 + (-p0.z+3*p1.z-3*p2.z+p3.z)*t3);
+      result.push({x,z});
+    }
+  }
+  return result;
+}
 export type GreaterAccraWorld = {
   blockers: WorldBlocker[];
   spawn: { x: number; z: number };
@@ -71,7 +95,7 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     entity.setLocalScale(sx, sy, sz);
     if (yaw) entity.setEulerAngles(0, yaw, 0);
     app.root.addChild(entity);
-    if (solid) blockers.push({ x, z, hx: sx * 0.52, hz: sz * 0.52 });
+    if (solid) blockers.push({ x, z, hx: sx * 0.52, hz: sz * 0.52, yaw });
     return entity;
   };
   const plane = (name: string, x: number, y: number, z: number, width: number, depth: number, mat: StandardMaterial) => {
@@ -151,8 +175,9 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
       path.roadSegmentId.includes("spintex") ? 14 :
       path.roadSegmentId.includes("ring-road") ? 13 :
       path.roadSegmentId === "la-beach-road" ? 10 : 12;
-    for (let index = 0; index < path.points.length - 1; index++) {
-      const a = path.points[index], b = path.points[index + 1];
+    const roadPoints = smoothRoadCentreline(path.points);
+    for (let index = 0; index < roadPoints.length - 1; index++) {
+      const a = roadPoints[index], b = roadPoints[index + 1];
       const dx = b.x - a.x, dz = b.z - a.z, length = Math.hypot(dx, dz);
       if (length < 1) continue;
       const yaw = Math.atan2(dx, dz) * 180 / Math.PI;
@@ -171,7 +196,13 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
         }
       } else {
         box(path.roadSegmentId + " road surface", mx, 0.04, mz, roadWidth, 0.16, length + 1, mats.road, yaw);
-        box(path.roadSegmentId + " yellow centre line", mx, 0.13, mz, 0.16, 0.025, length * 0.42, mats.yellow, yaw);
+        // Broken yellow centre markings are laid out along the full road
+        // segment, rather than one oversized dash at its midpoint.
+        for (let mark = 12; mark < length - 4; mark += 34) {
+          const t = mark / length;
+          box(path.roadSegmentId + " broken yellow centre marking",
+            a.x + dx * t, 0.14, a.z + dz * t, 0.16, 0.025, 8, mats.yellow, yaw);
+        }
         for (const side of [-1, 1]) {
           const offset = side * (roadWidth / 2 - 0.28);
           const nx = Math.cos(yaw * Math.PI / 180) * offset;
@@ -225,6 +256,56 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     box("Coastal sand berm", (a.x + b.x) / 2, 0.08, (a.z + b.z) / 2, 7, 0.16, length, mats.sand, Math.atan2(dx, dz) * 180 / Math.PI);
   }
 
+  // Keep generated district buildings outside every drivable road corridor.
+  // Use the full building footprint plus a sidewalk/clearance margin, not just
+  // the building centre, so wide buildings cannot intrude into the carriageway.
+  // Precompute the same smoothed road segments used by the renderer. This
+  // keeps building clearance aligned with the visible carriageways and avoids
+  // repeatedly resampling every road while searching for safe building sites.
+  const roadCorridors = GREATER_ACCRA_ROAD_PATHS
+    .filter((path) => path.playableInFirstRelease)
+    .flatMap((path) => {
+      const isMotorway = /^(n1|n4|n6)-/.test(path.roadSegmentId);
+      const width = path.roadSegmentId.startsWith("n1-tema") ? 23 :
+        path.roadSegmentId.startsWith("n1") ? 19 :
+        path.roadSegmentId.startsWith("n6") ? 19 :
+        path.roadSegmentId.startsWith("n4") ? 17 :
+        path.roadSegmentId.includes("spintex") ? 14 :
+        path.roadSegmentId.includes("ring-road") ? 13 :
+        path.roadSegmentId === "la-beach-road" ? 10 : 12;
+      const points = smoothRoadCentreline(path.points);
+      return points.slice(0, -1).map((a, index) => ({
+        a, b: points[index + 1], halfRoad: width / 2 + (isMotorway ? 2 : 0)
+      }));
+    });
+  const roadClearance = (x: number, z: number, radius: number): number => {
+    let clearance = Number.POSITIVE_INFINITY;
+    for (const segment of roadCorridors) {
+      const dx = segment.b.x - segment.a.x, dz = segment.b.z - segment.a.z;
+      const lengthSq = dx * dx + dz * dz || 1;
+      const t = Math.max(0, Math.min(1, ((x - segment.a.x) * dx + (z - segment.a.z) * dz) / lengthSq));
+      const distance = Math.hypot(x - (segment.a.x + t * dx), z - (segment.a.z + t * dz));
+      clearance = Math.min(clearance, distance - segment.halfRoad - radius - 9);
+    }
+    return clearance;
+  };
+  const placeDistrictBuilding = (x: number, z: number, width: number, depth: number): { x: number; z: number } | null => {
+    const radius = Math.hypot(width / 2, depth / 2);
+    if (roadClearance(x, z, radius) >= 0) return { x, z };
+    // Search outward in small rings. Pick the nearest safe position so district
+    // clusters retain their shape without placing a building over a road.
+    for (let ring = 1; ring <= 18; ring++) {
+      const distance = ring * 18;
+      for (let step = 0; step < 32; step++) {
+        const angle = step * Math.PI * 2 / 32;
+        const candidate = { x: x + Math.cos(angle) * distance, z: z + Math.sin(angle) * distance };
+        if (roadClearance(candidate.x, candidate.z, radius) >= 0) return candidate;
+      }
+    }
+    // Prefer omitting an unsafe generated building over silently blocking a road.
+    return null;
+  };
+
   // District identity: sign structures and distinctive building clusters around real place anchors.
   const districtNames: Record<string, string> = {
     "accra-central-makola": "ACCRA CENTRAL · MAKOLA", "airport-city": "AIRPORT CITY",
@@ -244,10 +325,13 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     for (let i = 0; i < 7; i++) {
       const angle = (i / 7) * Math.PI * 2;
       const radius = 115 + (i % 3) * 28;
-      const x = anchor.x + Math.cos(angle) * radius;
-      const z = anchor.z + Math.sin(angle) * radius;
+      const rawX = anchor.x + Math.cos(angle) * radius;
+      const rawZ = anchor.z + Math.sin(angle) * radius;
       const width = isMarket ? 22 + (i % 3) * 5 : isModern ? 30 + (i % 3) * 7 : 18 + (i % 4) * 6;
       const depth = isMarket ? 18 + (i % 2) * 5 : 20 + (i % 3) * 6;
+      const placement = placeDistrictBuilding(rawX, rawZ, width, depth);
+      if (!placement) continue;
+      const { x, z } = placement;
       const floors = isModern ? 5 + (i % 4) : isMarket ? 1 + (i % 2) : 2 + (i % 3);
       const height = floors * 3.2;
       const yaw = (i * 23) % 360;
@@ -265,6 +349,10 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
           const p = local(wx, depth / 2 + 0.07);
           box(name + " framed window", p.x, wy, p.z, width * 0.19, 1.45, 0.16, mats.glass, yaw);
           box(name + " window sill", p.x, wy - 0.78, p.z + 0.08, width * 0.22, 0.16, 0.3, mats.lightConcrete, yaw);
+          if (col !== 1) {
+            box(name + " exterior air conditioner", p.x, wy - 1.02, p.z + 0.3, width * 0.12, 0.3, 0.34, mats.industrial, yaw);
+            box(name + " air conditioner vent", p.x, wy - 1.02, p.z + 0.48, width * 0.075, 0.16, 0.04, mats.roof, yaw);
+          }
         }
         if (isModern) {
           const p = local(0, depth / 2 + 0.6);
@@ -345,6 +433,43 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     }
   }
 
+  // Black Star Square / Independence Square civic landmark.
+  // Stylised game-scale architecture: a broad ceremonial plaza, Independence Arch,
+  // open spectator terraces and flagpoles. This is not a surveyed site plan.
+  const independenceSquare = { x: 430, z: -980 };
+  plane("Black Star Square ceremonial plaza", independenceSquare.x, 0.035, independenceSquare.z, 190, 142, mats.lightConcrete);
+  plane("Black Star Square central parade ground", independenceSquare.x, 0.075, independenceSquare.z - 2, 116, 82, mats.concrete);
+  for (const side of [-1, 1]) {
+    box("Independence Square spectator terrace", independenceSquare.x + side * 76, 2.2, independenceSquare.z, 22, 4.4, 112, mats.lightConcrete);
+    for (let tier = 0; tier < 3; tier++) {
+      box("Independence Square seating tier", independenceSquare.x + side * (68 + tier * 4), 4.5 + tier * 0.72, independenceSquare.z, 7, 0.5, 100 - tier * 12, mats.roof);
+    }
+  }
+  // Monumental open arch with a broad lintel and two heavy piers.
+  box("Independence Arch left pier", independenceSquare.x - 25, 13, independenceSquare.z - 48, 8, 26, 9, mats.lightConcrete);
+  box("Independence Arch right pier", independenceSquare.x + 25, 13, independenceSquare.z - 48, 8, 26, 9, mats.lightConcrete);
+  box("Independence Arch upper lintel", independenceSquare.x, 26, independenceSquare.z - 48, 58, 5, 10, mats.lightConcrete);
+  box("Independence Arch recessed opening", independenceSquare.x, 12.5, independenceSquare.z - 42.5, 38, 21, 0.35, mats.roof);
+  box("Independence Arch crown", independenceSquare.x, 29.2, independenceSquare.z - 48, 34, 1.1, 10.5, mats.gold);
+  // A five-spoke black star emblem sits above the arch as a readable distant silhouette.
+  for (let point = 0; point < 5; point++) {
+    const angle = (point * 72 - 90) * Math.PI / 180;
+    const beam = new Entity("Black Star Square star point");
+    beam.addComponent("render", { type: "box", material: mats.roof, castShadows: false, receiveShadows: true });
+    beam.setPosition(independenceSquare.x + Math.cos(angle) * 3.1, 33.2 + Math.sin(angle) * 2.4, independenceSquare.z - 48);
+    beam.setLocalScale(1.15, 5.2, 0.8);
+    beam.setEulerAngles(0, -angle * 180 / Math.PI, 0);
+    app.root.addChild(beam);
+  }
+  for (let flag = 0; flag < 6; flag++) {
+    const x = independenceSquare.x - 52 + flag * 20.8;
+    cylinder("Independence Square flagpole", x, 8, independenceSquare.z + 52, 0.12, 16, mats.white);
+    box("Ghana flag red stripe", x + 1.9, 14.13, independenceSquare.z + 52, 3.8, 0.74, 0.12, mats.red);
+    box("Ghana flag gold stripe", x + 1.9, 13.4, independenceSquare.z + 52, 3.8, 0.74, 0.12, mats.gold);
+    box("Ghana flag green stripe", x + 1.9, 12.67, independenceSquare.z + 52, 3.8, 0.74, 0.12, mats.green);
+    box("Ghana flag black star", x + 1.9, 13.4, independenceSquare.z + 51.91, 0.48, 0.48, 0.08, mats.roof);
+  }
+
   // Traffic-control furniture and public-transport stops at key Accra junctions.
   const junctions = [
     { name: "Osu", x: 1450, z: -1350 },
@@ -375,8 +500,21 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
   box("Accra trotro side windows", 1460, 2.15, -1560, 2.4, 0.78, 4.0, mats.glass);
   box("Accra trotro roof rack", 1460, 2.85, -1560, 1.8, 0.16, 4.0, mats.roof);
   for (const x of [1458.85, 1462.15]) for (const z of [-1561.8, -1558.2]) {
-    cylinder("Accra trotro wheel", x, 0.55, z, 0.42, 0.24, mats.roof);
+    const wheel = cylinder("Accra trotro rubber wheel", x, 0.55, z, 0.42, 0.24, mats.roof);
+    wheel.setEulerAngles(0, 0, 90);
+    const hub = cylinder("Accra trotro metal wheel hub", x + (x < 1460 ? -0.14 : 0.14), 0.55, z, 0.21, 0.04, mats.lightConcrete);
+    hub.setEulerAngles(0, 0, 90);
   }
+  box("Accra trotro front bumper", 1460, 0.72, -1557.0, 2.3, 0.22, 0.18, mats.roof);
+  box("Accra trotro front grille", 1460, 1.28, -1557.0, 0.82, 0.42, 0.08, mats.roof);
+  for (const side of [-1, 1]) {
+    box("Accra trotro headlamp", 1460 + side * 0.86, 1.42, -1557.0, 0.38, 0.3, 0.08, mats.white);
+    box("Accra trotro rear lamp", 1460 + side * 0.9, 1.42, -1562.72, 0.24, 0.42, 0.08, mats.red);
+    box("Accra trotro side door seam", 1460 + side * 1.19, 1.4, -1560.1, 0.035, 1.9, 1.25, mats.roof);
+    box("Accra trotro side mirror", 1460 + side * 1.34, 2.2, -1557.2, 0.16, 0.22, 0.24, mats.glass);
+  }
+  box("Accra trotro rear bumper", 1460, 0.72, -1563.0, 2.3, 0.22, 0.18, mats.roof);
+  box("Accra trotro destination board", 1460, 2.78, -1557.0, 1.5, 0.28, 0.12, makeSignMaterial("ACCRA · OSU"));
 
   // Ghanaian roadside service station and street lighting.
   box("Spintex fuel station forecourt", 5650, 0.03, -1040, 52, 0.12, 38, mats.lightConcrete);
@@ -476,8 +614,10 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     box(label+" rooftop water tank",x+w*0.28,h+1.05,z-d*0.2,1.45,1.5,1.45,mats.industrial);
   };
   const strips=[
-    {name:"Osu Oxford Street",x:1450,z:-1180,shops:["MOBILE MONEY","PHARMACY","GROCERY","CHOP BAR","SALON"]},
-    {name:"Makola Market",x:-400,z:450,shops:["FABRICS","PROVISIONS","FRUITS","FOOD","HARDWARE"]},
+    // Keep the commercial frontage beside, not on top of, the Ring Road / Osu connector.
+    {name:"Osu Oxford Street",x:1580,z:-1180,shops:["MOBILE MONEY","PHARMACY","GROCERY","CHOP BAR","SALON"]},
+    // Makola's shop row sits north of the Circle approach, leaving the junction open.
+    {name:"Makola Market",x:-400,z:610,shops:["FABRICS","PROVISIONS","FRUITS","FOOD","HARDWARE"]},
     {name:"East Legon Shops",x:4300,z:1100,shops:["CAFE","SUPERMARKET","PHARMACY","FASHION","RESTAURANT"]},
     {name:"Madina Market",x:4900,z:2150,shops:["PROVISIONS","FOOD","FABRICS","PHONE SHOP","BARBER"]},
     {name:"Spintex Shops",x:5600,z:-1450,shops:["AUTO PARTS","FUEL","WAREHOUSE","SUPERMARKET","ELECTRICAL"]},
@@ -554,6 +694,8 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     cylinder("Accra roadside shade tree trunk", tree.x, 2.5, tree.z, 0.28, 5, mats.roof);
     cylinder("Accra roadside shade tree canopy", tree.x, 5.8, tree.z, 2.3, 2.8, mats.green);
   }
+
+  buildAccraCoastalShowcase(app);
 
   return {
     blockers,
