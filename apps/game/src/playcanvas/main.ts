@@ -220,16 +220,106 @@ async function boot() {
   sun.setEulerAngles(48, 32, 0);
   app.root.addChild(sun);
 
-  // One drivable saloon/taxi prototype with separate body and wheels.
-  const vehicle = new Entity("Accra taxi");
-  addBox("Taxi body", 0, 1.1, 0, 2.1, 1.05, 4.2, materials.vehicle);
-  const vehicleBody = app.root.findByName("Taxi body") as Entity;
-  vehicle.addChild(vehicleBody);
-  vehicleBody.setLocalPosition(0, 1.1, 0);
-  const cab = new Entity("Taxi cabin"); cab.addComponent("render", { type: "box", material: materials.glass }); cab.setLocalScale(1.7, 0.8, 2); cab.setLocalPosition(0, 1.95, -0.15); vehicle.addChild(cab);
-  for (const x of [-0.95, 0.95]) for (const z of [-1.35, 1.35]) { const wheel = new Entity("Taxi wheel"); wheel.addComponent("render", { type: "cylinder", material: materials.tyre }); wheel.setLocalScale(0.65, 0.22, 0.65); wheel.setLocalEulerAngles(0, 0, 90); wheel.setLocalPosition(x, 0.58, z); vehicle.addChild(wheel); }
+  // Drivable sports car. Keep a lightweight fallback until the detailed GLB
+  // is ready, then replace only the visual child; the vehicle controller,
+  // collision footprint, enter/exit and camera remain unchanged.
+  const vehicle = new Entity("AKWANTUO Sports Car");
+  const vehiclePlaceholder = new Entity("Sports car loading fallback");
+  vehicle.addChild(vehiclePlaceholder);
+  // Do not show box/cylinder stand-ins: the drivable vehicle visual is the imported sports-car GLB.
+  vehiclePlaceholder.enabled = false;
+  const vehicleBody = new Entity("Fallback sports car body");
+  vehicleBody.addComponent("render", { type: "box", material: materials.vehicle, castShadows: true, receiveShadows: true });
+  vehicleBody.setLocalScale(2.06, 0.62, 4.6);
+  vehicleBody.setLocalPosition(0, 0.64, 0);
+  vehiclePlaceholder.addChild(vehicleBody);
+  const fallbackCabin = new Entity("Fallback sports car cabin");
+  fallbackCabin.addComponent("render", { type: "box", material: materials.glass });
+  fallbackCabin.setLocalScale(1.55, 0.56, 1.8);
+  fallbackCabin.setLocalPosition(0, 1.17, -0.12);
+  vehiclePlaceholder.addChild(fallbackCabin);
+  for (const x of [-0.94, 0.94]) for (const z of [-1.48, 1.48]) {
+    const wheel = new Entity("Fallback sports car wheel");
+    wheel.addComponent("render", { type: "cylinder", material: materials.tyre, castShadows: true, receiveShadows: true });
+    wheel.setLocalScale(0.66, 0.24, 0.66);
+    wheel.setLocalEulerAngles(0, 0, 90);
+    wheel.setLocalPosition(x, 0.36, z);
+    vehiclePlaceholder.addChild(wheel);
+  }
   vehicle.setPosition(world.taxiSpawn.x, 0, world.taxiSpawn.z);
   app.root.addChild(vehicle);
+
+  // CC0 mid-engine supercar, LOD1 (44,632 triangles / about 1.9 MB):
+  // detailed body, glass engine cover, lights, intakes, rims and brake details.
+  // Fit the imported model from its measured bounds so its lowest point
+  // (the tyres) rests just above the road plane instead of hovering or clipping.
+  const sportsCarAssetPromise = new Promise<Asset>((resolve, reject) => {
+    app.assets.loadFromUrl(
+      "https://tevy.dev/models/supercar/v2/lod1.glb",
+      "container",
+      (error, asset) => {
+        if (error || !asset?.resource) reject(error ?? new Error("Sports car GLB returned no container resource."));
+        else resolve(asset);
+      }
+    );
+  });
+  void sportsCarAssetPromise.then((loadedAsset) => {
+    const container = loadedAsset.resource as any;
+    const sportsCar = container.instantiateRenderEntity({ castShadows: true });
+    sportsCar.name = "Detailed pearl-orange mid-engine sports car";
+    sportsCar.enabled = true;
+    vehicle.addChild(sportsCar);
+    sportsCar.syncHierarchy();
+
+    const meshInstances: any[] = [];
+    const collectMeshes = (node: any) => {
+      node.enabled = true;
+      for (const meshInstance of node.render?.meshInstances ?? []) {
+        meshInstance.visible = true;
+        meshInstances.push(meshInstance);
+      }
+      for (const child of node.children ?? []) collectMeshes(child);
+    };
+    collectMeshes(sportsCar);
+    if (meshInstances.length === 0) {
+      sportsCar.destroy();
+      throw new Error("Sports car GLB contains no visible render meshes.");
+    }
+
+    // Mesh AABBs are measured after hierarchy sync. Center the model over the
+    // vehicle controller and lift/lower it by its actual lowest mesh point.
+    let minX = Number.POSITIVE_INFINITY, maxX = Number.NEGATIVE_INFINITY;
+    let minY = Number.POSITIVE_INFINITY, maxY = Number.NEGATIVE_INFINITY;
+    let minZ = Number.POSITIVE_INFINITY, maxZ = Number.NEGATIVE_INFINITY;
+    for (const meshInstance of meshInstances) {
+      const bounds = meshInstance.aabb;
+      minX = Math.min(minX, bounds.getMin().x);
+      minY = Math.min(minY, bounds.getMin().y);
+      minZ = Math.min(minZ, bounds.getMin().z);
+      maxX = Math.max(maxX, bounds.getMax().x);
+      maxY = Math.max(maxY, bounds.getMax().y);
+      maxZ = Math.max(maxZ, bounds.getMax().z);
+    }
+    const vehicleOrigin = vehicle.getPosition();
+    // AABBs are world-space because the parent vehicle is already at its
+    // spawn coordinates; convert the measured correction back to local space.
+    sportsCar.setLocalPosition(
+      vehicleOrigin.x - (minX + maxX) * 0.5,
+      vehicleOrigin.y - minY + 0.035,
+      vehicleOrigin.z - (minZ + maxZ) * 0.5
+    );
+    sportsCar.syncHierarchy();
+    vehiclePlaceholder.enabled = false;
+    document.documentElement.dataset.akwantuoVehicleModel = "sports-car-3d";
+    console.info("[AKWANTUO] Detailed sports car loaded and grounded", {
+      meshCount: meshInstances.length,
+      bounds: { width: maxX - minX, height: maxY - minY, length: maxZ - minZ },
+      groundClearance: 0.035
+    });
+  }).catch((error) => {
+    document.documentElement.dataset.akwantuoVehicleModel = "fallback";
+    console.error("[AKWANTUO] Sports car GLB failed to load; retaining drivable fallback.", error);
+  });
 
   const keys = new Set<string>();
   window.addEventListener("keydown", (event) => { keys.add(event.code); if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"].includes(event.code)) event.preventDefault(); });
