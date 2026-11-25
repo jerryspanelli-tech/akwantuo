@@ -236,6 +236,61 @@ async function boot() {
   sun.setEulerAngles(48, 32, 0);
   app.root.addChild(sun);
 
+  const sunDiscMaterial = mat(1, 0.78, 0.43);
+  sunDiscMaterial.emissive = new Color(1, 0.58, 0.22);
+  sunDiscMaterial.update();
+  const sunDisc = new Entity("Visible Accra sun");
+  sunDisc.addComponent("render", { type: "sphere", material: sunDiscMaterial, castShadows: false, receiveShadows: false });
+  sunDisc.setLocalScale(10, 10, 10);
+  app.root.addChild(sunDisc);
+
+  const moonMaterial = mat(0.78, 0.84, 0.96);
+  moonMaterial.emissive = new Color(0.34, 0.4, 0.58);
+  moonMaterial.update();
+  const moon = new Entity("Visible night moon");
+  moon.addComponent("render", { type: "sphere", material: moonMaterial, castShadows: false, receiveShadows: false });
+  moon.setLocalScale(7, 7, 7);
+  app.root.addChild(moon);
+  const moonLight = new Entity("Accra moonlight");
+  moonLight.addComponent("light", { type: "directional", color: new Color(0.48, 0.58, 0.82), intensity: 0.18, castShadows: false });
+  app.root.addChild(moonLight);
+
+  // Small, deterministic star field. Stars are disabled in daylight and follow
+  // the active player/camera focus so they remain in the upper sky.
+  const starMaterial = mat(0.78, 0.84, 1);
+  starMaterial.emissive = new Color(0.68, 0.76, 1);
+  starMaterial.update();
+  const stars: Entity[] = [];
+  for (let i = 0; i < 32; i++) {
+    const star = new Entity("Accra night sky star");
+    star.addComponent("render", { type: "sphere", material: starMaterial, castShadows: false, receiveShadows: false });
+    const size = i % 7 === 0 ? 1.05 : 0.58;
+    star.setLocalScale(size, size, size);
+    star.enabled = false;
+    app.root.addChild(star);
+    stars.push(star);
+  }
+
+  // A small rain pool is reused around the player; no particles are allocated
+  // during gameplay and the count stays bounded for mobile GPUs.
+  const rainMaterial = mat(0.48, 0.66, 0.78);
+  const rainDrops: Entity[] = [];
+  for (let i = 0; i < 24; i++) {
+    const drop = new Entity("Accra tropical rain streak");
+    drop.addComponent("render", { type: "box", material: rainMaterial, castShadows: false, receiveShadows: false });
+    drop.setLocalScale(0.035, 1.05, 0.035);
+    drop.enabled = false;
+    app.root.addChild(drop);
+    rainDrops.push(drop);
+  }
+
+  const accraTimeParts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Africa/Accra", hour: "2-digit", minute: "2-digit",
+    second: "2-digit", hourCycle: "h23"
+  }).formatToParts(new Date());
+  const timePart = (type: string) => Number(accraTimeParts.find((part) => part.type === type)?.value ?? 0);
+  let worldClock = timePart("hour") * 3600 + timePart("minute") * 60 + timePart("second");
+
   // Drivable sports car. Keep a lightweight fallback until the detailed GLB
   // is ready, then replace only the visual child; the vehicle controller,
   // collision footprint, enter/exit and camera remain unchanged.
@@ -425,6 +480,8 @@ async function boot() {
 
   const walkSpeed = 4.6, sprintSpeed = 8.2;
   let inVehicle = false, vehicleSpeed = 0, vehicleYaw = 0;
+  const firstJourneyDestination = { x: 2260, z: -2380, radius: 65 };
+  let firstJourneyComplete = false;
   const worldMapHud = attachGreaterAccraWorldMap({
     roads: GREATER_ACCRA_ROAD_PATHS,
     coastline: GREATER_ACCRA_COASTLINE,
@@ -496,6 +553,82 @@ async function boot() {
   let elapsed = 0, mapElapsed = 0;
   app.on("update", (dt: number) => {
     const step = Math.min(dt, 0.05);
+    worldClock = (worldClock + step * 60) % 86400;
+    const hourOfDay = worldClock / 3600;
+    // Accra sunrise/sunset and twilight transitions, accelerated so one full
+    // in-game day takes 24 real minutes.
+    const solarAngle = ((hourOfDay - 6) / 12) * Math.PI;
+    const sunElevation = Math.sin(solarAngle);
+    const daylightRaw = clamp((sunElevation + 0.14) / 0.38, 0, 1);
+    const daylight = daylightRaw * daylightRaw * (3 - 2 * daylightRaw);
+    const night = 1 - daylight;
+    if (sun.light) {
+      sun.light.intensity = 0.025 + daylight * 1.45;
+      sun.setEulerAngles(90 - sunElevation * 72, hourOfDay * 15 + 90, 0);
+    }
+    if (moonLight.light) moonLight.light.intensity = 0.025 + night * 0.24;
+    const skyFocus = inVehicle ? vehicle.getPosition() : player.getPosition();
+    const sunX = Math.cos(solarAngle) * 210;
+    const sunY = Math.max(-35, sunElevation * 175);
+    sunDisc.setPosition(skyFocus.x + sunX, skyFocus.y + sunY + 35, skyFocus.z - 35);
+    moon.setPosition(skyFocus.x - sunX, skyFocus.y + Math.max(20, -sunElevation * 155) + 35, skyFocus.z + 35);
+    moonLight.setEulerAngles(42, hourOfDay * 15 + 270, 0);
+    const starsVisible = night > 0.48;
+    const starFade = clamp((night - 0.35) / 0.5, 0, 1);
+    for (let i = 0; i < stars.length; i++) {
+      const star = stars[i];
+      star.enabled = starsVisible;
+      if (starsVisible) {
+        const angle = i * 2.399963229728653;
+        const y = 55 + (i % 9) * 15;
+        const ring = Math.sqrt(Math.max(0, 1 - (y / 220) ** 2)) * 205;
+        star.setPosition(skyFocus.x + Math.cos(angle) * ring, skyFocus.y + y, skyFocus.z + Math.sin(angle) * ring);
+      }
+    }
+    app.scene.ambientLight = new Color(
+      0.035 + daylight * 0.445 + starFade * 0.025,
+      0.045 + daylight * 0.405 + starFade * 0.035,
+      0.085 + daylight * 0.305 + starFade * 0.075
+    );
+    if (camera.camera) {
+      camera.camera.clearColor = new Color(
+        0.006 + daylight * 0.57 + starFade * 0.018,
+        0.012 + daylight * 0.66 + starFade * 0.025,
+        0.035 + daylight * 0.68 + starFade * 0.055
+      );
+    }
+
+    // Tropical showers cycle slowly: one 2-hour in-game weather cycle, with a
+    // 20-minute shower window. Reuse 24 streaks around the active player.
+    const weatherPhase = worldClock % 7200;
+    const raining = weatherPhase >= 6000;
+    const weatherFocus = inVehicle ? vehicle.getPosition() : player.getPosition();
+    for (const drop of rainDrops) {
+      if (!raining) {
+        if (drop.enabled) drop.enabled = false;
+        continue;
+      }
+      if (!drop.enabled) {
+        drop.enabled = true;
+        drop.setPosition(
+          weatherFocus.x + (Math.random() - 0.5) * 34,
+          weatherFocus.y + 7 + Math.random() * 17,
+          weatherFocus.z + (Math.random() - 0.5) * 34
+        );
+      } else {
+        const position = drop.getPosition();
+        const nextY = position.y - 24 * step;
+        if (nextY < weatherFocus.y + 0.6) {
+          drop.setPosition(
+            weatherFocus.x + (Math.random() - 0.5) * 34,
+            weatherFocus.y + 7 + Math.random() * 17,
+            weatherFocus.z + (Math.random() - 0.5) * 34
+          );
+        } else {
+          drop.setPosition(position.x - 1.5 * step, nextY, position.z + 0.8 * step);
+        }
+      }
+    }
     const forward = (keys.has("KeyW") || keys.has("ArrowUp") ? 1 : 0) - (keys.has("KeyS") || keys.has("ArrowDown") ? 1 : 0) - stickY;
     const strafe = (keys.has("KeyD") || keys.has("ArrowRight") ? 1 : 0) - (keys.has("KeyA") || keys.has("ArrowLeft") ? 1 : 0) + stickX;
     if (inVehicle) {
@@ -521,6 +654,11 @@ async function boot() {
       vehicle.setEulerAngles(0, vehicleYaw * 180 / Math.PI, 0);
       const vehiclePosition = vehicle.getPosition();
       player.setPosition(vehiclePosition.x, vehiclePosition.y, vehiclePosition.z);
+      if (!firstJourneyComplete && Math.hypot(vehiclePosition.x - firstJourneyDestination.x, vehiclePosition.z - firstJourneyDestination.z) <= firstJourneyDestination.radius) {
+        firstJourneyComplete = true;
+        vehicleSpeed = 0;
+        showNotice("FIRST JOURNEY COMPLETE · Welcome to Labadi Beach!");
+      }
       if (exitButton) exitButton.hidden = false;
     } else {
       const rawMagnitude = Math.hypot(forward, strafe);
@@ -663,9 +801,9 @@ async function boot() {
       map.beginPath(); map.arc(width / 2, height / 2, radius, 0, Math.PI * 2);
       map.strokeStyle = "#e3bd7a"; map.lineWidth = 3; map.stroke();
     }
-    if (status) status.textContent = inVehicle ? "TAXI · DRIVING" : "OSU · EXPLORATION";
-    if (objective) objective.textContent = inVehicle ? "Drive towards Labadi Beach" : "Explore Osu and find the taxi";
-    if (hint) hint.textContent = inVehicle ? "Steer with the joystick · Hold GAS or BRAKE / REVERSE · Tap the door to exit · Drag anywhere above to look" : "Push fully to sprint · Tap ↑ to jump · Drag to look";
+    if (status) status.textContent = firstJourneyComplete ? "LABADI BEACH · ARRIVED" : inVehicle ? "TAXI · DRIVING" : "OSU · EXPLORATION";
+    if (objective) objective.textContent = firstJourneyComplete ? "Journey complete · Welcome to Labadi Beach!" : inVehicle ? "Drive towards Labadi Beach" : "Explore Osu and find the taxi";
+    if (hint) hint.textContent = firstJourneyComplete ? "FIRST JOURNEY complete · You can explore Labadi Beach" : inVehicle ? "Steer with the joystick · Hold GAS or BRAKE / REVERSE · Reach the Labadi Beach stop · Tap the door to exit" : "Push fully to sprint · Tap ↑ to jump · Drag to look";
     if (healthFill) healthFill.style.width = "100%";
     if (healthValue) healthValue.textContent = "100";
   });
