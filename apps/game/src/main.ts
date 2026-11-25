@@ -1629,7 +1629,7 @@ async function start(): Promise<void> {
             vehicleState = { ...vehicleState, speedMps: 0 };
           }
           vehicleRig.update(vehicleState);
-          playerVehicleVisualDriver?.update(vehicleState.speedMps, 0, delta);
+          playerVehicleVisualDriver?.update(vehicleState.speedMps, steering * 0.48, delta);
           camera.target = Vector3.Lerp(camera.target, new Vector3(vehicleState.x, 1.4, vehicleState.z), Math.min(1, delta * 8));
           camera.alpha = -Math.PI / 2 - vehicleState.headingRadians;
           camera.radius = 9;
