@@ -18,3 +18,16 @@ These are external source candidates only. Do not remove the current procedural 
 - Add engine and tyre audio as a separate audio task; do not infer sound support from a GLB.
 - Optimize high-detail hero vehicles separately from NPC traffic for mobile memory and draw-call budgets.
 - Retain a safe fallback until every replacement asset loads successfully.
+
+## Direct CDN models now wired on the feature branch
+
+The following CC0 GLBs are loaded from their permanent CORS-enabled CDN URLs:
+
+- Player starter saloon: `https://cdn.3dassets.dev/assets/32490/v1/model.glb` — 30,280 triangles, 2.00 × 1.40 × 4.82 m, named wheel pivots and wheel-roll/steering clips.
+- NPC SUV: `https://cdn.3dassets.dev/assets/18686/v1/model.glb` — 9,800 triangles, 2.37 × 1.94 × 5.05 m.
+- NPC city car: `https://cdn.3dassets.dev/assets/32487/v1/model.glb` — 31,000 triangles, 1.83 × 1.53 × 3.59 m.
+- NPC saloon: `https://cdn.3dassets.dev/assets/32490/v1/model.glb`.
+
+These are separate GLB instances, not one box mesh recoloured. The current fallback is hidden only after each model loads successfully. CDN outage or model-load failure leaves the existing drivable fallback visible.
+
+The CC0 community minibus at `https://cdn.3dassets.dev/assets/34198/v1/model.glb` is only 836 triangles and visibly stylized/low-detail. It is deliberately not used for the trotro because it does not meet the requested realistic standard. The trotro still needs a higher-detail minibus asset.
