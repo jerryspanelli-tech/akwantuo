@@ -3,6 +3,8 @@ import { GREATER_ACCRA_COASTLINE, GREATER_ACCRA_MAP_EXTENT, GREATER_ACCRA_REGION
 import { GREATER_ACCRA_LANDMARK_FOOTPRINTS } from "../world/greaterAccraLandmarkData";
 import { GREATER_ACCRA_RAIL_NODES, GREATER_ACCRA_RAIL_ROUTES } from "../world/railNetwork";
 import { buildAccraCoastalShowcase } from "./coastalShowcase";
+import { addGhanaLandmarkDetails } from "./landmarkDetails";
+import { addGreaterAccraLocalStreets } from "./localStreets";
 
 export type WorldBlocker = { x: number; z: number; hx: number; hz: number; yaw: number };
 type RoadPoint = Readonly<{ x: number; z: number }>;
@@ -695,6 +697,11 @@ export function createGreaterAccraWorld(app: AppBase): GreaterAccraWorld {
     cylinder("Accra roadside shade tree canopy", tree.x, 5.8, tree.z, 2.3, 2.8, mats.green);
   }
 
+  addGreaterAccraLocalStreets(app);
+  addGhanaLandmarkDetails(app);
+
+  // Preserve the already-integrated Labadi coastal showcase after the new
+  // neighbourhood streets and landmark detail pass.
   buildAccraCoastalShowcase(app);
 
   return {
