@@ -211,7 +211,7 @@ export function attachGreaterAccraWorldMap(options: Options): { update: (dt: num
       status.textContent = selected ? status.textContent : "Choose a district or landmark to plot a road route.";
     }
   };
-  toggle.addEventListener("click", () => setOpen(panel.hidden));
+  toggle.addEventListener("click", () => setOpen(panel.hasAttribute("hidden")));
   close.addEventListener("click", () => setOpen(false));
   window.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && !panel.hidden) setOpen(false);
