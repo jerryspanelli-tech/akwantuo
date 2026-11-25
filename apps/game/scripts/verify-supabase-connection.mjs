@@ -1,5 +1,7 @@
-const projectUrl = process.env.VITE_SUPABASE_URL || "https://ugiysogfkclbcryhtkyn.supabase.co";
-const publishableKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || "sb_publishable__WFhhKIwP7yxOqaMNsy9pA_ZHY9xE3m";
+// Keep these defaults aligned with apps/game/src/services/supabase.ts and the
+// active AKWANTUO Supabase project (zqdxorjlmwaqyxtguqpb).
+const projectUrl = process.env.VITE_SUPABASE_URL || "https://zqdxorjlmwaqyxtguqpb.supabase.co";
+const publishableKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || "sb_publishable_gjoKeAb488wlfNVywbG36Q_GtoUjdAQ";
 
 if (!projectUrl.startsWith("https://") || !publishableKey.startsWith("sb_publishable_")) {
   throw new Error("AKWANTUO Supabase public configuration is missing or invalid.");
